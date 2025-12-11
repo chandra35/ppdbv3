@@ -171,6 +171,11 @@ return [
                     'route' => 'admin.settings.jadwal.index',
                     'icon' => 'fas fa-fw fa-calendar-alt',
                 ],
+                [
+                    'text' => 'Alur Pendaftaran',
+                    'route' => 'admin.settings.alur-pendaftaran.index',
+                    'icon' => 'fas fa-fw fa-list-ol',
+                ],
             ],
         ],
 

@@ -65,8 +65,9 @@
         
         /* Hero Section */
         .hero-section {
-            min-height: 70vh;
-            background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 70%, black) 100%);
+            min-height: auto;
+            padding: 60px 0 50px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 60%, black) 100%);
             position: relative;
             overflow: hidden;
         }
@@ -79,7 +80,7 @@
             right: 0;
             bottom: 0;
             background: url('{{ $siteSettings->hero_image_url }}') center/cover no-repeat;
-            opacity: 0.2;
+            opacity: 0.1;
         }
         
         .hero-content {
@@ -87,29 +88,28 @@
             z-index: 1;
         }
         
-        /* Slider */
-        .carousel-item img {
-            height: 500px;
-            object-fit: cover;
+        .hero-section .card {
+            transition: transform 0.2s ease;
         }
         
-        .carousel-caption {
-            background: rgba(0,0,0,0.6);
-            border-radius: 10px;
-            padding: 20px;
+        .hero-section .card:hover {
+            transform: translateY(-3px);
         }
         
         /* Cards */
         .card {
             border: none;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            transition: box-shadow 0.3s ease;
         }
         
         .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+            box-shadow: 0 5px 25px rgba(0,0,0,0.1);
+        }
+        
+        .card-jalur:hover {
+            transform: translateY(-3px);
         }
         
         /* Timeline */
@@ -125,12 +125,13 @@
             top: 0;
             bottom: 0;
             width: 3px;
-            background: #e9ecef;
+            background: linear-gradient(180deg, var(--primary-color) 0%, #e9ecef 100%);
         }
         
         .timeline-item {
             position: relative;
             padding-bottom: 25px;
+            transition: all 0.3s ease;
         }
         
         .timeline-item::before {
@@ -143,6 +144,7 @@
             border-radius: 50%;
             border: 3px solid var(--primary-color);
             background: white;
+            transition: all 0.3s ease;
         }
         
         .timeline-item.active::before {
@@ -150,10 +152,71 @@
             animation: pulse 2s infinite;
         }
         
+        .timeline-item:hover::before {
+            transform: scale(1.3);
+        }
+        
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.4); }
             70% { box-shadow: 0 0 0 10px rgba(0, 123, 255, 0); }
             100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); }
+        }
+        
+        /* Alur Pendaftaran */
+        .alur-step {
+            display: flex;
+            align-items: flex-start;
+            position: relative;
+        }
+        
+        .alur-number {
+            width: 45px;
+            height: 45px;
+            min-width: 45px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .alur-content {
+            flex: 1;
+            padding-bottom: 30px;
+        }
+        
+        .alur-content h5 {
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .alur-content p {
+            color: #6c757d;
+            font-size: 14px;
+            margin: 0;
+        }
+        
+        .alur-line {
+            position: absolute;
+            left: 22px;
+            top: 45px;
+            bottom: 0;
+            width: 2px;
+            background: #e9ecef;
+        }
+        
+        .alur-step:last-child .alur-line {
+            display: none;
+        }
+        
+        .alur-step:last-child .alur-content {
+            padding-bottom: 0;
         }
         
         /* Footer */
@@ -191,22 +254,22 @@
         
         /* Section spacing */
         section {
-            padding: 80px 0;
+            padding: 60px 0;
         }
         
         .section-title {
-            position: relative;
-            margin-bottom: 50px;
+            margin-bottom: 10px;
+            color: #2d3748;
         }
         
-        .section-title::after {
-            content: '';
-            display: block;
-            width: 60px;
-            height: 4px;
-            background: var(--primary-color);
-            margin: 15px auto 0;
-            border-radius: 2px;
+        .section-subtitle {
+            color: #718096;
+            margin-bottom: 40px;
+        }
+        
+        /* Smooth section backgrounds */
+        .bg-soft {
+            background: #f8fafc;
         }
         
         /* Berita Card */
@@ -271,7 +334,7 @@
                         <a class="nav-link" href="#beranda">Beranda</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#jadwal">Jadwal</a>
+                        <a class="nav-link" href="#alur">Info PPDB</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#berita">Berita</a>
@@ -316,246 +379,193 @@
     </nav>
 
     {{-- Hero Section --}}
-    <section id="beranda" class="hero-section d-flex align-items-center text-white" style="padding-top: 100px;">
-        <div class="container hero-content text-center">
-            <h1 class="display-4 fw-bold mb-3">{{ $siteSettings->hero_title ?: 'PPDB Online ' . $sekolahSettings->nama_sekolah }}</h1>
-            <p class="lead mb-2">{{ $siteSettings->hero_subtitle ?: 'Pendaftaran Peserta Didik Baru secara online, cepat dan mudah' }}</p>
-            <p class="mb-4">
-                <span class="badge bg-light text-dark fs-6 px-3 py-2">
-                    <i class="fas fa-graduation-cap me-1"></i>
-                    {{ \App\Models\SekolahSettings::JENJANG_LIST[$sekolahSettings->jenjang] ?? $sekolahSettings->jenjang }}
-                </span>
-                @if($sekolahSettings->npsn)
-                <span class="badge bg-light text-dark fs-6 px-3 py-2 ms-2">NPSN: {{ $sekolahSettings->npsn }}</span>
-                @endif
-            </p>
-            
-            @php
-                $jalurDenganGelombang = $jalurAktif->filter(fn($j) => $j->gelombangs->isNotEmpty());
-            @endphp
-            
-            @if($jalurDenganGelombang->isNotEmpty())
-                <div class="alert alert-success d-inline-block mb-3">
-                    <i class="fas fa-bullhorn me-2"></i>
-                    <strong>Pendaftaran Dibuka!</strong> - 
-                    {{ $jalurDenganGelombang->count() }} jalur pendaftaran tersedia
-                </div>
-                <br>
-                <a href="{{ route('ppdb.register.step1') }}" class="btn btn-light btn-lg px-5 me-3">
-                    <i class="fas fa-user-plus me-2"></i> Daftar Sekarang
-                </a>
-                <a href="{{ route('login') }}" class="btn btn-outline-light btn-lg px-5">
-                    <i class="fas fa-sign-in-alt me-2"></i> Cek Status
-                </a>
-            @elseif($ppdbSettings && $ppdbSettings->status_pendaftaran)
-                <a href="{{ route('ppdb.register.step1') }}" class="btn btn-light btn-lg px-5 me-3">
-                    <i class="fas fa-user-plus me-2"></i> Daftar Sekarang
-                </a>
-                <a href="{{ route('login') }}" class="btn btn-outline-light btn-lg px-5">
-                    <i class="fas fa-sign-in-alt me-2"></i> Cek Status
-                </a>
-            @else
-                <div class="alert alert-warning d-inline-block">
-                    <i class="fas fa-info-circle me-2"></i>
-                    Pendaftaran saat ini belum dibuka
-                </div>
-            @endif
-            
-            @if($jalurDenganGelombang->isNotEmpty())
-            <div class="mt-5">
-                <div class="row justify-content-center g-3">
-                    <div class="col-6 col-md-3">
-                        <div class="bg-white bg-opacity-10 rounded-3 p-3">
-                            <h3 class="fw-bold mb-0">{{ $jalurDenganGelombang->count() }}</h3>
-                            <small>Jalur Dibuka</small>
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <div class="bg-white bg-opacity-10 rounded-3 p-3">
-                            <h3 class="fw-bold mb-0">{{ $jalurAktif->sum('kuota') }}</h3>
-                            <small>Total Kuota</small>
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <div class="bg-white bg-opacity-10 rounded-3 p-3">
-                            <h3 class="fw-bold mb-0">{{ $jalurAktif->sum(fn($j) => $j->pendaftars_count ?? 0) }}</h3>
-                            <small>Sudah Daftar</small>
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <div class="bg-white bg-opacity-10 rounded-3 p-3">
-                            <h3 class="fw-bold mb-0">{{ $jalurAktif->sum('kuota_tersisa') }}</h3>
-                            <small>Sisa Kuota</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @elseif($ppdbSettings)
-            <div class="mt-5">
-                <div class="row justify-content-center g-3">
-                    <div class="col-6 col-md-3">
-                        <div class="bg-white bg-opacity-10 rounded-3 p-3">
-                            <h3 class="fw-bold mb-0">{{ $ppdbSettings->kuota_penerimaan }}</h3>
-                            <small>Kuota Siswa</small>
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <div class="bg-white bg-opacity-10 rounded-3 p-3">
-                            <h3 class="fw-bold mb-0">
-                                @if($ppdbSettings->status_pendaftaran)
-                                    <span class="text-success"><i class="fas fa-check-circle"></i></span>
-                                @else
-                                    <span class="text-danger"><i class="fas fa-times-circle"></i></span>
-                                @endif
-                            </h3>
-                            <small>{{ $ppdbSettings->status_pendaftaran ? 'Pendaftaran Dibuka' : 'Pendaftaran Ditutup' }}</small>
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <div class="bg-white bg-opacity-10 rounded-3 p-3">
-                            <h5 class="fw-bold mb-0">{{ $ppdbSettings->tanggal_dibuka ? $ppdbSettings->tanggal_dibuka->format('d M Y') : '-' }}</h5>
-                            <small>Tanggal Dibuka</small>
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <div class="bg-white bg-opacity-10 rounded-3 p-3">
-                            <h5 class="fw-bold mb-0">{{ $ppdbSettings->tanggal_ditutup ? $ppdbSettings->tanggal_ditutup->format('d M Y') : '-' }}</h5>
-                            <small>Tanggal Ditutup</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @endif
-        </div>
-    </section>
-
-    {{-- Slider Section --}}
-    @if($sliders->count() > 0)
-    <section class="py-0">
-        <div id="mainCarousel" class="carousel slide" data-bs-ride="carousel">
-            <div class="carousel-indicators">
-                @foreach($sliders as $index => $slider)
-                <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="{{ $index }}" class="{{ $index === 0 ? 'active' : '' }}"></button>
-                @endforeach
-            </div>
-            <div class="carousel-inner">
-                @foreach($sliders as $index => $slider)
-                <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
-                    @if($slider->link)
-                    <a href="{{ $slider->link }}" target="_blank">
-                    @endif
-                        <img src="{{ asset('storage/' . $slider->gambar) }}" class="d-block w-100" alt="{{ $slider->judul }}">
-                        @if($slider->judul || $slider->deskripsi)
-                        <div class="carousel-caption d-none d-md-block">
-                            @if($slider->judul)<h5>{{ $slider->judul }}</h5>@endif
-                            @if($slider->deskripsi)<p>{{ $slider->deskripsi }}</p>@endif
-                        </div>
-                        @endif
-                    @if($slider->link)
-                    </a>
-                    @endif
-                </div>
-                @endforeach
-            </div>
-            <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
-                <span class="carousel-control-prev-icon"></span>
-            </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
-                <span class="carousel-control-next-icon"></span>
-            </button>
-        </div>
-    </section>
-    @endif
-
-    {{-- Jalur Pendaftaran Section --}}
-    @if($jalurAktif->count() > 0)
-    <section id="jalur-pendaftaran" class="py-5">
-        <div class="container">
-            <h2 class="section-title text-center fw-bold mb-2">Jalur Pendaftaran</h2>
-            <p class="text-center text-muted mb-5">Pilih jalur pendaftaran yang sesuai dengan kriteria Anda</p>
-            
-            <div class="row g-4">
-                @foreach($jalurAktif as $jalur)
-                <div class="col-md-6 col-lg-4">
-                    <div class="card h-100 border-0 shadow-sm" style="border-top: 4px solid {{ $jalur->warna ?? '#007bff' }} !important;">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="rounded-circle p-3 me-3" style="background: {{ $jalur->warna ?? '#007bff' }}15;">
-                                    <i class="{{ $jalur->icon ?? 'fas fa-graduation-cap' }} fa-lg" style="color: {{ $jalur->warna ?? '#007bff' }};"></i>
-                                </div>
-                                <div>
-                                    <h5 class="card-title mb-0">{{ $jalur->nama }}</h5>
-                                    @if($jalur->tahunPelajaran)
-                                    <small class="text-muted">TA {{ $jalur->tahunPelajaran->nama }}</small>
+    <section id="beranda" class="hero-section d-flex align-items-center text-white" style="padding-top: 80px;">
+        <div class="container hero-content">
+            <div class="row align-items-center">
+                <div class="col-lg-10 mx-auto text-center">
+                    {{-- School Name --}}
+                    <h1 class="display-5 fw-bold mb-2">{{ $sekolahSettings->nama_sekolah }}</h1>
+                    <p class="lead mb-4 opacity-90">Pendaftaran Peserta Didik Baru (PPDB) Online</p>
+                    
+                    @php
+                        $jalurDenganGelombang = $jalurAktif->filter(fn($j) => $j->gelombangs->isNotEmpty());
+                    @endphp
+                    
+                    {{-- Main CTA Cards --}}
+                    <div class="row justify-content-center g-3 mb-4">
+                        {{-- Card Daftar Baru --}}
+                        <div class="col-sm-6 col-md-5 col-lg-4">
+                            <div class="card bg-white text-dark h-100 border-0 shadow">
+                                <div class="card-body p-4 text-center">
+                                    <div class="rounded-circle bg-primary bg-opacity-10 p-3 d-inline-flex mb-3">
+                                        <i class="fas fa-user-plus fa-2x text-primary"></i>
+                                    </div>
+                                    <h5 class="fw-bold mb-2">Pendaftaran Baru</h5>
+                                    <p class="text-muted small mb-3">Belum punya akun? Daftar di sini untuk memulai pendaftaran PPDB</p>
+                                    @if($jalurDenganGelombang->isNotEmpty() || ($ppdbSettings && $ppdbSettings->status_pendaftaran))
+                                    <a href="{{ route('ppdb.register.step1') }}" class="btn btn-primary w-100">
+                                        <i class="fas fa-arrow-right me-2"></i> Daftar Sekarang
+                                    </a>
+                                    @else
+                                    <button class="btn btn-secondary w-100" disabled>
+                                        <i class="fas fa-clock me-2"></i> Belum Dibuka
+                                    </button>
                                     @endif
                                 </div>
                             </div>
-                            
+                        </div>
+                        
+                        {{-- Card Login --}}
+                        <div class="col-sm-6 col-md-5 col-lg-4">
+                            <div class="card bg-white bg-opacity-10 text-white h-100 border border-white border-opacity-25">
+                                <div class="card-body p-4 text-center">
+                                    <div class="rounded-circle bg-white bg-opacity-25 p-3 d-inline-flex mb-3">
+                                        <i class="fas fa-sign-in-alt fa-2x"></i>
+                                    </div>
+                                    <h5 class="fw-bold mb-2">Sudah Terdaftar?</h5>
+                                    <p class="opacity-75 small mb-3">Login untuk melanjutkan pendaftaran atau cek status</p>
+                                    <a href="{{ route('login') }}" class="btn btn-outline-light w-100">
+                                        <i class="fas fa-sign-in-alt me-2"></i> Login
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {{-- Info Badge --}}
+                    <div class="d-flex flex-wrap justify-content-center gap-2">
+                        <span class="badge bg-white text-dark px-3 py-2">
+                            <i class="fas fa-graduation-cap me-1"></i>
+                            {{ \App\Models\SekolahSettings::JENJANG_LIST[$sekolahSettings->jenjang] ?? $sekolahSettings->jenjang }}
+                        </span>
+                        @if($sekolahSettings->npsn)
+                        <span class="badge bg-white bg-opacity-25 px-3 py-2">NPSN: {{ $sekolahSettings->npsn }}</span>
+                        @endif
+                        @if($sekolahSettings->akreditasi)
+                        <span class="badge bg-warning text-dark px-3 py-2">
+                            <i class="fas fa-award me-1"></i> Akreditasi {{ $sekolahSettings->akreditasi }}
+                        </span>
+                        @endif
+                        @if($jalurDenganGelombang->isNotEmpty())
+                        <span class="badge bg-success px-3 py-2">
+                            <i class="fas fa-check-circle me-1"></i> Pendaftaran Dibuka
+                        </span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {{-- Jalur Pendaftaran Section --}}
+    @if($jalurAktif->count() > 0)
+    <section id="jalur-pendaftaran" class="bg-soft">
+        <div class="container">
+            <h2 class="section-title text-center fw-bold">Jalur Pendaftaran</h2>
+            <p class="section-subtitle text-center">Pilih jalur pendaftaran yang sesuai dengan kriteria Anda</p>
+            
+            <div class="row g-4 justify-content-center">
+                @foreach($jalurAktif as $jalur)
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm overflow-hidden" style="border-left: 5px solid {{ $jalur->warna ?? '#007bff' }} !important;">
+                        {{-- Card Header --}}
+                        <div class="card-header border-0 py-3" style="background: linear-gradient(135deg, {{ $jalur->warna ?? '#007bff' }}15 0%, {{ $jalur->warna ?? '#007bff' }}05 100%);">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle p-3 me-3 shadow-sm" style="background: white;">
+                                    <i class="{{ $jalur->icon ?? 'fas fa-graduation-cap' }} fa-lg" style="color: {{ $jalur->warna ?? '#007bff' }};"></i>
+                                </div>
+                                <div>
+                                    <h5 class="card-title mb-0 fw-bold">{{ $jalur->nama }}</h5>
+                                    @if($jalur->tahunPelajaran)
+                                    <small class="text-muted"><i class="fas fa-calendar-alt me-1"></i> TA {{ $jalur->tahunPelajaran->nama }}</small>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card-body">
                             @if($jalur->deskripsi)
-                            <p class="text-muted small mb-3">{{ Str::limit($jalur->deskripsi, 100) }}</p>
+                            <p class="text-muted small mb-3">{{ Str::limit($jalur->deskripsi, 120) }}</p>
                             @endif
                             
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between mb-1">
-                                    <span class="small">Kuota Tersedia</span>
-                                    <span class="small fw-bold">{{ $jalur->kuota_tersisa }} / {{ $jalur->kuota }}</span>
+                            {{-- Kuota Progress --}}
+                            <div class="mb-3 p-3 rounded" style="background: #f8f9fa;">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="small fw-semibold"><i class="fas fa-users me-1"></i> Kuota</span>
+                                    <span class="small">
+                                        <span class="fw-bold" style="color: {{ $jalur->warna ?? '#007bff' }}">{{ $jalur->kuota_tersisa }}</span> 
+                                        <span class="text-muted">/ {{ $jalur->kuota }} tersedia</span>
+                                    </span>
                                 </div>
-                                <div class="progress" style="height: 6px;">
+                                <div class="progress" style="height: 8px; border-radius: 4px;">
                                     @php
                                         $persentase = $jalur->kuota > 0 ? (($jalur->kuota - $jalur->kuota_tersisa) / $jalur->kuota) * 100 : 0;
                                     @endphp
                                     <div class="progress-bar" role="progressbar" 
-                                         style="width: {{ $persentase }}%; background-color: {{ $jalur->warna ?? '#007bff' }};"
+                                         style="width: {{ $persentase }}%; background: linear-gradient(90deg, {{ $jalur->warna ?? '#007bff' }} 0%, color-mix(in srgb, {{ $jalur->warna ?? '#007bff' }} 70%, white) 100%); border-radius: 4px;"
                                          aria-valuenow="{{ $persentase }}" aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
+                                <small class="text-muted mt-1 d-block">{{ number_format($persentase, 0) }}% terisi</small>
                             </div>
                             
                             {{-- Gelombang yang dibuka --}}
                             @if($jalur->gelombangs->isNotEmpty())
                             <div class="mb-3">
-                                <small class="text-muted d-block mb-2">
-                                    <i class="fas fa-door-open me-1"></i> Periode Dibuka:
+                                <small class="text-muted d-block mb-2 fw-semibold">
+                                    <i class="fas fa-door-open me-1 text-success"></i> Pendaftaran Dibuka:
                                 </small>
                                 @foreach($jalur->gelombangs as $gelombang)
-                                <div class="bg-success bg-opacity-10 rounded p-2 mb-1 small">
+                                <div class="border border-success rounded p-2 mb-2" style="background: rgba(25, 135, 84, 0.05);">
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <span class="fw-semibold text-success">
+                                        <span class="fw-semibold text-success small">
+                                            <i class="fas fa-check-circle me-1"></i>
                                             @if($gelombang->tampilkan_nama)
                                                 {{ $gelombang->nama }}
                                             @else
-                                                Pendaftaran Dibuka
+                                                Periode Aktif
                                             @endif
                                         </span>
-                                        <span class="badge bg-success">{{ $gelombang->sisa_hari }} hari</span>
+                                        <span class="badge bg-success rounded-pill">{{ $gelombang->sisa_hari }} hari lagi</span>
                                     </div>
-                                    <small class="text-muted">
-                                        s/d {{ $gelombang->tanggal_ditutup->format('d M Y') }} | Kuota: {{ $gelombang->kuota_tersisa }}
-                                    </small>
+                                    <div class="d-flex justify-content-between align-items-center mt-1">
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar me-1"></i> s/d {{ $gelombang->tanggal_ditutup->format('d M Y') }}
+                                        </small>
+                                        <small class="text-muted">
+                                            <i class="fas fa-user me-1"></i> Kuota: {{ $gelombang->kuota_tersisa }}
+                                        </small>
+                                    </div>
                                 </div>
                                 @endforeach
                             </div>
                             @else
                             <div class="mb-3">
-                                <span class="badge bg-secondary">Belum ada periode dibuka</span>
+                                <div class="alert alert-secondary py-2 px-3 mb-0">
+                                    <small><i class="fas fa-clock me-1"></i> Belum ada periode dibuka</small>
+                                </div>
                             </div>
                             @endif
                             
                             @if($jalur->persyaratan)
-                            <div class="small text-muted mb-3">
-                                <strong class="d-block mb-1"><i class="fas fa-list-check me-1"></i> Persyaratan:</strong>
-                                {!! nl2br(e(Str::limit($jalur->persyaratan, 150))) !!}
-                            </div>
+                            <details class="small mb-2">
+                                <summary class="fw-semibold text-primary cursor-pointer">
+                                    <i class="fas fa-list-check me-1"></i> Lihat Persyaratan
+                                </summary>
+                                <div class="mt-2 p-2 bg-light rounded text-muted">
+                                    {!! nl2br(e(Str::limit($jalur->persyaratan, 200))) !!}
+                                </div>
+                            </details>
                             @endif
                         </div>
                         
-                        <div class="card-footer bg-transparent border-0 pt-0">
+                        <div class="card-footer bg-transparent border-0 pt-0 pb-3">
                             @if($jalur->gelombangs->isNotEmpty())
-                            <a href="{{ route('ppdb.register.step1') }}" class="btn btn-sm w-100" style="background: {{ $jalur->warna ?? '#007bff' }}; color: white;">
-                                <i class="fas fa-arrow-right me-1"></i> Daftar Jalur Ini
+                            <a href="{{ route('ppdb.register.step1') }}" class="btn w-100 py-2" style="background: {{ $jalur->warna ?? '#007bff' }}; color: white;">
+                                <i class="fas fa-arrow-right me-2"></i> Daftar Sekarang
                             </a>
                             @else
-                            <button class="btn btn-sm btn-outline-secondary w-100" disabled>
-                                <i class="fas fa-clock me-1"></i> Belum Dibuka
+                            <button class="btn btn-outline-secondary w-100 py-2" disabled>
+                                <i class="fas fa-clock me-1"></i> Menunggu Dibuka
                             </button>
                             @endif
                         </div>
@@ -567,56 +577,89 @@
     </section>
     @endif
 
-    {{-- Jadwal Section --}}
-    @if($jadwals->count() > 0)
-    <section id="jadwal" class="bg-light">
+    {{-- Alur & Jadwal Section (Combined) --}}
+    <section id="alur">
         <div class="container">
-            <h2 class="section-title text-center fw-bold">Jadwal PPDB</h2>
-            <div class="row justify-content-center">
-                <div class="col-md-8">
-                    <div class="card p-4">
-                        <div class="timeline">
-                            @foreach($jadwals as $jadwal)
-                            <div class="timeline-item {{ $jadwal->is_ongoing ? 'active' : '' }}">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <h5 class="mb-1" style="color: {{ $jadwal->warna ?: 'var(--primary-color)' }}">
-                                            {{ $jadwal->nama_kegiatan }}
-                                        </h5>
-                                        @if($jadwal->keterangan)
-                                        <p class="text-muted mb-1 small">{{ $jadwal->keterangan }}</p>
-                                        @endif
-                                    </div>
-                                    <span class="badge {{ $jadwal->is_ongoing ? 'bg-success' : ($jadwal->is_upcoming ? 'bg-info' : 'bg-secondary') }}">
-                                        {{ $jadwal->is_ongoing ? 'Berlangsung' : ($jadwal->is_upcoming ? 'Akan Datang' : 'Selesai') }}
-                                    </span>
-                                </div>
-                                <small class="text-muted">
-                                    <i class="fas fa-calendar me-1"></i> {{ $jadwal->tanggal_range }}
-                                </small>
-                            </div>
-                            @endforeach
+            <h2 class="section-title text-center fw-bold">Informasi Pendaftaran</h2>
+            <p class="section-subtitle text-center">Alur pendaftaran dan jadwal kegiatan PPDB</p>
+            
+            <div class="row g-4 g-lg-5">
+                {{-- Kolom Alur Pendaftaran --}}
+                <div class="col-lg-6">
+                    <h5 class="fw-bold mb-4 text-primary">
+                        <i class="fas fa-list-ol me-2"></i>Alur Pendaftaran
+                    </h5>
+                    
+                    @forelse($alurPendaftaran as $index => $alur)
+                    <div class="alur-step">
+                        <div class="alur-number" @if($alur->warna) style="background-color: {{ $alur->warna }}" @endif>
+                            {{ $index + 1 }}
                         </div>
+                        <div class="alur-content">
+                            <h6 class="fw-semibold mb-1">{{ $alur->judul }}</h6>
+                            <p class="mb-0">{{ $alur->deskripsi }}</p>
+                        </div>
+                        @if(!$loop->last)
+                        <div class="alur-line"></div>
+                        @endif
                     </div>
+                    @empty
+                    <div class="text-muted text-center py-4">
+                        <i class="fas fa-info-circle fa-2x mb-2"></i>
+                        <p class="mb-0">Alur pendaftaran belum dikonfigurasi</p>
+                    </div>
+                    @endforelse
+                </div>
+                
+                {{-- Kolom Jadwal PPDB --}}
+                <div class="col-lg-6" id="jadwal">
+                    <h5 class="fw-bold mb-4 text-primary">
+                        <i class="fas fa-calendar-alt me-2"></i>Jadwal PPDB
+                    </h5>
+                    
+                    @if($jadwals->count() > 0)
+                    <div class="timeline">
+                        @foreach($jadwals as $jadwal)
+                        <div class="timeline-item {{ $jadwal->is_ongoing ? 'active' : '' }}">
+                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1 fw-semibold">{{ $jadwal->nama_kegiatan }}</h6>
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i> {{ $jadwal->tanggal_range }}
+                                    </small>
+                                </div>
+                                <span class="badge {{ $jadwal->is_ongoing ? 'bg-success' : ($jadwal->is_upcoming ? 'bg-info' : 'bg-secondary') }}">
+                                    {{ $jadwal->is_ongoing ? 'Berlangsung' : ($jadwal->is_upcoming ? 'Akan Datang' : 'Selesai') }}
+                                </span>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    @else
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-calendar-times fa-3x mb-3 opacity-50"></i>
+                        <p>Jadwal belum tersedia</p>
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>
     </section>
-    @endif
 
     {{-- Tentang Section --}}
     @if($siteSettings->about_content)
-    <section id="tentang">
+    <section id="tentang" class="bg-soft">
         <div class="container">
-            <h2 class="section-title text-center fw-bold">Tentang Kami</h2>
-            <div class="row align-items-center">
+            <h2 class="section-title text-center fw-bold">Tentang Sekolah</h2>
+            <p class="section-subtitle text-center">Mengenal lebih dekat {{ $sekolahSettings->nama_sekolah }}</p>
+            <div class="row align-items-center justify-content-center">
                 @if($siteSettings->about_image)
                 <div class="col-md-5 mb-4 mb-md-0">
-                    <img src="{{ $siteSettings->about_image_url }}" class="img-fluid rounded-3 shadow" alt="Tentang Kami">
+                    <img src="{{ $siteSettings->about_image_url }}" class="img-fluid rounded-3" alt="Tentang Kami">
                 </div>
                 <div class="col-md-7">
                 @else
-                <div class="col-md-10 mx-auto">
+                <div class="col-lg-8">
                 @endif
                     <div class="ps-md-4">
                         {!! nl2br(e($siteSettings->about_content)) !!}
@@ -629,9 +672,10 @@
 
     {{-- Berita Section --}}
     @if($beritas->count() > 0)
-    <section id="berita" class="bg-light">
+    <section id="berita">
         <div class="container">
             <h2 class="section-title text-center fw-bold">Berita & Pengumuman</h2>
+            <p class="section-subtitle text-center">Informasi terbaru seputar PPDB</p>
             <div class="row g-4">
                 @foreach($beritas as $berita)
                 <div class="col-md-4">
@@ -671,9 +715,10 @@
     @endif
 
     {{-- Kontak Section --}}
-    <section id="kontak">
+    <section id="kontak" class="bg-soft">
         <div class="container">
             <h2 class="section-title text-center fw-bold">Hubungi Kami</h2>
+            <p class="section-subtitle text-center">Butuh bantuan? Jangan ragu untuk menghubungi kami</p>
             <div class="row g-4">
                 <div class="col-md-6">
                     <div class="card h-100 p-4">

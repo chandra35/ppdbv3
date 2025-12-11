@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\GtkController;
 use App\Http\Controllers\Admin\JalurPendaftaranController;
 use App\Http\Controllers\Admin\TahunPelajaranController;
+use App\Http\Controllers\Admin\AlurPendaftaranController;
 use App\Http\Controllers\Operator\DashboardController as OperatorDashboardController;
 use App\Http\Controllers\Operator\PendaftarController as OperatorPendaftarController;
 
@@ -130,6 +131,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         // Jadwal PPDB
         Route::resource('jadwal', JadwalController::class);
         Route::post('/jadwal/{jadwal}/toggle-status', [JadwalController::class, 'toggleStatus'])->name('jadwal.toggle-status');
+
+        // Alur Pendaftaran
+        Route::prefix('alur-pendaftaran')->name('alur-pendaftaran.')->group(function () {
+            Route::get('/', [AlurPendaftaranController::class, 'index'])->name('index');
+            Route::post('/', [AlurPendaftaranController::class, 'store'])->name('store');
+            Route::put('/{alurPendaftaran}', [AlurPendaftaranController::class, 'update'])->name('update');
+            Route::delete('/{alurPendaftaran}', [AlurPendaftaranController::class, 'destroy'])->name('destroy');
+            Route::post('/update-order', [AlurPendaftaranController::class, 'updateOrder'])->name('update-order');
+        });
     });
 
     // ---- JALUR PENDAFTARAN ----

@@ -10,6 +10,7 @@ use App\Models\SiteSettings;
 use App\Models\PpdbSettings;
 use App\Models\SekolahSettings;
 use App\Models\JalurPendaftaran;
+use App\Models\AlurPendaftaran;
 use App\Models\User;
 use App\Models\ActivityLog;
 use Illuminate\Http\Request;
@@ -50,6 +51,9 @@ class LandingController extends Controller
         // Get active jadwal
         $jadwals = JadwalPpdb::active()->get();
         
+        // Get active alur pendaftaran
+        $alurPendaftaran = AlurPendaftaran::getActive();
+        
         return view('ppdb.landing', compact(
             'siteSettings',
             'ppdbSettings',
@@ -58,7 +62,8 @@ class LandingController extends Controller
             'sliders',
             'beritas',
             'featuredBeritas',
-            'jadwals'
+            'jadwals',
+            'alurPendaftaran'
         ));
     }
 
