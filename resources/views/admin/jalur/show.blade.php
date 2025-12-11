@@ -167,9 +167,19 @@
                             </td>
                             <td class="text-center">
                                 <div class="btn-group btn-group-sm">
-                                    <a href="{{ route('admin.jalur.gelombang.edit', [$jalur, $gelombang]) }}" class="btn btn-warning" title="Edit">
+                                    <button type="button" class="btn btn-warning btn-edit-gelombang" title="Edit"
+                                        data-id="{{ $gelombang->id }}"
+                                        data-nama="{{ $gelombang->nama }}"
+                                        data-deskripsi="{{ $gelombang->deskripsi }}"
+                                        data-tanggal_buka="{{ $gelombang->tanggal_buka->format('Y-m-d') }}"
+                                        data-tanggal_tutup="{{ $gelombang->tanggal_tutup->format('Y-m-d') }}"
+                                        data-kuota="{{ $gelombang->kuota }}"
+                                        data-biaya_pendaftaran="{{ $gelombang->biaya_pendaftaran }}"
+                                        data-tampil_nama_gelombang="{{ $gelombang->tampil_nama_gelombang ? '1' : '0' }}"
+                                        data-tampil_kuota="{{ $gelombang->tampil_kuota ? '1' : '0' }}"
+                                        data-toggle="modal" data-target="#modalEditGelombang">
                                         <i class="fas fa-edit"></i>
-                                    </a>
+                                    </button>
                                     <div class="btn-group btn-group-sm">
                                         <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown">
                                             <i class="fas fa-cog"></i>
@@ -383,4 +393,113 @@
         </div>
     </div>
 </div>
+
+{{-- Modal Edit Gelombang --}}
+<div class="modal fade" id="modalEditGelombang" tabindex="-1" role="dialog" aria-labelledby="modalEditGelombangLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <form id="formEditGelombang" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title" id="modalEditGelombangLabel">
+                        <i class="fas fa-edit mr-2"></i>Edit Gelombang Pendaftaran
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_nama">Nama Gelombang <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="edit_nama" name="nama" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_kuota">Kuota</label>
+                                <input type="number" class="form-control" id="edit_kuota" name="kuota" min="1"
+                                    placeholder="Kosongkan untuk ikut kuota jalur">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_tanggal_buka">Tanggal Buka <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="edit_tanggal_buka" name="tanggal_buka" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_tanggal_tutup">Tanggal Tutup <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="edit_tanggal_tutup" name="tanggal_tutup" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_biaya_pendaftaran">Biaya Pendaftaran</label>
+                                <input type="number" class="form-control" id="edit_biaya_pendaftaran" name="biaya_pendaftaran" min="0"
+                                    placeholder="0">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Visibilitas Publik</label>
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input" id="edit_tampil_nama_gelombang" name="tampil_nama_gelombang" value="1">
+                                    <label class="custom-control-label" for="edit_tampil_nama_gelombang">Tampilkan nama gelombang</label>
+                                </div>
+                                <div class="custom-control custom-switch mt-2">
+                                    <input type="checkbox" class="custom-control-input" id="edit_tampil_kuota" name="tampil_kuota" value="1">
+                                    <label class="custom-control-label" for="edit_tampil_kuota">Tampilkan kuota gelombang</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_deskripsi">Keterangan</label>
+                        <textarea class="form-control" id="edit_deskripsi" name="deskripsi" rows="2"
+                            placeholder="Keterangan tambahan (opsional)"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i>Batal
+                    </button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save mr-1"></i>Update Gelombang
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@stop
+
+@section('js')
+<script>
+$(function() {
+    // Handle edit gelombang button click
+    $('.btn-edit-gelombang').on('click', function() {
+        var id = $(this).data('id');
+        var baseUrl = '{{ route("admin.jalur.gelombang.update", [$jalur->id, ":gelombang"]) }}';
+        var actionUrl = baseUrl.replace(':gelombang', id);
+        
+        $('#formEditGelombang').attr('action', actionUrl);
+        $('#edit_nama').val($(this).data('nama'));
+        $('#edit_deskripsi').val($(this).data('deskripsi'));
+        $('#edit_tanggal_buka').val($(this).data('tanggal_buka'));
+        $('#edit_tanggal_tutup').val($(this).data('tanggal_tutup'));
+        $('#edit_kuota').val($(this).data('kuota') || '');
+        $('#edit_biaya_pendaftaran').val($(this).data('biaya_pendaftaran') || 0);
+        $('#edit_tampil_nama_gelombang').prop('checked', $(this).data('tampil_nama_gelombang') == '1');
+        $('#edit_tampil_kuota').prop('checked', $(this).data('tampil_kuota') == '1');
+    });
+});
+</script>
 @stop
