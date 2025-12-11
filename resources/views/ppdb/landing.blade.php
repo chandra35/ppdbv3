@@ -403,7 +403,7 @@
                                     <h5 class="fw-bold mb-2">Pendaftaran Baru</h5>
                                     <p class="text-muted small mb-3">Belum punya akun? Daftar di sini untuk memulai pendaftaran PPDB</p>
                                     @if($jalurDenganGelombang->isNotEmpty() || ($ppdbSettings && $ppdbSettings->status_pendaftaran))
-                                    <a href="{{ route('ppdb.register.step1') }}" class="btn btn-primary w-100">
+                                    <a href="{{ route('pendaftar.landing') }}" class="btn btn-primary w-100">
                                         <i class="fas fa-arrow-right me-2"></i> Daftar Sekarang
                                     </a>
                                     @else
@@ -560,7 +560,7 @@
                         
                         <div class="card-footer bg-transparent border-0 pt-0 pb-3">
                             @if($jalur->gelombangs->isNotEmpty())
-                            <a href="{{ route('ppdb.register.step1') }}" class="btn w-100 py-2" style="background: {{ $jalur->warna ?? '#007bff' }}; color: white;">
+                            <a href="{{ route('pendaftar.landing') }}" class="btn w-100 py-2" style="background: {{ $jalur->warna ?? '#007bff' }}; color: white;">
                                 <i class="fas fa-arrow-right me-2"></i> Daftar Sekarang
                             </a>
                             @else

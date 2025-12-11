@@ -460,7 +460,7 @@
                         @if($slider->link)
                             <a href="{{ $slider->link }}" class="btn">Selengkapnya</a>
                         @else
-                            <a href="{{ route('ppdb.register.step1') }}" class="btn">Daftar Sekarang</a>
+                            <a href="{{ route('pendaftar.landing') }}" class="btn">Daftar Sekarang</a>
                         @endif
                     </div>
                 </div>
@@ -482,7 +482,7 @@
                 <div class="slide-content">
                     <h2>Portal Pendaftaran PPDB</h2>
                     <p>Penerimaan Peserta Didik Baru Tahun {{ now()->year }}/{{ now()->year + 1 }}</p>
-                    <a href="{{ route('ppdb.register.step1') }}" class="btn">Daftar Sekarang</a>
+                    <a href="{{ route('pendaftar.landing') }}" class="btn">Daftar Sekarang</a>
                 </div>
             </div>
         </div>
@@ -497,7 +497,7 @@
                 <div class="icon">📝</div>
                 <h3>Pendaftaran Baru</h3>
                 <p>Belum memiliki akun? Daftar sekarang untuk memulai proses pendaftaran PPDB dengan mudah dan cepat.</p>
-                <a href="{{ route('ppdb.register.step1') }}" class="btn">Daftar Sekarang</a>
+                <a href="{{ route('pendaftar.landing') }}" class="btn">Daftar Sekarang</a>
             </div>
 
             <div class="info-card">
@@ -575,7 +575,7 @@
             <div class="auth-card">
                 <h3>📝 Daftar Baru</h3>
                 <p class="auth-text">Belum memiliki akun? Daftar sekarang untuk memulai proses pendaftaran PPDB. Gratis dan mudah!</p>
-                <a href="{{ route('ppdb.register.step1') }}" class="btn">Mulai Pendaftaran</a>
+                <a href="{{ route('pendaftar.landing') }}" class="btn">Mulai Pendaftaran</a>
                 
                 <div style="margin-top: 30px; padding-top: 30px; border-top: 2px solid #e2e8f0;">
                     <p style="color: #64748b; font-size: 0.9rem; text-align: center; margin-bottom: 15px;"><strong>Yang Anda Butuhkan:</strong></p>
@@ -612,7 +612,7 @@
             </div>
             <div class="footer-col">
                 <h4>Link Penting</h4>
-                <a href="{{ route('ppdb.register.step1') }}">Pendaftaran</a>
+                <a href="{{ route('pendaftar.landing') }}">Pendaftaran</a>
                 <a href="#berita">Berita</a>
                 <a href="#berita">Informasi</a>
                 <a href="{{ route('ppdb.landing') }}">Beranda</a>
