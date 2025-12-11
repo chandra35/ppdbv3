@@ -348,14 +348,14 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="tanggal_mulai">Tanggal Mulai <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control" id="tanggal_mulai" name="tanggal_mulai" required>
+                                <label for="tanggal_buka">Tanggal Buka <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="tanggal_buka" name="tanggal_buka" required>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="tanggal_selesai">Tanggal Selesai <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control" id="tanggal_selesai" name="tanggal_selesai" required>
+                                <label for="tanggal_tutup">Tanggal Tutup <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="tanggal_tutup" name="tanggal_tutup" required>
                             </div>
                         </div>
                     </div>

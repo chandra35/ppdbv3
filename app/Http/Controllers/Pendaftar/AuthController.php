@@ -37,8 +37,8 @@ class AuthController extends Controller
         $tahunAktif = TahunPelajaran::where('is_active', true)->first();
         $jalurPendaftaran = JalurPendaftaran::where('is_active', true)->orderBy('urutan')->get();
         $gelombangAktif = GelombangPendaftaran::where('is_active', true)
-            ->where('tanggal_mulai', '<=', now())
-            ->where('tanggal_selesai', '>=', now())
+            ->where('tanggal_buka', '<=', now())
+            ->where('tanggal_tutup', '>=', now())
             ->first();
 
         return view('pendaftar.landing', compact('tahunAktif', 'jalurPendaftaran', 'gelombangAktif'));
@@ -96,8 +96,8 @@ class AuthController extends Controller
         $tahunAktif = TahunPelajaran::where('is_active', true)->first();
         $jalurPendaftaran = JalurPendaftaran::where('is_active', true)->orderBy('urutan')->get();
         $gelombangAktif = GelombangPendaftaran::where('is_active', true)
-            ->where('tanggal_mulai', '<=', now())
-            ->where('tanggal_selesai', '>=', now())
+            ->where('tanggal_buka', '<=', now())
+            ->where('tanggal_tutup', '>=', now())
             ->get();
 
         return view('pendaftar.register', compact(
