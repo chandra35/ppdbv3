@@ -388,7 +388,7 @@
                     <p class="lead mb-4 opacity-90">Pendaftaran Peserta Didik Baru (PPDB) Online</p>
                     
                     @php
-                        $jalurDenganGelombang = $jalurAktif->filter(fn($j) => $j->gelombangs->isNotEmpty());
+                        $jalurDenganGelombang = $jalurAktif->filter(fn($j) => $j->gelombang->isNotEmpty());
                     @endphp
                     
                     {{-- Main CTA Cards --}}
@@ -509,12 +509,12 @@
                             </div>
                             
                             {{-- Gelombang yang dibuka --}}
-                            @if($jalur->gelombangs->isNotEmpty())
+                            @if($jalur->gelombang->isNotEmpty())
                             <div class="mb-3">
                                 <small class="text-muted d-block mb-2 fw-semibold">
                                     <i class="fas fa-door-open me-1 text-success"></i> Pendaftaran Dibuka:
                                 </small>
-                                @foreach($jalur->gelombangs as $gelombang)
+                                @foreach($jalur->gelombang as $gelombang)
                                 <div class="border border-success rounded p-2 mb-2" style="background: rgba(25, 135, 84, 0.05);">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <span class="fw-semibold text-success small">
@@ -559,8 +559,8 @@
                         </div>
                         
                         <div class="card-footer bg-transparent border-0 pt-0 pb-3">
-                            @if($jalur->gelombangs->isNotEmpty())
-                            <a href="{{ route('pendaftar.landing') }}" class="btn w-100 py-2" style="background: {{ $jalur->warna ?? '#007bff' }}; color: white;">
+                            @if($jalur->gelombang->isNotEmpty())
+                            <a href="{{ route('pendaftar.landing') }}" class="btn w-100 py-2" style="background: {{ $jalur->warna ?? '#007bff' }}; color: white;">>
                                 <i class="fas fa-arrow-right me-2"></i> Daftar Sekarang
                             </a>
                             @else
