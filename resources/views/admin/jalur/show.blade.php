@@ -110,9 +110,9 @@
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-layer-group mr-2"></i>Gelombang Pendaftaran</h3>
                 <div class="card-tools">
-                    <a href="{{ route('admin.jalur.gelombang.create', $jalur) }}" class="btn btn-sm btn-primary">
+                    <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#modalTambahGelombang">
                         <i class="fas fa-plus mr-1"></i> Tambah Gelombang
-                    </a>
+                    </button>
                 </div>
             </div>
             <div class="card-body p-0">
@@ -120,9 +120,9 @@
                 <div class="text-center py-5">
                     <i class="fas fa-layer-group fa-3x text-muted mb-3"></i>
                     <p class="text-muted">Belum ada gelombang pendaftaran</p>
-                    <a href="{{ route('admin.jalur.gelombang.create', $jalur) }}" class="btn btn-primary">
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalTambahGelombang">
                         <i class="fas fa-plus mr-1"></i> Buat Gelombang Pertama
-                    </a>
+                    </button>
                 </div>
                 @else
                 <table class="table table-hover mb-0">
@@ -242,9 +242,9 @@
                     </button>
                 </form>
 
-                <a href="{{ route('admin.jalur.gelombang.create', $jalur) }}" class="btn btn-primary btn-block mb-2">
+                <button type="button" class="btn btn-primary btn-block mb-2" data-toggle="modal" data-target="#modalTambahGelombang">
                     <i class="fas fa-plus mr-1"></i> Tambah Gelombang
-                </a>
+                </button>
 
                 <form action="{{ route('admin.jalur.duplicate', $jalur) }}" method="POST" class="mb-2">
                     @csrf
@@ -310,6 +310,76 @@
                     <li><strong>Tutup/Selesaikan</strong> gelombang</li>
                 </ol>
             </div>
+        </div>
+    </div>
+</div>
+
+{{-- Modal Tambah Gelombang --}}
+<div class="modal fade" id="modalTambahGelombang" tabindex="-1" role="dialog" aria-labelledby="modalTambahGelombangLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <form action="{{ route('admin.jalur.gelombang.store', $jalur) }}" method="POST">
+                @csrf
+                <div class="modal-header bg-primary">
+                    <h5 class="modal-title" id="modalTambahGelombangLabel">
+                        <i class="fas fa-plus-circle mr-2"></i>Tambah Gelombang Pendaftaran
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="nama">Nama Gelombang <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="nama" name="nama" required
+                                    placeholder="Contoh: Gelombang 1">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="kuota">Kuota <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="kuota" name="kuota" min="1" required
+                                    placeholder="Jumlah kuota">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="tanggal_mulai">Tanggal Mulai <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="tanggal_mulai" name="tanggal_mulai" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="tanggal_selesai">Tanggal Selesai <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="tanggal_selesai" name="tanggal_selesai" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="keterangan">Keterangan</label>
+                        <textarea class="form-control" id="keterangan" name="keterangan" rows="2"
+                            placeholder="Keterangan tambahan (opsional)"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="is_active" name="is_active" value="1">
+                            <label class="custom-control-label" for="is_active">Langsung aktifkan gelombang</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i>Batal
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save mr-1"></i>Simpan Gelombang
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
