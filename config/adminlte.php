@@ -203,9 +203,20 @@ return [
             'icon' => 'fas fa-fw fa-history',
         ],
         [
-            'text' => 'Update Token EMIS',
-            'route' => 'admin.pengaturan.update-emis-token.index',
-            'icon' => 'fas fa-fw fa-key',
+            'text' => 'Pengaturan',
+            'icon' => 'fas fa-fw fa-tools',
+            'submenu' => [
+                [
+                    'text' => 'EMIS Token',
+                    'route' => 'admin.pengaturan.update-emis-token.index',
+                    'icon' => 'fas fa-fw fa-key',
+                ],
+                [
+                    'text' => 'WhatsApp API',
+                    'route' => 'admin.pengaturan.whatsapp.index',
+                    'icon' => 'fab fa-fw fa-whatsapp',
+                ],
+            ],
         ],
 
         ['header' => ''],

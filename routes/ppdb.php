@@ -21,8 +21,11 @@ use App\Http\Controllers\Admin\JalurPendaftaranController;
 use App\Http\Controllers\Admin\TahunPelajaranController;
 use App\Http\Controllers\Admin\AlurPendaftaranController;
 use App\Http\Controllers\Admin\EmisTokenController;
+use App\Http\Controllers\Admin\PengaturanWaController;
 use App\Http\Controllers\Operator\DashboardController as OperatorDashboardController;
 use App\Http\Controllers\Operator\PendaftarController as OperatorPendaftarController;
+use App\Http\Controllers\Pendaftar\AuthController as PendaftarAuthController;
+use App\Http\Controllers\Pendaftar\DashboardController as PendaftarDashboardController;
 
 // Public landing page
 Route::get('/login', [LandingController::class, 'showLoginForm'])->name('login');
@@ -33,7 +36,55 @@ Route::get('/ppdb/berita/{slug}', [LandingController::class, 'showBerita'])->nam
 Route::post('/ppdb/login', [LandingController::class, 'login'])->name('ppdb.login');
 Route::post('/ppdb/logout', [LandingController::class, 'logout'])->name('ppdb.logout');
 
-// Registration routes (5-step process)
+// ============================================
+// PENDAFTAR ROUTES (Dashboard Calon Siswa)
+// ============================================
+
+// Landing & Auth (Guest)
+Route::prefix('pendaftar')->name('pendaftar.')->group(function () {
+    // Landing page dengan cek NISN
+    Route::get('/', [PendaftarAuthController::class, 'landing'])->name('landing');
+    Route::post('/cek-nisn', [PendaftarAuthController::class, 'cekNisn'])->name('cek-nisn');
+    
+    // Registration
+    Route::get('/register', [PendaftarAuthController::class, 'showRegistrationForm'])->name('register.form');
+    Route::post('/register', [PendaftarAuthController::class, 'register'])->name('register.post');
+    Route::get('/register/success', [PendaftarAuthController::class, 'registrationSuccess'])->name('register.success');
+    
+    // Login
+    Route::get('/login', [PendaftarAuthController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [PendaftarAuthController::class, 'login'])->name('login.post');
+});
+
+// Dashboard Pendaftar (Auth Required)
+Route::middleware(['auth'])->prefix('pendaftar')->name('pendaftar.')->group(function () {
+    // Logout
+    Route::post('/logout', [PendaftarAuthController::class, 'logout'])->name('logout');
+    
+    // Dashboard
+    Route::get('/dashboard', [PendaftarDashboardController::class, 'index'])->name('dashboard');
+    
+    // Data Pribadi
+    Route::get('/data-pribadi', [PendaftarDashboardController::class, 'dataPribadi'])->name('data-pribadi');
+    Route::put('/data-pribadi', [PendaftarDashboardController::class, 'updateDataPribadi'])->name('data-pribadi.update');
+    
+    // Data Orang Tua
+    Route::get('/data-ortu', [PendaftarDashboardController::class, 'dataOrtu'])->name('data-ortu');
+    Route::put('/data-ortu', [PendaftarDashboardController::class, 'updateDataOrtu'])->name('data-ortu.update');
+    
+    // Dokumen
+    Route::get('/dokumen', [PendaftarDashboardController::class, 'dokumen'])->name('dokumen');
+    Route::post('/dokumen', [PendaftarDashboardController::class, 'uploadDokumen'])->name('dokumen.upload');
+    Route::delete('/dokumen/{id}', [PendaftarDashboardController::class, 'deleteDokumen'])->name('dokumen.delete');
+    
+    // Status & Cetak
+    Route::get('/status', [PendaftarDashboardController::class, 'status'])->name('status');
+    Route::get('/cetak-bukti', [PendaftarDashboardController::class, 'cetakBukti'])->name('cetak-bukti');
+});
+
+// ============================================
+// OLD REGISTRATION ROUTES (5-step process) - Backward compatibility
+// ============================================
 Route::middleware('guest')->group(function () {
     Route::get('/ppdb/register/step1', [RegisterController::class, 'step1'])->name('ppdb.register.step1');
     Route::post('/ppdb/register/step1', [RegisterController::class, 'validateNisn'])->name('ppdb.register.step1.validate');
@@ -215,10 +266,18 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/gtk/{id}/remove', [GtkController::class, 'removeUser'])->name('gtk.remove');
     Route::post('/gtk/bulk-register', [GtkController::class, 'bulkRegister'])->name('gtk.bulk-register');
 
-    // ---- PENGATURAN EMIS TOKEN ----
+    // ---- PENGATURAN ----
     Route::prefix('pengaturan')->name('pengaturan.')->group(function () {
+        // EMIS Token
         Route::get('/update-emis-token', [EmisTokenController::class, 'index'])->name('update-emis-token.index');
         Route::post('/update-emis-token', [EmisTokenController::class, 'update'])->name('update-emis-token.update');
+        
+        // WhatsApp API Settings
+        Route::get('/whatsapp', [PengaturanWaController::class, 'index'])->name('whatsapp.index');
+        Route::put('/whatsapp', [PengaturanWaController::class, 'update'])->name('whatsapp.update');
+        Route::post('/whatsapp/test-connection', [PengaturanWaController::class, 'testConnection'])->name('whatsapp.test-connection');
+        Route::post('/whatsapp/send-test', [PengaturanWaController::class, 'sendTest'])->name('whatsapp.send-test');
+        Route::get('/whatsapp/reset-templates', [PengaturanWaController::class, 'resetTemplates'])->name('whatsapp.reset-templates');
     });
 });
 

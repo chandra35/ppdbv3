@@ -68,6 +68,23 @@ class RoleSeeder extends Seeder
             ]
         );
 
+        // Create Pendaftar Role (for PPDB applicants)
+        Role::firstOrCreate(
+            ['name' => 'pendaftar'],
+            [
+                'display_name' => 'Pendaftar',
+                'description' => 'Calon siswa yang mendaftar melalui PPDB',
+                'permissions' => [
+                    'pendaftar.dashboard',
+                    'pendaftar.profile.view',
+                    'pendaftar.profile.edit',
+                    'pendaftar.dokumen.upload',
+                    'pendaftar.status.view',
+                ],
+                'is_system' => true,
+            ]
+        );
+
         // Assign admin role to admin user
         $adminUser = User::where('email', 'admin@ppdb.local')->first();
         if ($adminUser) {
