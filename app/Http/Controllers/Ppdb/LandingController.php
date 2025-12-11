@@ -33,7 +33,7 @@ class LandingController extends Controller
         
         // Get jalur pendaftaran aktif dengan gelombang yang sedang dibuka
         $jalurAktif = JalurPendaftaran::active()
-            ->with(['gelombangs' => function($q) {
+            ->with(['gelombang' => function($q) {
                 $q->open()->orderBy('urutan');
             }])
             ->orderBy('urutan')
