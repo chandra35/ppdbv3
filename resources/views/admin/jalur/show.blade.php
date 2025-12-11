@@ -1,0 +1,316 @@
+@extends('adminlte::page')
+
+@section('title', 'Detail Jalur - ' . $jalur->nama)
+
+@section('content_header')
+    <div class="d-flex justify-content-between align-items-center">
+        <h1>
+            <i class="{{ $jalur->icon }} text-{{ $jalur->warna }} mr-2"></i>
+            {{ $jalur->nama }}
+            <small class="badge badge-{{ $jalur->warna }}">{{ $jalur->kode }}</small>
+        </h1>
+        <div>
+            <a href="{{ route('admin.jalur.edit', $jalur) }}" class="btn btn-warning">
+                <i class="fas fa-edit mr-1"></i> Edit
+            </a>
+            <a href="{{ route('admin.jalur.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left mr-1"></i> Kembali
+            </a>
+        </div>
+    </div>
+@stop
+
+@section('content')
+{{-- Status Cards --}}
+<div class="row">
+    <div class="col-md-3 col-sm-6">
+        <div class="info-box bg-{{ $jalur->warna }}">
+            <span class="info-box-icon"><i class="fas fa-users"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">Total Pendaftar</span>
+                <span class="info-box-number">{{ $jalur->pendaftar_count }}</span>
+                <div class="progress">
+                    <div class="progress-bar" style="width: {{ $jalur->persentaseKuota() }}%"></div>
+                </div>
+                <span class="progress-description">{{ $jalur->persentaseKuota() }}% dari kuota</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="info-box bg-success">
+            <span class="info-box-icon"><i class="fas fa-chair"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">Kuota</span>
+                <span class="info-box-number">{{ $jalur->kuota }}</span>
+                <span class="progress-description">Sisa: {{ $jalur->sisaKuota() }} kursi</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="info-box bg-info">
+            <span class="info-box-icon"><i class="fas fa-layer-group"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">Gelombang</span>
+                <span class="info-box-number">{{ $jalur->gelombang->count() }}</span>
+                <span class="progress-description">
+                    @php $aktif = $jalur->gelombang->where('is_active', true)->count(); @endphp
+                    {{ $aktif }} aktif
+                </span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="info-box bg-{{ $jalur->is_active ? 'success' : 'secondary' }}">
+            <span class="info-box-icon"><i class="fas fa-toggle-{{ $jalur->is_active ? 'on' : 'off' }}"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">Status</span>
+                <span class="info-box-number">{{ $jalur->is_active ? 'Aktif' : 'Nonaktif' }}</span>
+                <span class="progress-description">
+                    @if($jalur->tampil_di_publik)
+                    <i class="fas fa-eye"></i> Tampil di publik
+                    @else
+                    <i class="fas fa-eye-slash"></i> Tidak tampil
+                    @endif
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    {{-- Detail & Gelombang --}}
+    <div class="col-md-8">
+        {{-- Detail Jalur --}}
+        <div class="card card-outline card-{{ $jalur->warna }}">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Detail Jalur</h3>
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered">
+                    <tr>
+                        <th width="150">Tahun Pelajaran</th>
+                        <td>{{ $jalur->tahunPelajaran?->nama ?? '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Deskripsi</th>
+                        <td>{{ $jalur->deskripsi ?: '-' }}</td>
+                    </tr>
+                    @if($jalur->persyaratan)
+                    <tr>
+                        <th>Persyaratan</th>
+                        <td>{!! nl2br(e($jalur->persyaratan)) !!}</td>
+                    </tr>
+                    @endif
+                </table>
+            </div>
+        </div>
+
+        {{-- Daftar Gelombang --}}
+        <div class="card card-outline card-info">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-layer-group mr-2"></i>Gelombang Pendaftaran</h3>
+                <div class="card-tools">
+                    <a href="{{ route('admin.jalur.gelombang.create', $jalur) }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus mr-1"></i> Tambah Gelombang
+                    </a>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                @if($jalur->gelombang->isEmpty())
+                <div class="text-center py-5">
+                    <i class="fas fa-layer-group fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Belum ada gelombang pendaftaran</p>
+                    <a href="{{ route('admin.jalur.gelombang.create', $jalur) }}" class="btn btn-primary">
+                        <i class="fas fa-plus mr-1"></i> Buat Gelombang Pertama
+                    </a>
+                </div>
+                @else
+                <table class="table table-hover mb-0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Nama Gelombang</th>
+                            <th>Periode</th>
+                            <th class="text-center">Kuota</th>
+                            <th class="text-center">Pendaftar</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($jalur->gelombang as $gelombang)
+                        <tr class="{{ $gelombang->is_active ? 'table-success' : '' }}">
+                            <td>{{ $gelombang->urutan }}</td>
+                            <td>
+                                <strong>{{ $gelombang->nama }}</strong>
+                                @if(!$gelombang->tampil_nama_gelombang)
+                                    <i class="fas fa-eye-slash text-muted ml-1" title="Tidak tampil di publik"></i>
+                                @endif
+                                @if($gelombang->is_active)
+                                    <span class="badge badge-success ml-1">Aktif</span>
+                                @endif
+                            </td>
+                            <td>
+                                {{ $gelombang->tanggal_buka->format('d/m/Y') }} - {{ $gelombang->tanggal_tutup->format('d/m/Y') }}
+                                @if($gelombang->status == 'open')
+                                <br><small class="text-success"><i class="fas fa-clock"></i> {{ $gelombang->sisa_hari }} hari lagi</small>
+                                @endif
+                            </td>
+                            <td class="text-center">{{ $gelombang->kuota ?? 'Ikut Jalur' }}</td>
+                            <td class="text-center">
+                                <span class="badge badge-{{ $gelombang->persentaseKuota() >= 90 ? 'danger' : ($gelombang->persentaseKuota() >= 70 ? 'warning' : 'info') }}">
+                                    {{ $gelombang->pendaftar_count ?? $gelombang->kuota_terisi }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge badge-{{ $gelombang->status_color }}">{{ $gelombang->status_label }}</span>
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ route('admin.jalur.gelombang.edit', [$jalur, $gelombang]) }}" class="btn btn-warning" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown">
+                                            <i class="fas fa-cog"></i>
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-right">
+                                            @if($gelombang->status != 'open' && $gelombang->status != 'finished')
+                                            <form action="{{ route('admin.jalur.gelombang.buka', [$jalur, $gelombang]) }}" method="POST">
+                                                @csrf
+                                                <button type="submit" class="dropdown-item">
+                                                    <i class="fas fa-door-open text-success mr-2"></i> Buka Pendaftaran
+                                                </button>
+                                            </form>
+                                            @endif
+                                            
+                                            @if($gelombang->status == 'open')
+                                            <form action="{{ route('admin.jalur.gelombang.tutup', [$jalur, $gelombang]) }}" method="POST">
+                                                @csrf
+                                                <button type="submit" class="dropdown-item">
+                                                    <i class="fas fa-door-closed text-warning mr-2"></i> Tutup Pendaftaran
+                                                </button>
+                                            </form>
+                                            @endif
+                                            
+                                            @if($gelombang->status != 'finished' && $gelombang->status != 'draft')
+                                            <form action="{{ route('admin.jalur.gelombang.selesaikan', [$jalur, $gelombang]) }}" method="POST">
+                                                @csrf
+                                                <button type="submit" class="dropdown-item">
+                                                    <i class="fas fa-flag-checkered text-dark mr-2"></i> Selesaikan
+                                                </button>
+                                            </form>
+                                            @endif
+                                            
+                                            @if($gelombang->kuota_terisi == 0)
+                                            <div class="dropdown-divider"></div>
+                                            <form action="{{ route('admin.jalur.gelombang.destroy', [$jalur, $gelombang]) }}" method="POST" 
+                                                  onsubmit="return confirm('Yakin ingin menghapus gelombang ini?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="dropdown-item text-danger">
+                                                    <i class="fas fa-trash mr-2"></i> Hapus
+                                                </button>
+                                            </form>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+                @endif
+            </div>
+        </div>
+    </div>
+
+    {{-- Sidebar --}}
+    <div class="col-md-4">
+        {{-- Aksi Cepat --}}
+        <div class="card card-outline card-warning">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-bolt mr-2"></i>Aksi Cepat</h3>
+            </div>
+            <div class="card-body">
+                <form action="{{ route('admin.jalur.toggle-status', $jalur) }}" method="POST" class="mb-2">
+                    @csrf
+                    <button type="submit" class="btn btn-{{ $jalur->is_active ? 'warning' : 'success' }} btn-block">
+                        <i class="fas fa-toggle-{{ $jalur->is_active ? 'off' : 'on' }} mr-1"></i>
+                        {{ $jalur->is_active ? 'Nonaktifkan Jalur' : 'Aktifkan Jalur' }}
+                    </button>
+                </form>
+
+                <a href="{{ route('admin.jalur.gelombang.create', $jalur) }}" class="btn btn-primary btn-block mb-2">
+                    <i class="fas fa-plus mr-1"></i> Tambah Gelombang
+                </a>
+
+                <form action="{{ route('admin.jalur.duplicate', $jalur) }}" method="POST" class="mb-2">
+                    @csrf
+                    <button type="submit" class="btn btn-info btn-block">
+                        <i class="fas fa-copy mr-1"></i> Duplikasi untuk Tahun Baru
+                    </button>
+                </form>
+
+                @if($jalur->kuota_terisi == 0)
+                <hr>
+                <form action="{{ route('admin.jalur.destroy', $jalur) }}" method="POST" 
+                      onsubmit="return confirm('Yakin ingin menghapus jalur ini beserta semua gelombangnya?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-outline-danger btn-block">
+                        <i class="fas fa-trash mr-1"></i> Hapus Jalur
+                    </button>
+                </form>
+                @endif
+            </div>
+        </div>
+
+        {{-- Info --}}
+        <div class="card card-outline card-info">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Info</h3>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-borderless">
+                    <tr>
+                        <td>Dibuat:</td>
+                        <td>{{ $jalur->created_at->format('d/m/Y H:i') }}</td>
+                    </tr>
+                    <tr>
+                        <td>Diperbarui:</td>
+                        <td>{{ $jalur->updated_at->format('d/m/Y H:i') }}</td>
+                    </tr>
+                    <tr>
+                        <td>ID:</td>
+                        <td><code>{{ Str::limit($jalur->id, 8) }}</code></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        {{-- Panduan --}}
+        <div class="card card-outline card-secondary collapsed-card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-question-circle mr-2"></i>Panduan</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <h6>Alur Kerja:</h6>
+                <ol class="pl-3">
+                    <li>Pastikan Jalur <strong>Aktif</strong></li>
+                    <li>Buat Gelombang Pendaftaran</li>
+                    <li><strong>Buka Pendaftaran</strong> pada gelombang</li>
+                    <li>Pendaftar dapat mendaftar</li>
+                    <li><strong>Tutup/Selesaikan</strong> gelombang</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+@stop
