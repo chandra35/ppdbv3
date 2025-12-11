@@ -34,9 +34,9 @@ class AuthController extends Controller
      */
     public function landing()
     {
-        $tahunAktif = TahunPelajaran::where('is_aktif', true)->first();
-        $jalurPendaftaran = JalurPendaftaran::where('is_aktif', true)->orderBy('urutan')->get();
-        $gelombangAktif = GelombangPendaftaran::where('is_aktif', true)
+        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        $jalurPendaftaran = JalurPendaftaran::where('is_active', true)->orderBy('urutan')->get();
+        $gelombangAktif = GelombangPendaftaran::where('is_active', true)
             ->where('tanggal_mulai', '<=', now())
             ->where('tanggal_selesai', '>=', now())
             ->first();
@@ -93,9 +93,9 @@ class AuthController extends Controller
         $nisn = $request->query('nisn');
         $emisData = session('emis_data');
         
-        $tahunAktif = TahunPelajaran::where('is_aktif', true)->first();
-        $jalurPendaftaran = JalurPendaftaran::where('is_aktif', true)->orderBy('urutan')->get();
-        $gelombangAktif = GelombangPendaftaran::where('is_aktif', true)
+        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        $jalurPendaftaran = JalurPendaftaran::where('is_active', true)->orderBy('urutan')->get();
+        $gelombangAktif = GelombangPendaftaran::where('is_active', true)
             ->where('tanggal_mulai', '<=', now())
             ->where('tanggal_selesai', '>=', now())
             ->get();
@@ -151,7 +151,7 @@ class AuthController extends Controller
             }
 
             // Get active tahun pelajaran
-            $tahunAktif = TahunPelajaran::where('is_aktif', true)->first();
+            $tahunAktif = TahunPelajaran::where('is_active', true)->first();
 
             // Create calon siswa
             $calonSiswa = CalonSiswa::create([
