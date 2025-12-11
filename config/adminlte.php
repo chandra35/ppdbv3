@@ -202,6 +202,11 @@ return [
             'route' => 'admin.logs.index',
             'icon' => 'fas fa-fw fa-history',
         ],
+        [
+            'text' => 'Update Token EMIS',
+            'route' => 'admin.pengaturan.update-emis-token.index',
+            'icon' => 'fas fa-fw fa-key',
+        ],
 
         ['header' => ''],
         [

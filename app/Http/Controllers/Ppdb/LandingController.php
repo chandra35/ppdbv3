@@ -52,7 +52,7 @@ class LandingController extends Controller
         $jadwals = JadwalPpdb::active()->get();
         
         // Get active alur pendaftaran
-        $alurPendaftaran = AlurPendaftaran::getActive();
+        $alurPendaftaran = AlurPendaftaran::getActiveOrdered();
         
         return view('ppdb.landing', compact(
             'siteSettings',

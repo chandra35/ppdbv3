@@ -4,20 +4,26 @@ namespace App\Http\Controllers\Ppdb;
 
 use App\Http\Controllers\Controller;
 use App\Models\CalonSiswa;
+use App\Models\CalonOrtu;
 use App\Models\CalonDokumen;
 use App\Models\JalurPendaftaran;
 use App\Models\GelombangPendaftaran;
 use App\Models\User;
+use App\Services\EmisNisnService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use Laravolt\Indonesia\Models\Province;
+use Laravolt\Indonesia\Models\City;
+use Laravolt\Indonesia\Models\District;
+use Laravolt\Indonesia\Models\Village;
 use Ramsey\Uuid\Uuid;
 
 class RegisterController extends Controller
 {
     /**
      * Get active/open Jalur Pendaftaran
-     * System automatically uses the single open jalur
      */
     protected function getJalurAktif()
     {
@@ -54,6 +60,9 @@ class RegisterController extends Controller
         ];
     }
 
+    /**
+     * STEP 1: Validasi NISN & Create Account
+     */
     public function step1()
     {
         $validasi = $this->validateRegistrasiDibuka();
@@ -70,7 +79,6 @@ class RegisterController extends Controller
 
     public function validateNisn(Request $request)
     {
-        // Re-validate registration is still open
         $validasi = $this->validateRegistrasiDibuka();
         
         if (!$validasi['status']) {
@@ -90,233 +98,511 @@ class RegisterController extends Controller
             'password.confirmed' => 'Konfirmasi password tidak sesuai.',
         ]);
 
-        // TODO: Validate NISN against Kemendikbud API
-        // For now, mark as valid
+        // Validate NISN against EMIS API
+        $emisService = new EmisNisnService();
+        $emisResult = $emisService->cekNisn($validated['nisn']);
         
-        session([
+        // Prepare session data
+        $sessionData = [
             'ppdb_step' => 1,
             'ppdb_jalur_id' => $jalur->id,
             'ppdb_nisn' => $validated['nisn'],
             'ppdb_email' => $validated['email'],
             'ppdb_password' => $validated['password'],
-            'ppdb_nisn_valid' => true,
-        ]);
-
-        return redirect()->route('ppdb.register.step2')->with('success', 'NISN valid! Lanjutkan ke step 2.');
+        ];
+        
+        // Store EMIS data if found (for pre-filling form in step 2)
+        if ($emisResult['success'] && $emisResult['data']) {
+            $sessionData['ppdb_nisn_valid'] = true;
+            $sessionData['ppdb_emis_data'] = $emisService->extractStudentData($emisResult['data']);
+            session($sessionData);
+            return redirect()->route('ppdb.register.step2')
+                ->with('success', 'NISN valid! Data ditemukan di EMIS. Lanjutkan ke step 2.');
+        } else {
+            // NISN not found in EMIS but allow to continue with warning
+            $sessionData['ppdb_nisn_valid'] = false;
+            $sessionData['ppdb_emis_data'] = null;
+            session($sessionData);
+            return redirect()->route('ppdb.register.step2')
+                ->with('warning', 'NISN tidak ditemukan di database EMIS. Silahkan isi data secara manual.');
+        }
     }
 
+    /**
+     * API endpoint to check NISN via EMIS
+     */
+    public function apiCekNisn(Request $request)
+    {
+        $request->validate([
+            'nisn' => 'required|digits:10'
+        ]);
+        
+        $nisn = $request->nisn;
+        
+        // Check if NISN already registered
+        $existing = CalonSiswa::where('nisn', $nisn)->first();
+        if ($existing) {
+            return response()->json([
+                'success' => false,
+                'message' => 'NISN sudah terdaftar di sistem PPDB.',
+                'data' => null
+            ]);
+        }
+        
+        // Check against EMIS API
+        $emisService = new EmisNisnService();
+        $result = $emisService->cekNisn($nisn);
+        
+        if ($result['success']) {
+            $extractedData = $emisService->extractStudentData($result['data']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Data NISN ditemukan',
+                'data' => [
+                    'raw' => $result['data'],
+                    'extracted' => $extractedData
+                ]
+            ]);
+        }
+        
+        return response()->json($result);
+    }
+
+    /**
+     * STEP 2: Data Diri Siswa (sesuai SIMANSAV3)
+     */
     public function step2()
     {
-        if (session('ppdb_step') != 1) {
+        if (session('ppdb_step') < 1) {
             return redirect()->route('ppdb.register.step1')->with('warning', 'Silahkan mulai dari step 1.');
         }
 
-        return view('ppdb.step2');
+        $provinces = Province::pluck('name', 'code');
+        $agamaOptions = ['islam' => 'Islam', 'kristen' => 'Kristen', 'katolik' => 'Katolik', 'hindu' => 'Hindu', 'budha' => 'Budha', 'konghucu' => 'Konghucu'];
+        
+        // Get EMIS data if available (for pre-filling form)
+        $emisData = session('ppdb_emis_data');
+        $nisn = session('ppdb_nisn');
+        
+        return view('ppdb.step2', compact('provinces', 'agamaOptions', 'emisData', 'nisn'));
     }
 
     public function storePersonalData(Request $request)
     {
-        if (session('ppdb_step') != 1) {
+        if (session('ppdb_step') < 1) {
             return redirect()->route('ppdb.register.step1')->with('warning', 'Silahkan mulai dari step 1.');
         }
 
         $validated = $request->validate([
+            'nik' => 'required|digits:16',
             'nama_lengkap' => 'required|string|max:100',
             'tempat_lahir' => 'required|string|max:100',
             'tanggal_lahir' => 'required|date|before:today',
-            'jenis_kelamin' => 'required|in:laki-laki,perempuan',
-            'agama' => 'nullable|in:islam,kristen,katolik,hindu,budha,konghucu',
-            'no_hp_pribadi' => 'nullable|string|max:15',
-            'alamat_rumah' => 'required|string|max:500',
-            'kelurahan' => 'required|string|max:100',
-            'kecamatan' => 'required|string|max:100',
-            'kabupaten_kota' => 'required|string|max:100',
-            'provinsi' => 'required|string|max:100',
-            'no_hp_ortu' => 'nullable|string|max:15',
+            'jenis_kelamin' => 'required|in:L,P',
+            'agama' => 'required|in:islam,kristen,katolik,hindu,budha,konghucu',
+            'jumlah_saudara' => 'nullable|integer|min:0|max:20',
+            'anak_ke' => 'nullable|integer|min:1|max:20',
+            'hobi' => 'nullable|string|max:255',
+            'cita_cita' => 'nullable|string|max:255',
+            
+            // Alamat siswa
+            'alamat_siswa' => 'required|string|max:500',
+            'rt_siswa' => 'nullable|string|max:5',
+            'rw_siswa' => 'nullable|string|max:5',
+            'provinsi_id_siswa' => 'required|exists:indonesia_provinces,code',
+            'kabupaten_id_siswa' => 'required|exists:indonesia_cities,code',
+            'kecamatan_id_siswa' => 'required|exists:indonesia_districts,code',
+            'kelurahan_id_siswa' => 'required|exists:indonesia_villages,code',
+            'kode_pos_siswa' => 'nullable|string|max:10',
+            
+            // Kontak
+            'no_hp' => 'nullable|string|max:20',
+            
+            // Asal sekolah
+            'npsn_asal' => 'nullable|string|max:20',
+            'sekolah_asal' => 'required|string|max:255',
+            'alamat_sekolah_asal' => 'nullable|string|max:500',
         ], [
             'tanggal_lahir.before' => 'Tanggal lahir harus sebelum hari ini.',
+            'jenis_kelamin.in' => 'Jenis kelamin harus L (Laki-laki) atau P (Perempuan).',
         ]);
 
         session([
             'ppdb_step' => 2,
-            'ppdb_nama_lengkap' => $validated['nama_lengkap'],
-            'ppdb_tempat_lahir' => $validated['tempat_lahir'],
-            'ppdb_tanggal_lahir' => $validated['tanggal_lahir'],
-            'ppdb_jenis_kelamin' => $validated['jenis_kelamin'],
-            'ppdb_agama' => $validated['agama'],
-            'ppdb_no_hp_pribadi' => $validated['no_hp_pribadi'],
-            'ppdb_alamat_rumah' => $validated['alamat_rumah'],
-            'ppdb_kelurahan' => $validated['kelurahan'],
-            'ppdb_kecamatan' => $validated['kecamatan'],
-            'ppdb_kabupaten_kota' => $validated['kabupaten_kota'],
-            'ppdb_provinsi' => $validated['provinsi'],
-            'ppdb_no_hp_ortu' => $validated['no_hp_ortu'],
+            'ppdb_data_diri' => $validated,
         ]);
 
-        return redirect()->route('ppdb.register.step3')->with('success', 'Data pribadi tersimpan. Lanjutkan ke step 3.');
+        return redirect()->route('ppdb.register.step3')->with('success', 'Data diri tersimpan. Lanjutkan ke step 3.');
     }
 
+    /**
+     * STEP 3: Data Orang Tua/Wali (sesuai SIMANSAV3)
+     */
     public function step3()
     {
-        if (session('ppdb_step') != 2) {
+        if (session('ppdb_step') < 2) {
             return redirect()->route('ppdb.register.step1')->with('warning', 'Silahkan mulai dari step 1.');
         }
 
-        return view('ppdb.step3');
+        $provinces = Province::pluck('name', 'code');
+        $pendidikanOptions = CalonOrtu::PENDIDIKAN;
+        $pekerjaanOptions = CalonOrtu::PEKERJAAN;
+        $penghasilanOptions = CalonOrtu::PENGHASILAN;
+        $hubunganWaliOptions = CalonOrtu::HUBUNGAN_WALI;
+        
+        // Get EMIS data for name prefill (nama ayah, ibu)
+        $emisData = session('ppdb_emis_data');
+        
+        return view('ppdb.step3', compact('provinces', 'pendidikanOptions', 'pekerjaanOptions', 'penghasilanOptions', 'hubunganWaliOptions', 'emisData'));
+    }
+
+    public function storeParentData(Request $request)
+    {
+        if (session('ppdb_step') < 2) {
+            return redirect()->route('ppdb.register.step1')->with('warning', 'Silahkan mulai dari step 1.');
+        }
+
+        $rules = [
+            'no_kk' => 'required|digits:16',
+            
+            // Ayah
+            'status_ayah' => 'required|in:masih_hidup,meninggal',
+            'nik_ayah' => 'nullable|digits:16',
+            'nama_ayah' => 'required|string|max:100',
+            'tempat_lahir_ayah' => 'nullable|string|max:100',
+            'tanggal_lahir_ayah' => 'nullable|date|before:today',
+            'pendidikan_ayah' => 'nullable|string|max:50',
+            'pekerjaan_ayah' => 'nullable|string|max:100',
+            'penghasilan_ayah' => 'nullable|string|max:50',
+            'no_hp_ayah' => 'nullable|string|max:20',
+            
+            // Ibu
+            'status_ibu' => 'required|in:masih_hidup,meninggal',
+            'nik_ibu' => 'nullable|digits:16',
+            'nama_ibu' => 'required|string|max:100',
+            'tempat_lahir_ibu' => 'nullable|string|max:100',
+            'tanggal_lahir_ibu' => 'nullable|date|before:today',
+            'pendidikan_ibu' => 'nullable|string|max:50',
+            'pekerjaan_ibu' => 'nullable|string|max:100',
+            'penghasilan_ibu' => 'nullable|string|max:50',
+            'no_hp_ibu' => 'nullable|string|max:20',
+            
+            // Wali (optional)
+            'tinggal_dengan_wali' => 'nullable|boolean',
+            'nama_wali' => 'nullable|string|max:100',
+            'hubungan_wali' => 'nullable|string|max:50',
+            'nik_wali' => 'nullable|digits:16',
+            'tempat_lahir_wali' => 'nullable|string|max:100',
+            'tanggal_lahir_wali' => 'nullable|date|before:today',
+            'pendidikan_wali' => 'nullable|string|max:50',
+            'pekerjaan_wali' => 'nullable|string|max:100',
+            'penghasilan_wali' => 'nullable|string|max:50',
+            'no_hp_wali' => 'nullable|string|max:20',
+            
+            // Alamat ortu
+            'alamat_ortu' => 'required|string|max:500',
+            'rt_ortu' => 'nullable|string|max:5',
+            'rw_ortu' => 'nullable|string|max:5',
+            'provinsi_id_ortu' => 'required|exists:indonesia_provinces,code',
+            'kabupaten_id_ortu' => 'required|exists:indonesia_cities,code',
+            'kecamatan_id_ortu' => 'required|exists:indonesia_districts,code',
+            'kelurahan_id_ortu' => 'required|exists:indonesia_villages,code',
+            'kode_pos_ortu' => 'nullable|string|max:10',
+        ];
+
+        // If tinggal_dengan_wali, wali data is required
+        if ($request->boolean('tinggal_dengan_wali')) {
+            $rules['nama_wali'] = 'required|string|max:100';
+            $rules['hubungan_wali'] = 'required|string|max:50';
+        }
+
+        $validated = $request->validate($rules);
+
+        session([
+            'ppdb_step' => 3,
+            'ppdb_data_ortu' => $validated,
+        ]);
+
+        return redirect()->route('ppdb.register.step4')->with('success', 'Data orang tua tersimpan. Lanjutkan ke step 4.');
+    }
+
+    /**
+     * STEP 4: Upload Dokumen
+     */
+    public function step4()
+    {
+        if (session('ppdb_step') < 3) {
+            return redirect()->route('ppdb.register.step1')->with('warning', 'Silahkan mulai dari step 1.');
+        }
+
+        $requiredDocs = [
+            'foto' => ['label' => 'Pas Foto (3x4)', 'required' => true],
+            'kk' => ['label' => 'Kartu Keluarga', 'required' => true],
+            'akta_lahir' => ['label' => 'Akta Kelahiran', 'required' => true],
+            'ktp_ortu' => ['label' => 'KTP Orang Tua', 'required' => false],
+            'ijazah' => ['label' => 'Ijazah/SKL', 'required' => false],
+            'raport' => ['label' => 'Raport', 'required' => false],
+            'sertifikat_prestasi' => ['label' => 'Sertifikat Prestasi (jika ada)', 'required' => false],
+        ];
+
+        return view('ppdb.step4', compact('requiredDocs'));
     }
 
     public function uploadDocuments(Request $request)
     {
-        if (session('ppdb_step') != 2) {
+        if (session('ppdb_step') < 3) {
             return redirect()->route('ppdb.register.step1')->with('warning', 'Silahkan mulai dari step 1.');
         }
 
         $validated = $request->validate([
+            'foto' => 'required|file|mimes:jpg,jpeg,png|max:2048',
+            'kk' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'akta_lahir' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'ktp_ortu' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'ijazah' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'akta_kelahiran' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'kartu_keluarga' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'foto_4x6' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'piagam_prestasi' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'surat_sehat' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'raport' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'sertifikat_prestasi' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ], [
-            'file' => 'File harus berformat PDF atau gambar.',
-            'max' => 'Ukuran file maksimal 5MB.',
+            'foto.required' => 'Pas foto wajib diunggah.',
+            'kk.required' => 'Kartu Keluarga wajib diunggah.',
+            'akta_lahir.required' => 'Akta Kelahiran wajib diunggah.',
+            '*.mimes' => 'File harus berformat PDF atau gambar (JPG, PNG).',
+            '*.max' => 'Ukuran file maksimal 5MB.',
+            'foto.max' => 'Ukuran foto maksimal 2MB.',
         ]);
 
         $uploadedDocs = [];
-        $documentTypes = ['ijazah', 'akta_kelahiran', 'kartu_keluarga', 'foto_4x6', 'piagam_prestasi', 'surat_sehat'];
+        $documentTypes = ['foto', 'kk', 'akta_lahir', 'ktp_ortu', 'ijazah', 'raport', 'sertifikat_prestasi'];
+        $nisn = session('ppdb_nisn');
 
         foreach ($documentTypes as $docType) {
             if ($request->hasFile($docType)) {
                 $file = $request->file($docType);
-                $fileName = 'ppdb/' . session('ppdb_nisn') . '/' . $docType . '_' . time() . '.' . $file->getClientOriginalExtension();
-                $path = Storage::disk('public')->putFileAs('ppdb/' . session('ppdb_nisn'), $file, $docType . '_' . time() . '.' . $file->getClientOriginalExtension());
-                $uploadedDocs[$docType] = $path;
+                $fileName = $docType . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $path = $file->storeAs('ppdb/' . $nisn, $fileName, 'public');
+                
+                $uploadedDocs[$docType] = [
+                    'nama_file' => $file->getClientOriginalName(),
+                    'file_path' => $path,
+                    'file_size' => $file->getSize(),
+                    'mime_type' => $file->getMimeType(),
+                ];
             }
         }
 
         session([
-            'ppdb_step' => 3,
+            'ppdb_step' => 4,
             'ppdb_uploaded_docs' => $uploadedDocs,
         ]);
 
-        return redirect()->route('ppdb.register.step4')->with('success', 'Dokumen terupload. Lanjutkan ke step 4.');
+        return redirect()->route('ppdb.register.step5')->with('success', 'Dokumen terupload. Lanjutkan ke review.');
     }
 
-    public function step4()
+    /**
+     * STEP 5: Review & Confirm
+     */
+    public function step5()
     {
-        if (session('ppdb_step') != 3) {
+        if (session('ppdb_step') < 4) {
             return redirect()->route('ppdb.register.step1')->with('warning', 'Silahkan mulai dari step 1.');
         }
 
-        $caalonSiswa = [
-            'nisn' => session('ppdb_nisn'),
-            'nama_lengkap' => session('ppdb_nama_lengkap'),
-            'tempat_lahir' => session('ppdb_tempat_lahir'),
-            'tanggal_lahir' => session('ppdb_tanggal_lahir'),
-            'jenis_kelamin' => session('ppdb_jenis_kelamin'),
-            'agama' => session('ppdb_agama'),
-            'no_hp_pribadi' => session('ppdb_no_hp_pribadi'),
-            'email' => session('ppdb_email'),
-            'alamat_rumah' => session('ppdb_alamat_rumah'),
-            'kelurahan' => session('ppdb_kelurahan'),
-            'kecamatan' => session('ppdb_kecamatan'),
-            'kabupaten_kota' => session('ppdb_kabupaten_kota'),
-            'provinsi' => session('ppdb_provinsi'),
-            'no_hp_ortu' => session('ppdb_no_hp_ortu'),
-            'uploaded_docs_count' => count(session('ppdb_uploaded_docs', [])),
-        ];
+        $dataSiswa = session('ppdb_data_diri');
+        $dataOrtu = session('ppdb_data_ortu');
+        $uploadedDocs = session('ppdb_uploaded_docs');
+        $nisn = session('ppdb_nisn');
+        $email = session('ppdb_email');
 
-        return view('ppdb.step4', compact('caalonSiswa'));
+        // Get address names
+        $dataSiswa['provinsi_nama'] = Province::where('code', $dataSiswa['provinsi_id_siswa'])->value('name');
+        $dataSiswa['kabupaten_nama'] = City::where('code', $dataSiswa['kabupaten_id_siswa'])->value('name');
+        $dataSiswa['kecamatan_nama'] = District::where('code', $dataSiswa['kecamatan_id_siswa'])->value('name');
+        $dataSiswa['kelurahan_nama'] = Village::where('code', $dataSiswa['kelurahan_id_siswa'])->value('name');
+
+        $dataOrtu['provinsi_nama'] = Province::where('code', $dataOrtu['provinsi_id_ortu'])->value('name');
+        $dataOrtu['kabupaten_nama'] = City::where('code', $dataOrtu['kabupaten_id_ortu'])->value('name');
+        $dataOrtu['kecamatan_nama'] = District::where('code', $dataOrtu['kecamatan_id_ortu'])->value('name');
+        $dataOrtu['kelurahan_nama'] = Village::where('code', $dataOrtu['kelurahan_id_ortu'])->value('name');
+
+        return view('ppdb.step5', compact('dataSiswa', 'dataOrtu', 'uploadedDocs', 'nisn', 'email'));
     }
 
     public function confirmRegistration(Request $request)
     {
-        if (session('ppdb_step') != 3) {
+        if (session('ppdb_step') < 4) {
             return redirect()->route('ppdb.register.step1')->with('warning', 'Silahkan mulai dari step 1.');
         }
 
         $request->validate(['agree' => 'required|accepted']);
 
-        // Validasi ulang gelombang
-        $gelombangId = session('ppdb_gelombang_id');
-        $jalurId = session('ppdb_jalur_id');
+        $validasi = $this->validateRegistrasiDibuka();
         
-        $gelombang = $this->validateGelombang($gelombangId);
-        
-        if (!$gelombang) {
+        if (!$validasi['status']) {
             return redirect()->route('ppdb.landing')
-                ->with('error', 'Maaf, gelombang pendaftaran sudah ditutup atau kuota sudah penuh.');
+                ->with('error', $validasi['message']);
         }
 
+        $jalur = $validasi['jalur'];
+
+        DB::beginTransaction();
+        
         try {
-            // Create User
+            // 1. Create User
             $user = User::create([
                 'id' => Uuid::uuid4()->toString(),
-                'name' => session('ppdb_nama_lengkap'),
+                'name' => session('ppdb_data_diri.nama_lengkap'),
                 'email' => session('ppdb_email'),
                 'password' => Hash::make(session('ppdb_password')),
                 'email_verified_at' => now(),
             ]);
 
-            // Generate nomor_registrasi dari gelombang
-            $nomorRegistrasi = $gelombang->generateNomorRegistrasi();
-
-            // Create CalonSiswa
-            $caalonSiswa = CalonSiswa::create([
+            // 2. Create CalonSiswa
+            $dataDiri = session('ppdb_data_diri');
+            
+            $calonSiswa = CalonSiswa::create([
                 'id' => Uuid::uuid4()->toString(),
-                'jalur_pendaftaran_id' => $jalurId,
-                'gelombang_pendaftaran_id' => $gelombangId,
-                'nisn' => session('ppdb_nisn'),
-                'nisn_valid' => true,
-                'nama_lengkap' => session('ppdb_nama_lengkap'),
-                'tempat_lahir' => session('ppdb_tempat_lahir'),
-                'tanggal_lahir' => session('ppdb_tanggal_lahir'),
-                'jenis_kelamin' => session('ppdb_jenis_kelamin'),
-                'agama' => session('ppdb_agama'),
-                'no_hp_pribadi' => session('ppdb_no_hp_pribadi'),
-                'email' => session('ppdb_email'),
-                'alamat_rumah' => session('ppdb_alamat_rumah'),
-                'kelurahan' => session('ppdb_kelurahan'),
-                'kecamatan' => session('ppdb_kecamatan'),
-                'kabupaten_kota' => session('ppdb_kabupaten_kota'),
-                'provinsi' => session('ppdb_provinsi'),
-                'no_hp_ortu' => session('ppdb_no_hp_ortu'),
                 'user_id' => $user->id,
+                'jalur_pendaftaran_id' => session('ppdb_jalur_id'),
+                'gelombang_pendaftaran_id' => $jalur->gelombangAktif()?->id,
+                'nisn' => session('ppdb_nisn'),
+                'nisn_valid' => session('ppdb_nisn_valid'),
+                'email' => session('ppdb_email'),
                 'status_verifikasi' => 'pending',
                 'status_admisi' => 'pending',
-                'nomor_registrasi' => $nomorRegistrasi,
-                'tanggal_registrasi' => now(),
+                
+                // Data diri
+                'nik' => $dataDiri['nik'],
+                'nama_lengkap' => $dataDiri['nama_lengkap'],
+                'tempat_lahir' => $dataDiri['tempat_lahir'],
+                'tanggal_lahir' => $dataDiri['tanggal_lahir'],
+                'jenis_kelamin' => $dataDiri['jenis_kelamin'],
+                'agama' => $dataDiri['agama'],
+                'jumlah_saudara' => $dataDiri['jumlah_saudara'] ?? null,
+                'anak_ke' => $dataDiri['anak_ke'] ?? null,
+                'hobi' => $dataDiri['hobi'] ?? null,
+                'cita_cita' => $dataDiri['cita_cita'] ?? null,
+                
+                // Alamat siswa
+                'alamat_siswa' => $dataDiri['alamat_siswa'],
+                'rt_siswa' => $dataDiri['rt_siswa'] ?? null,
+                'rw_siswa' => $dataDiri['rw_siswa'] ?? null,
+                'provinsi_id_siswa' => $dataDiri['provinsi_id_siswa'],
+                'kabupaten_id_siswa' => $dataDiri['kabupaten_id_siswa'],
+                'kecamatan_id_siswa' => $dataDiri['kecamatan_id_siswa'],
+                'kelurahan_id_siswa' => $dataDiri['kelurahan_id_siswa'],
+                'kode_pos_siswa' => $dataDiri['kode_pos_siswa'] ?? null,
+                
+                // Kontak & Sekolah
+                'no_hp' => $dataDiri['no_hp'] ?? null,
+                'npsn_asal' => $dataDiri['npsn_asal'] ?? null,
+                'sekolah_asal' => $dataDiri['sekolah_asal'],
+                'alamat_sekolah_asal' => $dataDiri['alamat_sekolah_asal'] ?? null,
+                
+                // Completion flags
+                'data_diri_completed' => true,
+                'data_ortu_completed' => true,
+                'data_dokumen_completed' => true,
             ]);
 
-            // Upload documents to CalonDokumen
+            // Generate nomor registrasi
+            $calonSiswa->nomor_registrasi = $calonSiswa->generateNomorRegistrasi();
+            $calonSiswa->save();
+
+            // 3. Create CalonOrtu
+            $dataOrtu = session('ppdb_data_ortu');
+            
+            CalonOrtu::create([
+                'id' => Uuid::uuid4()->toString(),
+                'calon_siswa_id' => $calonSiswa->id,
+                'no_kk' => $dataOrtu['no_kk'],
+                
+                // Ayah
+                'status_ayah' => $dataOrtu['status_ayah'],
+                'nik_ayah' => $dataOrtu['nik_ayah'] ?? null,
+                'nama_ayah' => $dataOrtu['nama_ayah'],
+                'tempat_lahir_ayah' => $dataOrtu['tempat_lahir_ayah'] ?? null,
+                'tanggal_lahir_ayah' => $dataOrtu['tanggal_lahir_ayah'] ?? null,
+                'pendidikan_ayah' => $dataOrtu['pendidikan_ayah'] ?? null,
+                'pekerjaan_ayah' => $dataOrtu['pekerjaan_ayah'] ?? null,
+                'penghasilan_ayah' => $dataOrtu['penghasilan_ayah'] ?? null,
+                'no_hp_ayah' => $dataOrtu['no_hp_ayah'] ?? null,
+                
+                // Ibu
+                'status_ibu' => $dataOrtu['status_ibu'],
+                'nik_ibu' => $dataOrtu['nik_ibu'] ?? null,
+                'nama_ibu' => $dataOrtu['nama_ibu'],
+                'tempat_lahir_ibu' => $dataOrtu['tempat_lahir_ibu'] ?? null,
+                'tanggal_lahir_ibu' => $dataOrtu['tanggal_lahir_ibu'] ?? null,
+                'pendidikan_ibu' => $dataOrtu['pendidikan_ibu'] ?? null,
+                'pekerjaan_ibu' => $dataOrtu['pekerjaan_ibu'] ?? null,
+                'penghasilan_ibu' => $dataOrtu['penghasilan_ibu'] ?? null,
+                'no_hp_ibu' => $dataOrtu['no_hp_ibu'] ?? null,
+                
+                // Wali
+                'tinggal_dengan_wali' => $dataOrtu['tinggal_dengan_wali'] ?? false,
+                'nama_wali' => $dataOrtu['nama_wali'] ?? null,
+                'hubungan_wali' => $dataOrtu['hubungan_wali'] ?? null,
+                'nik_wali' => $dataOrtu['nik_wali'] ?? null,
+                'tempat_lahir_wali' => $dataOrtu['tempat_lahir_wali'] ?? null,
+                'tanggal_lahir_wali' => $dataOrtu['tanggal_lahir_wali'] ?? null,
+                'pendidikan_wali' => $dataOrtu['pendidikan_wali'] ?? null,
+                'pekerjaan_wali' => $dataOrtu['pekerjaan_wali'] ?? null,
+                'penghasilan_wali' => $dataOrtu['penghasilan_wali'] ?? null,
+                'no_hp_wali' => $dataOrtu['no_hp_wali'] ?? null,
+                
+                // Alamat ortu
+                'alamat_ortu' => $dataOrtu['alamat_ortu'],
+                'rt_ortu' => $dataOrtu['rt_ortu'] ?? null,
+                'rw_ortu' => $dataOrtu['rw_ortu'] ?? null,
+                'provinsi_id_ortu' => $dataOrtu['provinsi_id_ortu'],
+                'kabupaten_id_ortu' => $dataOrtu['kabupaten_id_ortu'],
+                'kecamatan_id_ortu' => $dataOrtu['kecamatan_id_ortu'],
+                'kelurahan_id_ortu' => $dataOrtu['kelurahan_id_ortu'],
+                'kode_pos_ortu' => $dataOrtu['kode_pos_ortu'] ?? null,
+            ]);
+
+            // 4. Create CalonDokumen
             $uploadedDocs = session('ppdb_uploaded_docs', []);
-            foreach ($uploadedDocs as $jenisDoc => $filePath) {
+            $requiredDocs = ['foto', 'kk', 'akta_lahir'];
+            
+            foreach ($uploadedDocs as $jenisDoc => $docData) {
                 CalonDokumen::create([
                     'id' => Uuid::uuid4()->toString(),
-                    'calon_siswa_id' => $caalonSiswa->id,
+                    'calon_siswa_id' => $calonSiswa->id,
                     'jenis_dokumen' => $jenisDoc,
-                    'file_path' => $filePath,
-                    'file_size' => Storage::disk('public')->size($filePath),
-                    'file_type' => Storage::disk('public')->mimeType($filePath),
+                    'nama_dokumen' => CalonDokumen::JENIS_DOKUMEN[$jenisDoc] ?? $jenisDoc,
+                    'nama_file' => $docData['nama_file'],
+                    'file_path' => $docData['file_path'],
+                    'file_size' => $docData['file_size'],
+                    'mime_type' => $docData['mime_type'],
+                    'storage_disk' => 'public',
+                    'is_required' => in_array($jenisDoc, $requiredDocs),
                     'status_verifikasi' => 'pending',
                 ]);
             }
 
+            DB::commit();
+
             // Clear session
             session()->forget([
-                'ppdb_step', 'ppdb_jalur_id', 'ppdb_gelombang_id', 'ppdb_nisn', 'ppdb_email', 'ppdb_password', 
-                'ppdb_nisn_valid', 'ppdb_nama_lengkap', 'ppdb_tempat_lahir',
-                'ppdb_tanggal_lahir', 'ppdb_jenis_kelamin', 'ppdb_agama',
-                'ppdb_no_hp_pribadi', 'ppdb_alamat_rumah', 'ppdb_kelurahan',
-                'ppdb_kecamatan', 'ppdb_kabupaten_kota', 'ppdb_provinsi',
-                'ppdb_no_hp_ortu', 'ppdb_uploaded_docs',
+                'ppdb_step', 'ppdb_jalur_id', 'ppdb_nisn', 'ppdb_email', 'ppdb_password', 
+                'ppdb_nisn_valid', 'ppdb_data_diri', 'ppdb_data_ortu', 'ppdb_uploaded_docs',
             ]);
 
-            return redirect()->route('ppdb.register.success', ['nomor_registrasi' => $nomorRegistrasi])
-                ->with('success', 'Pendaftaran berhasil! Nomor registrasi Anda: ' . $nomorRegistrasi);
+            return redirect()->route('ppdb.register.success', ['nomor_registrasi' => $calonSiswa->nomor_registrasi])
+                ->with('success', 'Pendaftaran berhasil! Nomor registrasi Anda: ' . $calonSiswa->nomor_registrasi);
 
         } catch (\Exception $e) {
+            DB::rollBack();
+            
+            // Clean up uploaded files on failure
+            $uploadedDocs = session('ppdb_uploaded_docs', []);
+            foreach ($uploadedDocs as $docData) {
+                if (isset($docData['file_path'])) {
+                    Storage::disk('public')->delete($docData['file_path']);
+                }
+            }
+            
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
@@ -325,5 +611,32 @@ class RegisterController extends Controller
     {
         $nomor_registrasi = $request->query('nomor_registrasi', 'PPDB-' . date('Y') . '-00000');
         return view('ppdb.success', compact('nomor_registrasi'));
+    }
+
+    /**
+     * API endpoints for cascading dropdowns
+     */
+    public function getKabupaten(Request $request)
+    {
+        $cities = City::where('province_code', $request->province_code)
+            ->orderBy('name')
+            ->pluck('name', 'code');
+        return response()->json($cities);
+    }
+
+    public function getKecamatan(Request $request)
+    {
+        $districts = District::where('city_code', $request->city_code)
+            ->orderBy('name')
+            ->pluck('name', 'code');
+        return response()->json($districts);
+    }
+
+    public function getKelurahan(Request $request)
+    {
+        $villages = Village::where('district_code', $request->district_code)
+            ->orderBy('name')
+            ->pluck('name', 'code');
+        return response()->json($villages);
     }
 }

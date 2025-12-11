@@ -4,8 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Laravolt\Indonesia\Models\Province;
+use Laravolt\Indonesia\Models\City;
+use Laravolt\Indonesia\Models\District;
+use Laravolt\Indonesia\Models\Village;
 
 class CalonSiswa extends Model
 {
@@ -14,47 +19,79 @@ class CalonSiswa extends Model
     protected $table = 'calon_siswas';
 
     protected $fillable = [
+        // PPDB fields
         'jalur_pendaftaran_id',
         'gelombang_pendaftaran_id',
-        'nisn',
-        'nisn_valid',
-        'nama_lengkap',
-        'tempat_lahir',
-        'tanggal_lahir',
-        'jenis_kelamin',
-        'agama',
-        'no_hp_pribadi',
-        'no_hp_ortu',
-        'email',
-        'alamat_rumah',
-        'kelurahan',
-        'kecamatan',
-        'kabupaten_kota',
-        'provinsi',
-        'asal_sekolah',
+        'nomor_registrasi',
         'status_verifikasi',
         'status_admisi',
-        'nilai_tes',
-        'nilai_wawancara',
-        'rata_rata_nilai',
-        'ranking',
-        'nomor_pendaftaran_sementara',
-        'nomor_pendaftaran_final',
-        'nomor_registrasi',
-        'tanggal_registrasi',
-        'bukti_registrasi_path',
-        'tahun_pelajaran_id',
+        'catatan_verifikasi',
+        'tanggal_verifikasi',
+        'verified_by',
+        
+        // Data diri siswa (sesuai SIMANSAV3)
+        'nisn',
+        'nisn_valid',
+        'nik',
+        'nama_lengkap',
+        'jenis_kelamin',
+        'tempat_lahir',
+        'tanggal_lahir',
+        'agama',
+        'jumlah_saudara',
+        'anak_ke',
+        'hobi',
+        'cita_cita',
+        
+        // Alamat siswa (Laravolt FK)
+        'alamat_siswa',
+        'rt_siswa',
+        'rw_siswa',
+        'provinsi_id_siswa',
+        'kabupaten_id_siswa',
+        'kecamatan_id_siswa',
+        'kelurahan_id_siswa',
+        'kode_pos_siswa',
+        
+        // Kontak
+        'no_hp',
+        'email',
+        
+        // Asal sekolah
+        'npsn_asal',
+        'sekolah_asal',
+        'alamat_sekolah_asal',
+        
+        // Foto
+        'foto',
+        
+        // Completion flags
+        'data_diri_completed',
+        'data_ortu_completed',
+        'data_dokumen_completed',
+        
+        // Relations
         'user_id',
-        'kelas_id',
+        'tahun_pelajaran_id',
     ];
 
     protected $casts = [
         'tanggal_lahir' => 'date',
+        'tanggal_verifikasi' => 'datetime',
         'nisn_valid' => 'boolean',
-        'tanggal_registrasi' => 'datetime',
+        'data_diri_completed' => 'boolean',
+        'data_ortu_completed' => 'boolean',
+        'data_dokumen_completed' => 'boolean',
+        'jumlah_saudara' => 'integer',
+        'anak_ke' => 'integer',
     ];
 
     // Relations
+    public function ortu(): HasOne
+    {
+        return $this->hasOne(CalonOrtu::class, 'calon_siswa_id');
+    }
+
     public function dokumen(): HasMany
     {
         return $this->hasMany(CalonDokumen::class, 'calon_siswa_id');
@@ -80,20 +117,56 @@ class CalonSiswa extends Model
         return $this->belongsTo(GelombangPendaftaran::class, 'gelombang_pendaftaran_id');
     }
 
+    public function verifiedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'verified_by');
+    }
+
+    // Laravolt Address Relations - Siswa
+    public function provinsiSiswa(): BelongsTo
+    {
+        return $this->belongsTo(Province::class, 'provinsi_id_siswa', 'code');
+    }
+
+    public function kabupatenSiswa(): BelongsTo
+    {
+        return $this->belongsTo(City::class, 'kabupaten_id_siswa', 'code');
+    }
+
+    public function kecamatanSiswa(): BelongsTo
+    {
+        return $this->belongsTo(District::class, 'kecamatan_id_siswa', 'code');
+    }
+
+    public function kelurahanSiswa(): BelongsTo
+    {
+        return $this->belongsTo(Village::class, 'kelurahan_id_siswa', 'code');
+    }
+
     // Scopes
     public function scopePending($query)
     {
         return $query->where('status_verifikasi', 'pending');
     }
 
-    public function scopeApproved($query)
+    public function scopeVerified($query)
     {
-        return $query->where('status_verifikasi', 'approved');
+        return $query->where('status_verifikasi', 'verified');
     }
 
     public function scopeDiterima($query)
     {
         return $query->where('status_admisi', 'diterima');
+    }
+
+    public function scopeDitolak($query)
+    {
+        return $query->where('status_admisi', 'ditolak');
+    }
+
+    public function scopeCadangan($query)
+    {
+        return $query->where('status_admisi', 'cadangan');
     }
 
     public function scopeByTahun($query, $tahunId)
@@ -109,5 +182,42 @@ class CalonSiswa extends Model
     public function scopeByGelombang($query, $gelombangId)
     {
         return $query->where('gelombang_pendaftaran_id', $gelombangId);
+    }
+
+    // Accessors
+    public function getJenisKelaminLengkapAttribute(): string
+    {
+        return $this->jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan';
+    }
+
+    public function getAlamatLengkapSiswaAttribute(): string
+    {
+        $parts = array_filter([
+            $this->alamat_siswa,
+            $this->rt_siswa ? 'RT ' . $this->rt_siswa : null,
+            $this->rw_siswa ? 'RW ' . $this->rw_siswa : null,
+            $this->kelurahanSiswa?->name,
+            $this->kecamatanSiswa?->name,
+            $this->kabupatenSiswa?->name,
+            $this->provinsiSiswa?->name,
+            $this->kode_pos_siswa,
+        ]);
+        return implode(', ', $parts);
+    }
+
+    public function getIsCompleteAttribute(): bool
+    {
+        return $this->data_diri_completed && $this->data_ortu_completed && $this->data_dokumen_completed;
+    }
+
+    // Helper methods
+    public function generateNomorRegistrasi(): string
+    {
+        $tahun = date('Y');
+        $jalur = $this->jalurPendaftaran?->kode ?? 'XX';
+        $gelombang = $this->gelombangPendaftaran?->kode ?? '0';
+        $sequence = self::whereYear('created_at', $tahun)->count() + 1;
+        
+        return sprintf('%s/%s/%s/%04d', $tahun, $jalur, $gelombang, $sequence);
     }
 }

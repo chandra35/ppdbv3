@@ -67,18 +67,27 @@
             
             <div class="form-group">
                 <label for="nisn">NISN (10 digit) <span style="color: red;">*</span></label>
-                <input type="text" 
-                       id="nisn" 
-                       name="nisn" 
-                       placeholder="Contoh: 1234567890" 
-                       maxlength="10" 
-                       required 
-                       value="{{ old('nisn') }}"
-                       pattern="[0-9]{10}">
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" 
+                           id="nisn" 
+                           name="nisn" 
+                           placeholder="Contoh: 1234567890" 
+                           maxlength="10" 
+                           required 
+                           value="{{ old('nisn') }}"
+                           pattern="[0-9]{10}"
+                           style="flex: 1;">
+                    <button type="button" id="btnCekNisn" class="btn btn-secondary" style="white-space: nowrap;" disabled>
+                        <i class="fas fa-search"></i> Cek NISN
+                    </button>
+                </div>
                 <small style="color: #666; display: block; margin-top: 0.25rem;">Masukkan 10 digit NISN Anda</small>
                 @error('nisn')
                 <small style="color: red;">{{ $message }}</small>
                 @enderror
+                
+                {{-- NISN Check Result --}}
+                <div id="nisnResult" style="display: none; margin-top: 0.75rem; padding: 0.75rem; border-radius: 4px;"></div>
             </div>
 
             <div class="form-group">
@@ -134,4 +143,98 @@
 </div>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const nisnInput = document.getElementById('nisn');
+    const btnCekNisn = document.getElementById('btnCekNisn');
+    const nisnResult = document.getElementById('nisnResult');
+    
+    // Enable/disable check button based on NISN length
+    nisnInput.addEventListener('input', function() {
+        const value = this.value.replace(/\D/g, '');
+        this.value = value;
+        btnCekNisn.disabled = value.length !== 10;
+        nisnResult.style.display = 'none';
+    });
+    
+    // Check NISN button click
+    btnCekNisn.addEventListener('click', function() {
+        const nisn = nisnInput.value;
+        if (nisn.length !== 10) return;
+        
+        btnCekNisn.disabled = true;
+        btnCekNisn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengecek...';
+        nisnResult.style.display = 'none';
+        
+        fetch('{{ route("ppdb.api.cek-nisn") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ nisn: nisn })
+        })
+        .then(response => response.json())
+        .then(data => {
+            nisnResult.style.display = 'block';
+            
+            if (data.success) {
+                const student = data.data.extracted;
+                nisnResult.style.background = '#d4edda';
+                nisnResult.style.border = '1px solid #c3e6cb';
+                nisnResult.innerHTML = `
+                    <strong style="color: #155724;"><i class="fas fa-check-circle"></i> NISN Ditemukan di EMIS!</strong>
+                    <div style="margin-top: 0.5rem; font-size: 0.9rem; color: #155724;">
+                        <div><strong>Nama:</strong> ${student.nama || '-'}</div>
+                        <div><strong>Tempat Lahir:</strong> ${student.tempat_lahir || '-'}</div>
+                        <div><strong>Tanggal Lahir:</strong> ${student.tanggal_lahir || '-'}</div>
+                        <div><strong>Jenis Kelamin:</strong> ${student.jenis_kelamin === 'L' ? 'Laki-laki' : (student.jenis_kelamin === 'P' ? 'Perempuan' : '-')}</div>
+                        ${student.nama_ibu ? `<div><strong>Nama Ibu:</strong> ${student.nama_ibu}</div>` : ''}
+                        ${student.asal_sekolah ? `<div><strong>Asal Sekolah:</strong> ${student.asal_sekolah}</div>` : ''}
+                    </div>
+                    <small style="color: #155724; margin-top: 0.5rem; display: block;">Data di atas akan digunakan untuk mengisi formulir pendaftaran secara otomatis.</small>
+                `;
+            } else {
+                if (data.message.includes('sudah terdaftar')) {
+                    nisnResult.style.background = '#f8d7da';
+                    nisnResult.style.border = '1px solid #f5c6cb';
+                    nisnResult.innerHTML = `
+                        <strong style="color: #721c24;"><i class="fas fa-times-circle"></i> ${data.message}</strong>
+                        <div style="margin-top: 0.5rem; font-size: 0.9rem; color: #721c24;">
+                            Silahkan login dengan akun yang sudah terdaftar atau hubungi admin jika ada masalah.
+                        </div>
+                    `;
+                } else {
+                    nisnResult.style.background = '#fff3cd';
+                    nisnResult.style.border = '1px solid #ffeeba';
+                    nisnResult.innerHTML = `
+                        <strong style="color: #856404;"><i class="fas fa-exclamation-triangle"></i> NISN Tidak Ditemukan di EMIS</strong>
+                        <div style="margin-top: 0.5rem; font-size: 0.9rem; color: #856404;">
+                            ${data.message}<br>
+                            <small>Anda tetap dapat melanjutkan pendaftaran dengan mengisi data secara manual.</small>
+                        </div>
+                    `;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            nisnResult.style.display = 'block';
+            nisnResult.style.background = '#f8d7da';
+            nisnResult.style.border = '1px solid #f5c6cb';
+            nisnResult.innerHTML = `
+                <strong style="color: #721c24;"><i class="fas fa-times-circle"></i> Error</strong>
+                <div style="margin-top: 0.5rem; font-size: 0.9rem; color: #721c24;">
+                    Terjadi kesalahan saat mengecek NISN. Silahkan coba lagi.
+                </div>
+            `;
+        })
+        .finally(() => {
+            btnCekNisn.disabled = false;
+            btnCekNisn.innerHTML = '<i class="fas fa-search"></i> Cek NISN';
+        });
+    });
+});
+</script>
 @endsection

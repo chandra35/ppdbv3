@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\GtkController;
 use App\Http\Controllers\Admin\JalurPendaftaranController;
 use App\Http\Controllers\Admin\TahunPelajaranController;
 use App\Http\Controllers\Admin\AlurPendaftaranController;
+use App\Http\Controllers\Admin\EmisTokenController;
 use App\Http\Controllers\Operator\DashboardController as OperatorDashboardController;
 use App\Http\Controllers\Operator\PendaftarController as OperatorPendaftarController;
 
@@ -32,7 +33,7 @@ Route::get('/ppdb/berita/{slug}', [LandingController::class, 'showBerita'])->nam
 Route::post('/ppdb/login', [LandingController::class, 'login'])->name('ppdb.login');
 Route::post('/ppdb/logout', [LandingController::class, 'logout'])->name('ppdb.logout');
 
-// Registration routes (4-step process)
+// Registration routes (5-step process)
 Route::middleware('guest')->group(function () {
     Route::get('/ppdb/register/step1', [RegisterController::class, 'step1'])->name('ppdb.register.step1');
     Route::post('/ppdb/register/step1', [RegisterController::class, 'validateNisn'])->name('ppdb.register.step1.validate');
@@ -41,12 +42,23 @@ Route::middleware('guest')->group(function () {
     Route::post('/ppdb/register/step2', [RegisterController::class, 'storePersonalData'])->name('ppdb.register.step2.store');
 
     Route::get('/ppdb/register/step3', [RegisterController::class, 'step3'])->name('ppdb.register.step3');
-    Route::post('/ppdb/register/step3', [RegisterController::class, 'uploadDocuments'])->name('ppdb.register.step3.store');
+    Route::post('/ppdb/register/step3', [RegisterController::class, 'storeParentData'])->name('ppdb.register.step3.store');
 
     Route::get('/ppdb/register/step4', [RegisterController::class, 'step4'])->name('ppdb.register.step4');
-    Route::post('/ppdb/register/step4', [RegisterController::class, 'confirmRegistration'])->name('ppdb.register.step4.confirm');
+    Route::post('/ppdb/register/step4', [RegisterController::class, 'uploadDocuments'])->name('ppdb.register.step4.store');
+
+    Route::get('/ppdb/register/step5', [RegisterController::class, 'step5'])->name('ppdb.register.step5');
+    Route::post('/ppdb/register/step5', [RegisterController::class, 'confirmRegistration'])->name('ppdb.register.step5.confirm');
 
     Route::get('/ppdb/register/success', [RegisterController::class, 'success'])->name('ppdb.register.success');
+    
+    // API for cascading address dropdowns
+    Route::get('/ppdb/api/kabupaten', [RegisterController::class, 'getKabupaten'])->name('ppdb.api.kabupaten');
+    Route::get('/ppdb/api/kecamatan', [RegisterController::class, 'getKecamatan'])->name('ppdb.api.kecamatan');
+    Route::get('/ppdb/api/kelurahan', [RegisterController::class, 'getKelurahan'])->name('ppdb.api.kelurahan');
+    
+    // API for NISN check
+    Route::post('/ppdb/api/cek-nisn', [RegisterController::class, 'apiCekNisn'])->name('ppdb.api.cek-nisn');
 });
 
 // Calon Siswa Dashboard (protected with auth)
@@ -202,6 +214,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/gtk/{id}/update-roles', [GtkController::class, 'updateRoles'])->name('gtk.update-roles');
     Route::delete('/gtk/{id}/remove', [GtkController::class, 'removeUser'])->name('gtk.remove');
     Route::post('/gtk/bulk-register', [GtkController::class, 'bulkRegister'])->name('gtk.bulk-register');
+
+    // ---- PENGATURAN EMIS TOKEN ----
+    Route::prefix('pengaturan')->name('pengaturan.')->group(function () {
+        Route::get('/update-emis-token', [EmisTokenController::class, 'index'])->name('update-emis-token.index');
+        Route::post('/update-emis-token', [EmisTokenController::class, 'update'])->name('update-emis-token.update');
+    });
 });
 
 // ============================================
