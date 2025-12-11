@@ -10,6 +10,15 @@
     flex-wrap: nowrap;
     gap: 3px;
     align-items: center;
+    justify-content: center;
+}
+
+/* Ensure forms inside action-btns are inline-flex too */
+.action-btns form,
+.action-btns .action-form {
+    display: inline-flex;
+    margin: 0;
+    padding: 0;
 }
 
 .action-btns .btn {
@@ -23,6 +32,7 @@
     min-width: 28px;
     height: 28px;
     line-height: 1;
+    vertical-align: middle;
 }
 
 .action-btns .btn i {
