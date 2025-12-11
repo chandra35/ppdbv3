@@ -8,24 +8,25 @@
 .action-btns {
     display: inline-flex;
     flex-wrap: nowrap;
-    gap: 4px;
+    gap: 3px;
     align-items: center;
 }
 
 .action-btns .btn {
-    padding: 0.35rem 0.6rem;
-    font-size: 0.8rem;
+    padding: 0.25rem 0.45rem;
+    font-size: 0.75rem;
     border-radius: 4px;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 32px;
-    height: 32px;
+    min-width: 28px;
+    height: 28px;
+    line-height: 1;
 }
 
 .action-btns .btn i {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
 }
 
 .action-btns .btn:hover {
@@ -148,15 +149,15 @@
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .action-btns {
-        gap: 3px;
+        gap: 2px;
     }
     .action-btns .btn {
-        padding: 0.3rem 0.5rem;
-        min-width: 30px;
-        height: 30px;
+        padding: 0.2rem 0.35rem;
+        min-width: 26px;
+        height: 26px;
     }
     .action-btns .btn i {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
     }
     /* Hide text on mobile, show only icons */
     .action-btns .btn .btn-text {
@@ -176,12 +177,14 @@
 
 /* Status Toggle Buttons */
 .btn-status-toggle {
-    min-width: 80px;
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: 20px;
+    min-width: 70px;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 12px;
     font-weight: 500;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
+    height: 24px;
+    line-height: 1;
 }
 
 .btn-status-toggle.active {
