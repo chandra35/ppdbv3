@@ -85,10 +85,12 @@ class JalurPendaftaranController extends Controller
             'icon' => 'required|string|max:50',
             'prefix_nomor' => 'nullable|string|max:20',
             'tampil_di_publik' => 'boolean',
+            'tampil_kuota' => 'boolean',
             'urutan' => 'nullable|integer|min:1',
         ]);
         
         $validated['tampil_di_publik'] = $request->has('tampil_di_publik');
+        $validated['tampil_kuota'] = $request->has('tampil_kuota');
         $validated['is_active'] = false; // Selalu mulai sebagai non-aktif
         $validated['status'] = JalurPendaftaran::STATUS_DRAFT;
         $validated['urutan'] = $validated['urutan'] ?? (JalurPendaftaran::where('tahun_pelajaran_id', $validated['tahun_pelajaran_id'])->max('urutan') + 1);
@@ -140,10 +142,12 @@ class JalurPendaftaranController extends Controller
             'icon' => 'required|string|max:50',
             'prefix_nomor' => 'nullable|string|max:20',
             'tampil_di_publik' => 'boolean',
+            'tampil_kuota' => 'boolean',
             'urutan' => 'nullable|integer|min:1',
         ]);
         
         $validated['tampil_di_publik'] = $request->has('tampil_di_publik');
+        $validated['tampil_kuota'] = $request->has('tampil_kuota');
         
         $jalur->update($validated);
         

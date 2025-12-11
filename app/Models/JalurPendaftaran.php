@@ -30,6 +30,7 @@ class JalurPendaftaran extends Model
         'is_active',
         'status',
         'tampil_di_publik',
+        'tampil_kuota',
         'urutan',
     ];
 
@@ -41,6 +42,7 @@ class JalurPendaftaran extends Model
         'counter_nomor' => 'integer',
         'is_active' => 'boolean',
         'tampil_di_publik' => 'boolean',
+        'tampil_kuota' => 'boolean',
         'urutan' => 'integer',
     ];
 

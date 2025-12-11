@@ -488,7 +488,8 @@
                             <p class="text-muted small mb-3">{{ Str::limit($jalur->deskripsi, 120) }}</p>
                             @endif
                             
-                            {{-- Kuota Progress --}}
+                            {{-- Kuota Progress - Conditional --}}
+                            @if($jalur->tampil_kuota ?? true)
                             <div class="mb-3 p-3 rounded" style="background: #f8f9fa;">
                                 <div class="d-flex justify-content-between mb-2">
                                     <span class="small fw-semibold"><i class="fas fa-users me-1"></i> Kuota</span>
@@ -507,41 +508,34 @@
                                 </div>
                                 <small class="text-muted mt-1 d-block">{{ number_format($persentase, 0) }}% terisi</small>
                             </div>
+                            @endif
                             
-                            {{-- Gelombang yang dibuka --}}
+                            {{-- Status Pendaftaran (Gelombang hidden, hanya tampilkan status) --}}
                             @if($jalur->gelombang->isNotEmpty())
-                            <div class="mb-3">
-                                <small class="text-muted d-block mb-2 fw-semibold">
-                                    <i class="fas fa-door-open me-1 text-success"></i> Pendaftaran Dibuka:
-                                </small>
-                                @foreach($jalur->gelombang as $gelombang)
-                                <div class="border border-success rounded p-2 mb-2" style="background: rgba(25, 135, 84, 0.05);">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="fw-semibold text-success small">
-                                            <i class="fas fa-check-circle me-1"></i>
-                                            @if($gelombang->tampilkan_nama)
-                                                {{ $gelombang->nama }}
-                                            @else
-                                                Periode Aktif
-                                            @endif
-                                        </span>
-                                        <span class="badge bg-success rounded-pill">{{ $gelombang->sisa_hari }} hari lagi</span>
-                                    </div>
-                                    <div class="d-flex justify-content-between align-items-center mt-1">
-                                        <small class="text-muted">
-                                            <i class="fas fa-calendar me-1"></i> s/d {{ $gelombang->tanggal_ditutup->format('d M Y') }}
-                                        </small>
-                                        <small class="text-muted">
-                                            <i class="fas fa-user me-1"></i> Kuota: {{ $gelombang->kuota_tersisa }}
-                                        </small>
+                                @php
+                                    $gelombangAktif = $jalur->gelombang->first();
+                                @endphp
+                                <div class="mb-3">
+                                    <div class="border border-success rounded p-3" style="background: rgba(25, 135, 84, 0.05);">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="fas fa-door-open text-success me-2"></i>
+                                            <span class="fw-semibold text-success">Pendaftaran Dibuka</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">
+                                                <i class="fas fa-calendar me-1"></i> 
+                                                {{ $gelombangAktif->tanggal_buka->format('d M') }} - {{ $gelombangAktif->tanggal_tutup->format('d M Y') }}
+                                            </small>
+                                            <span class="badge bg-success rounded-pill">
+                                                <i class="fas fa-clock me-1"></i>{{ $gelombangAktif->sisa_hari }} hari lagi
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
-                                @endforeach
-                            </div>
                             @else
                             <div class="mb-3">
                                 <div class="alert alert-secondary py-2 px-3 mb-0">
-                                    <small><i class="fas fa-clock me-1"></i> Belum ada periode dibuka</small>
+                                    <small><i class="fas fa-clock me-1"></i> Pendaftaran belum dibuka</small>
                                 </div>
                             </div>
                             @endif

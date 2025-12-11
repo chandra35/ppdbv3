@@ -158,16 +158,25 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <div class="custom-control custom-switch">
                                     <input type="checkbox" class="custom-control-input" id="tampil_di_publik" name="tampil_di_publik" value="1" {{ old('tampil_di_publik', $jalur->tampil_di_publik) ? 'checked' : '' }}>
                                     <label class="custom-control-label" for="tampil_di_publik">Tampilkan di Halaman Publik</label>
                                 </div>
-                                <small class="text-muted">Info jalur ini akan muncul di landing page</small>
+                                <small class="text-muted">Info jalur muncul di landing page</small>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input" id="tampil_kuota" name="tampil_kuota" value="1" {{ old('tampil_kuota', $jalur->tampil_kuota ?? true) ? 'checked' : '' }}>
+                                    <label class="custom-control-label" for="tampil_kuota">Tampilkan Kuota ke Publik</label>
+                                </div>
+                                <small class="text-muted">Jika tidak dicentang, kuota disembunyikan</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
                             {{-- Status Info --}}
                             <div class="callout callout-{{ $jalur->status == 'open' ? 'success' : ($jalur->status == 'closed' ? 'warning' : ($jalur->status == 'finished' ? 'secondary' : 'info')) }} py-2 px-3 mb-0">
                                 <small>

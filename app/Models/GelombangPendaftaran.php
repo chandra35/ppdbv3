@@ -27,6 +27,7 @@ class GelombangPendaftaran extends Model
         'status',
         'is_active',
         'tampil_nama_gelombang',
+        'tampil_kuota',
         'urutan',
     ];
 
@@ -39,6 +40,7 @@ class GelombangPendaftaran extends Model
         'counter_nomor' => 'integer',
         'is_active' => 'boolean',
         'tampil_nama_gelombang' => 'boolean',
+        'tampil_kuota' => 'boolean',
         'urutan' => 'integer',
     ];
 
