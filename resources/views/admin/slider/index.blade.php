@@ -2,6 +2,10 @@
 
 @section('title', 'Kelola Slider')
 
+@section('css')
+@include('admin.partials.action-buttons-style')
+@stop
+
 @section('content_header')
     <div class="d-flex justify-content-between align-items-center">
         <h1 class="m-0"><i class="fas fa-images mr-2"></i>Kelola Slider</h1>
@@ -73,29 +77,24 @@
                             <td class="text-center">
                                 <form action="{{ route('admin.settings.slider.toggle-status', $slider) }}" method="POST" class="d-inline">
                                     @csrf
-                                    @if($slider->status === 'active')
-                                        <button type="submit" class="btn btn-sm btn-success" title="Klik untuk nonaktifkan">
-                                            <i class="fas fa-check-circle mr-1"></i>Aktif
-                                        </button>
-                                    @else
-                                        <button type="submit" class="btn btn-sm btn-secondary" title="Klik untuk aktifkan">
-                                            <i class="fas fa-times-circle mr-1"></i>Nonaktif
-                                        </button>
-                                    @endif
+                                    <button type="submit" class="btn btn-status-toggle {{ $slider->status === 'active' ? 'active' : 'inactive' }}" data-toggle="tooltip" title="{{ $slider->status === 'active' ? 'Klik untuk nonaktifkan' : 'Klik untuk aktifkan' }}">
+                                        <i class="fas fa-{{ $slider->status === 'active' ? 'check-circle' : 'times-circle' }} mr-1"></i>
+                                        {{ $slider->status === 'active' ? 'Aktif' : 'Nonaktif' }}
+                                    </button>
                                 </form>
                             </td>
                             <td class="text-center">
-                                <div class="btn-group btn-group-sm">
-                                    <a href="{{ route('admin.settings.slider.edit', $slider) }}" class="btn btn-info" title="Edit">
+                                <div class="action-btns">
+                                    <a href="{{ route('admin.settings.slider.edit', $slider) }}" class="btn btn-action-edit" data-toggle="tooltip" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <button type="button" class="btn btn-primary" title="Preview" data-toggle="modal" data-target="#previewModal{{ $slider->id }}">
+                                    <button type="button" class="btn btn-action-view" data-toggle="modal" data-target="#previewModal{{ $slider->id }}" title="Preview">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <form action="{{ route('admin.settings.slider.destroy', $slider) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus slider ini?')">
+                                    <form action="{{ route('admin.settings.slider.destroy', $slider) }}" method="POST" class="d-inline action-form" onsubmit="return confirm('Yakin ingin menghapus slider ini?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-danger" title="Hapus">
+                                        <button type="submit" class="btn btn-action-delete" data-toggle="tooltip" title="Hapus">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
@@ -169,15 +168,21 @@
 @stop
 
 @section('css')
+@include('admin.partials.action-buttons-style')
 <style>
     .table th, .table td {
         vertical-align: middle;
-    }
-    .btn-group-sm > .btn {
-        padding: 0.25rem 0.5rem;
     }
     .handle:hover {
         background-color: #6c757d !important;
     }
 </style>
+@stop
+
+@section('js')
+<script>
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+</script>
 @stop

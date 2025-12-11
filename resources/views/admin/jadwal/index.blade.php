@@ -2,6 +2,10 @@
 
 @section('title', 'Kelola Jadwal PPDB')
 
+@section('css')
+@include('admin.partials.action-buttons-style')
+@stop
+
 @section('content_header')
     <div class="d-flex justify-content-between align-items-center">
         <h1 class="m-0"><i class="fas fa-calendar-alt mr-2"></i>Kelola Jadwal PPDB</h1>
@@ -64,26 +68,21 @@
                                     <td class="text-center">
                                         <form action="{{ route('admin.settings.jadwal.toggle-status', $jadwal) }}" method="POST" class="d-inline">
                                             @csrf
-                                            @if($jadwal->is_active)
-                                                <button type="submit" class="btn btn-sm btn-success" title="Klik untuk nonaktifkan">
-                                                    <i class="fas fa-check"></i> Aktif
-                                                </button>
-                                            @else
-                                                <button type="submit" class="btn btn-sm btn-secondary" title="Klik untuk aktifkan">
-                                                    <i class="fas fa-times"></i> Nonaktif
-                                                </button>
-                                            @endif
+                                            <button type="submit" class="btn btn-status-toggle {{ $jadwal->is_active ? 'active' : 'inactive' }}" data-toggle="tooltip" title="{{ $jadwal->is_active ? 'Klik untuk nonaktifkan' : 'Klik untuk aktifkan' }}">
+                                                <i class="fas fa-{{ $jadwal->is_active ? 'check' : 'times' }} mr-1"></i>
+                                                {{ $jadwal->is_active ? 'Aktif' : 'Nonaktif' }}
+                                            </button>
                                         </form>
                                     </td>
                                     <td class="text-center">
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="{{ route('admin.settings.jadwal.edit', $jadwal) }}" class="btn btn-info" title="Edit">
+                                        <div class="action-btns">
+                                            <a href="{{ route('admin.settings.jadwal.edit', $jadwal) }}" class="btn btn-action-edit" data-toggle="tooltip" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <form action="{{ route('admin.settings.jadwal.destroy', $jadwal) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus jadwal ini?')">
+                                            <form action="{{ route('admin.settings.jadwal.destroy', $jadwal) }}" method="POST" class="d-inline action-form" onsubmit="return confirm('Yakin ingin menghapus jadwal ini?')">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-danger" title="Hapus">
+                                                <button type="submit" class="btn btn-action-delete" data-toggle="tooltip" title="Hapus">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </form>
@@ -229,4 +228,12 @@
         font-size: 11px;
     }
 </style>
+@stop
+
+@section('js')
+<script>
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+</script>
 @stop

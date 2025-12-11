@@ -2,6 +2,10 @@
 
 @section('title', 'Daftar Pendaftar')
 
+@section('css')
+@include('admin.partials.action-buttons-style')
+@stop
+
 @section('content_header')
     <div class="row mb-2">
         <div class="col-sm-6">
@@ -160,9 +164,11 @@
                         </td>
                         <td>{{ $pendaftar->created_at->format('d/m/Y H:i') }}</td>
                         <td>
-                            <a href="{{ route('admin.pendaftar.show', $pendaftar->id) }}" class="btn btn-info btn-xs">
-                                <i class="fas fa-eye"></i> Detail
-                            </a>
+                            <div class="action-btns">
+                                <a href="{{ route('admin.pendaftar.show', $pendaftar->id) }}" class="btn btn-action-view" data-toggle="tooltip" title="Lihat Detail">
+                                    <i class="fas fa-eye"></i> <span class="btn-text">Detail</span>
+                                </a>
+                            </div>
                         </td>
                     </tr>
                     @empty
@@ -177,4 +183,12 @@
             {{ $pendaftars->appends(request()->query())->links() }}
         </div>
     </div>
+@stop
+
+@section('js')
+<script>
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+</script>
 @stop

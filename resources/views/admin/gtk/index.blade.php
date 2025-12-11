@@ -2,6 +2,10 @@
 
 @section('title', 'Data GTK - PPDB Admin')
 
+@section('css')
+@include('admin.partials.action-buttons-style')
+@stop
+
 @section('content_header')
     <div class="d-flex justify-content-between align-items-center">
         <h1><i class="fas fa-users-cog mr-2"></i>Data GTK dari SIMANSA</h1>
@@ -189,19 +193,19 @@
                             @endif
                         </td>
                         <td>
-                            <div class="btn-group">
+                            <div class="action-btns">
                                 <a href="{{ route('admin.gtk.show', $gtk->id) }}" 
-                                   class="btn btn-sm btn-info" title="Detail">
+                                   class="btn btn-action-view" data-toggle="tooltip" title="Detail">
                                     <i class="fas fa-eye"></i>
                                 </a>
                                 @if($isRegistered)
-                                    <button type="button" class="btn btn-sm btn-warning" 
-                                            onclick="editRoles('{{ $gtk->id }}')" title="Edit Role">
+                                    <button type="button" class="btn btn-action-edit" 
+                                            onclick="editRoles('{{ $gtk->id }}')" data-toggle="tooltip" title="Edit Role">
                                         <i class="fas fa-user-tag"></i>
                                     </button>
                                 @else
-                                    <button type="button" class="btn btn-sm btn-success" 
-                                            onclick="registerGtk('{{ $gtk->id }}')" title="Daftarkan">
+                                    <button type="button" class="btn btn-action-success" 
+                                            onclick="registerGtk('{{ $gtk->id }}')" data-toggle="tooltip" title="Daftarkan">
                                         <i class="fas fa-user-plus"></i>
                                     </button>
                                 @endif
@@ -435,6 +439,11 @@ $('#bulkRegisterForm').on('submit', function(e) {
             this.submit();
         }
     });
+});
+
+// Initialize tooltips
+$(function () {
+    $('[data-toggle="tooltip"]').tooltip();
 });
 </script>
 @stop

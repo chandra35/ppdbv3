@@ -2,6 +2,10 @@
 
 @section('title', 'Tahun Pelajaran')
 
+@section('css')
+@include('admin.partials.action-buttons-style')
+@stop
+
 @section('content_header')
     <div class="d-flex justify-content-between align-items-center">
         <h1><i class="fas fa-calendar-alt mr-2"></i>Tahun Pelajaran</h1>
@@ -111,24 +115,23 @@
                             @endif
                         </td>
                         <td>
-                            <div class="btn-group btn-group-sm">
+                            <div class="action-btns">
                                 @if(!$tp->is_active)
-                                <form action="{{ route('admin.tahun-pelajaran.aktifkan', $tp) }}" method="POST" class="d-inline">
+                                <form action="{{ route('admin.tahun-pelajaran.aktifkan', $tp) }}" method="POST" class="d-inline action-form">
                                     @csrf
-                                    <button type="submit" class="btn btn-success" title="Aktifkan" onclick="return confirm('Aktifkan tahun pelajaran {{ $tp->nama }}?')">
+                                    <button type="submit" class="btn btn-action-success" data-toggle="tooltip" title="Aktifkan" onclick="return confirm('Aktifkan tahun pelajaran {{ $tp->nama }}?')">
                                         <i class="fas fa-check"></i>
                                     </button>
                                 </form>
                                 @endif
-                                <button type="button" class="btn btn-warning" title="Edit" 
-                                        data-toggle="modal" data-target="#modalEdit{{ $tp->id }}">
+                                <button type="button" class="btn btn-action-edit" data-toggle="modal" data-target="#modalEdit{{ $tp->id }}" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 @if(!$tp->is_active && $jalurCount == 0)
-                                <form action="{{ route('admin.tahun-pelajaran.destroy', $tp) }}" method="POST" class="d-inline">
+                                <form action="{{ route('admin.tahun-pelajaran.destroy', $tp) }}" method="POST" class="d-inline action-form">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-danger" title="Hapus" onclick="return confirm('Hapus tahun pelajaran {{ $tp->nama }}?')">
+                                    <button type="submit" class="btn btn-action-delete" data-toggle="tooltip" title="Hapus" onclick="return confirm('Hapus tahun pelajaran {{ $tp->nama }}?')">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
@@ -268,6 +271,10 @@
 
 @section('js')
 <script>
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+    
     // Auto open modal if there are validation errors
     @if($errors->any() && old('_method') != 'PUT')
     $(document).ready(function() {

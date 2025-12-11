@@ -2,6 +2,16 @@
 
 @section('title', 'Jalur Pendaftaran')
 
+@section('css')
+@include('admin.partials.action-buttons-style')
+<style>
+    .card-footer .action-btns-full .btn {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.6rem;
+    }
+</style>
+@stop
+
 @section('content_header')
     <div class="d-flex justify-content-between align-items-center">
         <h1><i class="fas fa-road mr-2"></i>Jalur Pendaftaran</h1>
@@ -148,12 +158,12 @@
                             </div>
                             <div class="card-footer">
                                 {{-- Action Buttons berdasarkan Status --}}
-                                <div class="btn-group btn-group-sm w-100 mb-2">
+                                <div class="action-btns-full mb-2">
                                     @switch($jalur->status)
                                         @case('draft')
                                             <form action="{{ route('admin.jalur.aktifkan', $jalur) }}" method="POST" class="d-inline flex-fill">
                                                 @csrf
-                                                <button type="submit" class="btn btn-success btn-block" onclick="return confirm('Buka pendaftaran untuk jalur ini?')">
+                                                <button type="submit" class="btn btn-action-success btn-block" onclick="return confirm('Buka pendaftaran untuk jalur ini?')">
                                                     <i class="fas fa-play mr-1"></i> Buka Pendaftaran
                                                 </button>
                                             </form>
@@ -161,13 +171,13 @@
                                         @case('open')
                                             <form action="{{ route('admin.jalur.tutup', $jalur) }}" method="POST" class="d-inline flex-fill">
                                                 @csrf
-                                                <button type="submit" class="btn btn-warning btn-block" onclick="return confirm('Tutup sementara pendaftaran?')">
-                                                    <i class="fas fa-pause mr-1"></i> Tutup Sementara
+                                                <button type="submit" class="btn btn-action-warning btn-block" onclick="return confirm('Tutup sementara pendaftaran?')">
+                                                    <i class="fas fa-pause mr-1"></i> Tutup
                                                 </button>
                                             </form>
                                             <form action="{{ route('admin.jalur.selesaikan', $jalur) }}" method="POST" class="d-inline flex-fill">
                                                 @csrf
-                                                <button type="submit" class="btn btn-secondary btn-block" onclick="return confirm('Selesaikan pendaftaran? Status akan menjadi Selesai dan tidak bisa dibuka lagi.')">
+                                                <button type="submit" class="btn btn-action-secondary btn-block" onclick="return confirm('Selesaikan pendaftaran? Status akan menjadi Selesai dan tidak bisa dibuka lagi.')">
                                                     <i class="fas fa-check mr-1"></i> Selesai
                                                 </button>
                                             </form>
@@ -175,36 +185,36 @@
                                         @case('closed')
                                             <form action="{{ route('admin.jalur.aktifkan', $jalur) }}" method="POST" class="d-inline flex-fill">
                                                 @csrf
-                                                <button type="submit" class="btn btn-success btn-block" onclick="return confirm('Buka kembali pendaftaran?')">
-                                                    <i class="fas fa-play mr-1"></i> Buka Kembali
+                                                <button type="submit" class="btn btn-action-success btn-block" onclick="return confirm('Buka kembali pendaftaran?')">
+                                                    <i class="fas fa-play mr-1"></i> Buka
                                                 </button>
                                             </form>
                                             <form action="{{ route('admin.jalur.selesaikan', $jalur) }}" method="POST" class="d-inline flex-fill">
                                                 @csrf
-                                                <button type="submit" class="btn btn-secondary btn-block" onclick="return confirm('Selesaikan pendaftaran?')">
+                                                <button type="submit" class="btn btn-action-secondary btn-block" onclick="return confirm('Selesaikan pendaftaran?')">
                                                     <i class="fas fa-check mr-1"></i> Selesai
                                                 </button>
                                             </form>
                                             @break
                                         @case('finished')
                                             <button type="button" class="btn btn-light btn-block" disabled>
-                                                <i class="fas fa-check-double mr-1"></i> Pendaftaran Selesai
+                                                <i class="fas fa-check-double mr-1"></i> Selesai
                                             </button>
                                             @break
                                     @endswitch
                                 </div>
                                 
                                 {{-- Detail & Edit --}}
-                                <div class="btn-group btn-group-sm w-100">
-                                    <a href="{{ route('admin.jalur.show', $jalur) }}" class="btn btn-outline-{{ $jalur->warna }}">
-                                        <i class="fas fa-eye"></i> Detail
+                                <div class="action-btns justify-content-center">
+                                    <a href="{{ route('admin.jalur.show', $jalur) }}" class="btn btn-action-view" data-toggle="tooltip" title="Detail">
+                                        <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{{ route('admin.jalur.edit', $jalur) }}" class="btn btn-outline-{{ $jalur->warna }}">
-                                        <i class="fas fa-edit"></i> Edit
+                                    <a href="{{ route('admin.jalur.edit', $jalur) }}" class="btn btn-action-edit" data-toggle="tooltip" title="Edit">
+                                        <i class="fas fa-edit"></i>
                                     </a>
-                                    <form action="{{ route('admin.jalur.duplicate', $jalur) }}" method="POST" class="d-inline">
+                                    <form action="{{ route('admin.jalur.duplicate', $jalur) }}" method="POST" class="d-inline action-form">
                                         @csrf
-                                        <button type="submit" class="btn btn-outline-{{ $jalur->warna }}" title="Duplikasi ke tahun ajaran berikutnya" onclick="return confirm('Duplikasi jalur ini?')">
+                                        <button type="submit" class="btn btn-action-primary" data-toggle="tooltip" title="Duplikasi" onclick="return confirm('Duplikasi jalur ini?')">
                                             <i class="fas fa-copy"></i>
                                         </button>
                                     </form>
@@ -270,4 +280,12 @@
         </div>
     </div>
 </div>
+@stop
+
+@section('js')
+<script>
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+</script>
 @stop

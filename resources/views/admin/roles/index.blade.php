@@ -2,6 +2,10 @@
 
 @section('title', 'Role Management')
 
+@section('css')
+@include('admin.partials.action-buttons-style')
+@stop
+
 @section('content_header')
     <div class="row mb-2">
         <div class="col-sm-6">
@@ -77,21 +81,23 @@
                             @endif
                         </td>
                         <td>
-                            <a href="{{ route('admin.roles.show', $role) }}" class="btn btn-info btn-xs">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            @if(!$role->is_system)
-                                <a href="{{ route('admin.roles.edit', $role) }}" class="btn btn-warning btn-xs">
-                                    <i class="fas fa-edit"></i>
+                            <div class="action-btns">
+                                <a href="{{ route('admin.roles.show', $role) }}" class="btn btn-action-view" data-toggle="tooltip" title="Lihat Detail">
+                                    <i class="fas fa-eye"></i>
                                 </a>
-                                <form action="{{ route('admin.roles.destroy', $role) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin hapus role ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-xs">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            @endif
+                                @if(!$role->is_system)
+                                    <a href="{{ route('admin.roles.edit', $role) }}" class="btn btn-action-edit" data-toggle="tooltip" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form action="{{ route('admin.roles.destroy', $role) }}" method="POST" class="d-inline action-form" onsubmit="return confirm('Yakin hapus role ini?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-action-delete" data-toggle="tooltip" title="Hapus">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                     @empty
@@ -103,4 +109,12 @@
             </table>
         </div>
     </div>
+@stop
+
+@section('js')
+<script>
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+</script>
 @stop

@@ -2,6 +2,10 @@
 
 @section('title', 'Alur Pendaftaran')
 
+@section('css')
+@include('admin.partials.action-buttons-style')
+@stop
+
 @section('content_header')
     <div class="d-flex justify-content-between align-items-center">
         <h1><i class="fas fa-list-ol mr-2"></i> Alur Pendaftaran</h1>
@@ -56,22 +60,25 @@
                                 <small class="text-muted">{{ $alur->deskripsi ?: '-' }}</small>
                             </td>
                             <td class="text-center">
-                                @if($alur->is_active)
-                                <span class="badge badge-success">Aktif</span>
-                                @else
-                                <span class="badge badge-secondary">Nonaktif</span>
-                                @endif
+                                <span class="btn btn-status-toggle {{ $alur->is_active ? 'active' : 'inactive' }}" style="cursor: default;">
+                                    <i class="fas fa-{{ $alur->is_active ? 'check' : 'times' }} mr-1"></i>
+                                    {{ $alur->is_active ? 'Aktif' : 'Nonaktif' }}
+                                </span>
                             </td>
                             <td class="text-center">
-                                <button type="button" class="btn btn-sm btn-info" 
-                                        data-toggle="modal" 
-                                        data-target="#editModal{{ $alur->id }}">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-danger" 
-                                        onclick="confirmDelete('{{ $alur->id }}', '{{ $alur->judul }}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                                <div class="action-btns">
+                                    <button type="button" class="btn btn-action-edit" 
+                                            data-toggle="modal" 
+                                            data-target="#editModal{{ $alur->id }}"
+                                            title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-action-delete" 
+                                            onclick="confirmDelete('{{ $alur->id }}', '{{ $alur->judul }}')"
+                                            data-toggle="tooltip" title="Hapus">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         @endforeach
@@ -233,6 +240,10 @@
 
 @section('js')
 <script>
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+
     function confirmDelete(id, judul) {
         if (confirm('Yakin ingin menghapus alur "' + judul + '"?')) {
             const form = document.getElementById('deleteForm');

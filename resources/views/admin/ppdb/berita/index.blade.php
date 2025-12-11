@@ -166,14 +166,14 @@
                                 @endif
                             </td>
                             <td>
-                                <div class="btn-group btn-group-sm">
-                                    <a href="{{ route('admin.settings.berita.edit', $berita) }}" class="btn btn-info" title="Edit">
+                                <div class="action-btns">
+                                    <a href="{{ route('admin.settings.berita.edit', $berita) }}" class="btn btn-action-edit" data-toggle="tooltip" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <form action="{{ route('admin.settings.berita.destroy', $berita) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus berita ini?')">
+                                    <form action="{{ route('admin.settings.berita.destroy', $berita) }}" method="POST" class="d-inline action-form" onsubmit="return confirm('Yakin ingin menghapus berita ini?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-danger" title="Hapus">
+                                        <button type="submit" class="btn btn-action-delete" data-toggle="tooltip" title="Hapus">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
@@ -211,12 +211,18 @@
 @stop
 
 @section('css')
+@include('admin.partials.action-buttons-style')
 <style>
     .table th, .table td {
         vertical-align: middle;
     }
-    .btn-group-sm > .btn {
-        padding: 0.25rem 0.5rem;
-    }
 </style>
+@stop
+
+@section('js')
+<script>
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+</script>
 @stop
