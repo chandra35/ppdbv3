@@ -280,4 +280,126 @@ class JalurPendaftaranController extends Controller
             ->route('admin.jalur.edit', $newJalur)
             ->with('success', "Jalur berhasil diduplikasi untuk tahun pelajaran {$tahunPelajaran->nama}. Silakan sesuaikan pengaturan.");
     }
+
+    // ========================================
+    // GELOMBANG MANAGEMENT
+    // ========================================
+
+    /**
+     * Store a new gelombang for jalur
+     */
+    public function storeGelombang(Request $request, JalurPendaftaran $jalur)
+    {
+        $validated = $request->validate([
+            'nama' => 'required|string|max:100',
+            'deskripsi' => 'nullable|string',
+            'tanggal_buka' => 'required|date',
+            'tanggal_tutup' => 'required|date|after_or_equal:tanggal_buka',
+            'kuota' => 'nullable|integer|min:1',
+            'biaya_pendaftaran' => 'nullable|numeric|min:0',
+            'is_active' => 'boolean',
+        ]);
+
+        $validated['jalur_id'] = $jalur->id;
+        $validated['is_active'] = $request->has('is_active');
+        $validated['status'] = $validated['is_active'] ? GelombangPendaftaran::STATUS_OPEN : GelombangPendaftaran::STATUS_DRAFT;
+        $validated['urutan'] = $jalur->gelombang()->max('urutan') + 1;
+        $validated['prefix_nomor'] = $jalur->prefix_nomor ?? 'REG';
+
+        $gelombang = GelombangPendaftaran::create($validated);
+
+        return redirect()
+            ->route('admin.jalur.show', $jalur)
+            ->with('success', "Gelombang \"{$gelombang->nama}\" berhasil ditambahkan!");
+    }
+
+    /**
+     * Update gelombang
+     */
+    public function updateGelombang(Request $request, JalurPendaftaran $jalur, GelombangPendaftaran $gelombang)
+    {
+        $validated = $request->validate([
+            'nama' => 'required|string|max:100',
+            'deskripsi' => 'nullable|string',
+            'tanggal_buka' => 'required|date',
+            'tanggal_tutup' => 'required|date|after_or_equal:tanggal_buka',
+            'kuota' => 'nullable|integer|min:1',
+            'biaya_pendaftaran' => 'nullable|numeric|min:0',
+            'tampil_nama_gelombang' => 'boolean',
+            'tampil_kuota' => 'boolean',
+        ]);
+
+        $validated['tampil_nama_gelombang'] = $request->has('tampil_nama_gelombang');
+        $validated['tampil_kuota'] = $request->has('tampil_kuota');
+
+        $gelombang->update($validated);
+
+        return redirect()
+            ->route('admin.jalur.show', $jalur)
+            ->with('success', "Gelombang \"{$gelombang->nama}\" berhasil diperbarui!");
+    }
+
+    /**
+     * Delete gelombang
+     */
+    public function destroyGelombang(JalurPendaftaran $jalur, GelombangPendaftaran $gelombang)
+    {
+        if ($gelombang->kuota_terisi > 0) {
+            return redirect()
+                ->route('admin.jalur.show', $jalur)
+                ->with('error', "Tidak dapat menghapus gelombang yang sudah memiliki pendaftar!");
+        }
+
+        $nama = $gelombang->nama;
+        $gelombang->delete();
+
+        return redirect()
+            ->route('admin.jalur.show', $jalur)
+            ->with('success', "Gelombang \"{$nama}\" berhasil dihapus!");
+    }
+
+    /**
+     * Open gelombang (set status to open)
+     */
+    public function bukaGelombang(JalurPendaftaran $jalur, GelombangPendaftaran $gelombang)
+    {
+        $gelombang->update([
+            'status' => GelombangPendaftaran::STATUS_OPEN,
+            'is_active' => true,
+        ]);
+
+        return redirect()
+            ->route('admin.jalur.show', $jalur)
+            ->with('success', "Gelombang \"{$gelombang->nama}\" berhasil dibuka!");
+    }
+
+    /**
+     * Close gelombang (set status to closed)
+     */
+    public function tutupGelombang(JalurPendaftaran $jalur, GelombangPendaftaran $gelombang)
+    {
+        $gelombang->update([
+            'status' => GelombangPendaftaran::STATUS_CLOSED,
+            'is_active' => false,
+        ]);
+
+        return redirect()
+            ->route('admin.jalur.show', $jalur)
+            ->with('success', "Gelombang \"{$gelombang->nama}\" berhasil ditutup!");
+    }
+
+    /**
+     * Finish gelombang (set status to finished)
+     */
+    public function selesaikanGelombang(JalurPendaftaran $jalur, GelombangPendaftaran $gelombang)
+    {
+        $gelombang->update([
+            'status' => GelombangPendaftaran::STATUS_FINISHED,
+            'is_active' => false,
+        ]);
+
+        return redirect()
+            ->route('admin.jalur.show', $jalur)
+            ->with('success', "Gelombang \"{$gelombang->nama}\" telah diselesaikan!");
+    }
 }
