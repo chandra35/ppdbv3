@@ -15,7 +15,11 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::with('roles')->orderBy('created_at', 'desc');
+        $query = User::with('roles')
+            ->whereDoesntHave('roles', function ($q) {
+                $q->where('name', 'pendaftar');
+            })
+            ->orderBy('created_at', 'desc');
 
         // Search
         if ($request->filled('search')) {
@@ -34,14 +38,16 @@ class UserController extends Controller
         }
 
         $users = $query->paginate(20);
-        $roles = Role::orderBy('name')->get();
+        // Exclude pendaftar role from filter options
+        $roles = Role::where('name', '!=', 'pendaftar')->orderBy('name')->get();
 
         return view('admin.users.index', compact('users', 'roles'));
     }
 
     public function create()
     {
-        $roles = Role::orderBy('name')->get();
+        // Exclude pendaftar role from create form
+        $roles = Role::where('name', '!=', 'pendaftar')->orderBy('name')->get();
         return view('admin.users.create', compact('roles'));
     }
 
@@ -84,7 +90,14 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        $roles = Role::orderBy('name')->get();
+        // Prevent editing user with pendaftar role
+        if ($user->roles->contains('name', 'pendaftar')) {
+            return redirect()->route('admin.ppdb.users.index')
+                ->with('error', 'User dengan role Pendaftar tidak dapat diedit di halaman ini. Silakan gunakan menu Pendaftar.');
+        }
+        
+        // Exclude pendaftar role from edit form
+        $roles = Role::where('name', '!=', 'pendaftar')->orderBy('name')->get();
         $user->load('roles');
         return view('admin.users.edit', compact('user', 'roles'));
     }
@@ -127,6 +140,12 @@ class UserController extends Controller
         if ($user->id === auth()->id()) {
             return redirect()->route('admin.ppdb.users.index')
                 ->with('error', 'Tidak dapat menghapus akun sendiri');
+        }
+        
+        // Prevent deleting user with pendaftar role
+        if ($user->roles->contains('name', 'pendaftar')) {
+            return redirect()->route('admin.ppdb.users.index')
+                ->with('error', 'User dengan role Pendaftar tidak dapat dihapus di halaman ini. Silakan gunakan menu Pendaftar.');
         }
 
         $userName = $user->name;

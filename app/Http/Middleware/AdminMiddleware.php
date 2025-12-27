@@ -24,15 +24,16 @@ class AdminMiddleware
                 ->with('warning', 'Silahkan login terlebih dahulu untuk mengakses halaman admin.');
         }
 
-        // Check if user is admin using isAdmin() method
+        // Check if user has admin or operator/verifikator role
         $user = auth()->user();
         
-        if (!$user->isAdmin()) {
+        // Allow: admin, operator, verifikator
+        if (!$user->isAdmin() && !$user->hasAnyRole(['operator', 'verifikator'])) {
             if ($request->expectsJson()) {
                 return response()->json(['error' => 'Forbidden'], 403);
             }
             return redirect()->route('ppdb.dashboard')
-                ->with('error', 'Maaf, Anda tidak memiliki akses ke halaman administrator.');
+                ->with('error', 'Maaf, Anda tidak memiliki akses ke halaman ini.');
         }
 
         return $next($request);

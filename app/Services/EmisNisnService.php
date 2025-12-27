@@ -113,9 +113,10 @@ class EmisNisnService
                 ];
             }
 
-            // No data found from both sources
+            // No data found from both sources, allow manual input
             return [
-                'success' => false,
+                'success' => true,
+                'manual_input' => true,
                 'message' => 'NISN tidak ditemukan dalam database EMIS (Kemdikbud & Kemenag)',
                 'data' => null
             ];

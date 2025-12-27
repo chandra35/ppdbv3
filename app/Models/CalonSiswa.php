@@ -51,19 +51,23 @@ class CalonSiswa extends Model
         'kabupaten_id_siswa',
         'kecamatan_id_siswa',
         'kelurahan_id_siswa',
-        'kode_pos_siswa',
+        'kodepos_siswa',
+        
+        // Transportasi (dari EMIS)
+        'transportasi',
+        'jarak_ke_sekolah',
         
         // Kontak
-        'no_hp',
+        'nomor_hp',
         'email',
         
         // Asal sekolah
-        'npsn_asal',
-        'sekolah_asal',
-        'alamat_sekolah_asal',
+        'npsn_asal_sekolah',
+        'nsm_asal_sekolah',
+        'nama_sekolah_asal',
         
         // Foto
-        'foto',
+        'foto_profile',
         
         // Completion flags
         'data_diri_completed',
@@ -73,6 +77,7 @@ class CalonSiswa extends Model
         // Relations
         'user_id',
         'tahun_pelajaran_id',
+        'tanggal_registrasi',
     ];
 
     protected $casts = [
@@ -167,6 +172,48 @@ class CalonSiswa extends Model
     public function scopeCadangan($query)
     {
         return $query->where('status_admisi', 'cadangan');
+    }
+
+    /**
+     * Check apakah semua dokumen sudah valid
+     */
+    public function allDokumenValid(): bool
+    {
+        $totalDokumen = $this->dokumen()->count();
+        
+        // Jika belum ada dokumen, return false
+        if ($totalDokumen === 0) {
+            return false;
+        }
+        
+        $validDokumen = $this->dokumen()->where('status_verifikasi', 'valid')->count();
+        
+        return $totalDokumen === $validDokumen;
+    }
+
+    /**
+     * Auto-update status verifikasi berdasarkan kelengkapan dokumen
+     */
+    public function autoUpdateStatusVerifikasi(): void
+    {
+        if ($this->allDokumenValid()) {
+            // Semua dokumen valid -> set verified
+            $this->update([
+                'status_verifikasi' => 'verified',
+                'verified_at' => now(),
+                'verified_by' => auth()->id() ?? $this->verified_by,
+            ]);
+        } else {
+            // Ada dokumen yang belum valid -> set pending
+            // Kecuali jika statusnya sudah approved/rejected, jangan ubah
+            if (in_array($this->status_verifikasi, ['pending', 'verified'])) {
+                $this->update([
+                    'status_verifikasi' => 'pending',
+                    'verified_at' => null,
+                    'verified_by' => null,
+                ]);
+            }
+        }
     }
 
     public function scopeByTahun($query, $tahunId)

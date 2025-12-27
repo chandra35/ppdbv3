@@ -4,15 +4,116 @@
 
 @section('css')
 @include('admin.partials.action-buttons-style')
+<style>
+.badge-lg {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+}
+.form-check-input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+.pagination {
+    margin-bottom: 0;
+}
+.page-link {
+    padding: 0.375rem 0.75rem;
+}
+</style>
 @stop
 
 @section('content_header')
-    <div class="d-flex justify-content-between align-items-center">
-        <h1><i class="fas fa-users-cog mr-2"></i>Data GTK dari SIMANSA</h1>
+    <div class="row mb-2">
+        <div class="col-sm-6">
+            <h1 class="m-0">
+                <i class="fas fa-users-cog"></i> Data GTK
+            </h1>
+        </div>
+        <div class="col-sm-6">
+            <div class="float-right">
+                @if($source === 'simansa')
+                    <span class="badge badge-primary badge-lg mr-2">
+                        <i class="fas fa-database"></i> Mode: SIMANSA
+                    </span>
+                @else
+                    <span class="badge badge-secondary badge-lg mr-2">
+                        <i class="fas fa-server"></i> Mode: Local
+                    </span>
+                @endif
+                @if($simansaAvailable)
+                    <form action="{{ route('admin.gtk.sync') }}" method="POST" class="d-inline">
+                        @csrf
+                        <button type="submit" class="btn btn-primary" id="syncBtn">
+                            <i class="fas fa-sync-alt"></i> Sync
+                        </button>
+                    </form>
+                @endif
+                <a href="{{ route('admin.gtk.create') }}" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Tambah Manual
+                </a>
+            </div>
+        </div>
     </div>
 @stop
 
 @section('content')
+
+@if($simansaAvailable && isset($syncStats))
+<div class="card card-info">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-sync-alt"></i> Informasi Sinkronisasi Data GTK
+        </h3>
+        <div class="card-tools">
+            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                <i class="fas fa-minus"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3 col-sm-6 col-12">
+                <div class="info-box bg-gradient-primary">
+                    <span class="info-box-icon"><i class="fas fa-users"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Total GTK</span>
+                        <span class="info-box-number">{{ $syncStats['total'] ?? 0 }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 col-12">
+                <div class="info-box bg-gradient-success">
+                    <span class="info-box-icon"><i class="fas fa-database"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Dari SIMANSA</span>
+                        <span class="info-box-number">{{ $syncStats['synced'] ?? 0 }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 col-12">
+                <div class="info-box bg-gradient-warning">
+                    <span class="info-box-icon"><i class="fas fa-pen"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Input Manual</span>
+                        <span class="info-box-number">{{ $syncStats['manual'] ?? 0 }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 col-12">
+                <div class="info-box bg-gradient-info">
+                    <span class="info-box-icon"><i class="fas fa-clock"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Terakhir Sync</span>
+                        <span class="info-box-number" style="font-size: 0.9rem;">{{ $syncStats['last_sync'] ?? 'Belum Sync' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 <div class="card">
     <div class="card-header">
         <h3 class="card-title">Filter & Cari GTK</h3>
@@ -23,19 +124,20 @@
         </div>
     </div>
     <div class="card-body">
-        <form action="{{ route('admin.gtk.index') }}" method="GET" class="row">
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label for="search">Cari</label>
-                    <input type="text" name="search" id="search" class="form-control" 
-                           placeholder="Nama, NIP, NUPTK, Email..." value="{{ request('search') }}">
+        <form action="{{ route('admin.gtk.index') }}" method="GET">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="search">Cari</label>
+                        <input type="text" name="search" id="search" class="form-control" 
+                               placeholder="Nama, NIP, Email..." value="{{ request('search') }}">
+                    </div>
                 </div>
-            </div>
-            <div class="col-md-3">
+                <div class="col-md-2">
                 <div class="form-group">
                     <label for="kategori_ptk">Kategori PTK</label>
-                    <select name="kategori_ptk" id="kategori_ptk" class="form-control select2">
-                        <option value="">Semua Kategori</option>
+                    <select name="kategori_ptk" id="kategori_ptk" class="form-control">
+                        <option value="">Semua</option>
                         @foreach($kategoriPtks as $kategori)
                             <option value="{{ $kategori }}" {{ request('kategori_ptk') == $kategori ? 'selected' : '' }}>
                                 {{ $kategori }}
@@ -44,29 +146,40 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label for="jenis_ptk">Jenis PTK</label>
-                    <select name="jenis_ptk" id="jenis_ptk" class="form-control select2">
-                        <option value="">Semua Jenis</option>
-                        @foreach($jenisPtks as $jenis)
-                            <option value="{{ $jenis }}" {{ request('jenis_ptk') == $jenis ? 'selected' : '' }}>
-                                {{ $jenis }}
-                            </option>
-                        @endforeach
-                    </select>
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label for="jenis_ptk">Jenis PTK</label>
+                        <select name="jenis_ptk" id="jenis_ptk" class="form-control">
+                            <option value="">Semua</option>
+                            @foreach($jenisPtks as $jenis)
+                                <option value="{{ $jenis }}" {{ request('jenis_ptk') == $jenis ? 'selected' : '' }}>
+                                    {{ $jenis }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
-            </div>
-            <div class="col-md-2">
-                <div class="form-group">
-                    <label>&nbsp;</label>
-                    <div class="d-flex">
-                        <button type="submit" class="btn btn-primary mr-2">
-                            <i class="fas fa-search"></i> Cari
-                        </button>
-                        <a href="{{ route('admin.gtk.index') }}" class="btn btn-secondary">
-                            <i class="fas fa-sync"></i>
-                        </a>
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label for="source">Source</label>
+                        <select name="source" id="source" class="form-control">
+                            <option value="">Semua</option>
+                            <option value="manual" {{ request('source') == 'manual' ? 'selected' : '' }}>Manual</option>
+                            <option value="simansa" {{ request('source') == 'simansa' ? 'selected' : '' }}>SIMANSA</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>&nbsp;</label>
+                        <div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Filter
+                            </button>
+                            <a href="{{ route('admin.gtk.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-redo"></i> Reset
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -127,26 +240,30 @@
 <div class="card">
     <div class="card-header">
         <h3 class="card-title">
-            Daftar GTK 
-            <span class="badge badge-info">{{ $gtks->total() }} data</span>
+            <i class="fas fa-list"></i> Daftar GTK 
+            <span class="badge badge-info ml-2">{{ $gtks->total() }}</span>
         </h3>
     </div>
-    <div class="card-body table-responsive p-0">
-        <table class="table table-hover table-striped">
-            <thead>
-                <tr>
-                    <th width="40">
-                        <input type="checkbox" id="selectAll" class="form-check-input">
-                    </th>
-                    <th>Nama Lengkap</th>
-                    <th>NIP</th>
-                    <th>NUPTK</th>
-                    <th>Email</th>
-                    <th>Jabatan</th>
-                    <th>Status PPDB</th>
-                    <th width="120">Aksi</th>
-                </tr>
-            </thead>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover table-sm mb-0">
+                <thead class="bg-gradient-navy">
+                    <tr>
+                        <th width="50" class="text-center" style="color: white;">
+                            <div class="icheck-primary d-inline">
+                                <input type="checkbox" id="selectAll">
+                                <label for="selectAll"></label>
+                            </div>
+                        </th>
+                        <th style="color: white;">Nama Lengkap</th>
+                        <th width="150" style="color: white;">NIP</th>
+                        <th style="color: white;">Email</th>
+                        <th style="color: white;">Jabatan</th>
+                        <th width="100" class="text-center" style="color: white;">Source</th>
+                        <th width="120" class="text-center" style="color: white;">Status</th>
+                        <th width="160" class="text-center" style="color: white;">Aksi</th>
+                    </tr>
+                </thead>
             <tbody>
                 @forelse($gtks as $gtk)
                     @php
@@ -154,28 +271,48 @@
                         $ppdbUser = $isRegistered ? \App\Models\User::where('email', $gtk->email)->first() : null;
                     @endphp
                     <tr>
-                        <td>
+                        <td class="text-center">
                             @if(!$isRegistered)
-                                <input type="checkbox" class="form-check-input gtk-checkbox" 
-                                       value="{{ $gtk->id }}" data-name="{{ $gtk->nama_lengkap }}">
+                                <div class="icheck-primary d-inline">
+                                    <input type="checkbox" class="gtk-checkbox" id="gtk_{{ $gtk->id }}"
+                                           value="{{ $gtk->id }}" data-name="{{ $gtk->nama_lengkap }}">
+                                    <label for="gtk_{{ $gtk->id }}"></label>
+                                </div>
                             @endif
                         </td>
                         <td>
                             <strong>{{ $gtk->nama_lengkap }}</strong>
                             @if($gtk->jenis_kelamin)
-                                <br><small class="text-muted">{{ $gtk->jenis_kelamin_label }}</small>
+                                <br><small class="text-muted">
+                                    <i class="fas fa-{{ $gtk->jenis_kelamin == 'L' ? 'mars text-primary' : 'venus text-danger' }}"></i>
+                                    {{ $gtk->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan' }}
+                                </small>
                             @endif
                         </td>
-                        <td>{{ $gtk->nip ?? '-' }}</td>
-                        <td>{{ $gtk->nuptk ?? '-' }}</td>
-                        <td>{{ $gtk->email }}</td>
+                        <td>
+                            <code class="text-dark">{{ $gtk->nip ?? '-' }}</code>
+                        </td>
+                        <td>
+                            <small>{{ $gtk->email }}</small>
+                        </td>
                         <td>
                             {{ $gtk->jabatan ?? '-' }}
                             @if($gtk->kategori_ptk)
-                                <br><small class="badge badge-secondary">{{ $gtk->kategori_ptk }}</small>
+                                <br><span class="badge badge-secondary badge-sm">{{ $gtk->kategori_ptk }}</span>
                             @endif
                         </td>
-                        <td>
+                        <td class="text-center">
+                            @if($gtk->source === 'manual')
+                                <span class="badge badge-warning">
+                                    <i class="fas fa-pencil-alt"></i> Manual
+                                </span>
+                            @else
+                                <span class="badge badge-info">
+                                    <i class="fas fa-database"></i> SIMANSA
+                                </span>
+                            @endif
+                        </td>
+                        <td class="text-center">
                             @if($isRegistered)
                                 <span class="badge badge-success">
                                     <i class="fas fa-check"></i> Terdaftar
@@ -183,28 +320,42 @@
                                 @if($ppdbUser && $ppdbUser->roles->count() > 0)
                                     <br>
                                     @foreach($ppdbUser->roles as $role)
-                                        <small class="badge badge-info">{{ $role->display_name }}</small>
+                                        <small class="badge badge-secondary mt-1">{{ $role->display_name }}</small>
                                     @endforeach
                                 @endif
                             @else
                                 <span class="badge badge-secondary">
-                                    <i class="fas fa-times"></i> Belum Terdaftar
+                                    <i class="fas fa-times"></i> Belum
                                 </span>
                             @endif
                         </td>
-                        <td>
-                            <div class="action-btns">
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm" role="group">
                                 <a href="{{ route('admin.gtk.show', $gtk->id) }}" 
-                                   class="btn btn-action-view" data-toggle="tooltip" title="Detail">
+                                   class="btn btn-info" data-toggle="tooltip" title="Detail">
                                     <i class="fas fa-eye"></i>
                                 </a>
+                                
+                                @if($gtk->source === 'manual')
+                                    <a href="{{ route('admin.gtk.edit', $gtk->id) }}" 
+                                       class="btn btn-warning" data-toggle="tooltip" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    <button type="button" class="btn btn-danger" 
+                                            onclick="deleteGtk('{{ $gtk->id }}', '{{ $gtk->nama_lengkap }}')"
+                                            data-toggle="tooltip" title="Hapus">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                @endif
+                                
                                 @if($isRegistered)
-                                    <button type="button" class="btn btn-action-edit" 
+                                    <button type="button" class="btn btn-primary" 
                                             onclick="editRoles('{{ $gtk->id }}')" data-toggle="tooltip" title="Edit Role">
-                                        <i class="fas fa-user-tag"></i>
+                                        <i class="fas fa-user-cog"></i>
                                     </button>
                                 @else
-                                    <button type="button" class="btn btn-action-success" 
+                                    <button type="button" class="btn btn-success" 
                                             onclick="registerGtk('{{ $gtk->id }}')" data-toggle="tooltip" title="Daftarkan">
                                         <i class="fas fa-user-plus"></i>
                                     </button>
@@ -215,17 +366,27 @@
                 @empty
                     <tr>
                         <td colspan="8" class="text-center py-4">
-                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">Tidak ada data GTK ditemukan</p>
+                            <div class="text-muted">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <p>Tidak ada data GTK</p>
+                            </div>
                         </td>
                     </tr>
                 @endforelse
             </tbody>
         </table>
+        </div>
     </div>
     @if($gtks->hasPages())
-        <div class="card-footer">
-            {{ $gtks->appends(request()->query())->links() }}
+        <div class="card-footer clearfix">
+            <div class="float-left">
+                <p class="text-sm text-muted mb-0">
+                    Menampilkan {{ $gtks->firstItem() ?? 0 }} sampai {{ $gtks->lastItem() ?? 0 }} dari {{ $gtks->total() }} data
+                </p>
+            </div>
+            <div class="float-right">
+                {{ $gtks->appends(request()->query())->links('pagination::bootstrap-4') }}
+            </div>
         </div>
     @endif
 </div>
@@ -318,12 +479,102 @@
 </form>
 @stop
 
-@section('css')
+@section('css')\n@include('admin.partials.action-buttons-style')
 <style>
-.form-check-input {
+.badge-lg {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+/* Checkbox Styling */
+.icheck-primary {
+    display: inline-block;
+    position: relative;
+}
+.icheck-primary input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+.icheck-primary label {
+    position: relative;
+    padding-left: 25px;
+    margin-bottom: 0;
+    cursor: pointer;
+}
+.icheck-primary label:before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
     width: 18px;
     height: 18px;
-    cursor: pointer;
+    border: 2px solid #adb5bd;
+    border-radius: 3px;
+    background-color: #fff;
+    transition: all 0.2s;
+}
+.icheck-primary input[type="checkbox"]:checked + label:before {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+.icheck-primary input[type="checkbox"]:checked + label:after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+}
+.icheck-primary input[type="checkbox"]:hover + label:before {
+    border-color: #007bff;
+}
+
+.pagination {
+    margin-bottom: 0;
+}
+.page-link {
+    padding: 0.375rem 0.75rem;
+}
+.card-footer.clearfix {
+    background-color: #f8f9fa;
+}
+
+/* Table Styling - Navy Header */
+.bg-gradient-navy {
+    background: linear-gradient(to bottom, #001f3f 0%, #003366 100%) !important;
+}
+.bg-gradient-navy th {
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    font-size: 0.8rem !important;
+    letter-spacing: 0.5px !important;
+    padding: 0.75rem 0.5rem !important;
+    border-color: #003366 !important;
+}
+.table-bordered thead th {
+    border-bottom: 2px solid #003366 !important;
+}
+.table-bordered td {
+    vertical-align: middle;
+}
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+.badge-sm {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+.btn-group-sm > .btn {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.875rem;
+}
+.table-sm td, .table-sm th {
+    padding: 0.5rem;
 }
 </style>
 @stop
@@ -331,6 +582,50 @@
 @section('js')
 <script>
 let currentGtkId = null;
+
+// Sync button loading state
+$('#syncBtn').closest('form').on('submit', function(e) {
+    const btn = $('#syncBtn');
+    btn.prop('disabled', true);
+    btn.html('<i class="fas fa-spinner fa-spin"></i> Syncing...');
+    
+    // Show loading overlay
+    Swal.fire({
+        title: 'Syncing dari SIMANSA...',
+        html: 'Mohon tunggu, sedang menyinkronkan data GTK',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+});
+
+// Delete GTK function
+function deleteGtk(id, name) {
+    Swal.fire({
+        title: 'Hapus GTK?',
+        html: `Yakin ingin menghapus <strong>${name}</strong>?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Create form and submit
+            const form = $('<form>', {
+                'method': 'POST',
+                'action': `{{ url('admin/gtk') }}/${id}`
+            });
+            form.append('{{ csrf_field() }}');
+            form.append('<input type="hidden" name="_method" value="DELETE">');
+            $('body').append(form);
+            form.submit();
+        }
+    });
+}
 
 // Select All Checkbox
 $('#selectAll').on('change', function() {

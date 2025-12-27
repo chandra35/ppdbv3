@@ -34,6 +34,12 @@
             {{ session('error') }}
         </div>
     @endif
+    
+    <div class="callout callout-info">
+        <h5><i class="icon fas fa-info-circle"></i> Informasi</h5>
+        <p>Halaman ini menampilkan user dengan role <strong>Admin, Operator, dan Verifikator</strong>. 
+        User dengan role <strong>Pendaftar</strong> dapat dikelola di menu <a href="#" class="font-weight-bold">Pendaftar</a>.</p>
+    </div>
 
     <div class="card">
         <div class="card-header">

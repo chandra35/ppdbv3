@@ -37,9 +37,9 @@ return [
     'usermenu_enabled' => true,
     'usermenu_header' => false,
     'usermenu_header_class' => 'bg-primary',
-    'usermenu_image' => false,
+    'usermenu_image' => true,
     'usermenu_desc' => false,
-    'usermenu_profile_url' => false,
+    'usermenu_profile_url' => true,
 
     'layout_topnav' => null,
     'layout_boxed' => null,
@@ -92,7 +92,7 @@ return [
     'register_url' => false,
     'password_reset_url' => false,
     'password_email_url' => false,
-    'profile_url' => false,
+    'profile_url' => 'admin.profile.index',
     'disable_darkmode_routes' => false,
 
     'laravel_asset_bundling' => false,
@@ -103,15 +103,20 @@ return [
         // ============================================
         // MENU UNTUK ADMIN
         // ============================================
-        ['header' => 'MENU ADMIN'],
+        [
+            'header' => 'MENU ADMIN',
+            'can' => 'admin',  // Only for admin role
+        ],
         [
             'text' => 'Dashboard',
             'route' => 'admin.dashboard',
             'icon' => 'fas fa-fw fa-tachometer-alt',
+            'can' => 'admin',
         ],
         [
             'text' => 'Pendaftar',
             'icon' => 'fas fa-fw fa-users',
+            'can' => 'admin',
             'submenu' => [
                 [
                     'text' => 'Semua Pendaftar',
@@ -126,25 +131,32 @@ return [
             ],
         ],
 
-        ['header' => 'SETTINGS'],
+        [
+            'header' => 'SETTINGS',
+            'can' => 'admin',
+        ],
         [
             'text' => 'Pengaturan Sekolah',
             'route' => 'admin.sekolah.index',
             'icon' => 'fas fa-fw fa-school',
+            'can' => 'admin',
         ],
         [
             'text' => 'Jalur Pendaftaran',
             'route' => 'admin.jalur.index',
             'icon' => 'fas fa-fw fa-route',
+            'can' => 'admin',
         ],
         [
             'text' => 'Tahun Pelajaran',
             'route' => 'admin.tahun-pelajaran.index',
             'icon' => 'fas fa-fw fa-calendar-check',
+            'can' => 'admin',
         ],
         [
             'text' => 'Pengaturan PPDB',
             'icon' => 'fas fa-fw fa-cogs',
+            'can' => 'admin',
             'submenu' => [
                 [
                     'text' => 'PPDB Settings',
@@ -179,44 +191,82 @@ return [
             ],
         ],
 
-        ['header' => 'USER & ROLE'],
+        [
+            'header' => 'USER & ROLE',
+            'can' => 'admin',
+        ],
         [
             'text' => 'User Management',
             'route' => 'admin.users.index',
             'icon' => 'fas fa-fw fa-user-cog',
+            'can' => 'admin',
         ],
         [
             'text' => 'Role Management',
             'route' => 'admin.roles.index',
             'icon' => 'fas fa-fw fa-user-tag',
+            'can' => 'admin',
         ],
         [
             'text' => 'GTK (SIMANSA)',
             'route' => 'admin.gtk.index',
             'icon' => 'fas fa-fw fa-users-cog',
+            'can' => 'admin',
         ],
 
-        ['header' => 'SYSTEM'],
+        [
+            'header' => 'SYSTEM',
+            'can' => 'admin',
+        ],
         [
             'text' => 'Activity Log',
             'route' => 'admin.logs.index',
             'icon' => 'fas fa-fw fa-history',
+            'can' => 'admin',
         ],
         [
             'text' => 'Pengaturan',
             'icon' => 'fas fa-fw fa-tools',
+            'can' => 'admin',
             'submenu' => [
                 [
                     'text' => 'EMIS Token',
-                    'route' => 'admin.pengaturan.update-emis-token.index',
+                    'route' => 'admin.update-emis-token.index',
                     'icon' => 'fas fa-fw fa-key',
                 ],
                 [
                     'text' => 'WhatsApp API',
-                    'route' => 'admin.pengaturan.whatsapp.index',
+                    'route' => 'admin.whatsapp.index',
                     'icon' => 'fab fa-fw fa-whatsapp',
                 ],
             ],
+        ],
+
+        // ============================================
+        // MENU UNTUK OPERATOR/VERIFIKATOR
+        // ============================================
+        [
+            'header' => 'MENU OPERATOR',
+            'can' => 'only-operator-or-verifikator',
+        ],
+        [
+            'text' => 'Dashboard',
+            'route' => 'admin.dashboard',
+            'icon' => 'fas fa-fw fa-tachometer-alt',
+            'can' => 'only-operator-or-verifikator',
+        ],
+        [
+            'text' => 'Data Pendaftar',
+            'route' => 'admin.pendaftar.index',
+            'icon' => 'fas fa-fw fa-users',
+            'can' => 'only-operator-or-verifikator',
+        ],
+
+        ['header' => 'AKUN'],
+        [
+            'text' => 'Profil Saya',
+            'route' => 'admin.profile.index',
+            'icon' => 'fas fa-fw fa-user-circle',
         ],
 
         ['header' => ''],

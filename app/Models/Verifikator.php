@@ -14,7 +14,7 @@ class Verifikator extends Model
     protected $table = 'ppdb_verifikators';
 
     protected $fillable = [
-        'gtk_id',
+        'user_id',  // ✅ Changed from gtk_id to user_id
         'ppdb_settings_id',
         'jenis_dokumen_aktif',
         'is_active',
@@ -26,9 +26,9 @@ class Verifikator extends Model
     ];
 
     // Relations
-    public function gtk(): BelongsTo
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(Gtk::class, 'gtk_id');
+        return $this->belongsTo(User::class, 'user_id');  // ✅ Relasi ke User
     }
 
     public function ppdbSettings(): BelongsTo
@@ -47,8 +47,8 @@ class Verifikator extends Model
         return $query->where('is_active', true);
     }
 
-    public function scopeByGtk($query, $gtkId)
+    public function scopeByUser($query, $userId)
     {
-        return $query->where('gtk_id', $gtkId);
+        return $query->where('user_id', $userId);
     }
 }

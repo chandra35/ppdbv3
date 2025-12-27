@@ -230,9 +230,9 @@ class DashboardController extends Controller
             ],
             [
                 'nama_file' => $file->getClientOriginalName(),
-                'path_file' => $path,
+                'file_path' => $path,
                 'mime_type' => $file->getMimeType(),
-                'ukuran_file' => $file->getSize(),
+                'file_size' => $file->getSize(),
                 'status_verifikasi' => 'pending',
             ]
         );
@@ -371,5 +371,67 @@ class DashboardController extends Controller
         $requiredCount = 6;
         $uploadedCount = $calonSiswa->dokumen->count();
         return (int) min(100, ($uploadedCount / $requiredCount) * 100);
+    }
+
+    /**
+     * Show profile page
+     */
+    public function profile()
+    {
+        $user = Auth::user();
+        $calonSiswa = CalonSiswa::where('user_id', $user->id)->first();
+        
+        return view('pendaftar.dashboard.profile', compact('calonSiswa'));
+    }
+
+    /**
+     * Update profile
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = Auth::user();
+        
+        $request->validate([
+            'name' => 'required|string|max:100',
+            'email' => 'nullable|email|unique:users,email,' . $user->id,
+        ]);
+        
+        $user->update([
+            'name' => $request->name,
+            'email' => $request->email,
+        ]);
+        
+        return back()->with('success', 'Profil berhasil diperbarui');
+    }
+
+    /**
+     * Show password page
+     */
+    public function password()
+    {
+        return view('pendaftar.dashboard.password');
+    }
+
+    /**
+     * Update password
+     */
+    public function updatePassword(Request $request)
+    {
+        $user = Auth::user();
+        
+        $request->validate([
+            'current_password' => 'required',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+        
+        if (!\Hash::check($request->current_password, $user->password)) {
+            return back()->with('error', 'Password lama tidak sesuai');
+        }
+        
+        $user->update([
+            'password' => \Hash::make($request->password),
+        ]);
+        
+        return back()->with('success', 'Password berhasil diubah');
     }
 }

@@ -198,7 +198,7 @@ $(document).ready(function() {
         $('#btnSubmit').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
 
         $.ajax({
-            url: '{{ route("admin.pengaturan.update-emis-token.update") }}',
+            url: '{{ route("admin.update-emis-token.update") }}',
             method: 'POST',
             data: {
                 _token: '{{ csrf_token() }}',

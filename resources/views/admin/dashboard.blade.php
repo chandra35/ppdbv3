@@ -64,32 +64,33 @@
             <div class="info-box">
                 <span class="info-box-icon bg-success elevation-1"><i class="fas fa-user-check"></i></span>
                 <div class="info-box-content">
-                    <span class="info-box-text">Diterima</span>
-                    <span class="info-box-number">{{ number_format($stats['diterima']) }}</span>
+                    <span class="info-box-text">Terverifikasi</span>
+                    <span class="info-box-number">{{ number_format($stats['terverifikasi']) }}</span>
                 </div>
             </div>
         </div>
         <div class="col-12 col-sm-6 col-md-3">
             <div class="info-box">
-                <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-user-times"></i></span>
+                <span class="info-box-icon bg-success elevation-1"><i class="fas fa-user-check"></i></span>
                 <div class="info-box-content">
-                    <span class="info-box-text">Ditolak</span>
-                    <span class="info-box-number">{{ number_format($stats['ditolak']) }}</span>
+                    <span class="info-box-text">Diterima</span>
+                    <span class="info-box-number">{{ number_format($stats['diterima']) }}</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Second row of info boxes -->
+    @if($isAdmin)
+    <!-- Second row of info boxes - ADMIN ONLY -->
     <div class="row">
         <div class="col-12 col-sm-6 col-md-3">
-            <div class="small-box bg-primary">
+            <div class="small-box bg-danger">
                 <div class="inner">
-                    <h3>{{ $stats['terverifikasi'] }}</h3>
-                    <p>Terverifikasi</p>
+                    <h3>{{ $stats['ditolak'] }}</h3>
+                    <p>Ditolak</p>
                 </div>
                 <div class="icon">
-                    <i class="fas fa-clipboard-check"></i>
+                    <i class="fas fa-user-times"></i>
                 </div>
                 <a href="{{ route('admin.pendaftar.index') }}" class="small-box-footer">
                     Lihat Detail <i class="fas fa-arrow-circle-right"></i>
@@ -139,6 +140,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <div class="row">
         <!-- Chart -->
@@ -221,9 +223,10 @@
                         <div class="col-md-2 col-sm-4 col-6 mb-2">
                             <a href="{{ route('admin.pendaftar.index') }}" class="btn btn-outline-primary btn-block">
                                 <i class="fas fa-users"></i><br>
-                                <small>Pendaftar</small>
+                                <small>Lihat Pendaftar</small>
                             </a>
                         </div>
+                        @if($isAdmin)
                         <div class="col-md-2 col-sm-4 col-6 mb-2">
                             <a href="{{ route('admin.settings.berita.create') }}" class="btn btn-outline-success btn-block">
                                 <i class="fas fa-plus-circle"></i><br>
@@ -254,14 +257,15 @@
                                 <small>Activity Log</small>
                             </a>
                         </div>
+                        @endif
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Recent Activity -->
-    @if(count($recentLogs) > 0)
+    <!-- Recent Activity - ADMIN ONLY -->
+    @if($isAdmin && count($recentLogs) > 0)
     <div class="row">
         <div class="col-12">
             <div class="card">

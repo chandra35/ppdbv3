@@ -299,14 +299,6 @@
             <h4><i class="fas fa-clipboard-list"></i> DATA PENDAFTARAN</h4>
             <table class="info-table">
                 <tr>
-                    <td>Jalur Pendaftaran</td>
-                    <td>{{ $calonSiswa->jalurPendaftaran->nama ?? '-' }}</td>
-                </tr>
-                <tr>
-                    <td>Gelombang</td>
-                    <td>{{ $calonSiswa->gelombangPendaftaran->nama ?? '-' }}</td>
-                </tr>
-                <tr>
                     <td>Tanggal Pendaftaran</td>
                     <td>{{ $calonSiswa->created_at->format('d F Y, H:i') }} WIB</td>
                 </tr>

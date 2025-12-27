@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\TahunPelajaranController;
 use App\Http\Controllers\Admin\AlurPendaftaranController;
 use App\Http\Controllers\Admin\EmisTokenController;
 use App\Http\Controllers\Admin\PengaturanWaController;
+use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Operator\DashboardController as OperatorDashboardController;
 use App\Http\Controllers\Operator\PendaftarController as OperatorPendaftarController;
 use App\Http\Controllers\Pendaftar\AuthController as PendaftarAuthController;
@@ -77,6 +78,12 @@ Route::middleware(['auth'])->prefix('pendaftar')->name('pendaftar.')->group(func
     Route::post('/dokumen', [PendaftarDashboardController::class, 'uploadDokumen'])->name('dokumen.upload');
     Route::delete('/dokumen/{id}', [PendaftarDashboardController::class, 'deleteDokumen'])->name('dokumen.delete');
     
+    // Profile & Password
+    Route::get('/profile', [PendaftarDashboardController::class, 'profile'])->name('profile');
+    Route::put('/profile', [PendaftarDashboardController::class, 'updateProfile'])->name('profile.update');
+    Route::get('/password', [PendaftarDashboardController::class, 'password'])->name('password');
+    Route::put('/password', [PendaftarDashboardController::class, 'updatePassword'])->name('password.update');
+    
     // Status & Cetak
     Route::get('/status', [PendaftarDashboardController::class, 'status'])->name('status');
     Route::get('/cetak-bukti', [PendaftarDashboardController::class, 'cetakBukti'])->name('cetak-bukti');
@@ -120,166 +127,194 @@ Route::middleware('auth')->group(function () {
 });
 
 // ============================================
-// OPERATOR ROUTES (untuk role operator/verifikator)
+// OPERATOR ROUTES - Redirect to Admin
+// (Backward compatibility - sekarang unified di /admin)
 // ============================================
-Route::middleware(['auth', 'operator'])->prefix('operator')->name('operator.')->group(function () {
-    // Dashboard Operator
-    Route::get('/', [OperatorDashboardController::class, 'index'])->name('dashboard');
-
-    // Pendaftar Management
-    Route::get('/pendaftar', [OperatorPendaftarController::class, 'index'])->name('pendaftar.index');
-    Route::get('/pendaftar/{id}', [OperatorPendaftarController::class, 'show'])->name('pendaftar.show');
-    Route::post('/pendaftar/{id}/verify', [OperatorPendaftarController::class, 'verify'])->name('pendaftar.verify');
-    Route::post('/pendaftar/{id}/reject', [OperatorPendaftarController::class, 'reject'])->name('pendaftar.reject');
-
-    // Verifikasi Dokumen
-    Route::get('/verifikasi-dokumen', [OperatorPendaftarController::class, 'verifikasiDokumen'])->name('verifikasi-dokumen.index');
-    Route::get('/verifikasi-dokumen/{id}', [OperatorPendaftarController::class, 'verifikasiDokumenDetail'])->name('verifikasi-dokumen.show');
-    Route::post('/verifikasi-dokumen/{id}', [OperatorPendaftarController::class, 'updateVerifikasiDokumen'])->name('verifikasi-dokumen.update');
+Route::middleware(['auth'])->prefix('operator')->name('operator.')->group(function () {
+    // Redirect semua route operator ke admin
+    Route::get('/', fn() => redirect()->route('admin.dashboard'))->name('dashboard');
+    Route::get('/pendaftar', fn() => redirect()->route('admin.pendaftar.index'))->name('pendaftar.index');
+    Route::get('/pendaftar/{id}', fn($id) => redirect()->route('admin.pendaftar.show', $id))->name('pendaftar.show');
+    Route::get('/verifikasi-dokumen', fn() => redirect()->route('admin.pendaftar.index'))->name('verifikasi-dokumen.index');
 });
 
 // ============================================
-// ADMIN ROUTES (untuk role admin)
+// ADMIN ROUTES (untuk role admin + operator + verifikator)
 // ============================================
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    // Dashboard Admin
+    // Dashboard - Accessible by all (admin, operator, verifikator)
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
-    // ---- PENGATURAN SEKOLAH ----
-    Route::prefix('sekolah')->name('sekolah.')->group(function () {
-        Route::get('/', [SekolahSettingsController::class, 'index'])->name('index');
-        Route::post('/', [SekolahSettingsController::class, 'update'])->name('update');
-        // Laravolt Indonesia API untuk cascade dropdown
-        Route::get('/cities', [SekolahSettingsController::class, 'getCities'])->name('cities');
-        Route::get('/districts', [SekolahSettingsController::class, 'getDistricts'])->name('districts');
-        Route::get('/villages', [SekolahSettingsController::class, 'getVillages'])->name('villages');
-    });
+    // ============================================
+    // SHARED ROUTES - Accessible by operator/verifikator
+    // ============================================
+    
+    // ---- PROFILE (Shared access) ----
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+    Route::put('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.updateProfile');
+    Route::put('/profile/photo', [ProfileController::class, 'updatePhoto'])->name('profile.updatePhoto');
+    Route::delete('/profile/photo', [ProfileController::class, 'deletePhoto'])->name('profile.deletePhoto');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.updatePassword');
+    
+    // ---- PENDAFTAR (Shared access) ----
+    Route::get('/pendaftar', [PendaftarController::class, 'index'])->name('pendaftar.index');
+    Route::get('/pendaftar/{id}', [PendaftarController::class, 'show'])->name('pendaftar.show');
+    Route::get('/pendaftar/{id}/edit', [PendaftarController::class, 'edit'])->name('pendaftar.edit');
+    Route::put('/pendaftar/{id}', [PendaftarController::class, 'update'])->name('pendaftar.update');
+    Route::post('/pendaftar/{id}/reset-password', [PendaftarController::class, 'resetPassword'])->name('pendaftar.reset-password');
+    Route::get('/pendaftar/{id}/show-password', [PendaftarController::class, 'showPassword'])->name('pendaftar.show-password');
+    Route::get('/pendaftar/{id}/dokumen-list', [PendaftarController::class, 'getDokumenList'])->name('pendaftar.dokumen-list');
+    Route::post('/pendaftar/{id}/verify', [PendaftarController::class, 'verify'])->name('pendaftar.verify');
+    Route::post('/pendaftar/{id}/reject', [PendaftarController::class, 'reject'])->name('pendaftar.reject');
+    Route::post('/pendaftar/{id}/approve', [PendaftarController::class, 'approve'])->name('pendaftar.approve');
+    
+    // Verifikasi Dokumen Pendaftar (Shared access)
+    Route::post('/pendaftar/dokumen/{id}/approve', [PendaftarController::class, 'approveDokumen'])->name('pendaftar.dokumen.approve');
+    Route::post('/pendaftar/dokumen/{id}/reject', [PendaftarController::class, 'rejectDokumen'])->name('pendaftar.dokumen.reject');
+    Route::post('/pendaftar/dokumen/{id}/revisi', [PendaftarController::class, 'revisiDokumen'])->name('pendaftar.dokumen.revisi');
+    Route::post('/pendaftar/dokumen/{id}/cancel', [PendaftarController::class, 'cancelVerifikasi'])->name('pendaftar.dokumen.cancel');
+    Route::post('/pendaftar/dokumen/{id}/cancel-revisi', [PendaftarController::class, 'cancelRevisi'])->name('pendaftar.dokumen.cancel-revisi');
 
-    // ---- TAHUN PELAJARAN ----
-    Route::prefix('tahun-pelajaran')->name('tahun-pelajaran.')->group(function () {
-        Route::get('/', [TahunPelajaranController::class, 'index'])->name('index');
-        Route::get('/create', [TahunPelajaranController::class, 'create'])->name('create');
-        Route::post('/', [TahunPelajaranController::class, 'store'])->name('store');
-        Route::get('/{tahunPelajaran}/edit', [TahunPelajaranController::class, 'edit'])->name('edit');
-        Route::put('/{tahunPelajaran}', [TahunPelajaranController::class, 'update'])->name('update');
-        Route::delete('/{tahunPelajaran}', [TahunPelajaranController::class, 'destroy'])->name('destroy');
-        Route::post('/{tahunPelajaran}/aktifkan', [TahunPelajaranController::class, 'aktifkan'])->name('aktifkan');
-    });
+    // ============================================
+    // ADMIN-ONLY ROUTES - Only accessible by admin
+    // ============================================
+    Route::middleware('can:admin')->group(function () {
+        
+        // ---- PENGATURAN SEKOLAH ----
+        Route::prefix('sekolah')->name('sekolah.')->group(function () {
+            Route::get('/', [SekolahSettingsController::class, 'index'])->name('index');
+            Route::post('/', [SekolahSettingsController::class, 'update'])->name('update');
+            // Laravolt Indonesia API untuk cascade dropdown
+            Route::get('/cities', [SekolahSettingsController::class, 'getCities'])->name('cities');
+            Route::get('/districts', [SekolahSettingsController::class, 'getDistricts'])->name('districts');
+            Route::get('/villages', [SekolahSettingsController::class, 'getVillages'])->name('villages');
+        });
 
-    // ---- SETTINGS GROUP ----
-    Route::prefix('settings')->name('settings.')->group(function () {
-        // PPDB Settings
-        Route::get('/', [SettingsController::class, 'index'])->name('index');
-        Route::post('/', [SettingsController::class, 'update'])->name('update');
+        // ---- TAHUN PELAJARAN ----
+        Route::prefix('tahun-pelajaran')->name('tahun-pelajaran.')->group(function () {
+            Route::get('/', [TahunPelajaranController::class, 'index'])->name('index');
+            Route::get('/create', [TahunPelajaranController::class, 'create'])->name('create');
+            Route::post('/', [TahunPelajaranController::class, 'store'])->name('store');
+            Route::get('/{tahunPelajaran}/edit', [TahunPelajaranController::class, 'edit'])->name('edit');
+            Route::put('/{tahunPelajaran}', [TahunPelajaranController::class, 'update'])->name('update');
+            Route::delete('/{tahunPelajaran}', [TahunPelajaranController::class, 'destroy'])->name('destroy');
+            Route::post('/{tahunPelajaran}/aktifkan', [TahunPelajaranController::class, 'aktifkan'])->name('aktifkan');
+        });
 
-        // Site Settings (Frontend Configuration) 
-        Route::get('/halaman', [SiteSettingsController::class, 'index'])->name('halaman.index');
-        Route::post('/halaman/general', [SiteSettingsController::class, 'updateGeneral'])->name('halaman.update.general');
-        Route::post('/halaman/social', [SiteSettingsController::class, 'updateSocial'])->name('halaman.update.social');
-        Route::post('/halaman/landing', [SiteSettingsController::class, 'updateLanding'])->name('halaman.update.landing');
-        Route::post('/halaman/seo', [SiteSettingsController::class, 'updateSeo'])->name('halaman.update.seo');
-        Route::post('/halaman/theme', [SiteSettingsController::class, 'updateTheme'])->name('halaman.update.theme');
-        Route::post('/halaman/maps', [SiteSettingsController::class, 'updateMaps'])->name('halaman.update.maps');
-        Route::post('/halaman/verify-facebook', [SiteSettingsController::class, 'verifyFacebookToken'])->name('halaman.verify-facebook');
+        // ---- SETTINGS GROUP ----
+        Route::prefix('settings')->name('settings.')->group(function () {
+            // PPDB Settings
+            Route::get('/', [SettingsController::class, 'index'])->name('index');
+            Route::post('/', [SettingsController::class, 'update'])->name('update');
 
-        // Berita
-        Route::resource('berita', BeritaController::class);
-        Route::post('/berita/{berita}/share-facebook', [BeritaController::class, 'shareToFacebook'])->name('berita.share-facebook');
-        Route::post('/berita/{berita}/toggle-featured', [BeritaController::class, 'toggleFeatured'])->name('berita.toggle-featured');
+            // Site Settings (Frontend Configuration) 
+            Route::get('/halaman', [SiteSettingsController::class, 'index'])->name('halaman.index');
+            Route::post('/halaman/general', [SiteSettingsController::class, 'updateGeneral'])->name('halaman.update.general');
+            Route::post('/halaman/social', [SiteSettingsController::class, 'updateSocial'])->name('halaman.update.social');
+            Route::post('/halaman/landing', [SiteSettingsController::class, 'updateLanding'])->name('halaman.update.landing');
+            Route::post('/halaman/seo', [SiteSettingsController::class, 'updateSeo'])->name('halaman.update.seo');
+            Route::post('/halaman/theme', [SiteSettingsController::class, 'updateTheme'])->name('halaman.update.theme');
+            Route::post('/halaman/maps', [SiteSettingsController::class, 'updateMaps'])->name('halaman.update.maps');
+            Route::post('/halaman/verify-facebook', [SiteSettingsController::class, 'verifyFacebookToken'])->name('halaman.verify-facebook');
 
-        // Slider
-        Route::resource('slider', SliderController::class);
-        Route::post('/slider/{slider}/toggle-status', [SliderController::class, 'toggleStatus'])->name('slider.toggle-status');
+            // Berita
+            Route::resource('berita', BeritaController::class);
+            Route::post('/berita/{berita}/share-facebook', [BeritaController::class, 'shareToFacebook'])->name('berita.share-facebook');
+            Route::post('/berita/{berita}/toggle-featured', [BeritaController::class, 'toggleFeatured'])->name('berita.toggle-featured');
 
-        // Jadwal PPDB
-        Route::resource('jadwal', JadwalController::class);
-        Route::post('/jadwal/{jadwal}/toggle-status', [JadwalController::class, 'toggleStatus'])->name('jadwal.toggle-status');
+            // Slider
+            Route::resource('slider', SliderController::class);
+            Route::post('/slider/{slider}/toggle-status', [SliderController::class, 'toggleStatus'])->name('slider.toggle-status');
 
-        // Alur Pendaftaran
-        Route::prefix('alur-pendaftaran')->name('alur-pendaftaran.')->group(function () {
-            Route::get('/', [AlurPendaftaranController::class, 'index'])->name('index');
-            Route::post('/', [AlurPendaftaranController::class, 'store'])->name('store');
+            // Jadwal PPDB
+            Route::resource('jadwal', JadwalController::class);
+            Route::post('/jadwal/{jadwal}/toggle-status', [JadwalController::class, 'toggleStatus'])->name('jadwal.toggle-status');
+
+            // Alur Pendaftaran
+            Route::prefix('alur-pendaftaran')->name('alur-pendaftaran.')->group(function () {
+                Route::get('/', [AlurPendaftaranController::class, 'index'])->name('index');
+                Route::post('/', [AlurPendaftaranController::class, 'store'])->name('store');
             Route::put('/{alurPendaftaran}', [AlurPendaftaranController::class, 'update'])->name('update');
             Route::delete('/{alurPendaftaran}', [AlurPendaftaranController::class, 'destroy'])->name('destroy');
             Route::post('/update-order', [AlurPendaftaranController::class, 'updateOrder'])->name('update-order');
         });
     });
 
-    // ---- JALUR PENDAFTARAN ----
-    Route::prefix('jalur')->name('jalur.')->group(function () {
-        // CRUD Jalur
-        Route::get('/', [JalurPendaftaranController::class, 'index'])->name('index');
-        Route::get('/create', [JalurPendaftaranController::class, 'create'])->name('create');
-        Route::post('/', [JalurPendaftaranController::class, 'store'])->name('store');
-        Route::get('/{jalur}', [JalurPendaftaranController::class, 'show'])->name('show');
-        Route::get('/{jalur}/edit', [JalurPendaftaranController::class, 'edit'])->name('edit');
-        Route::put('/{jalur}', [JalurPendaftaranController::class, 'update'])->name('update');
-        Route::delete('/{jalur}', [JalurPendaftaranController::class, 'destroy'])->name('destroy');
-        Route::post('/{jalur}/duplicate', [JalurPendaftaranController::class, 'duplicate'])->name('duplicate');
-        
-        // Jalur Status Actions
-        Route::post('/{jalur}/aktifkan', [JalurPendaftaranController::class, 'aktifkanJalur'])->name('aktifkan');
-        Route::post('/{jalur}/tutup', [JalurPendaftaranController::class, 'tutupJalur'])->name('tutup');
-        Route::post('/{jalur}/selesaikan', [JalurPendaftaranController::class, 'selesaikanJalur'])->name('selesaikan');
-        Route::post('/{jalur}/toggle-status', [JalurPendaftaranController::class, 'toggleStatus'])->name('toggle-status');
-        
-        // Gelombang Management (nested) - Optional sub-periods
-        Route::post('/{jalur}/gelombang', [JalurPendaftaranController::class, 'storeGelombang'])->name('gelombang.store');
-        Route::put('/{jalur}/gelombang/{gelombang}', [JalurPendaftaranController::class, 'updateGelombang'])->name('gelombang.update');
-        Route::delete('/{jalur}/gelombang/{gelombang}', [JalurPendaftaranController::class, 'destroyGelombang'])->name('gelombang.destroy');
-        
-        // Gelombang Actions
-        Route::post('/{jalur}/gelombang/{gelombang}/buka', [JalurPendaftaranController::class, 'bukaGelombang'])->name('gelombang.buka');
-        Route::post('/{jalur}/gelombang/{gelombang}/tutup', [JalurPendaftaranController::class, 'tutupGelombang'])->name('gelombang.tutup');
-        Route::post('/{jalur}/gelombang/{gelombang}/selesaikan', [JalurPendaftaranController::class, 'selesaikanGelombang'])->name('gelombang.selesaikan');
-    });
+        // ---- JALUR PENDAFTARAN ----
+        Route::prefix('jalur')->name('jalur.')->group(function () {
+            // CRUD Jalur
+            Route::get('/', [JalurPendaftaranController::class, 'index'])->name('index');
+            Route::get('/create', [JalurPendaftaranController::class, 'create'])->name('create');
+            Route::post('/', [JalurPendaftaranController::class, 'store'])->name('store');
+            Route::get('/{jalur}', [JalurPendaftaranController::class, 'show'])->name('show');
+            Route::get('/{jalur}/edit', [JalurPendaftaranController::class, 'edit'])->name('edit');
+            Route::put('/{jalur}', [JalurPendaftaranController::class, 'update'])->name('update');
+            Route::delete('/{jalur}', [JalurPendaftaranController::class, 'destroy'])->name('destroy');
+            Route::post('/{jalur}/duplicate', [JalurPendaftaranController::class, 'duplicate'])->name('duplicate');
+            
+            // Jalur Status Actions
+            Route::post('/{jalur}/aktifkan', [JalurPendaftaranController::class, 'aktifkanJalur'])->name('aktifkan');
+            Route::post('/{jalur}/tutup', [JalurPendaftaranController::class, 'tutupJalur'])->name('tutup');
+            Route::post('/{jalur}/selesaikan', [JalurPendaftaranController::class, 'selesaikanJalur'])->name('selesaikan');
+            Route::post('/{jalur}/toggle-status', [JalurPendaftaranController::class, 'toggleStatus'])->name('toggle-status');
+            
+            // Gelombang Management (nested) - Optional sub-periods
+            Route::post('/{jalur}/gelombang', [JalurPendaftaranController::class, 'storeGelombang'])->name('gelombang.store');
+            Route::put('/{jalur}/gelombang/{gelombang}', [JalurPendaftaranController::class, 'updateGelombang'])->name('gelombang.update');
+            Route::delete('/{jalur}/gelombang/{gelombang}', [JalurPendaftaranController::class, 'destroyGelombang'])->name('gelombang.destroy');
+            
+            // Gelombang Actions
+            Route::post('/{jalur}/gelombang/{gelombang}/buka', [JalurPendaftaranController::class, 'bukaGelombang'])->name('gelombang.buka');
+            Route::post('/{jalur}/gelombang/{gelombang}/tutup', [JalurPendaftaranController::class, 'tutupGelombang'])->name('gelombang.tutup');
+            Route::post('/{jalur}/gelombang/{gelombang}/selesaikan', [JalurPendaftaranController::class, 'selesaikanGelombang'])->name('gelombang.selesaikan');
+        });
 
-    // ---- PENDAFTAR (Admin view - bisa approve/reject final) ----
-    Route::get('/pendaftar', [PendaftarController::class, 'index'])->name('pendaftar.index');
-    Route::get('/pendaftar/{id}', [PendaftarController::class, 'show'])->name('pendaftar.show');
-    Route::post('/pendaftar/{id}/verify', [PendaftarController::class, 'verify'])->name('pendaftar.verify');
-    Route::post('/pendaftar/{id}/reject', [PendaftarController::class, 'reject'])->name('pendaftar.reject');
-    Route::post('/pendaftar/{id}/approve', [PendaftarController::class, 'approve'])->name('pendaftar.approve');
+        // ---- VERIFIKATOR MANAGEMENT ----
+        Route::prefix('verifikator')->name('verifikator.')->group(function () {
+            Route::get('/', [VerifikatorController::class, 'index'])->name('index');
+            Route::post('/assign', [VerifikatorController::class, 'assign'])->name('assign');
+            Route::put('/{verifikator}/toggle-status', [VerifikatorController::class, 'toggleStatus'])->name('toggle-status');
+            Route::delete('/{verifikator}', [VerifikatorController::class, 'delete'])->name('delete');
+        });
 
-    // Verifikator
-    Route::get('/verifikator', [VerifikatorController::class, 'index'])->name('verifikator.index');
-    Route::post('/verifikator', [VerifikatorController::class, 'assign'])->name('verifikator.assign');
-    Route::delete('/verifikator/{id}', [VerifikatorController::class, 'delete'])->name('verifikator.delete');
+        // ---- USER MANAGEMENT ----
+        Route::resource('users', UserController::class);
 
-    // User Management
-    Route::resource('users', UserController::class);
+        // ---- ROLE & PERMISSION ----
+        Route::resource('roles', RoleController::class);
+        Route::post('/roles/{role}/permissions', [RoleController::class, 'updatePermissions'])->name('roles.permissions.update');
 
-    // Role Management
-    Route::resource('roles', RoleController::class);
-    Route::post('/roles/{role}/permissions', [RoleController::class, 'updatePermissions'])->name('roles.permissions');
+        // ---- GTK MANAGEMENT ----
+        Route::prefix('gtk')->name('gtk.')->group(function () {
+            Route::get('/', [GtkController::class, 'index'])->name('index');
+            Route::get('/create', [GtkController::class, 'create'])->name('create');
+            Route::post('/', [GtkController::class, 'store'])->name('store');
+            Route::get('/{id}', [GtkController::class, 'show'])->name('show');
+            Route::get('/{id}/edit', [GtkController::class, 'edit'])->name('edit');
+            Route::put('/{id}', [GtkController::class, 'update'])->name('update');
+            Route::delete('/{id}', [GtkController::class, 'destroy'])->name('destroy');
+            Route::post('/sync', [GtkController::class, 'syncFromSimansa'])->name('sync');
+            Route::post('/{id}/register', [GtkController::class, 'registerAsUser'])->name('register');
+            Route::put('/{id}/update-roles', [GtkController::class, 'updateRoles'])->name('update-roles');
+            Route::delete('/{id}/remove', [GtkController::class, 'removeUser'])->name('remove');
+            Route::post('/bulk-register', [GtkController::class, 'bulkRegister'])->name('bulk-register');
+        });
 
-    // Activity Logs
-    Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
-    Route::get('/logs/{id}', [ActivityLogController::class, 'show'])->name('logs.show');
-    Route::delete('/logs/clear', [ActivityLogController::class, 'clear'])->name('logs.clear');
+        // ---- ACTIVITY LOGS ----
+        Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
 
-    // GTK Management (from SIMANSA)
-    Route::get('/gtk', [GtkController::class, 'index'])->name('gtk.index');
-    Route::get('/gtk/{id}', [GtkController::class, 'show'])->name('gtk.show');
-    Route::post('/gtk/{id}/register', [GtkController::class, 'registerAsUser'])->name('gtk.register');
-    Route::put('/gtk/{id}/update-roles', [GtkController::class, 'updateRoles'])->name('gtk.update-roles');
-    Route::delete('/gtk/{id}/remove', [GtkController::class, 'removeUser'])->name('gtk.remove');
-    Route::post('/gtk/bulk-register', [GtkController::class, 'bulkRegister'])->name('gtk.bulk-register');
-
-    // ---- PENGATURAN ----
-    Route::prefix('pengaturan')->name('pengaturan.')->group(function () {
-        // EMIS Token
+        // ---- EMIS TOKEN MANAGEMENT ----
         Route::get('/update-emis-token', [EmisTokenController::class, 'index'])->name('update-emis-token.index');
         Route::post('/update-emis-token', [EmisTokenController::class, 'update'])->name('update-emis-token.update');
         
-        // WhatsApp API Settings
+        // ---- WhatsApp API Settings ----
         Route::get('/whatsapp', [PengaturanWaController::class, 'index'])->name('whatsapp.index');
         Route::put('/whatsapp', [PengaturanWaController::class, 'update'])->name('whatsapp.update');
         Route::post('/whatsapp/test-connection', [PengaturanWaController::class, 'testConnection'])->name('whatsapp.test-connection');
         Route::post('/whatsapp/send-test', [PengaturanWaController::class, 'sendTest'])->name('whatsapp.send-test');
         Route::get('/whatsapp/reset-templates', [PengaturanWaController::class, 'resetTemplates'])->name('whatsapp.reset-templates');
-    });
-});
+    }); // End of can:admin middleware group
+}); // End of admin routes group
 
 // ============================================
 // BACKWARD COMPATIBILITY - Redirect old routes

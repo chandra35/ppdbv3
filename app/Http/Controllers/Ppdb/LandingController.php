@@ -109,14 +109,9 @@ class LandingController extends Controller
      */
     protected function redirectBasedOnRole($user)
     {
-        // Admin
-        if ($user->isAdmin()) {
+        // Admin, Operator, Verifikator → semua ke admin.dashboard
+        if ($user->isAdmin() || $user->hasAnyRole(['operator', 'verifikator'])) {
             return redirect()->route('admin.dashboard');
-        }
-        
-        // Operator/Verifikator
-        if ($user->hasAnyRole(['operator', 'verifikator'])) {
-            return redirect()->route('operator.dashboard');
         }
         
         // Calon Siswa / User biasa
@@ -126,28 +121,68 @@ class LandingController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email' => 'required|email',
+            'login' => 'required|string',
             'password' => 'required|min:1',
         ], [
-            'email.required' => 'Email wajib diisi',
-            'email.email' => 'Format email tidak valid',
+            'login.required' => 'Email/Username/NISN/NIP/NIK wajib diisi',
             'password.required' => 'Password wajib diisi',
         ]);
 
-        // Check if user exists
-        $user = User::where('email', $credentials['email'])->first();
+        $loginField = $credentials['login'];
+        $password = $credentials['password'];
+        
+        // Determine login type and find user
+        $user = null;
+        
+        // 1. Check if it's an email
+        if (filter_var($loginField, FILTER_VALIDATE_EMAIL)) {
+            $user = User::where('email', $loginField)->first();
+        }
+        // 2. Check if it's numeric (could be NISN, NIP, NIK, or numeric username)
+        elseif (is_numeric($loginField)) {
+            // Try to find GTK by NIP
+            $gtk = \App\Models\LocalGtk::where('nip', $loginField)->first();
+            if ($gtk && $gtk->email) {
+                $user = User::where('email', $gtk->email)->first();
+            }
+            
+            // If not found, try GTK by NIK
+            if (!$user) {
+                $gtk = \App\Models\LocalGtk::where('nik', $loginField)->first();
+                if ($gtk && $gtk->email) {
+                    $user = User::where('email', $gtk->email)->first();
+                }
+            }
+            
+            // If not found, try CalonSiswa by NISN
+            if (!$user) {
+                $calonSiswa = \App\Models\CalonSiswa::where('nisn', $loginField)->first();
+                if ($calonSiswa && $calonSiswa->user_id) {
+                    $user = User::find($calonSiswa->user_id);
+                }
+            }
+            
+            // If still not found, try username (for numeric usernames like NIP/NIK)
+            if (!$user) {
+                $user = User::where('username', $loginField)->first();
+            }
+        }
+        // 3. Otherwise, try username
+        else {
+            $user = User::where('username', $loginField)->first();
+        }
 
         if (!$user) {
             return back()->withErrors([
-                'email' => 'Email tidak terdaftar dalam sistem.',
-            ])->onlyInput('email');
+                'login' => 'Email/Username/NISN/NIP/NIK tidak terdaftar dalam sistem.',
+            ])->onlyInput('login');
         }
 
         // Check password
-        if (!Hash::check($credentials['password'], $user->password)) {
+        if (!Hash::check($password, $user->password)) {
             return back()->withErrors([
                 'password' => 'Password yang Anda masukkan salah.',
-            ])->onlyInput('email');
+            ])->onlyInput('login');
         }
 
         // Login user
@@ -156,12 +191,12 @@ class LandingController extends Controller
 
         // Log activity
         try {
-            ActivityLog::log('login', 'User login berhasil: ' . $user->email);
+            ActivityLog::log('login', 'User login berhasil: ' . $user->email . ' (via: ' . $loginField . ')');
         } catch (\Exception $e) {
             // Ignore if activity log fails
         }
 
-        Log::info('Login berhasil', ['email' => $user->email, 'ip' => $request->ip()]);
+        Log::info('Login berhasil', ['login' => $loginField, 'email' => $user->email, 'ip' => $request->ip()]);
 
         // Redirect based on user role
         $roleName = 'User';

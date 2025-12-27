@@ -10,7 +10,7 @@ class CalonDokumen extends Model
 {
     use HasUuids;
 
-    protected $table = 'calon_dokumens';
+    protected $table = 'calon_dokumen';
 
     protected $fillable = [
         'calon_siswa_id',
@@ -26,10 +26,17 @@ class CalonDokumen extends Model
         'catatan_verifikasi',
         'verified_by',
         'verified_at',
+        'revised_by',
+        'revised_at',
+        'cancelled_by',
+        'cancelled_at',
+        'verifikasi_note',
     ];
 
     protected $casts = [
         'verified_at' => 'datetime',
+        'revised_at' => 'datetime',
+        'cancelled_at' => 'datetime',
         'is_required' => 'boolean',
         'file_size' => 'integer',
     ];
@@ -56,6 +63,21 @@ class CalonDokumen extends Model
     public function verifiedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'verified_by');
+    }
+
+    public function revisedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'revised_by');
+    }
+
+    public function cancelledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
+    }
+
+    public function histories()
+    {
+        return $this->hasMany(DokumenVerifikasiHistory::class, 'dokumen_id');
     }
 
     // Scopes

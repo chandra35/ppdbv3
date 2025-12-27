@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -16,7 +17,11 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'username',
         'password',
+        'photo',
+        'phone',
+        'plain_password',
     ];
 
     protected $hidden = [
@@ -50,12 +55,41 @@ class User extends Authenticatable
         return $this->hasMany(ActivityLog::class);
     }
 
+    public function verifikator(): HasOne
+    {
+        return $this->hasOne(Verifikator::class, 'user_id');
+    }
+
     /**
      * Check if user has a specific role
      */
     public function hasRole(string $roleName): bool
     {
         return $this->roles()->where('name', $roleName)->exists();
+    }
+
+    /**
+     * Assign a role to the user
+     */
+    public function assignRole(string $roleName): void
+    {
+        $role = Role::where('name', $roleName)->first();
+        
+        if ($role && !$this->hasRole($roleName)) {
+            $this->roles()->attach($role->id);
+        }
+    }
+
+    /**
+     * Remove a role from the user
+     */
+    public function removeRole(string $roleName): void
+    {
+        $role = Role::where('name', $roleName)->first();
+        
+        if ($role) {
+            $this->roles()->detach($role->id);
+        }
     }
 
     /**
@@ -92,5 +126,31 @@ class User extends Authenticatable
     {
         return $this->hasAnyRole(['admin', 'super-admin']) || 
                in_array($this->email, ['admin@ppdb.local', 'administrator@ppdb.local']);
+    }
+
+    /**
+     * Get user profile image URL for AdminLTE
+     */
+    public function adminlte_image()
+    {
+        if ($this->photo && \Storage::disk('public')->exists($this->photo)) {
+            return \Storage::url($this->photo);
+        }
+
+        // Generate avatar from name
+        $initials = strtoupper(substr($this->name, 0, 1));
+        $bgColor = '3c8dbc';
+        
+        return "https://ui-avatars.com/api/?name=" . urlencode($this->name) . 
+               "&background=" . $bgColor . 
+               "&color=fff&size=200&bold=true&format=svg";
+    }
+
+    /**
+     * Get user profile URL for AdminLTE
+     */
+    public function adminlte_profile_url()
+    {
+        return 'admin.profile.index';
     }
 }

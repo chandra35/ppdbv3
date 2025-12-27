@@ -16,26 +16,33 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Statistics using correct column names: status_verifikasi and status_admisi
+        $user = auth()->user();
+        $isAdmin = $user->isAdmin();
+        
+        // Statistics for all roles
         $stats = [
             'total_pendaftar' => CalonSiswa::count(),
             'pendaftar_baru' => CalonSiswa::where('status_verifikasi', 'pending')->count(),
             'terverifikasi' => CalonSiswa::where('status_verifikasi', 'verified')->count(),
             'diterima' => CalonSiswa::where('status_admisi', 'diterima')->count(),
-            'ditolak' => CalonSiswa::where('status_admisi', 'ditolak')->count(),
-            'total_berita' => Berita::count(),
-            'total_verifikator' => Verifikator::count(),
-            'total_user' => User::count(),
         ];
+
+        // Admin-only statistics
+        if ($isAdmin) {
+            $stats['ditolak'] = CalonSiswa::where('status_admisi', 'ditolak')->count();
+            $stats['total_berita'] = Berita::count();
+            $stats['total_verifikator'] = Verifikator::count();
+            $stats['total_user'] = User::count();
+        }
 
         // Recent registrations
         $recentPendaftar = CalonSiswa::orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
 
-        // Recent activity logs
+        // Recent activity logs (admin only)
         $recentLogs = [];
-        if (class_exists(ActivityLog::class) && Schema::hasTable('activity_logs')) {
+        if ($isAdmin && class_exists(ActivityLog::class) && Schema::hasTable('activity_logs')) {
             $recentLogs = ActivityLog::with('user')
                 ->orderBy('created_at', 'desc')
                 ->limit(10)
@@ -53,6 +60,6 @@ class DashboardController extends Controller
             $chartData['data'][] = CalonSiswa::whereDate('created_at', $date)->count();
         }
 
-        return view('admin.dashboard', compact('stats', 'recentPendaftar', 'recentLogs', 'chartData'));
+        return view('admin.dashboard', compact('stats', 'recentPendaftar', 'recentLogs', 'chartData', 'isAdmin'));
     }
 }

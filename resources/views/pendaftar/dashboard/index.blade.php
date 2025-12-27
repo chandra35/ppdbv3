@@ -29,31 +29,7 @@
 
 <div class="row">
     <!-- Info Cards -->
-    <div class="col-lg-3 col-6">
-        <div class="small-box bg-gradient-info">
-            <div class="inner">
-                <h3>{{ $calonSiswa->jalurPendaftaran->nama ?? '-' }}</h3>
-                <p>Jalur Pendaftaran</p>
-            </div>
-            <div class="icon">
-                <i class="fas fa-road"></i>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-lg-3 col-6">
-        <div class="small-box bg-gradient-success">
-            <div class="inner">
-                <h3>{{ $calonSiswa->gelombangPendaftaran->nama ?? '-' }}</h3>
-                <p>Gelombang</p>
-            </div>
-            <div class="icon">
-                <i class="fas fa-calendar-alt"></i>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-lg-3 col-6">
+    <div class="col-lg-6 col-6">
         <div class="small-box bg-gradient-warning">
             <div class="inner">
                 <h3>{{ $progress['overall'] }}%</h3>
@@ -65,7 +41,7 @@
         </div>
     </div>
     
-    <div class="col-lg-3 col-6">
+    <div class="col-lg-6 col-6">
         <div class="small-box bg-gradient-primary">
             <div class="inner">
                 <h3>{{ ucfirst($calonSiswa->status_admisi) }}</h3>

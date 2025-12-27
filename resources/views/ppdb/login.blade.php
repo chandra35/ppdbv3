@@ -98,34 +98,36 @@
     <div class="login-info">
         <h6><i class="fas fa-info-circle"></i> Informasi Login</h6>
         <ul>
-            <li>Gunakan email yang terdaftar</li>
+            <li><strong>Pendaftar:</strong> Login dengan NISN</li>
+            <li><strong>GTK:</strong> Login dengan NIP atau NIK</li>
+            <li><strong>Admin/Operator:</strong> Login dengan Username</li>
+            <li>Atau gunakan Email untuk semua role</li>
             <li>Password bersifat case-sensitive</li>
-            <li>Hubungi admin jika lupa password</li>
         </ul>
     </div>
 
     <form action="{{ $login_url }}" method="post" id="loginForm">
         @csrf
 
-        {{-- Email field --}}
+        {{-- Login field (Email/Username/NISN/NIP/NIK) --}}
         <div class="form-group">
-            <label for="email"><i class="fas fa-envelope"></i> Email</label>
+            <label for="login"><i class="fas fa-user"></i> Email / Username / NISN / NIP / NIK</label>
             <div class="input-group">
-                <input type="email" 
-                       name="email" 
-                       id="email"
-                       class="form-control @error('email') is-invalid @enderror"
-                       value="{{ old('email') }}" 
-                       placeholder="Masukkan email Anda" 
+                <input type="text" 
+                       name="login" 
+                       id="login"
+                       class="form-control @error('login') is-invalid @enderror"
+                       value="{{ old('login') }}" 
+                       placeholder="Masukkan Email, Username, NISN, NIP, atau NIK" 
                        autofocus 
                        required>
                 <div class="input-group-append">
                     <div class="input-group-text">
-                        <span class="fas fa-at"></span>
+                        <span class="fas fa-id-card"></span>
                     </div>
                 </div>
             </div>
-            @error('email')
+            @error('login')
                 <small class="text-danger"><i class="fas fa-times-circle"></i> {{ $message }}</small>
             @enderror
         </div>
@@ -167,8 +169,8 @@
 
     {{-- Demo Credential (remove in production) --}}
     <div class="demo-credential">
-        <strong><i class="fas fa-key"></i> Demo Admin:</strong><br>
-        Email: <code>admin@ppdb.local</code><br>
+        <strong><i class="fas fa-key"></i> Demo Login:</strong><br>
+        Username/Email: <code>admin@ppdb.local</code> atau <code>admin</code><br>
         Password: <code>admin123</code>
     </div>
 @stop
