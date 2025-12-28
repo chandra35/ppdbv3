@@ -916,6 +916,7 @@ dl.row dt {
                         
                         <!-- Modal Cancel Verifikasi Dokumen -->
                         @foreach($pendaftar->dokumen as $dokumen)
+                        <div class="modal fade" id="cancelDokumenModal{{ $dokumen->id }}">
                             <div class="modal-dialog">
                                 <div class="modal-content">
                                     <div class="modal-header bg-secondary">
