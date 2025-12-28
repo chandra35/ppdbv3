@@ -76,22 +76,22 @@ class KopSuratService
         // Build center content from config
         $centerContent = $this->buildCenterContent($sekolah);
 
-        // Build HTML table structure with precise positioning
+        // Build HTML table structure with balanced positioning
         $html = '
         <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 5px;">
             <tr>
-                <td width="15%" align="left" valign="middle" style="padding: 5px 5px 5px 0;">';
+                <td width="12%" align="center" valign="middle" style="padding: 5px;">';
         
         if ($logoKemenagSrc) {
-            $html .= '<img src="' . $logoKemenagSrc . '" alt="Logo Kemenag" style="height: ' . $logoKemenagHeight . 'px; display: block;">';
+            $html .= '<img src="' . $logoKemenagSrc . '" alt="Logo Kemenag" style="height: ' . $logoKemenagHeight . 'px; display: block; margin: 0 auto;">';
         }
         
         $html .= '</td>
-                <td width="70%" align="center" valign="middle" style="padding: 5px 10px;">' . $centerContent . '</td>
-                <td width="15%" align="right" valign="middle" style="padding: 5px 0 5px 5px;">';
+                <td width="76%" align="center" valign="middle" style="padding: 5px 15px;">' . $centerContent . '</td>
+                <td width="12%" align="center" valign="middle" style="padding: 5px;">';
         
         if ($logoSekolahSrc) {
-            $html .= '<img src="' . $logoSekolahSrc . '" alt="Logo Sekolah" style="height: ' . $logoSekolahHeight . 'px; display: block;">';
+            $html .= '<img src="' . $logoSekolahSrc . '" alt="Logo Sekolah" style="height: ' . $logoSekolahHeight . 'px; display: block; margin: 0 auto;">';
         }
         
         $html .= '</td>
