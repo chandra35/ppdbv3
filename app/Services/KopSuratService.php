@@ -80,18 +80,18 @@ class KopSuratService
         $html = '
         <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 5px;">
             <tr>
-                <td width="15%" align="center" valign="middle" style="padding: 5px;">';
+                <td width="15%" align="left" valign="middle" style="padding: 5px 5px 5px 0;">';
         
         if ($logoKemenagSrc) {
-            $html .= '<img src="' . $logoKemenagSrc . '" alt="Logo Kemenag" style="height: ' . $logoKemenagHeight . 'px; display: block; margin: 0 auto;">';
+            $html .= '<img src="' . $logoKemenagSrc . '" alt="Logo Kemenag" style="height: ' . $logoKemenagHeight . 'px; display: block;">';
         }
         
         $html .= '</td>
                 <td width="70%" align="center" valign="middle" style="padding: 5px 10px;">' . $centerContent . '</td>
-                <td width="15%" align="center" valign="middle" style="padding: 5px;">';
+                <td width="15%" align="right" valign="middle" style="padding: 5px 0 5px 5px;">';
         
         if ($logoSekolahSrc) {
-            $html .= '<img src="' . $logoSekolahSrc . '" alt="Logo Sekolah" style="height: ' . $logoSekolahHeight . 'px; display: block; margin: 0 auto;">';
+            $html .= '<img src="' . $logoSekolahSrc . '" alt="Logo Sekolah" style="height: ' . $logoSekolahHeight . 'px; display: block;">';
         }
         
         $html .= '</td>
