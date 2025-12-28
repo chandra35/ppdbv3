@@ -112,8 +112,15 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>No. HP (WhatsApp) <span class="text-danger">*</span></label>
+                                @php
+                                    $displayPhone = old('nomor_hp', $calonSiswa->nomor_hp);
+                                    // Convert +628xxx to 08xxx for display
+                                    if (!empty($displayPhone) && str_starts_with($displayPhone, '+62')) {
+                                        $displayPhone = '0' . substr($displayPhone, 3);
+                                    }
+                                @endphp
                                 <input type="text" name="nomor_hp" class="form-control @error('nomor_hp') is-invalid @enderror" 
-                                       value="{{ old('nomor_hp', $calonSiswa->nomor_hp) }}" 
+                                       value="{{ $displayPhone }}" 
                                        placeholder="08xxxxxxxxxx"
                                        pattern="0[0-9]{9,12}"
                                        inputmode="tel"
