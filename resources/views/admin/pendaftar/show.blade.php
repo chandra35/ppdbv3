@@ -777,88 +777,108 @@ dl.row dt {
                     </div>
                 </div>
                 <div class="box-body" style="padding: 8px;">
-                    @if($pendaftar->dokumen && $pendaftar->dokumen->count() > 0)
+                    @if(count($requiredDocs) > 0)
                         <div class="row" style="margin: 0 -3px;">
-                            @foreach($pendaftar->dokumen as $dokumen)
+                            @foreach($requiredDocs as $docType)
+                            @php
+                                $dokumen = $pendaftar->dokumen->firstWhere('jenis_dokumen', $docType);
+                                $docLabel = $dokumenLabels[$docType] ?? ucfirst(str_replace('_', ' ', $docType));
+                            @endphp
                             <div class="col-xl-2 col-lg-3 col-md-3 col-sm-4 col-6 mb-2" style="padding: 0 3px;">
                                 <div class="box box-widget dokumen-card" style="margin-bottom: 0; border: 1px solid #ddd;">
-                                    @php
-                                        $extension = strtolower(pathinfo($dokumen->file_path, PATHINFO_EXTENSION));
-                                        $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif']);
-                                        $isPdf = $extension === 'pdf';
-                                    @endphp
-                                    @if($isImage)
-                                        <a href="{{ asset('storage/' . $dokumen->file_path) }}" 
-                                           class="dokumen-link"
-                                           data-url="{{ asset('storage/' . $dokumen->file_path) }}"
-                                           data-title="{{ ucfirst(str_replace('_', ' ', $dokumen->jenis_dokumen)) }}"
-                                           data-dokumen-id="{{ $dokumen->id }}"
-                                           data-dokumen-status="{{ $dokumen->status_verifikasi }}"
-                                           data-jenis-dokumen="{{ $dokumen->jenis_dokumen }}"
-                                           data-type="image">
-                                            <img src="{{ asset('storage/' . $dokumen->file_path) }}" class="card-img-top" style="height: 85px; object-fit: cover;">
-                                        </a>
-                                    @else
-                                        <a href="javascript:void(0);"
-                                           class="dokumen-link"
-                                           data-url="{{ asset('storage/' . $dokumen->file_path) }}"
-                                           data-title="{{ ucfirst(str_replace('_', ' ', $dokumen->jenis_dokumen)) }}"
-                                           data-dokumen-id="{{ $dokumen->id }}"
-                                           data-dokumen-status="{{ $dokumen->status_verifikasi }}"
-                                           data-jenis-dokumen="{{ $dokumen->jenis_dokumen }}"
-                                           data-type="pdf">
-                                            <div class="card-img-top bg-danger d-flex align-items-center justify-content-center" style="height: 85px;">
-                                                <div class="text-center text-white">
-                                                    <i class="fas fa-file-pdf fa-2x"></i>
-                                                    <div style="font-size: 9px;">PDF</div>
+                                    @if($dokumen)
+                                        @php
+                                            $extension = strtolower(pathinfo($dokumen->file_path, PATHINFO_EXTENSION));
+                                            $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif']);
+                                            $isPdf = $extension === 'pdf';
+                                        @endphp
+                                        @if($isImage)
+                                            <a href="{{ asset('storage/' . $dokumen->file_path) }}" 
+                                               class="dokumen-link"
+                                               data-url="{{ asset('storage/' . $dokumen->file_path) }}"
+                                               data-title="{{ $docLabel }}"
+                                               data-dokumen-id="{{ $dokumen->id }}"
+                                               data-dokumen-status="{{ $dokumen->status_verifikasi }}"
+                                               data-jenis-dokumen="{{ $dokumen->jenis_dokumen }}"
+                                               data-type="image">
+                                                <img src="{{ asset('storage/' . $dokumen->file_path) }}" class="card-img-top" style="height: 85px; object-fit: cover;">
+                                            </a>
+                                        @else
+                                            <a href="javascript:void(0);"
+                                               class="dokumen-link"
+                                               data-url="{{ asset('storage/' . $dokumen->file_path) }}"
+                                               data-title="{{ $docLabel }}"
+                                               data-dokumen-id="{{ $dokumen->id }}"
+                                               data-dokumen-status="{{ $dokumen->status_verifikasi }}"
+                                               data-jenis-dokumen="{{ $dokumen->jenis_dokumen }}"
+                                               data-type="pdf">
+                                                <div class="card-img-top bg-danger d-flex align-items-center justify-content-center" style="height: 85px;">
+                                                    <div class="text-center text-white">
+                                                        <i class="fas fa-file-pdf fa-2x"></i>
+                                                        <div style="font-size: 9px;">PDF</div>
+                                                    </div>
                                                 </div>
+                                            </a>
+                                        @endif
+                                        <div class="card-body" style="padding: 5px;">
+                                            <div style="font-size: 10px; font-weight: 600; margin-bottom: 3px; line-height: 1.2;">{{ $docLabel }}</div>
+                                            <div style="margin-bottom: 4px;">
+                                                @if($dokumen->status_verifikasi == 'pending')
+                                                    <span class="badge badge-warning" style="font-size: 8px; padding: 2px 4px;">Pending</span>
+                                                @elseif($dokumen->status_verifikasi == 'valid')
+                                                    <span class="badge badge-success" style="font-size: 8px; padding: 2px 4px;">Valid</span>
+                                                @elseif($dokumen->status_verifikasi == 'invalid')
+                                                    <span class="badge badge-danger" style="font-size: 8px; padding: 2px 4px;">Invalid</span>
+                                                @elseif($dokumen->status_verifikasi == 'revision')
+                                                    <span class="badge badge-info" style="font-size: 8px; padding: 2px 4px;">Revisi</span>
+                                                @endif
                                             </div>
-                                        </a>
-                                    @endif
-                                    <div class="card-body" style="padding: 5px;">
-                                        <div style="font-size: 10px; font-weight: 600; margin-bottom: 3px; line-height: 1.2;">{{ ucfirst(str_replace('_', ' ', $dokumen->jenis_dokumen)) }}</div>
-                                        <div style="margin-bottom: 4px;">
-                                            @if($dokumen->status_verifikasi == 'pending')
-                                                <span class="badge badge-warning" style="font-size: 8px; padding: 2px 4px;">Pending</span>
-                                            @elseif($dokumen->status_verifikasi == 'valid')
-                                                <span class="badge badge-success" style="font-size: 8px; padding: 2px 4px;">Valid</span>
-                                            @elseif($dokumen->status_verifikasi == 'invalid')
-                                                <span class="badge badge-danger" style="font-size: 8px; padding: 2px 4px;">Invalid</span>
-                                            @elseif($dokumen->status_verifikasi == 'revision')
-                                                <span class="badge badge-info" style="font-size: 8px; padding: 2px 4px;">Revisi</span>
+                                            
+                                            @if($dokumen->jenis_dokumen != 'pas_foto')
+                                                @if($dokumen->status_verifikasi == 'pending')
+                                                <div class="btn-group d-flex" role="group">
+                                                    <button type="button" class="btn btn-success flex-fill approve-card-btn" data-dokumen-id="{{ $dokumen->id }}" title="Setujui" style="font-size: 9px; padding: 3px;">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-danger flex-fill" data-toggle="modal" data-target="#rejectDokumenModal{{ $dokumen->id }}" title="Tolak" style="font-size: 9px; padding: 3px;">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                                @elseif($dokumen->status_verifikasi == 'valid')
+                                                <button type="button" class="btn btn-warning btn-block" data-toggle="modal" data-target="#revisiDokumenModal{{ $dokumen->id }}" style="font-size: 9px; padding: 3px; margin-bottom: 2px;">
+                                                    <i class="fas fa-redo"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-secondary btn-block" data-toggle="modal" data-target="#cancelDokumenModal{{ $dokumen->id }}" style="font-size: 9px; padding: 3px;">
+                                                    <i class="fas fa-ban"></i>
+                                                </button>
+                                                @elseif($dokumen->status_verifikasi == 'invalid')
+                                                <button type="button" class="btn btn-secondary btn-block" data-toggle="modal" data-target="#cancelDokumenModal{{ $dokumen->id }}" style="font-size: 9px; padding: 3px;">
+                                                    <i class="fas fa-ban"></i>
+                                                </button>
+                                                @elseif($dokumen->status_verifikasi == 'revision')
+                                                <button type="button" class="btn btn-info btn-block" data-toggle="modal" data-target="#cancelRevisiModal{{ $dokumen->id }}" style="font-size: 9px; padding: 3px;">
+                                                    <i class="fas fa-undo"></i>
+                                                </button>
+                                                @endif
+                                            @else
+                                                <small class="text-muted" style="font-size: 8px;"><i class="fas fa-info-circle"></i> Auto</small>
                                             @endif
                                         </div>
-                                        
-                                        @if($dokumen->jenis_dokumen != 'pas_foto')
-                                            @if($dokumen->status_verifikasi == 'pending')
-                                            <div class="btn-group d-flex" role="group">
-                                                <button type="button" class="btn btn-success flex-fill approve-card-btn" data-dokumen-id="{{ $dokumen->id }}" title="Setujui" style="font-size: 9px; padding: 3px;">
-                                                    <i class="fas fa-check"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-danger flex-fill" data-toggle="modal" data-target="#rejectDokumenModal{{ $dokumen->id }}" title="Tolak" style="font-size: 9px; padding: 3px;">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
+                                    @else
+                                        {{-- Placeholder for missing document --}}
+                                        <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 85px; opacity: 0.5;">
+                                            <div class="text-center text-white">
+                                                <i class="fas fa-file fa-2x"></i>
+                                                <div style="font-size: 9px;">Belum Upload</div>
                                             </div>
-                                            @elseif($dokumen->status_verifikasi == 'valid')
-                                            <button type="button" class="btn btn-warning btn-block" data-toggle="modal" data-target="#revisiDokumenModal{{ $dokumen->id }}" style="font-size: 9px; padding: 3px; margin-bottom: 2px;">
-                                                <i class="fas fa-redo"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-secondary btn-block" data-toggle="modal" data-target="#cancelDokumenModal{{ $dokumen->id }}" style="font-size: 9px; padding: 3px;">
-                                                <i class="fas fa-ban"></i>
-                                            </button>
-                                            @elseif($dokumen->status_verifikasi == 'invalid')
-                                            <button type="button" class="btn btn-secondary btn-block" data-toggle="modal" data-target="#cancelDokumenModal{{ $dokumen->id }}" style="font-size: 9px; padding: 3px;">
-                                                <i class="fas fa-ban"></i>
-                                            </button>
-                                            @elseif($dokumen->status_verifikasi == 'revision')
-                                            <button type="button" class="btn btn-info btn-block" data-toggle="modal" data-target="#cancelRevisiModal{{ $dokumen->id }}" style="font-size: 9px; padding: 3px;">
-                                                <i class="fas fa-undo"></i>
-                                            </button>
-                                            @endif
-                                        @else
-                                            <small class="text-muted" style="font-size: 8px;"><i class="fas fa-info-circle"></i> Auto</small>
-                                        @endif
-                                    </div>
+                                        </div>
+                                        <div class="card-body" style="padding: 5px;">
+                                            <div style="font-size: 10px; font-weight: 600; margin-bottom: 3px; line-height: 1.2;">{{ $docLabel }}</div>
+                                            <div style="margin-bottom: 4px;">
+                                                <span class="badge badge-secondary" style="font-size: 8px; padding: 2px 4px;">Belum Upload</span>
+                                            </div>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                             @endforeach

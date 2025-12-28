@@ -108,7 +108,25 @@ class PendaftarController extends Controller
             'kecamatanSiswa',
             'kelurahanSiswa'
         ])->findOrFail($id);
-        return view('admin.pendaftar.show', compact('pendaftar'));
+        
+        // Get active documents from settings
+        $settings = \App\Models\PpdbSettings::first();
+        $requiredDocs = $settings?->dokumen_aktif ?? ['kk', 'akta_lahir', 'ijazah', 'foto'];
+        
+        // Map document types to labels
+        $dokumenLabels = [
+            'kk' => 'Kartu Keluarga',
+            'akta_lahir' => 'Akta Kelahiran',
+            'ijazah' => 'Ijazah/SKL',
+            'foto' => 'Pas Foto',
+            'ktp_ortu' => 'KTP Orang Tua',
+            'skhun' => 'SKHUN',
+            'raport' => 'Raport',
+            'surat_sehat' => 'Surat Keterangan Sehat',
+            'surat_kelakuan_baik' => 'Surat Kelakuan Baik',
+        ];
+        
+        return view('admin.pendaftar.show', compact('pendaftar', 'requiredDocs', 'dokumenLabels'));
     }
 
     public function verify(Request $request, $id)
