@@ -117,7 +117,7 @@
                                  data-doc-label="{{ $label }}"
                                  @if($isUploaded)
                                  data-doc-id="{{ $doc->id }}"
-                                 data-doc-path="{{ Storage::url($doc->path_file) }}"
+                                 data-doc-path="{{ asset('storage/' . $doc->file_path) }}"
                                  data-doc-name="{{ $doc->nama_file }}"
                                  @endif>
                                 <div class="icon">
