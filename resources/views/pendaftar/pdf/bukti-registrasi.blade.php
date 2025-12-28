@@ -19,39 +19,6 @@
             line-height: 1.4;
             color: #333;
         }
-        .header {
-            text-align: center;
-            border-bottom: 3px double #2c3e50;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-        }
-        .header img {
-            height: 60px;
-            margin-bottom: 8px;
-        }
-        .header h2 {
-            font-size: 14pt;
-            margin: 4px 0;
-            color: #2c3e50;
-            letter-spacing: 0.5px;
-        }
-        .header h3 {
-            font-size: 12pt;
-            margin: 3px 0;
-            font-weight: 600;
-            color: #34495e;
-        }
-        .header .tahun {
-            font-size: 11pt;
-            font-weight: bold;
-            color: #e74c3c;
-            margin: 3px 0;
-        }
-        .header p {
-            font-size: 9pt;
-            margin: 2px 0;
-            color: #7f8c8d;
-        }
         
         .title {
             text-align: center;
@@ -256,19 +223,14 @@
     </div>
     @endif
 
-    {{-- Header --}}
-    <div class="header">
-        @if($sekolah && $sekolah->logo)
-            <img src="{{ $sekolah->logo }}" alt="Logo">
-        @endif
-        <h2>{{ $sekolah->nama_sekolah ?? 'SMK' }}</h2>
-        <h3>PENERIMAAN PESERTA DIDIK BARU</h3>
-        <div class="tahun">TAHUN PELAJARAN {{ $calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y') }}/{{ ($calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y')) + 1 }}</div>
-        <p>{{ $sekolah->alamat ?? '' }} | Telp: {{ $sekolah->telepon ?? '-' }} | Email: {{ $sekolah->email ?? '-' }}</p>
-    </div>
+    {{-- Header Kop Surat (from Builder) --}}
+    {!! $kopHtml !!}
 
     {{-- Title --}}
     <div class="title">BUKTI REGISTRASI PENDAFTARAN</div>
+    <div style="text-align: center; font-size: 10pt; margin-bottom: 10px; font-weight: bold; color: #e74c3c;">
+        TAHUN PELAJARAN {{ $calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y') }}/{{ ($calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y')) + 1 }}
+    </div>
 
     {{-- Info Registrasi + Foto --}}
     <div class="info-container">

@@ -8,6 +8,7 @@ use App\Models\CalonOrtu;
 use App\Models\CalonDokumen;
 use App\Models\NilaiRapor;
 use App\Models\PpdbSettings;
+use App\Services\KopSuratService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -15,6 +16,13 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class DashboardController extends Controller
 {
+    protected $kopSuratService;
+
+    public function __construct(KopSuratService $kopSuratService)
+    {
+        $this->kopSuratService = $kopSuratService;
+    }
+
     /**
      * Show dashboard
      */
@@ -534,6 +542,9 @@ class DashboardController extends Controller
 
         $sekolahSettings = \App\Models\SekolahSettings::with(['province', 'city'])->first();
         
+        // Generate kop surat HTML
+        $kopHtml = $this->kopSuratService->renderKopHtml($sekolahSettings, true);
+        
         $sekolah = (object) [
             'nama_sekolah' => $sekolahSettings->nama_sekolah ?? config('app.school_name', config('app.name', 'SMK')),
             'logo' => $this->getSchoolLogo(),
@@ -543,7 +554,7 @@ class DashboardController extends Controller
             'kota' => $sekolahSettings->city->name ?? config('app.school_city', ''),
         ];
         
-        $pdf = Pdf::loadView('pendaftar.pdf.bukti-registrasi', compact('calonSiswa', 'sekolah'));
+        $pdf = Pdf::loadView('pendaftar.pdf.bukti-registrasi', compact('calonSiswa', 'sekolah', 'kopHtml'));
         
         $filename = 'bukti-registrasi-' . preg_replace('/[\/\\\:*?"<>|]/', '-', $calonSiswa->nomor_registrasi) . '.pdf';
         
@@ -587,6 +598,9 @@ class DashboardController extends Controller
 
         $sekolahSettings = \App\Models\SekolahSettings::with(['province', 'city'])->first();
         
+        // Generate kop surat HTML
+        $kopHtml = $this->kopSuratService->renderKopHtml($sekolahSettings, true);
+        
         $sekolah = (object) [
             'nama_sekolah' => $sekolahSettings->nama_sekolah ?? config('app.school_name', config('app.name', 'SMK')),
             'logo' => $this->getSchoolLogo(),
@@ -594,7 +608,7 @@ class DashboardController extends Controller
         
         $password = $user->plain_password ?? '********';
         
-        $pdf = Pdf::loadView('pendaftar.pdf.kartu-ujian', compact('calonSiswa', 'sekolah', 'password'))
+        $pdf = Pdf::loadView('pendaftar.pdf.kartu-ujian', compact('calonSiswa', 'sekolah', 'password', 'kopHtml'))
             ->setPaper([0, 0, 298, 421], 'landscape');
         
         $filename = 'kartu-ujian-' . preg_replace('/[\/\\\:*?"<>|]/', '-', $calonSiswa->nomor_tes) . '.pdf';
