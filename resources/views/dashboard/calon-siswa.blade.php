@@ -28,12 +28,12 @@
         </div>
     </div>
 
-    @if($caalonSiswa)
+    @if($calonSiswa)
     <div class="row">
         <div class="col-lg-3 col-6">
             <div class="small-box bg-info">
                 <div class="inner">
-                    <h3>{{ $caalonSiswa->nomor_registrasi }}</h3>
+                    <h3>{{ $calonSiswa->nomor_registrasi }}</h3>
                     <p>Nomor Registrasi</p>
                 </div>
                 <div class="icon">
@@ -45,7 +45,7 @@
         <div class="col-lg-3 col-6">
             <div class="small-box bg-success">
                 <div class="inner">
-                    <h3>{{ ucfirst($caalonSiswa->status_verifikasi) }}</h3>
+                    <h3>{{ ucfirst($calonSiswa->status_verifikasi) }}</h3>
                     <p>Status Verifikasi</p>
                 </div>
                 <div class="icon">
@@ -57,7 +57,7 @@
         <div class="col-lg-3 col-6">
             <div class="small-box bg-warning">
                 <div class="inner">
-                    <h3>{{ $caalonSiswa->dokumen->count() }}</h3>
+                    <h3>{{ $calonSiswa->dokumen->count() }}</h3>
                     <p>Dokumen Terupload</p>
                 </div>
                 <div class="icon">
@@ -69,7 +69,7 @@
         <div class="col-lg-3 col-6">
             <div class="small-box bg-danger">
                 <div class="inner">
-                    <h3>{{ $caalonSiswa->created_at->format('d M Y') }}</h3>
+                    <h3>{{ $calonSiswa->created_at->format('d M Y') }}</h3>
                     <p>Tanggal Daftar</p>
                 </div>
                 <div class="icon">
@@ -89,19 +89,19 @@
                     <table class="table table-borderless">
                         <tr>
                             <th width="200">NISN</th>
-                            <td>{{ $caalonSiswa->nisn }}</td>
+                            <td>{{ $calonSiswa->nisn }}</td>
                         </tr>
                         <tr>
                             <th>Nama Lengkap</th>
-                            <td>{{ $caalonSiswa->nama_lengkap }}</td>
+                            <td>{{ $calonSiswa->nama_lengkap }}</td>
                         </tr>
                         <tr>
                             <th>Jenis Kelamin</th>
-                            <td>{{ $caalonSiswa->jenis_kelamin }}</td>
+                            <td>{{ $calonSiswa->jenis_kelamin }}</td>
                         </tr>
                         <tr>
                             <th>Tempat, Tanggal Lahir</th>
-                            <td>{{ $caalonSiswa->tempat_lahir }}, {{ $caalonSiswa->tanggal_lahir }}</td>
+                            <td>{{ $calonSiswa->tempat_lahir }}, {{ $calonSiswa->tanggal_lahir }}</td>
                         </tr>
                     </table>
                 </div>
@@ -116,7 +116,7 @@
                 <div class="card-body">
                     <p>Status dokumen Anda:</p>
                     <ul>
-                        @forelse($caalonSiswa->dokumen as $dok)
+                        @forelse($calonSiswa->dokumen as $dok)
                             <li>{{ $dok->jenis_dokumen }}: <span class="badge badge-{{ $dok->status == 'verified' ? 'success' : 'warning' }}">{{ $dok->status }}</span></li>
                         @empty
                             <li class="text-muted">Belum ada dokumen</li>
