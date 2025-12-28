@@ -205,6 +205,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
             Route::get('/cities', [SekolahSettingsController::class, 'getCities'])->name('cities');
             Route::get('/districts', [SekolahSettingsController::class, 'getDistricts'])->name('districts');
             Route::get('/villages', [SekolahSettingsController::class, 'getVillages'])->name('villages');
+            
+            // Kop Surat Builder
+            Route::get('/kop-builder', [SekolahSettingsController::class, 'showKopBuilder'])->name('kop-builder');
+            Route::post('/kop-builder/update', [SekolahSettingsController::class, 'updateKopConfig'])->name('kop-builder.update');
+            Route::post('/logo-kemenag/upload', [SekolahSettingsController::class, 'uploadLogoKemenag'])->name('logo-kemenag.upload');
+            Route::post('/kop-asset/delete', [SekolahSettingsController::class, 'deleteKopAsset'])->name('kop-asset.delete');
         });
 
         // ---- TAHUN PELAJARAN ----

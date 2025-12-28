@@ -35,11 +35,28 @@ class SekolahSettings extends Model
         'logo',
         'nama_kepala_sekolah',
         'nip_kepala_sekolah',
+        
+        // Kop Surat Builder
+        'logo_kemenag_path',
+        'logo_kemenag_height',
+        'logo_display_height',
+        'logo_column_width',
+        'kop_mode',
+        'kop_surat_config',
+        'kop_surat_custom_path',
+        'kop_margin_top',
+        'kop_height',
     ];
 
     protected $casts = [
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
+        'kop_surat_config' => 'array',
+        'logo_kemenag_height' => 'integer',
+        'logo_display_height' => 'integer',
+        'logo_column_width' => 'integer',
+        'kop_margin_top' => 'integer',
+        'kop_height' => 'integer',
     ];
 
     /**

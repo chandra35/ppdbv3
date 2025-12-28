@@ -164,6 +164,11 @@ return [
                     'icon' => 'fas fa-fw fa-sliders-h',
                 ],
                 [
+                    'text' => 'Kop Surat',
+                    'route' => 'admin.sekolah.kop-builder',
+                    'icon' => 'fas fa-fw fa-file-alt',
+                ],
+                [
                     'text' => 'Halaman',
                     'route' => 'admin.settings.halaman.index',
                     'icon' => 'fas fa-fw fa-file-alt',

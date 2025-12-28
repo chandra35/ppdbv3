@@ -133,4 +133,128 @@ class SekolahSettingsController extends Controller
         
         return response()->json($villages, 200, [], JSON_UNESCAPED_UNICODE);
     }
+
+    /**
+     * Show Kop Surat Builder
+     */
+    public function showKopBuilder()
+    {
+        $sekolah = SekolahSettings::getSettings();
+        return view('admin.settings.kop-builder', compact('sekolah'));
+    }
+
+    /**
+     * Update Kop Surat Configuration
+     */
+    public function updateKopConfig(Request $request)
+    {
+        $validated = $request->validate([
+            'kop_mode' => 'required|in:builder,custom',
+            'kop_surat_config' => 'nullable|json',
+        ]);
+
+        $sekolah = SekolahSettings::getSettings();
+        
+        // Decode JSON config
+        if ($validated['kop_surat_config']) {
+            $validated['kop_surat_config'] = json_decode($validated['kop_surat_config'], true);
+        }
+
+        $sekolah->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Konfigurasi kop surat berhasil disimpan.'
+        ]);
+    }
+
+    /**
+     * Upload Logo Kemenag
+     */
+    public function uploadLogoKemenag(Request $request)
+    {
+        $request->validate([
+            'logo' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'type' => 'required|in:kemenag,custom',
+        ]);
+
+        $sekolah = SekolahSettings::getSettings();
+
+        // Handle different types
+        if ($request->type === 'kemenag') {
+            // Hapus logo lama
+            if ($sekolah->logo_kemenag_path && Storage::disk('public')->exists($sekolah->logo_kemenag_path)) {
+                Storage::disk('public')->delete($sekolah->logo_kemenag_path);
+            }
+            
+            $logoPath = $request->file('logo')->store('sekolah', 'public');
+            $sekolah->update(['logo_kemenag_path' => $logoPath]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Logo Kemenag berhasil diupload.',
+                'path' => $logoPath
+            ]);
+            
+        } else if ($request->type === 'custom') {
+            // Hapus kop custom lama
+            if ($sekolah->kop_surat_custom_path && Storage::disk('public')->exists($sekolah->kop_surat_custom_path)) {
+                Storage::disk('public')->delete($sekolah->kop_surat_custom_path);
+            }
+            
+            $kopPath = $request->file('logo')->store('sekolah', 'public');
+            $sekolah->update(['kop_surat_custom_path' => $kopPath]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Kop surat custom berhasil diupload.',
+                'path' => $kopPath
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Invalid type'
+        ], 400);
+    }
+
+    /**
+     * Delete Logo Kemenag or Custom Kop
+     */
+    public function deleteKopAsset(Request $request)
+    {
+        $request->validate([
+            'type' => 'required|in:logo_kemenag,kop_custom',
+        ]);
+
+        $sekolah = SekolahSettings::getSettings();
+
+        if ($request->type === 'logo_kemenag') {
+            if ($sekolah->logo_kemenag_path && Storage::disk('public')->exists($sekolah->logo_kemenag_path)) {
+                Storage::disk('public')->delete($sekolah->logo_kemenag_path);
+            }
+            $sekolah->update(['logo_kemenag_path' => null]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Logo Kemenag berhasil dihapus.'
+            ]);
+            
+        } else if ($request->type === 'kop_custom') {
+            if ($sekolah->kop_surat_custom_path && Storage::disk('public')->exists($sekolah->kop_surat_custom_path)) {
+                Storage::disk('public')->delete($sekolah->kop_surat_custom_path);
+            }
+            $sekolah->update(['kop_surat_custom_path' => null]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Kop surat custom berhasil dihapus.'
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Invalid type'
+        ], 400);
+    }
 }
