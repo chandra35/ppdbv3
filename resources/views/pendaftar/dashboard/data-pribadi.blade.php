@@ -144,7 +144,7 @@
                     </div>
 
                     <hr>
-                    <h5><i class="fas fa-map-marker-alt mr-2"></i>Alamat</h5>
+                    <h5><i class="fas fa-map-marker-alt mr-2"></i>Alamat Siswa</h5>
 
                     <div class="form-group">
                         <label>Alamat Lengkap <span class="text-danger">*</span></label>
@@ -153,6 +153,15 @@
                         @error('alamat_siswa')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input type="checkbox" class="form-check-input" id="copyToOrtu" name="copy_alamat_to_ortu" value="1" 
+                               {{ old('copy_alamat_to_ortu', true) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="copyToOrtu">
+                            <i class="fas fa-copy mr-1"></i> Salin alamat siswa ke alamat orang tua
+                        </label>
+                        <small class="form-text text-muted">Jika dicentang, alamat ini akan otomatis disalin ke data orang tua</small>
                     </div>
 
                     <div class="row">

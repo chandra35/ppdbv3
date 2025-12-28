@@ -111,6 +111,20 @@ class DashboardController extends Controller
             $calonSiswa->user->update(['email' => $validated['email']]);
         }
 
+        // Copy alamat siswa to ortu if requested
+        if ($request->has('copy_alamat_to_ortu')) {
+            $calonSiswa->ortu()->updateOrCreate(
+                ['calon_siswa_id' => $calonSiswa->id],
+                [
+                    'alamat_ortu' => $validated['alamat_siswa'],
+                    'provinsi_id_ortu' => $validated['provinsi_id_siswa'],
+                    'kabupaten_id_ortu' => $validated['kabupaten_id_siswa'],
+                    'kecamatan_id_ortu' => $validated['kecamatan_id_siswa'],
+                    'kelurahan_id_ortu' => $validated['kelurahan_id_siswa'],
+                ]
+            );
+        }
+
         // Mark as completed
         $calonSiswa->data_diri_completed = true;
         $calonSiswa->save();
