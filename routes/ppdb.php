@@ -315,6 +315,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/whatsapp/send-test', [PengaturanWaController::class, 'sendTest'])->name('whatsapp.send-test');
         Route::get('/whatsapp/reset-templates', [PengaturanWaController::class, 'resetTemplates'])->name('whatsapp.reset-templates');
         
+        // ---- BACKUP & RESTORE ----
+        Route::prefix('backup')->name('backup.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\BackupController::class, 'index'])->name('index');
+            Route::post('/create', [\App\Http\Controllers\Admin\BackupController::class, 'create'])->name('create');
+            Route::get('/download/{filename}', [\App\Http\Controllers\Admin\BackupController::class, 'download'])->name('download');
+            Route::delete('/{filename}', [\App\Http\Controllers\Admin\BackupController::class, 'destroy'])->name('destroy');
+        });
+        
         // ---- DATA MANAGEMENT (Soft Delete) ----
         Route::prefix('data-management')->name('data.')->group(function () {
             Route::get('/deleted', [\App\Http\Controllers\Admin\DataManagementController::class, 'index'])->name('deleted');

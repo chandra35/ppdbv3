@@ -239,6 +239,19 @@ return [
                     'route' => 'admin.whatsapp.index',
                     'icon' => 'fab fa-fw fa-whatsapp',
                 ],
+                [
+                    'header' => 'BACKUP & DATA',
+                ],
+                [
+                    'text' => 'Backup & Restore',
+                    'route' => 'admin.backup.index',
+                    'icon' => 'fas fa-fw fa-database text-primary',
+                ],
+                [
+                    'text' => 'Data Terhapus',
+                    'route' => 'admin.data.deleted',
+                    'icon' => 'fas fa-fw fa-trash-restore text-danger',
+                ],
             ],
         ],
 

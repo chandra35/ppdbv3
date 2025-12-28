@@ -297,7 +297,7 @@
             if (result.isConfirmed) {
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = '{{ route("admin.data.restore", "") }}/' + id;
+                form.action = '/admin/data-management/restore/' + id;
                 form.innerHTML = '@csrf';
                 document.body.appendChild(form);
                 form.submit();
