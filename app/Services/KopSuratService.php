@@ -76,30 +76,30 @@ class KopSuratService
         // Build center content from config
         $centerContent = $this->buildCenterContent($sekolah);
 
-        // Build HTML table structure
+        // Build HTML table structure with precise positioning
         $html = '
-        <table width="100%" border="0" cellpadding="5" cellspacing="0" style="margin-bottom: 10px;">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 5px;">
             <tr>
-                <td width="15%" align="center" valign="top">';
+                <td width="15%" align="center" valign="middle" style="padding: 5px;">';
         
         if ($logoKemenagSrc) {
-            $html .= '<img src="' . $logoKemenagSrc . '" alt="Logo Kemenag" style="height: ' . $logoKemenagHeight . 'px;">';
+            $html .= '<img src="' . $logoKemenagSrc . '" alt="Logo Kemenag" style="height: ' . $logoKemenagHeight . 'px; display: block; margin: 0 auto;">';
         }
         
         $html .= '</td>
-                <td width="70%" align="center" valign="top">' . $centerContent . '</td>
-                <td width="15%" align="center" valign="top">';
+                <td width="70%" align="center" valign="middle" style="padding: 5px 10px;">' . $centerContent . '</td>
+                <td width="15%" align="center" valign="middle" style="padding: 5px;">';
         
         if ($logoSekolahSrc) {
-            $html .= '<img src="' . $logoSekolahSrc . '" alt="Logo Sekolah" style="height: ' . $logoSekolahHeight . 'px;">';
+            $html .= '<img src="' . $logoSekolahSrc . '" alt="Logo Sekolah" style="height: ' . $logoSekolahHeight . 'px; display: block; margin: 0 auto;">';
         }
         
         $html .= '</td>
             </tr>
         </table>';
 
-        // Add divider line
-        $html .= '<div style="border-bottom: 3px double #000; margin-bottom: 10px;"></div>';
+        // Add divider line with precise spacing
+        $html .= '<div style="border-bottom: 3px double #000; margin: 5px 0 10px 0; clear: both;"></div>';
 
         return $html;
     }
@@ -266,7 +266,7 @@ class KopSuratService
         $fontWeight = $bold ? 'bold' : 'normal';
 
         $html = '';
-        $style = "text-align: {$align}; font-size: {$fontSize}pt; font-weight: {$fontWeight}; margin: 2px 0; line-height: 1.3;";
+        $style = "text-align: {$align}; font-size: {$fontSize}pt; font-weight: {$fontWeight}; margin: 1px 0; padding: 0; line-height: 1.2;";
 
         if (!empty($content['line1'])) {
             $html .= '<div style="' . $style . '">' . htmlspecialchars($content['line1']) . '</div>';
@@ -292,7 +292,7 @@ class KopSuratService
         $marginTop = $content['marginTop'] ?? 5;
         $marginBottom = $content['marginBottom'] ?? 5;
 
-        return '<hr style="border: none; border-top: ' . $width . 'px ' . $style . ' ' . $color . '; margin-top: ' . $marginTop . 'px; margin-bottom: ' . $marginBottom . 'px;">';
+        return '<hr style="border: none; border-top: ' . $width . 'px ' . $style . ' ' . $color . '; margin: ' . $marginTop . 'px 0 ' . $marginBottom . 'px 0; padding: 0;">';
     }
 
     /**
@@ -300,7 +300,7 @@ class KopSuratService
      */
     private function renderContactElement($content)
     {
-        $html = '<div style="font-size: 9pt; text-align: center; margin: 3px 0;">';
+        $html = '<div style="font-size: 9pt; text-align: center; margin: 2px 0; padding: 0; line-height: 1.2;">';
         
         $parts = [];
         if (!empty($content['alamat'])) {
@@ -327,12 +327,12 @@ class KopSuratService
      */
     private function buildDefaultCenterContent($sekolah)
     {
-        $html = '<div style="text-align: center; font-weight: bold;">';
-        $html .= '<div style="font-size: 11pt; margin: 3px 0;">KEMENTERIAN AGAMA REPUBLIK INDONESIA</div>';
-        $html .= '<div style="font-size: 14pt; margin: 3px 0;">' . strtoupper($sekolah->nama_sekolah ?? 'SEKOLAH') . '</div>';
+        $html = '<div style="text-align: center; font-weight: bold; padding: 0; margin: 0;">';
+        $html .= '<div style="font-size: 11pt; margin: 1px 0; padding: 0; line-height: 1.2;">KEMENTERIAN AGAMA REPUBLIK INDONESIA</div>';
+        $html .= '<div style="font-size: 14pt; margin: 1px 0; padding: 0; line-height: 1.2;">' . strtoupper($sekolah->nama_sekolah ?? 'SEKOLAH') . '</div>';
         
         if ($sekolah->alamat_jalan) {
-            $html .= '<div style="font-size: 9pt; margin: 5px 0; font-weight: normal;">';
+            $html .= '<div style="font-size: 9pt; margin: 2px 0; padding: 0; font-weight: normal; line-height: 1.2;">';
             $html .= htmlspecialchars($sekolah->alamat_jalan);
             if ($sekolah->telepon) {
                 $html .= ' | Telp: ' . htmlspecialchars($sekolah->telepon);
