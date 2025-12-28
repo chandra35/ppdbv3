@@ -26,7 +26,7 @@ class SettingsController extends Controller
             $settings->status_pendaftaran = true;
             $settings->validasi_nisn_aktif = true;
             $settings->cegah_pendaftar_ganda = true;
-            $settings->dokumen_aktif = ['kk', 'akta', 'ijazah', 'foto'];
+            $settings->dokumen_aktif = ['kk', 'akta_lahir', 'ijazah', 'foto'];
             $settings->nomor_registrasi_prefix = 'PPDB';
             $settings->nomor_registrasi_counter = 0;
             $settings->save();

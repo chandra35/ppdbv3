@@ -53,6 +53,8 @@ class CalonDokumen extends Model
         'raport' => 'Raport',
         'sertifikat_prestasi' => 'Sertifikat Prestasi',
         'surat_keterangan' => 'Surat Keterangan Lainnya',
+        'surat_sehat' => 'Surat Keterangan Sehat',
+        'surat_kelakuan_baik' => 'Surat Kelakuan Baik',
     ];
 
     // Relations

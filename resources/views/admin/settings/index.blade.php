@@ -175,12 +175,12 @@
                         @php
                             $dokumenOptions = [
                                 'kk' => 'Kartu Keluarga (KK)',
-                                'akta' => 'Akta Kelahiran',
+                                'akta_lahir' => 'Akta Kelahiran',
                                 'ijazah' => 'Ijazah/SKL',
                                 'foto' => 'Pas Foto',
                                 'ktp_ortu' => 'KTP Orang Tua',
                                 'skhun' => 'SKHUN',
-                                'rapor' => 'Rapor',
+                                'raport' => 'Raport',
                                 'surat_sehat' => 'Surat Keterangan Sehat',
                                 'surat_kelakuan_baik' => 'Surat Kelakuan Baik',
                             ];

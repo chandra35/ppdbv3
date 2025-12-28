@@ -7,6 +7,7 @@ use App\Models\CalonSiswa;
 use App\Models\CalonOrtu;
 use App\Models\CalonDokumen;
 use App\Models\NilaiRapor;
+use App\Models\PpdbSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -245,13 +246,16 @@ class DashboardController extends Controller
         // All available documents
         $allDocs = [
             'kk' => 'Kartu Keluarga',
-            'akta_kelahiran' => 'Akta Kelahiran',
+            'akta_lahir' => 'Akta Kelahiran',
             'ijazah' => 'Ijazah / SKL',
-            'rapor' => 'Rapor Semester Terakhir',
+            'raport' => 'Raport Semester Terakhir',
             'foto' => 'Pas Foto 3x4',
+            'ktp_ortu' => 'KTP Orang Tua',
+            'skhun' => 'SKHUN',
             'surat_sehat' => 'Surat Keterangan Sehat',
             'surat_pernyataan' => 'Surat Pernyataan Orang Tua',
             'kartu_pkh' => 'Kartu PKH/KIP',
+            'surat_kelakuan_baik' => 'Surat Kelakuan Baik',
         ];
 
         // Filter only active documents
@@ -510,8 +514,21 @@ class DashboardController extends Controller
 
     protected function calculateDokumenProgress(CalonSiswa $calonSiswa): int
     {
-        $requiredCount = 6;
-        $uploadedCount = $calonSiswa->dokumen->count();
+        // Get active documents from settings
+        $settings = PpdbSettings::first();
+        $requiredDokumen = $settings?->dokumen_aktif ?? ['foto', 'kk', 'akta_lahir', 'ktp_ortu', 'ijazah', 'raport'];
+        
+        $requiredCount = count($requiredDokumen);
+        
+        if ($requiredCount === 0) {
+            return 0; // No documents required
+        }
+        
+        // Count uploaded documents that match required types
+        $uploadedCount = $calonSiswa->dokumen()
+            ->whereIn('jenis_dokumen', $requiredDokumen)
+            ->count();
+            
         return (int) min(100, ($uploadedCount / $requiredCount) * 100);
     }
 

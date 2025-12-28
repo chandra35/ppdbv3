@@ -16,12 +16,13 @@
     .nilai-table th {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 12px;
+        padding: 12px 8px;
         text-align: center;
         font-weight: 600;
+        font-size: 14px;
     }
     .nilai-table td {
-        padding: 10px;
+        padding: 8px 4px;
         text-align: center;
         vertical-align: middle;
     }
@@ -31,11 +32,11 @@
     .nilai-input {
         width: 100%;
         max-width: 100px;
-        padding: 8px;
+        padding: 8px 4px;
         border: 2px solid #e9ecef;
         border-radius: 6px;
         text-align: center;
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 600;
         transition: all 0.3s ease;
     }
@@ -48,28 +49,138 @@
         border-color: #dc3545;
     }
     .rata-rata-display {
-        font-size: 18px;
+        font-size: 16px;
         font-weight: bold;
         color: #667eea;
-        padding: 10px;
+        padding: 8px;
         background: linear-gradient(135deg, #f0f4ff 0%, #e8eeff 100%);
         border-radius: 8px;
         text-align: center;
     }
     .info-box {
-        background: linear-gradient(135deg, #fff8e6 0%, #fffbf0 100%);
-        border-left: 4px solid #ffc107;
-        padding: 1rem;
-        border-radius: 8px;
+        background: #f8f9fa;
+        border-left: 3px solid #6c757d;
+        padding: 0.75rem 1rem;
+        border-radius: 4px;
         margin-bottom: 1.5rem;
     }
+    .info-box h5 {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #495057;
+    }
     .info-box ul {
-        margin: 0.5rem 0 0 0;
-        padding-left: 1.5rem;
+        margin: 0;
+        padding-left: 1.2rem;
     }
     .info-box li {
-        margin-bottom: 0.5rem;
-        color: #856404;
+        margin-bottom: 0.25rem;
+        font-size: 12px;
+        color: #6c757d;
+    }
+    .info-box li:last-child {
+        margin-bottom: 0;
+    }
+    
+    /* Mobile Card Layout */
+    .semester-card {
+        display: none;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        background: white;
+    }
+    .semester-card h5 {
+        color: #667eea;
+        font-weight: bold;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+    }
+    .semester-card .form-group {
+        margin-bottom: 12px;
+    }
+    .semester-card label {
+        font-weight: 600;
+        color: #495057;
+        font-size: 13px;
+        margin-bottom: 5px;
+    }
+    .semester-card .nilai-input {
+        max-width: 100%;
+        font-size: 16px;
+        padding: 10px;
+    }
+    .semester-card .rata-rata-display {
+        font-size: 18px;
+        padding: 12px;
+        margin-top: 10px;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .nilai-table {
+            display: none;
+        }
+        .semester-card {
+            display: block;
+        }
+        .card-header h3 {
+            font-size: 16px;
+        }
+        .info-box h5 {
+            font-size: 14px;
+        }
+        .info-box ul {
+            font-size: 12px;
+            padding-left: 1.2rem;
+        }
+        .info-box li {
+            margin-bottom: 0.3rem;
+        }
+        .btn-lg {
+            font-size: 14px;
+            padding: 10px 16px;
+        }
+        .small-box .inner h3 {
+            font-size: 28px;
+        }
+        .small-box .inner p {
+            font-size: 13px;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .card-body {
+            padding: 0.75rem;
+        }
+        .info-box {
+            padding: 0.75rem;
+            font-size: 12px;
+        }
+        .semester-card {
+            padding: 12px;
+        }
+        .semester-card h5 {
+            font-size: 15px;
+            margin-bottom: 12px;
+        }
+        .semester-card label {
+            font-size: 12px;
+        }
+        .semester-card .nilai-input {
+            font-size: 14px;
+            padding: 8px;
+        }
+        .rata-rata-display {
+            font-size: 14px;
+        }
+        .btn-lg {
+            font-size: 13px;
+            padding: 8px 12px;
+        }
     }
 </style>
 @endsection
@@ -90,13 +201,17 @@
                 </div>
                 <div class="card-body">
                     <div class="info-box">
-                        <h5 class="mb-2"><i class="fas fa-info-circle mr-2"></i>Petunjuk Pengisian:</h5>
-                        <ul>
-                            <li>Isi nilai rapor untuk <strong>Semester 1 sampai 5</strong></li>
-                            <li>Mata pelajaran: <strong>Matematika, IPA, IPS</strong></li>
-                            <li>Nilai harus dalam rentang <strong>1-100</strong> (tanpa koma)</li>
-                            <li>Rata-rata akan dihitung otomatis dari 3 mata pelajaran</li>
-                            <li>Nilai rapor akan menjadi salah satu komponen penilaian akhir</li>
+                        <div style="font-size: 12px; font-weight: 600; margin-bottom: 0.5rem; color: #495057;">
+                            <i class="fas fa-info-circle mr-1"></i>Petunjuk Pengisian<br>
+                        </div>
+                        <ul class="mb-0" style="line-height: 1.8;">
+                            <li>Isikan nilai rapor <strong>dari Semester 1 hingga Semester 5</strong> (5 semester SMP).</li>
+                            <li>Mata pelajaran yang dinilai: <strong>Matematika, Ilmu Pengetahuan Alam (IPA), dan Ilmu Pengetahuan Sosial (IPS)</strong>.</li>
+                            <li>Nilai yang diinput adalah <strong>nilai akhir semester</strong> yang tertera pada raport.</li>
+                            <li>Rentang nilai: <strong>1 sampai 100</strong> (angka bulat, tanpa desimal/koma).</li>
+                            <li>Rata-rata per semester akan <strong>dihitung otomatis</strong> dari 3 mata pelajaran.</li>
+                            <li>Pastikan semua nilai sudah diisi dengan benar sebelum menyimpan.</li>
+                            <li><strong>Nilai rapor berkontribusi 30%</strong> terhadap penilaian akhir PPDB.</li>
                         </ul>
                     </div>
 
@@ -185,6 +300,94 @@
                             </tfoot>
                         </table>
                     </div>
+
+                    <!-- Mobile Card View -->
+                    @foreach($nilaiRapor as $semester => $nilai)
+                    <div class="semester-card">
+                        <h5><i class="fas fa-book mr-2"></i>Semester {{ $semester }}</h5>
+                        
+                        <div class="form-group">
+                            <label for="mobile_semester_{{ $semester }}_matematika">
+                                <i class="fas fa-calculator mr-1"></i> Matematika
+                            </label>
+                            <input type="number" 
+                                   id="mobile_semester_{{ $semester }}_matematika"
+                                   name="semester_{{ $semester }}_matematika" 
+                                   class="nilai-input form-control @error("semester_{$semester}_matematika") is-invalid @enderror" 
+                                   value="{{ old("semester_{$semester}_matematika", $nilai['matematika']) }}"
+                                   min="1" 
+                                   max="100" 
+                                   step="1"
+                                   required
+                                   data-semester="{{ $semester }}"
+                                   data-mapel="matematika"
+                                   oninput="calculateRataRata({{ $semester }})">
+                            @error("semester_{$semester}_matematika")
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label for="mobile_semester_{{ $semester }}_ipa">
+                                <i class="fas fa-flask mr-1"></i> IPA
+                            </label>
+                            <input type="number" 
+                                   id="mobile_semester_{{ $semester }}_ipa"
+                                   name="semester_{{ $semester }}_ipa" 
+                                   class="nilai-input form-control @error("semester_{$semester}_ipa") is-invalid @enderror" 
+                                   value="{{ old("semester_{$semester}_ipa", $nilai['ipa']) }}"
+                                   min="1" 
+                                   max="100" 
+                                   step="1"
+                                   required
+                                   data-semester="{{ $semester }}"
+                                   data-mapel="ipa"
+                                   oninput="calculateRataRata({{ $semester }})">
+                            @error("semester_{$semester}_ipa")
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label for="mobile_semester_{{ $semester }}_ips">
+                                <i class="fas fa-globe mr-1"></i> IPS
+                            </label>
+                            <input type="number" 
+                                   id="mobile_semester_{{ $semester }}_ips"
+                                   name="semester_{{ $semester }}_ips" 
+                                   class="nilai-input form-control @error("semester_{$semester}_ips") is-invalid @enderror" 
+                                   value="{{ old("semester_{$semester}_ips", $nilai['ips']) }}"
+                                   min="1" 
+                                   max="100" 
+                                   step="1"
+                                   required
+                                   data-semester="{{ $semester }}"
+                                   data-mapel="ips"
+                                   oninput="calculateRataRata({{ $semester }})">
+                            @error("semester_{$semester}_ips")
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="form-group mb-0">
+                            <label><i class="fas fa-chart-line mr-1"></i> Rata-Rata</label>
+                            <div class="rata-rata-display" id="mobile_rata_rata_{{ $semester }}">
+                                {{ $nilai['rata_rata'] ? number_format($nilai['rata_rata'], 2) : '-' }}
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+
+                    <!-- Mobile Overall Average -->
+                    <div class="semester-card" style="background: #f8f9fa; border: 2px solid #667eea;">
+                        <h5 class="text-center mb-3" style="color: #28a745;">
+                            <i class="fas fa-trophy mr-2"></i>Rata-Rata Keseluruhan
+                        </h5>
+                        <div class="rata-rata-display" id="mobile_rata_rata_keseluruhan" style="font-size: 24px; color: #28a745;">
+                            {{ $calonSiswa->rata_rata_rapor ? number_format($calonSiswa->rata_rata_rapor, 2) : '-' }}
+                        </div>
+                    </div>
+
                 </div>
                 <div class="card-footer">
                     <button type="submit" class="btn btn-primary btn-lg">
@@ -262,6 +465,15 @@ $(document).ready(function() {
         calculateRataRata(i);
     }
     calculateRataRataKeseluruhan();
+    
+    // Sync values between desktop and mobile inputs
+    $('.nilai-input').on('input', function() {
+        const name = $(this).attr('name');
+        const value = $(this).val();
+        
+        // Update all inputs with the same name
+        $(`input[name="${name}"]`).val(value);
+    });
 });
 
 function calculateRataRata(semester) {
@@ -272,8 +484,10 @@ function calculateRataRata(semester) {
     if (mtk > 0 && ipa > 0 && ips > 0) {
         const rataRata = (mtk + ipa + ips) / 3;
         $(`#rata_rata_${semester}`).text(rataRata.toFixed(2));
+        $(`#mobile_rata_rata_${semester}`).text(rataRata.toFixed(2));
     } else {
         $(`#rata_rata_${semester}`).text('-');
+        $(`#mobile_rata_rata_${semester}`).text('-');
     }
     
     // Recalculate overall average
@@ -298,8 +512,10 @@ function calculateRataRataKeseluruhan() {
     if (count > 0) {
         const rataRataKeseluruhan = total / count;
         $('#rata_rata_keseluruhan').text(rataRataKeseluruhan.toFixed(2));
+        $('#mobile_rata_rata_keseluruhan').text(rataRataKeseluruhan.toFixed(2));
     } else {
         $('#rata_rata_keseluruhan').text('-');
+        $('#mobile_rata_rata_keseluruhan').text('-');
     }
 }
 
