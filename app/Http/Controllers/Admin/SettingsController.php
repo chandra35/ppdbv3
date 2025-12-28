@@ -38,10 +38,6 @@ class SettingsController extends Controller
     public function update(Request $request)
     {
         $validated = $request->validate([
-            'kuota_penerimaan' => 'required|integer|min:1',
-            'tanggal_dibuka' => 'required|date',
-            'tanggal_ditutup' => 'required|date|after:tanggal_dibuka',
-            'status_pendaftaran' => 'required|boolean',
             'validasi_nisn_aktif' => 'nullable|boolean',
             'cegah_pendaftar_ganda' => 'nullable|boolean',
             'dokumen_aktif' => 'nullable|array',
@@ -51,7 +47,6 @@ class SettingsController extends Controller
         // Convert checkbox values
         $validated['validasi_nisn_aktif'] = $request->has('validasi_nisn_aktif');
         $validated['cegah_pendaftar_ganda'] = $request->has('cegah_pendaftar_ganda');
-        $validated['status_pendaftaran'] = $request->input('status_pendaftaran') == '1';
 
         $settings = PpdbSettings::first();
         
