@@ -17,24 +17,6 @@
 @stop
 
 @section('content')
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible">
-            <button type="button" class="close" data-dismiss="alert">&times;</button>
-            <i class="fas fa-check-circle"></i> {{ session('success') }}
-        </div>
-    @endif
-
-    @if($errors->any())
-        <div class="alert alert-danger alert-dismissible">
-            <button type="button" class="close" data-dismiss="alert">&times;</button>
-            <ul class="mb-0">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
     {{-- Info Pengaturan Sekolah --}}
     @php
         $sekolah = \App\Models\SekolahSettings::first();
@@ -228,4 +210,22 @@
             </button>
         </div>
     </form>
+@stop
+
+@section('js')
+<script>
+$(document).ready(function() {
+    // Show success message
+    @if(session('success'))
+        toastr.success('{{ session('success') }}');
+    @endif
+    
+    // Show error messages
+    @if($errors->any())
+        @foreach($errors->all() as $error)
+            toastr.error('{{ $error }}');
+        @endforeach
+    @endif
+});
+</script>
 @stop
