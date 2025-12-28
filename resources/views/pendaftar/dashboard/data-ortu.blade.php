@@ -19,6 +19,31 @@
             @csrf
             @method('PUT')
 
+            <!-- Data Kartu Keluarga -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-id-card mr-2"></i>
+                        Data Kartu Keluarga
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Nomor Kartu Keluarga (KK)</label>
+                        <input type="text" name="no_kk" class="form-control @error('no_kk') is-invalid @enderror" 
+                               value="{{ old('no_kk', $ortu->no_kk) }}" 
+                               maxlength="16" 
+                               pattern="[0-9]{16}"
+                               inputmode="numeric"
+                               placeholder="16 digit angka">
+                        @error('no_kk')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <small class="form-text text-muted">Hanya angka, 16 digit</small>
+                    </div>
+                </div>
+            </div>
+
             <!-- Data Ayah -->
             <div class="card">
                 <div class="card-header bg-primary">
@@ -80,8 +105,22 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label>Pekerjaan</label>
-                                <input type="text" name="pekerjaan_ayah" class="form-control" 
-                                       value="{{ old('pekerjaan_ayah', $ortu->pekerjaan_ayah) }}">
+                                <select name="pekerjaan_ayah" class="form-control">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="tidak_bekerja" {{ old('pekerjaan_ayah', $ortu->pekerjaan_ayah) == 'tidak_bekerja' ? 'selected' : '' }}>Tidak Bekerja</option>
+                                    <option value="pns" {{ old('pekerjaan_ayah', $ortu->pekerjaan_ayah) == 'pns' ? 'selected' : '' }}>PNS</option>
+                                    <option value="tni_polri" {{ old('pekerjaan_ayah', $ortu->pekerjaan_ayah) == 'tni_polri' ? 'selected' : '' }}>TNI/Polri</option>
+                                    <option value="swasta" {{ old('pekerjaan_ayah', $ortu->pekerjaan_ayah) == 'swasta' ? 'selected' : '' }}>Karyawan Swasta</option>
+                                    <option value="wiraswasta" {{ old('pekerjaan_ayah', $ortu->pekerjaan_ayah) == 'wiraswasta' ? 'selected' : '' }}>Wiraswasta</option>
+                                    <option value="petani" {{ old('pekerjaan_ayah', $ortu->pekerjaan_ayah) == 'petani' ? 'selected' : '' }}>Petani</option>
+                                    <option value="nelayan" {{ old('pekerjaan_ayah', $ortu->pekerjaan_ayah) == 'nelayan' ? 'selected' : '' }}>Nelayan</option>
+                                    <option value="buruh" {{ old('pekerjaan_ayah', $ortu->pekerjaan_ayah) == 'buruh' ? 'selected' : '' }}>Buruh</option>
+                                    <option value="guru" {{ old('pekerjaan_ayah', $ortu->pekerjaan_ayah) == 'guru' ? 'selected' : '' }}>Guru/Dosen</option>
+                                    <option value="dokter" {{ old('pekerjaan_ayah', $ortu->pekerjaan_ayah) == 'dokter' ? 'selected' : '' }}>Dokter</option>
+                                    <option value="pedagang" {{ old('pekerjaan_ayah', $ortu->pekerjaan_ayah) == 'pedagang' ? 'selected' : '' }}>Pedagang</option>
+                                    <option value="pensiunan" {{ old('pekerjaan_ayah', $ortu->pekerjaan_ayah) == 'pensiunan' ? 'selected' : '' }}>Pensiunan</option>
+                                    <option value="lainnya" {{ old('pekerjaan_ayah', $ortu->pekerjaan_ayah) == 'lainnya' ? 'selected' : '' }}>Lainnya</option>
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -89,9 +128,13 @@
                                 <label>Penghasilan</label>
                                 <select name="penghasilan_ayah" class="form-control">
                                     <option value="">-- Pilih --</option>
-                                    @foreach(['< 1 Juta', '1 - 2 Juta', '2 - 3 Juta', '3 - 5 Juta', '5 - 10 Juta', '> 10 Juta'] as $peng)
-                                        <option value="{{ $peng }}" {{ old('penghasilan_ayah', $ortu->penghasilan_ayah) == $peng ? 'selected' : '' }}>{{ $peng }}</option>
-                                    @endforeach
+                                    <option value="tidak_ada" {{ old('penghasilan_ayah', $ortu->penghasilan_ayah) == 'tidak_ada' ? 'selected' : '' }}>Tidak ada</option>
+                                    <option value="dibawah_1jt" {{ old('penghasilan_ayah', $ortu->penghasilan_ayah) == 'dibawah_1jt' ? 'selected' : '' }}>< Rp 1.000.000</option>
+                                    <option value="1jt_2jt" {{ old('penghasilan_ayah', $ortu->penghasilan_ayah) == '1jt_2jt' ? 'selected' : '' }}>Rp 1.000.000 - Rp 2.000.000</option>
+                                    <option value="2jt_3jt" {{ old('penghasilan_ayah', $ortu->penghasilan_ayah) == '2jt_3jt' ? 'selected' : '' }}>Rp 2.000.000 - Rp 3.000.000</option>
+                                    <option value="3jt_5jt" {{ old('penghasilan_ayah', $ortu->penghasilan_ayah) == '3jt_5jt' ? 'selected' : '' }}>Rp 3.000.000 - Rp 5.000.000</option>
+                                    <option value="5jt_10jt" {{ old('penghasilan_ayah', $ortu->penghasilan_ayah) == '5jt_10jt' ? 'selected' : '' }}>Rp 5.000.000 - Rp 10.000.000</option>
+                                    <option value="diatas_10jt" {{ old('penghasilan_ayah', $ortu->penghasilan_ayah) == 'diatas_10jt' ? 'selected' : '' }}>> Rp 10.000.000</option>
                                 </select>
                             </div>
                         </div>
@@ -99,8 +142,14 @@
 
                     <div class="form-group">
                         <label>No. HP Ayah</label>
-                        <input type="text" name="nomor_hp_ayah" class="form-control" 
-                               value="{{ old('nomor_hp_ayah', $ortu->nomor_hp_ayah) }}">
+                        <input type="text" name="hp_ayah" class="form-control @error('hp_ayah') is-invalid @enderror" 
+                               value="{{ old('hp_ayah', $ortu->hp_ayah) }}"
+                               placeholder="08xxxxxxxxxx"
+                               pattern="0[0-9]{9,12}"
+                               inputmode="tel">
+                        @error('hp_ayah')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
             </div>
@@ -166,8 +215,23 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label>Pekerjaan</label>
-                                <input type="text" name="pekerjaan_ibu" class="form-control" 
-                                       value="{{ old('pekerjaan_ibu', $ortu->pekerjaan_ibu) }}">
+                                <select name="pekerjaan_ibu" class="form-control">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="tidak_bekerja" {{ old('pekerjaan_ibu', $ortu->pekerjaan_ibu) == 'tidak_bekerja' ? 'selected' : '' }}>Tidak Bekerja</option>
+                                    <option value="pns" {{ old('pekerjaan_ibu', $ortu->pekerjaan_ibu) == 'pns' ? 'selected' : '' }}>PNS</option>
+                                    <option value="tni_polri" {{ old('pekerjaan_ibu', $ortu->pekerjaan_ibu) == 'tni_polri' ? 'selected' : '' }}>TNI/Polri</option>
+                                    <option value="swasta" {{ old('pekerjaan_ibu', $ortu->pekerjaan_ibu) == 'swasta' ? 'selected' : '' }}>Karyawan Swasta</option>
+                                    <option value="wiraswasta" {{ old('pekerjaan_ibu', $ortu->pekerjaan_ibu) == 'wiraswasta' ? 'selected' : '' }}>Wiraswasta</option>
+                                    <option value="petani" {{ old('pekerjaan_ibu', $ortu->pekerjaan_ibu) == 'petani' ? 'selected' : '' }}>Petani</option>
+                                    <option value="nelayan" {{ old('pekerjaan_ibu', $ortu->pekerjaan_ibu) == 'nelayan' ? 'selected' : '' }}>Nelayan</option>
+                                    <option value="buruh" {{ old('pekerjaan_ibu', $ortu->pekerjaan_ibu) == 'buruh' ? 'selected' : '' }}>Buruh</option>
+                                    <option value="guru" {{ old('pekerjaan_ibu', $ortu->pekerjaan_ibu) == 'guru' ? 'selected' : '' }}>Guru/Dosen</option>
+                                    <option value="dokter" {{ old('pekerjaan_ibu', $ortu->pekerjaan_ibu) == 'dokter' ? 'selected' : '' }}>Dokter</option>
+                                    <option value="pedagang" {{ old('pekerjaan_ibu', $ortu->pekerjaan_ibu) == 'pedagang' ? 'selected' : '' }}>Pedagang</option>
+                                    <option value="ibu_rumah_tangga" {{ old('pekerjaan_ibu', $ortu->pekerjaan_ibu) == 'ibu_rumah_tangga' ? 'selected' : '' }}>Ibu Rumah Tangga</option>
+                                    <option value="pensiunan" {{ old('pekerjaan_ibu', $ortu->pekerjaan_ibu) == 'pensiunan' ? 'selected' : '' }}>Pensiunan</option>
+                                    <option value="lainnya" {{ old('pekerjaan_ibu', $ortu->pekerjaan_ibu) == 'lainnya' ? 'selected' : '' }}>Lainnya</option>
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -175,9 +239,13 @@
                                 <label>Penghasilan</label>
                                 <select name="penghasilan_ibu" class="form-control">
                                     <option value="">-- Pilih --</option>
-                                    @foreach(['< 1 Juta', '1 - 2 Juta', '2 - 3 Juta', '3 - 5 Juta', '5 - 10 Juta', '> 10 Juta'] as $peng)
-                                        <option value="{{ $peng }}" {{ old('penghasilan_ibu', $ortu->penghasilan_ibu) == $peng ? 'selected' : '' }}>{{ $peng }}</option>
-                                    @endforeach
+                                    <option value="tidak_ada" {{ old('penghasilan_ibu', $ortu->penghasilan_ibu) == 'tidak_ada' ? 'selected' : '' }}>Tidak ada</option>
+                                    <option value="dibawah_1jt" {{ old('penghasilan_ibu', $ortu->penghasilan_ibu) == 'dibawah_1jt' ? 'selected' : '' }}>< Rp 1.000.000</option>
+                                    <option value="1jt_2jt" {{ old('penghasilan_ibu', $ortu->penghasilan_ibu) == '1jt_2jt' ? 'selected' : '' }}>Rp 1.000.000 - Rp 2.000.000</option>
+                                    <option value="2jt_3jt" {{ old('penghasilan_ibu', $ortu->penghasilan_ibu) == '2jt_3jt' ? 'selected' : '' }}>Rp 2.000.000 - Rp 3.000.000</option>
+                                    <option value="3jt_5jt" {{ old('penghasilan_ibu', $ortu->penghasilan_ibu) == '3jt_5jt' ? 'selected' : '' }}>Rp 3.000.000 - Rp 5.000.000</option>
+                                    <option value="5jt_10jt" {{ old('penghasilan_ibu', $ortu->penghasilan_ibu) == '5jt_10jt' ? 'selected' : '' }}>Rp 5.000.000 - Rp 10.000.000</option>
+                                    <option value="diatas_10jt" {{ old('penghasilan_ibu', $ortu->penghasilan_ibu) == 'diatas_10jt' ? 'selected' : '' }}>> Rp 10.000.000</option>
                                 </select>
                             </div>
                         </div>
@@ -185,8 +253,14 @@
 
                     <div class="form-group">
                         <label>No. HP Ibu</label>
-                        <input type="text" name="nomor_hp_ibu" class="form-control" 
-                               value="{{ old('nomor_hp_ibu', $ortu->nomor_hp_ibu) }}">
+                        <input type="text" name="hp_ibu" class="form-control @error('hp_ibu') is-invalid @enderror" 
+                               value="{{ old('hp_ibu', $ortu->hp_ibu) }}"
+                               placeholder="08xxxxxxxxxx"
+                               pattern="0[0-9]{9,12}"
+                               inputmode="tel">
+                        @error('hp_ibu')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
             </div>

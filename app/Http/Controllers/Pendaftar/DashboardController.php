@@ -127,6 +127,8 @@ class DashboardController extends Controller
         $calonSiswa = CalonSiswa::where('user_id', $user->id)->first();
 
         $request->validate([
+            // KK
+            'no_kk' => 'nullable|string|size:16',
             // Ayah
             'nama_ayah' => 'required|string|max:100',
             'nik_ayah' => 'nullable|string|size:16',
@@ -135,7 +137,7 @@ class DashboardController extends Controller
             'pekerjaan_ayah' => 'nullable|string|max:100',
             'pendidikan_ayah' => 'nullable|string|max:50',
             'penghasilan_ayah' => 'nullable|string|max:50',
-            'nomor_hp_ayah' => 'nullable|string|max:15',
+            'hp_ayah' => 'nullable|string|max:15',
             // Ibu
             'nama_ibu' => 'required|string|max:100',
             'nik_ibu' => 'nullable|string|size:16',
@@ -144,7 +146,7 @@ class DashboardController extends Controller
             'pekerjaan_ibu' => 'nullable|string|max:100',
             'pendidikan_ibu' => 'nullable|string|max:50',
             'penghasilan_ibu' => 'nullable|string|max:50',
-            'nomor_hp_ibu' => 'nullable|string|max:15',
+            'hp_ibu' => 'nullable|string|max:15',
             // Alamat
             'alamat_ortu' => 'required|string',
             'provinsi_id_ortu' => 'required|string',
@@ -161,10 +163,11 @@ class DashboardController extends Controller
         $calonSiswa->ortu()->updateOrCreate(
             ['calon_siswa_id' => $calonSiswa->id],
             $request->only([
+                'no_kk',
                 'nama_ayah', 'nik_ayah', 'tempat_lahir_ayah', 'tanggal_lahir_ayah',
-                'pekerjaan_ayah', 'pendidikan_ayah', 'penghasilan_ayah', 'nomor_hp_ayah',
+                'pekerjaan_ayah', 'pendidikan_ayah', 'penghasilan_ayah', 'hp_ayah',
                 'nama_ibu', 'nik_ibu', 'tempat_lahir_ibu', 'tanggal_lahir_ibu',
-                'pekerjaan_ibu', 'pendidikan_ibu', 'penghasilan_ibu', 'nomor_hp_ibu',
+                'pekerjaan_ibu', 'pendidikan_ibu', 'penghasilan_ibu', 'hp_ibu',
                 'alamat_ortu', 'provinsi_id_ortu', 'kabupaten_id_ortu',
                 'kecamatan_id_ortu', 'kelurahan_id_ortu',
                 'nama_wali', 'hubungan_wali', 'pekerjaan_wali', 'nomor_hp_wali',
