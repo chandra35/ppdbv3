@@ -111,16 +111,27 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label>Anak Ke</label>
-                                <input type="number" name="anak_ke" class="form-control" 
-                                       value="{{ old('anak_ke', $calonSiswa->anak_ke) }}" min="1">
+                                <label>No. HP (WhatsApp) <span class="text-danger">*</span></label>
+                                <input type="text" name="nomor_hp" class="form-control @error('nomor_hp') is-invalid @enderror" 
+                                       value="{{ old('nomor_hp', $calonSiswa->nomor_hp) }}" 
+                                       placeholder="08xxxxxxxxxx"
+                                       pattern="0[0-9]{9,12}"
+                                       inputmode="tel"
+                                       required>
+                                @error('nomor_hp')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <small class="form-text text-muted">Hanya angka. Format: 08xx (tersimpan sebagai +628xx)</small>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label>Jumlah Saudara</label>
-                                <input type="number" name="jumlah_saudara" class="form-control" 
-                                       value="{{ old('jumlah_saudara', $calonSiswa->jumlah_saudara) }}" min="0">
+                                <label>Email</label>
+                                <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" 
+                                       value="{{ old('email', $calonSiswa->user->email ?? '') }}">
+                                @error('email')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
                     </div>
@@ -138,25 +149,34 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="form-group">
                                 <label>RT</label>
-                                <input type="text" name="rt_siswa" class="form-control" 
-                                       value="{{ old('rt_siswa', $calonSiswa->rt_siswa) }}" maxlength="5">
+                                <input type="number" name="rt_siswa" class="form-control @error('rt_siswa') is-invalid @enderror" 
+                                       value="{{ old('rt_siswa', $calonSiswa->rt_siswa) }}" min="0" max="999">
+                                @error('rt_siswa')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="form-group">
                                 <label>RW</label>
-                                <input type="text" name="rw_siswa" class="form-control" 
-                                       value="{{ old('rw_siswa', $calonSiswa->rw_siswa) }}" maxlength="5">
+                                <input type="number" name="rw_siswa" class="form-control @error('rw_siswa') is-invalid @enderror" 
+                                       value="{{ old('rw_siswa', $calonSiswa->rw_siswa) }}" min="0" max="999">
+                                @error('rw_siswa')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-2">
                             <div class="form-group">
                                 <label>Kode Pos</label>
-                                <input type="text" name="kode_pos_siswa" class="form-control" 
-                                       value="{{ old('kode_pos_siswa', $calonSiswa->kode_pos_siswa) }}" maxlength="10">
+                                <input type="number" name="kodepos_siswa" class="form-control @error('kodepos_siswa') is-invalid @enderror" 
+                                       value="{{ old('kodepos_siswa', $calonSiswa->kodepos_siswa) }}" min="0" max="99999">
+                                @error('kodepos_siswa')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
                     </div>
@@ -207,27 +227,13 @@
                     <hr>
                     <h5><i class="fas fa-phone mr-2"></i>Kontak & Asal Sekolah</h5>
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>No. HP (WhatsApp) <span class="text-danger">*</span></label>
-                                <input type="text" name="nomor_hp" class="form-control @error('nomor_hp') is-invalid @enderror" 
-                                       value="{{ old('nomor_hp', $calonSiswa->nomor_hp) }}" required>
-                                @error('nomor_hp')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Asal Sekolah <span class="text-danger">*</span></label>
-                                <input type="text" name="nama_sekolah_asal" class="form-control @error('nama_sekolah_asal') is-invalid @enderror" 
-                                       value="{{ old('nama_sekolah_asal', $calonSiswa->nama_sekolah_asal) }}" required>
-                                @error('nama_sekolah_asal')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
+                    <div class="form-group">
+                        <label>Asal Sekolah</label>
+                        <input type="text" name="nama_sekolah_asal" class="form-control @error('nama_sekolah_asal') is-invalid @enderror" 
+                               value="{{ old('nama_sekolah_asal', $calonSiswa->nama_sekolah_asal) }}">
+                        @error('nama_sekolah_asal')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
 

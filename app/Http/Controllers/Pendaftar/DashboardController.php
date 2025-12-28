@@ -54,47 +54,62 @@ class DashboardController extends Controller
         $user = Auth::user();
         $calonSiswa = CalonSiswa::where('user_id', $user->id)->first();
 
-        $request->validate([
-            'nik' => 'nullable|string|size:16',
-            'nama_lengkap' => 'required|string|max:100',
+        $validated = $request->validate([
+            'nik' => 'required|digits:16',
+            'nama_lengkap' => 'required|string|max:255',
             'tempat_lahir' => 'required|string|max:100',
             'tanggal_lahir' => 'required|date',
             'jenis_kelamin' => 'required|in:L,P',
-            'agama' => 'required|string|max:20',
-            'jumlah_saudara' => 'nullable|integer|min:0',
-            'anak_ke' => 'nullable|integer|min:1',
-            'alamat_siswa' => 'required|string',
+            'agama' => 'required|string',
+            'alamat_siswa' => 'nullable|string',
             'rt_siswa' => 'nullable|string|max:5',
             'rw_siswa' => 'nullable|string|max:5',
-            'provinsi_id_siswa' => 'required|string',
-            'kabupaten_id_siswa' => 'required|string',
-            'kecamatan_id_siswa' => 'required|string',
-            'kelurahan_id_siswa' => 'required|string',
-            'kode_pos_siswa' => 'nullable|string|max:10',
-            'nomor_hp' => 'required|string|max:15',
-            'nama_sekolah_asal' => 'required|string|max:150',
+            'provinsi_id_siswa' => 'required|exists:indonesia_provinces,code',
+            'kabupaten_id_siswa' => 'required|exists:indonesia_cities,code',
+            'kecamatan_id_siswa' => 'required|exists:indonesia_districts,code',
+            'kelurahan_id_siswa' => 'required|exists:indonesia_villages,code',
+            'kodepos_siswa' => 'nullable|string|max:10',
+            'nomor_hp' => 'required|string|regex:/^0[0-9]{9,12}$/|max:20',
+            'email' => 'nullable|email|max:255',
+            'nama_sekolah_asal' => 'nullable|string|max:255',
+        ], [
+            'nik.digits' => 'NIK harus 16 digit angka.',
+            'nomor_hp.regex' => 'Format No. HP harus 08xxxxxxxxxx (0 diikuti 9-12 digit).',
         ]);
 
-        $calonSiswa->update($request->only([
-            'nik',
-            'nama_lengkap',
-            'tempat_lahir',
-            'tanggal_lahir',
-            'jenis_kelamin',
-            'agama',
-            'jumlah_saudara',
-            'anak_ke',
-            'alamat_siswa',
-            'rt_siswa',
-            'rw_siswa',
-            'provinsi_id_siswa',
-            'kabupaten_id_siswa',
-            'kecamatan_id_siswa',
-            'kelurahan_id_siswa',
-            'kode_pos_siswa',
-            'nomor_hp',
-            'nama_sekolah_asal',
-        ]));
+        // Convert phone number from 08xx to +628xx format
+        if (!empty($validated['nomor_hp'])) {
+            $phone = $validated['nomor_hp'];
+            if (substr($phone, 0, 1) === '0') {
+                $validated['nomor_hp'] = '+62' . substr($phone, 1);
+            } elseif (substr($phone, 0, 2) === '62') {
+                $validated['nomor_hp'] = '+' . $phone;
+            }
+        }
+        
+        $calonSiswa->update([
+            'nik' => $validated['nik'],
+            'nama_lengkap' => $validated['nama_lengkap'],
+            'tempat_lahir' => $validated['tempat_lahir'],
+            'tanggal_lahir' => $validated['tanggal_lahir'],
+            'jenis_kelamin' => $validated['jenis_kelamin'],
+            'agama' => $validated['agama'],
+            'alamat_siswa' => $validated['alamat_siswa'],
+            'rt_siswa' => $validated['rt_siswa'],
+            'rw_siswa' => $validated['rw_siswa'],
+            'provinsi_id_siswa' => $validated['provinsi_id_siswa'],
+            'kabupaten_id_siswa' => $validated['kabupaten_id_siswa'],
+            'kecamatan_id_siswa' => $validated['kecamatan_id_siswa'],
+            'kelurahan_id_siswa' => $validated['kelurahan_id_siswa'],
+            'kodepos_siswa' => $validated['kodepos_siswa'] ?? null,
+            'nomor_hp' => $validated['nomor_hp'],
+            'nama_sekolah_asal' => $validated['nama_sekolah_asal'] ?? null,
+        ]);
+        
+        // Update email if provided
+        if (!empty($validated['email']) && $calonSiswa->user) {
+            $calonSiswa->user->update(['email' => $validated['email']]);
+        }
 
         // Mark as completed
         $calonSiswa->data_diri_completed = true;
