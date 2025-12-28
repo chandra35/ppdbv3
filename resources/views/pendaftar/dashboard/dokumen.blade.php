@@ -19,11 +19,14 @@
         cursor: pointer;
         height: 100%;
         position: relative;
+        min-height: 200px;
     }
     
     .doc-card:hover {
         border-color: #667eea;
         background: #f8f9ff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     
     .doc-card.uploaded {
@@ -32,12 +35,36 @@
         background: #f0fff4;
     }
     
+    /* Status-based styling */
+    .doc-card.status-revision {
+        border-color: #f59e0b !important;
+        border-width: 3px !important;
+        border-style: solid !important;
+        background: #fffbeb !important;
+        animation: pulse-warning 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse-warning {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+        50% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+    }
+    
+    .doc-card.status-pending {
+        border-color: #3b82f6;
+        background: #eff6ff;
+    }
+    
+    .doc-card.status-valid {
+        border-color: #10b981;
+        background: #ecfdf5;
+    }
+    
     .doc-card .thumbnail-preview {
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
-        height: 120px;
+        height: 100px;
         overflow: hidden;
         border-radius: 8px 8px 0 0;
         background: #f8f9fa;
@@ -50,56 +77,120 @@
     }
     
     .doc-card.uploaded.has-thumbnail {
-        padding-top: 130px;
+        padding-top: 110px;
     }
     
     .doc-card .icon {
         font-size: 2.5rem;
         color: #999;
-        margin-bottom: 1rem;
+        margin-bottom: 0.75rem;
     }
     
     .doc-card.uploaded .icon {
         color: #48bb78;
     }
     
+    .doc-card.status-revision .icon {
+        color: #f59e0b;
+        animation: shake 0.5s ease-in-out infinite;
+    }
+    
+    @keyframes shake {
+        0%, 100% { transform: rotate(0deg); }
+        25% { transform: rotate(-5deg); }
+        75% { transform: rotate(5deg); }
+    }
+    
     .doc-card h5 {
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.75rem;
         font-size: 1rem;
+        font-weight: 600;
+        color: #1f2937;
     }
     
     .doc-card .status {
-        font-size: 0.85rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+        display: inline-block;
+        margin-top: 0.5rem;
     }
     
     .doc-card .status.pending {
-        color: #ed8936;
+        background: #dbeafe;
+        color: #1e40af;
     }
     
     .doc-card .status.valid {
-        color: #48bb78;
-    }
-    
-    .doc-card .status.invalid {
-        color: #f56565;
+        background: #d1fae5;
+        color: #065f46;
     }
     
     .doc-card .status.revision {
-        color: #4299e1;
+        background: #fef3c7;
+        color: #92400e;
+        border: 2px solid #f59e0b;
+        animation: blink 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+    
+    .doc-card .catatan-revisi {
+        margin-top: 0.75rem;
+        padding: 0.75rem;
+        background: #fff;
+        border-left: 4px solid #f59e0b;
+        text-align: left;
+        font-size: 0.813rem;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .doc-card .catatan-revisi strong {
+        color: #92400e;
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+    
+    .doc-card .catatan-revisi p {
+        margin: 0;
+        color: #78350f;
+        line-height: 1.5;
     }
     
     .preview-img {
         max-width: 100%;
-        max-height: 200px;
+        max-height: 250px;
         object-fit: contain;
-        border-radius: 5px;
+        border-radius: 8px;
         margin-top: 1rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     
     .btn-delete-doc {
         position: absolute;
         top: 10px;
         right: 10px;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .doc-card {
+            min-height: 180px;
+            padding: 1.25rem;
+        }
+        
+        .doc-card .icon {
+            font-size: 2rem;
+        }
+        
+        .doc-card h5 {
+            font-size: 0.938rem;
+        }
     }
 </style>
 @endsection
@@ -131,13 +222,15 @@
                             $doc = $uploadedDocs->get($key);
                             $isUploaded = $doc !== null;
                             $isImage = false;
+                            $statusClass = '';
                             if ($isUploaded) {
                                 $extension = strtolower(pathinfo($doc->file_path, PATHINFO_EXTENSION));
                                 $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif']);
+                                $statusClass = 'status-' . $doc->status_verifikasi;
                             }
                         @endphp
-                        <div class="col-md-4 col-6 mb-4">
-                            <div class="doc-card {{ $isUploaded ? 'uploaded' : '' }} {{ $isImage ? 'has-thumbnail' : '' }}" 
+                        <div class="col-lg-3 col-md-4 col-sm-6 col-12 mb-4">
+                            <div class="doc-card {{ $isUploaded ? 'uploaded' : '' }} {{ $isImage ? 'has-thumbnail' : '' }} {{ $statusClass }}" 
                                  data-toggle="modal" 
                                  data-target="#uploadModal"
                                  data-doc-type="{{ $key }}"
@@ -154,7 +247,13 @@
                                 @endif
                                 <div class="icon">
                                     @if($isUploaded)
-                                        <i class="fas fa-file-check"></i>
+                                        @if($doc->status_verifikasi === 'revision')
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                        @elseif($doc->status_verifikasi === 'valid')
+                                            <i class="fas fa-check-circle"></i>
+                                        @else
+                                            <i class="fas fa-file-check"></i>
+                                        @endif
                                     @else
                                         <i class="fas fa-cloud-upload-alt"></i>
                                     @endif
@@ -165,17 +264,22 @@
                                         @if($doc->status_verifikasi === 'pending')
                                             <i class="fas fa-clock"></i> Menunggu Verifikasi
                                         @elseif($doc->status_verifikasi === 'valid')
-                                            <i class="fas fa-check"></i> Terverifikasi
-                                        @elseif($doc->status_verifikasi === 'invalid')
-                                            <i class="fas fa-times"></i> Ditolak
+                                            <i class="fas fa-check-circle"></i> Terverifikasi
                                         @elseif($doc->status_verifikasi === 'revision')
-                                            <i class="fas fa-redo"></i> Perlu Revisi
+                                            <i class="fas fa-exclamation-circle"></i> Perlu Revisi
                                         @else
                                             <i class="fas fa-clock"></i> {{ ucfirst($doc->status_verifikasi) }}
                                         @endif
                                     </span>
+                                    
+                                    @if($doc->status_verifikasi === 'revision' && $doc->catatan_revisi)
+                                        <div class="catatan-revisi">
+                                            <strong><i class="fas fa-info-circle"></i> Catatan Admin:</strong>
+                                            <p>{{ $doc->catatan_revisi }}</p>
+                                        </div>
+                                    @endif
                                 @else
-                                    <span class="text-muted">Belum diupload</span>
+                                    <span class="text-muted"><i class="fas fa-upload"></i> Belum diupload</span>
                                 @endif
                             </div>
                         </div>
@@ -186,9 +290,9 @@
     </div>
 
     <div class="col-lg-4">
-        <div class="card">
-            <div class="card-header bg-info">
-                <h3 class="card-title text-white">
+        <div class="card card-outline card-info">
+            <div class="card-header">
+                <h3 class="card-title">
                     <i class="fas fa-clipboard-list mr-2"></i>
                     Checklist Dokumen
                 </h3>
@@ -198,19 +302,28 @@
                     @foreach($requiredDocs as $key => $label)
                         @php $doc = $uploadedDocs->get($key); @endphp
                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                            {{ $label }}
+                            <span>
+                                @if($doc && $doc->status_verifikasi === 'revision')
+                                    <i class="fas fa-exclamation-circle text-warning mr-1"></i>
+                                @endif
+                                {{ $label }}
+                            </span>
                             @if($doc)
                                 @if($doc->status_verifikasi === 'valid')
-                                    <span class="badge badge-success"><i class="fas fa-check"></i></span>
-                                @elseif($doc->status_verifikasi === 'invalid')
-                                    <span class="badge badge-danger"><i class="fas fa-times"></i></span>
+                                    <span class="badge badge-success">
+                                        <i class="fas fa-check-circle"></i> Disetujui
+                                    </span>
                                 @elseif($doc->status_verifikasi === 'revision')
-                                    <span class="badge badge-info"><i class="fas fa-redo"></i></span>
+                                    <span class="badge badge-warning" style="background-color: #f59e0b; border-color: #f59e0b;">
+                                        <i class="fas fa-exclamation-circle"></i> Perlu Revisi
+                                    </span>
                                 @else
-                                    <span class="badge badge-warning"><i class="fas fa-clock"></i></span>
+                                    <span class="badge badge-info">
+                                        <i class="fas fa-clock"></i> Proses
+                                    </span>
                                 @endif
                             @else
-                                <span class="badge badge-secondary"><i class="fas fa-minus"></i></span>
+                                <span class="badge badge-secondary"><i class="fas fa-minus"></i> Belum</span>
                             @endif
                         </li>
                     @endforeach
@@ -218,19 +331,50 @@
             </div>
             <div class="card-footer">
                 <small class="text-muted">
+                    <i class="fas fa-check-double mr-1"></i>
                     {{ $uploadedDocs->count() }} dari {{ count($requiredDocs) }} dokumen terupload
                 </small>
-                <div class="progress mt-2" style="height: 8px;">
-                    <div class="progress-bar" style="width: {{ ($uploadedDocs->count() / count($requiredDocs)) * 100 }}%"></div>
+                <div class="progress mt-2" style="height: 10px;">
+                    @php
+                        $verifiedCount = $uploadedDocs->where('status_verifikasi', 'valid')->count();
+                        $percentage = count($requiredDocs) > 0 ? ($verifiedCount / count($requiredDocs)) * 100 : 0;
+                    @endphp
+                    <div class="progress-bar bg-success" style="width: {{ $percentage }}%"></div>
+                    <div class="progress-bar bg-info" style="width: {{ (($uploadedDocs->count() - $verifiedCount) / count($requiredDocs)) * 100 }}%"></div>
                 </div>
+                <small class="text-muted mt-1 d-block">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    {{ $verifiedCount }} dokumen terverifikasi
+                </small>
             </div>
         </div>
 
-        @if($calonSiswa->data_dokumen_completed)
+        @if($uploadedDocs->where('status_verifikasi', 'revision')->count() > 0)
+        <div class="alert alert-warning" style="border-color: #f59e0b; background-color: #fffbeb;">
+            <h5 class="alert-heading">
+                <i class="fas fa-exclamation-triangle"></i>
+                Perhatian!
+            </h5>
+            <p class="mb-2">
+                Ada <strong>{{ $uploadedDocs->where('status_verifikasi', 'revision')->count() }}</strong> dokumen yang perlu diperbaiki.
+            </p>
+            <hr style="border-color: #fbbf24;">
+            <p class="mb-0 small">
+                <i class="fas fa-lightbulb mr-1"></i>
+                Silakan klik pada kartu dokumen untuk melihat catatan revisi dari admin dan upload ulang dokumen yang sudah diperbaiki.
+            </p>
+        </div>
+        @endif
+
+        @if($calonSiswa->data_dokumen_completed && $uploadedDocs->where('status_verifikasi', 'valid')->count() === count($requiredDocs))
         <div class="alert alert-success">
-            <i class="fas fa-check-circle mr-2"></i>
-            <strong>Semua Dokumen Lengkap!</strong><br>
-            Dokumen Anda sedang dalam proses verifikasi.
+            <h5 class="alert-heading">
+                <i class="fas fa-check-circle"></i>
+                Dokumen Lengkap!
+            </h5>
+            <p class="mb-0">
+                Semua dokumen Anda telah diverifikasi dan disetujui. Anda dapat melanjutkan ke tahap selanjutnya.
+            </p>
         </div>
         @endif
     </div>
