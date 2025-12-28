@@ -114,8 +114,8 @@ class LandingController extends Controller
             return redirect()->route('admin.dashboard');
         }
         
-        // Calon Siswa / User biasa
-        return redirect()->route('ppdb.dashboard');
+        // Calon Siswa / User biasa → redirect ke pendaftar.dashboard
+        return redirect()->route('pendaftar.dashboard');
     }
 
     public function login(Request $request)

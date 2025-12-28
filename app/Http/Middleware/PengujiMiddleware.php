@@ -32,7 +32,7 @@ class PengujiMiddleware
             if ($request->expectsJson()) {
                 return response()->json(['error' => 'Forbidden'], 403);
             }
-            return redirect()->route('ppdb.dashboard')
+            return redirect()->route('pendaftar.dashboard')
                 ->with('error', 'Maaf, Anda tidak memiliki akses ke halaman penguji.');
         }
 
