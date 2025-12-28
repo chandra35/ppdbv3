@@ -827,8 +827,6 @@ dl.row dt {
                                                     <span class="badge badge-warning" style="font-size: 8px; padding: 2px 4px;">Pending</span>
                                                 @elseif($dokumen->status_verifikasi == 'valid')
                                                     <span class="badge badge-success" style="font-size: 8px; padding: 2px 4px;">Valid</span>
-                                                @elseif($dokumen->status_verifikasi == 'invalid')
-                                                    <span class="badge badge-danger" style="font-size: 8px; padding: 2px 4px;">Invalid</span>
                                                 @elseif($dokumen->status_verifikasi == 'revision')
                                                     <span class="badge badge-info" style="font-size: 8px; padding: 2px 4px;">Revisi</span>
                                                 @endif
@@ -840,24 +838,20 @@ dl.row dt {
                                                     <button type="button" class="btn btn-success flex-fill approve-card-btn" data-dokumen-id="{{ $dokumen->id }}" title="Setujui" style="font-size: 9px; padding: 3px;">
                                                         <i class="fas fa-check"></i>
                                                     </button>
-                                                    <button type="button" class="btn btn-danger flex-fill" data-toggle="modal" data-target="#rejectDokumenModal{{ $dokumen->id }}" title="Tolak" style="font-size: 9px; padding: 3px;">
-                                                        <i class="fas fa-times"></i>
+                                                    <button type="button" class="btn btn-warning flex-fill" data-toggle="modal" data-target="#revisiDokumenModal{{ $dokumen->id }}" title="Minta Revisi" style="font-size: 9px; padding: 3px;">
+                                                        <i class="fas fa-redo"></i>
                                                     </button>
                                                 </div>
                                                 @elseif($dokumen->status_verifikasi == 'valid')
                                                 <button type="button" class="btn btn-warning btn-block" data-toggle="modal" data-target="#revisiDokumenModal{{ $dokumen->id }}" style="font-size: 9px; padding: 3px; margin-bottom: 2px;">
-                                                    <i class="fas fa-redo"></i>
+                                                    <i class="fas fa-redo"></i> Revisi
                                                 </button>
                                                 <button type="button" class="btn btn-secondary btn-block" data-toggle="modal" data-target="#cancelDokumenModal{{ $dokumen->id }}" style="font-size: 9px; padding: 3px;">
-                                                    <i class="fas fa-ban"></i>
-                                                </button>
-                                                @elseif($dokumen->status_verifikasi == 'invalid')
-                                                <button type="button" class="btn btn-secondary btn-block" data-toggle="modal" data-target="#cancelDokumenModal{{ $dokumen->id }}" style="font-size: 9px; padding: 3px;">
-                                                    <i class="fas fa-ban"></i>
+                                                    <i class="fas fa-ban"></i> Batal
                                                 </button>
                                                 @elseif($dokumen->status_verifikasi == 'revision')
                                                 <button type="button" class="btn btn-info btn-block" data-toggle="modal" data-target="#cancelRevisiModal{{ $dokumen->id }}" style="font-size: 9px; padding: 3px;">
-                                                    <i class="fas fa-undo"></i>
+                                                    <i class="fas fa-undo"></i> Batal Revisi
                                                 </button>
                                                 @endif
                                             @else
@@ -884,38 +878,8 @@ dl.row dt {
                             @endforeach
                         </div>
                         
-                        <!-- Modal Reject & Revisi Dokumen -->
-                        @foreach($pendaftar->dokumen as $dokumen)
-                        <!-- Modal Reject Dokumen -->
-                        <div class="modal fade" id="rejectDokumenModal{{ $dokumen->id }}">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header bg-danger">
-                                        <h5 class="modal-title text-white">Tolak Dokumen: {{ ucfirst(str_replace('_', ' ', $dokumen->jenis_dokumen)) }}</h5>
-                                        <button type="button" class="close text-white" data-dismiss="modal">
-                                            <span>&times;</span>
-                                        </button>
-                                    </div>
-                                    <form class="reject-dokumen-form" data-dokumen-id="{{ $dokumen->id }}">
-                                        @csrf
-                                        <div class="modal-body">
-                                            <div class="form-group">
-                                                <label>Alasan Penolakan <span class="text-danger">*</span></label>
-                                                <textarea name="catatan" class="form-control" rows="3" required placeholder="Dokumen tidak jelas, format salah, dll..."></textarea>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                                            <button type="submit" class="btn btn-danger">
-                                                <i class="fas fa-times"></i> Tolak Dokumen
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                        
                         <!-- Modal Revisi Dokumen -->
+                        @foreach($pendaftar->dokumen as $dokumen)
                         <div class="modal fade" id="revisiDokumenModal{{ $dokumen->id }}">
                             <div class="modal-dialog">
                                 <div class="modal-content">
@@ -928,9 +892,14 @@ dl.row dt {
                                     <form class="revisi-dokumen-form" data-dokumen-id="{{ $dokumen->id }}">
                                         @csrf
                                         <div class="modal-body">
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-info-circle"></i>
+                                                <strong>Info:</strong> Dokumen akan dikembalikan ke pendaftar untuk diperbaiki dan diupload ulang.
+                                            </div>
                                             <div class="form-group">
                                                 <label>Catatan Revisi <span class="text-danger">*</span></label>
-                                                <textarea name="catatan" class="form-control" rows="3" required placeholder="Mohon upload ulang dengan kualitas lebih baik..."></textarea>
+                                                <textarea name="catatan" class="form-control" rows="4" required placeholder="Contoh: Foto terlalu gelap, mohon upload dengan pencahayaan lebih baik...&#10;Contoh: Format file salah, mohon upload dalam format PDF...&#10;Contoh: Dokumen tidak lengkap, mohon upload halaman lengkap..."></textarea>
+                                                <small class="text-muted">Berikan catatan yang jelas agar pendaftar tahu apa yang perlu diperbaiki.</small>
                                             </div>
                                         </div>
                                         <div class="modal-footer">
@@ -943,9 +912,10 @@ dl.row dt {
                                 </div>
                             </div>
                         </div>
+                        @endforeach
                         
                         <!-- Modal Cancel Verifikasi Dokumen -->
-                        <div class="modal fade" id="cancelDokumenModal{{ $dokumen->id }}">
+                        @foreach($pendaftar->dokumen as $dokumen)
                             <div class="modal-dialog">
                                 <div class="modal-content">
                                     <div class="modal-header bg-secondary">
@@ -1629,13 +1599,6 @@ $(document).ready(function() {
         }
     });
     
-    window.rejectDokumen = function(dokumenId) {
-        closeModal();
-        setTimeout(function() {
-            $('#rejectDokumenModal' + dokumenId).modal('show');
-        }, 400);
-    };
-    
     window.revisiDokumen = function(dokumenId) {
         closeModal();
         setTimeout(function() {
@@ -1649,28 +1612,6 @@ $(document).ready(function() {
         console.log('Approve card button clicked, dokumenId:', dokumenId);
         currentApproveDokumenId = dokumenId;
         $('#approveDokumenModal').modal('show');
-    });
-    
-    // Handle reject form
-    $(document).on('submit', '.reject-dokumen-form', function(e) {
-        e.preventDefault();
-        const $form = $(this);
-        const dokumenId = $form.data('dokumen-id');
-        
-        $.ajax({
-            url: '/admin/pendaftar/dokumen/' + dokumenId + '/reject',
-            method: 'POST',
-            data: $form.serialize(),
-            success: function(response) {
-                $('#rejectDokumenModal' + dokumenId).modal('hide');
-                showToast('success', 'Dokumen berhasil ditolak');
-                updateDokumenStatus(dokumenId, 'invalid');
-                $form[0].reset();
-            },
-            error: function() {
-                showToast('error', 'Gagal menolak dokumen');
-            }
-        });
     });
     
     // Handle revisi form
