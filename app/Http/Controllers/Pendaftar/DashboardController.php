@@ -525,6 +525,9 @@ class DashboardController extends Controller
      */
     private function generateBuktiRegistrasi($mode = 'download')
     {
+        // Increase memory limit for PDF generation
+        ini_set('memory_limit', '256M');
+        
         $user = Auth::user();
         $calonSiswa = CalonSiswa::where('user_id', $user->id)
             ->with([
@@ -582,6 +585,9 @@ class DashboardController extends Controller
      */
     private function generateKartuUjian($mode = 'download')
     {
+        // Increase memory limit for PDF generation
+        ini_set('memory_limit', '256M');
+        
         $user = Auth::user();
         $calonSiswa = CalonSiswa::where('user_id', $user->id)
             ->with([
@@ -617,7 +623,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get school logo path
+     * Get school logo path (optimized for PDF)
      */
     private function getSchoolLogo()
     {
@@ -627,7 +633,9 @@ class DashboardController extends Controller
         if ($sekolahSettings && $sekolahSettings->logo) {
             $logoPath = storage_path('app/public/' . $sekolahSettings->logo);
             if (file_exists($logoPath)) {
-                return $logoPath;
+                // For PDF, resize logo to reduce memory
+                $resized = $this->resizeLogoForWatermark($logoPath);
+                return $resized ?? $logoPath;
             }
         }
 
@@ -640,11 +648,80 @@ class DashboardController extends Controller
 
         foreach ($possiblePaths as $path) {
             if (file_exists($path)) {
-                return $path;
+                $resized = $this->resizeLogoForWatermark($path);
+                return $resized ?? $path;
             }
         }
 
         return null;
+    }
+
+    /**
+     * Resize logo for watermark to reduce memory
+     */
+    private function resizeLogoForWatermark($filePath)
+    {
+        try {
+            $imageInfo = @getimagesize($filePath);
+            if (!$imageInfo) {
+                return null;
+            }
+
+            list($width, $height, $type) = $imageInfo;
+
+            // Create source image
+            switch ($type) {
+                case IMAGETYPE_JPEG:
+                    $source = @imagecreatefromjpeg($filePath);
+                    break;
+                case IMAGETYPE_PNG:
+                    $source = @imagecreatefrompng($filePath);
+                    break;
+                default:
+                    return null;
+            }
+
+            if (!$source) {
+                return null;
+            }
+
+            // Max watermark size
+            $maxSize = 300;
+            $ratio = min($maxSize / $width, $maxSize / $height);
+            
+            if ($ratio >= 1) {
+                // Already small enough
+                imagedestroy($source);
+                return $filePath;
+            }
+
+            $newWidth = (int)($width * $ratio);
+            $newHeight = (int)($height * $ratio);
+
+            // Create resized image
+            $destination = imagecreatetruecolor($newWidth, $newHeight);
+
+            // Preserve transparency
+            if ($type == IMAGETYPE_PNG) {
+                imagealphablending($destination, false);
+                imagesavealpha($destination, true);
+            }
+
+            imagecopyresampled($destination, $source, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+
+            // Save to temp file
+            $tempPath = sys_get_temp_dir() . '/logo_watermark_' . md5($filePath) . '.png';
+            imagepng($destination, $tempPath, 6);
+
+            imagedestroy($source);
+            imagedestroy($destination);
+
+            return $tempPath;
+
+        } catch (\Exception $e) {
+            \Log::error('Logo resize failed: ' . $e->getMessage());
+            return null;
+        }
     }
 
     /**

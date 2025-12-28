@@ -41,9 +41,16 @@ class KopSuratService
         $imagePath = storage_path('app/public/' . $sekolah->kop_surat_custom_path);
         
         if ($forPDF && file_exists($imagePath)) {
-            $imageData = base64_encode(file_get_contents($imagePath));
-            $mimeType = mime_content_type($imagePath);
-            $imageBase64 = "data:{$mimeType};base64,{$imageData}";
+            // Resize custom kop to reduce memory
+            $resizedImage = $this->resizeImageForPDF($imagePath, 800, 300);
+            if ($resizedImage) {
+                $imageBase64 = $resizedImage;
+            } else {
+                // Fallback
+                $imageData = base64_encode(file_get_contents($imagePath));
+                $mimeType = mime_content_type($imagePath);
+                $imageBase64 = "data:{$mimeType};base64,{$imageData}";
+            }
         } else {
             $imageBase64 = asset('storage/' . $sekolah->kop_surat_custom_path);
         }
@@ -109,6 +116,13 @@ class KopSuratService
         if ($forPDF) {
             $fullPath = storage_path('app/public/' . $logoPath);
             if (file_exists($fullPath)) {
+                // Resize image to reduce memory usage
+                $resizedImage = $this->resizeImageForPDF($fullPath, 200, 200);
+                if ($resizedImage) {
+                    return $resizedImage;
+                }
+                
+                // Fallback to original if resize fails
                 $imageData = base64_encode(file_get_contents($fullPath));
                 $mimeType = mime_content_type($fullPath);
                 return "data:{$mimeType};base64,{$imageData}";
@@ -116,6 +130,93 @@ class KopSuratService
         }
 
         return asset('storage/' . $logoPath);
+    }
+
+    /**
+     * Resize image for PDF to reduce memory usage
+     */
+    private function resizeImageForPDF($filePath, $maxWidth = 200, $maxHeight = 200)
+    {
+        try {
+            $imageInfo = getimagesize($filePath);
+            if (!$imageInfo) {
+                return null;
+            }
+
+            list($width, $height, $type) = $imageInfo;
+
+            // Create image resource based on type
+            switch ($type) {
+                case IMAGETYPE_JPEG:
+                    $source = @imagecreatefromjpeg($filePath);
+                    break;
+                case IMAGETYPE_PNG:
+                    $source = @imagecreatefrompng($filePath);
+                    break;
+                case IMAGETYPE_GIF:
+                    $source = @imagecreatefromgif($filePath);
+                    break;
+                default:
+                    return null;
+            }
+
+            if (!$source) {
+                return null;
+            }
+
+            // Calculate new dimensions
+            $ratio = min($maxWidth / $width, $maxHeight / $height);
+            if ($ratio >= 1) {
+                // Image is already smaller, use original
+                $newWidth = $width;
+                $newHeight = $height;
+            } else {
+                $newWidth = (int)($width * $ratio);
+                $newHeight = (int)($height * $ratio);
+            }
+
+            // Create new image
+            $destination = imagecreatetruecolor($newWidth, $newHeight);
+
+            // Preserve transparency for PNG
+            if ($type == IMAGETYPE_PNG) {
+                imagealphablending($destination, false);
+                imagesavealpha($destination, true);
+                $transparent = imagecolorallocatealpha($destination, 0, 0, 0, 127);
+                imagefill($destination, 0, 0, $transparent);
+            }
+
+            // Resize
+            imagecopyresampled($destination, $source, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+
+            // Capture output
+            ob_start();
+            switch ($type) {
+                case IMAGETYPE_JPEG:
+                    imagejpeg($destination, null, 85); // 85% quality
+                    $mimeType = 'image/jpeg';
+                    break;
+                case IMAGETYPE_PNG:
+                    imagepng($destination, null, 6); // Compression level 6
+                    $mimeType = 'image/png';
+                    break;
+                case IMAGETYPE_GIF:
+                    imagegif($destination);
+                    $mimeType = 'image/gif';
+                    break;
+            }
+            $imageData = ob_get_clean();
+
+            // Free memory
+            imagedestroy($source);
+            imagedestroy($destination);
+
+            return "data:{$mimeType};base64," . base64_encode($imageData);
+
+        } catch (\Exception $e) {
+            \Log::error('Image resize failed: ' . $e->getMessage());
+            return null;
+        }
     }
 
     /**
