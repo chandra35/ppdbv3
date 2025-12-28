@@ -42,6 +42,8 @@ class SettingsController extends Controller
             'cegah_pendaftar_ganda' => 'nullable|boolean',
             'dokumen_aktif' => 'nullable|array',
             'nomor_registrasi_prefix' => 'required|string|max:20',
+            'nomor_tes_prefix' => 'required|string|max:10',
+            'nomor_tes_digit' => 'required|integer|in:3,4,5',
         ]);
 
         // Convert checkbox values

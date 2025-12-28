@@ -24,6 +24,10 @@ class PpdbSettings extends Model
         'dokumen_aktif',
         'nomor_registrasi_prefix',
         'nomor_registrasi_counter',
+        'nomor_tes_prefix',
+        'nomor_tes_format',
+        'nomor_tes_digit',
+        'nomor_tes_counter',
     ];
 
     protected $casts = [
@@ -33,6 +37,7 @@ class PpdbSettings extends Model
         'validasi_nisn_aktif' => 'boolean',
         'cegah_pendaftar_ganda' => 'boolean',
         'dokumen_aktif' => 'array',
+        'nomor_tes_counter' => 'array',
     ];
 
     protected $attributes = [
@@ -42,6 +47,9 @@ class PpdbSettings extends Model
         'kuota_penerimaan' => 200,
         'nomor_registrasi_prefix' => 'PPDB',
         'nomor_registrasi_counter' => 0,
+        'nomor_tes_prefix' => 'NTS',
+        'nomor_tes_format' => '{PREFIX}-{TAHUN}-{JALUR}-{NOMOR}',
+        'nomor_tes_digit' => 4,
     ];
 
     // Relations

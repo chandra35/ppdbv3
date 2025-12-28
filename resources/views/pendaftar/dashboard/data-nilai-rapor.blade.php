@@ -188,6 +188,13 @@
 @section('content')
 <div class="row">
     <div class="col-lg-12">
+        @if($calonSiswa->is_finalisasi)
+        <div class="alert alert-warning">
+            <h5><i class="fas fa-lock mr-2"></i>Data Sudah Difinalisasi</h5>
+            <p class="mb-0">Nilai rapor sudah difinalisasi dan tidak dapat diubah. Jika terdapat kesalahan data, silakan hubungi panitia.</p>
+        </div>
+        @endif
+        
         <form action="{{ route('pendaftar.nilai-rapor.update') }}" method="POST" id="formNilaiRapor">
             @csrf
             @method('PUT')
@@ -197,6 +204,9 @@
                     <h3 class="card-title text-white">
                         <i class="fas fa-graduation-cap mr-2"></i>
                         Input Nilai Rapor Semester 1-5
+                        @if($calonSiswa->is_finalisasi)
+                        <span class="badge badge-warning ml-2"><i class="fas fa-lock"></i> Terkunci</span>
+                        @endif
                     </h3>
                 </div>
                 <div class="card-body">
@@ -389,6 +399,7 @@
                     </div>
 
                 </div>
+                @if(!$calonSiswa->is_finalisasi)
                 <div class="card-footer">
                     <button type="submit" class="btn btn-primary btn-lg">
                         <i class="fas fa-save mr-1"></i> Simpan Nilai Rapor
@@ -397,6 +408,7 @@
                         <i class="fas fa-arrow-left mr-1"></i> Kembali
                     </a>
                 </div>
+                @endif
             </div>
         </form>
     </div>
@@ -460,6 +472,11 @@
 @section('js')
 <script>
 $(document).ready(function() {
+    // Disable all inputs if finalized
+    @if($calonSiswa->is_finalisasi)
+    $('.nilai-input').prop('readonly', true);
+    @endif
+    
     // Calculate rata-rata on page load
     for (let i = 1; i <= 5; i++) {
         calculateRataRata(i);

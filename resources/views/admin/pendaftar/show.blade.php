@@ -435,6 +435,11 @@ dl.row dt {
                         <button type="button" class="btn btn-info btn-sm" onclick="showPassword()">
                             <i class="fas fa-eye"></i> Lihat Password
                         </button>
+                        @if($pendaftar->is_finalisasi)
+                        <button type="button" class="btn btn-danger btn-sm" onclick="batalFinalisasi()">
+                            <i class="fas fa-unlock"></i> Batal Finalisasi
+                        </button>
+                        @endif
                     </div>
                 </div>
                 <div class="col-md-6 text-right">
@@ -1860,6 +1865,59 @@ function copyPasswordFromSwal(password) {
             icon: 'success',
             title: 'Password disalin!'
         });
+    });
+}
+
+function batalFinalisasi() {
+    Swal.fire({
+        title: 'Batalkan Finalisasi?',
+        html: '<div class="text-left">' +
+              '<p>Dengan membatalkan finalisasi:</p>' +
+              '<ul>' +
+              '<li>Pendaftar dapat mengedit data kembali</li>' +
+              '<li>Nomor tes akan tetap tersimpan</li>' +
+              '<li>Status finalisasi akan di-reset</li>' +
+              '</ul>' +
+              '<p class="text-danger"><strong>Perhatian:</strong> Lakukan dengan hati-hati!</p>' +
+              '</div>',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="fas fa-unlock"></i> Ya, Batalkan',
+        cancelButtonText: '<i class="fas fa-times"></i> Batal',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '{{ route("admin.pendaftar.batal-finalisasi", $pendaftar->id) }}',
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: 'Berhasil!',
+                            text: response.message,
+                            icon: 'success',
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire('Gagal!', response.message, 'error');
+                    }
+                },
+                error: function(xhr) {
+                    let errorMsg = 'Terjadi kesalahan saat membatalkan finalisasi.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    Swal.fire('Error!', errorMsg, 'error');
+                }
+            });
+        }
     });
 }
 </script>

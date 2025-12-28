@@ -181,6 +181,13 @@
 @section('content')
 <div class="row">
     <div class="col-lg-8">
+        @if($calonSiswa->is_finalisasi)
+        <div class="alert alert-warning">
+            <h5><i class="fas fa-lock mr-2"></i>Pilihan Program Sudah Difinalisasi</h5>
+            <p class="mb-0">Pilihan program Anda sudah difinalisasi dan tidak dapat diubah. Jika terdapat kesalahan, silakan hubungi panitia.</p>
+        </div>
+        @endif
+        
         {{-- Info Header --}}
         <div class="info-section">
             <div class="row align-items-center">
@@ -199,11 +206,19 @@
                     </p>
                 </div>
                 <div class="col-md-4 col-12 text-md-right">
+                    @if($calonSiswa->is_finalisasi)
+                    <div class="badge badge-danger px-3 py-2" style="font-size: 0.9rem;">
+                        <i class="fas fa-lock mr-1"></i>
+                        <span class="d-none d-sm-inline">Sudah Difinalisasi</span>
+                        <span class="d-inline d-sm-none">Terkunci</span>
+                    </div>
+                    @else
                     <div class="badge badge-warning px-3 py-2" style="font-size: 0.9rem;">
                         <i class="fas fa-clock mr-1"></i>
                         <span class="d-none d-sm-inline">Dapat diubah sebelum finalisasi</span>
                         <span class="d-inline d-sm-none">Bisa diubah</span>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -289,11 +304,17 @@
                         @endforeach
                     </div>
 
+                    @if(!$calonSiswa->is_finalisasi)
                     <div class="text-center mt-4">
                         <button type="submit" class="btn btn-primary btn-save btn-lg" id="btnSimpan">
                             <i class="fas fa-save mr-2"></i>Simpan Pilihan
                         </button>
                     </div>
+                    @else
+                    <div class="alert alert-info text-center mt-4 mb-0">
+                        <i class="fas fa-info-circle"></i> Pilihan tidak dapat diubah karena data sudah difinalisasi
+                    </div>
+                    @endif
                     @else
                     <div class="alert alert-warning text-center" role="alert">
                         <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
@@ -352,6 +373,14 @@
 @section('js')
 <script>
 $(document).ready(function() {
+    @if($calonSiswa->is_finalisasi)
+    // Disable all interactions when finalized
+    $('.program-option-card').css({
+        'cursor': 'not-allowed',
+        'opacity': '0.7'
+    });
+    $('input[name="pilihan_program"]').prop('disabled', true);
+    @else
     // Click card to select radio
     $('.program-option-card').on('click', function() {
         const radio = $(this).find('input[type="radio"]');
@@ -415,6 +444,7 @@ $(document).ready(function() {
             }
         });
     });
+    @endif
 });
 </script>
 @endsection

@@ -11,6 +11,7 @@ use App\Models\PpdbSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class DashboardController extends Controller
 {
@@ -324,13 +325,23 @@ class DashboardController extends Controller
             ]
         );
 
-        // Check if all required documents uploaded
-        $requiredCount = 6; // kk, akta, ijazah, rapor, foto, surat_sehat
-        $uploadedCount = $calonSiswa->dokumen()->count();
+        // Check if all required documents uploaded - get from settings
+        $settings = PpdbSettings::first();
+        $requiredDokumen = $settings?->dokumen_aktif ?? ['foto', 'kk', 'akta_lahir', 'ktp_ortu', 'ijazah', 'raport'];
+        $requiredCount = count($requiredDokumen);
         
-        if ($uploadedCount >= $requiredCount) {
-            $calonSiswa->data_dokumen_completed = true;
-            $calonSiswa->save();
+        if ($requiredCount > 0) {
+            $uploadedCount = $calonSiswa->dokumen()
+                ->whereIn('jenis_dokumen', $requiredDokumen)
+                ->count();
+            
+            if ($uploadedCount >= $requiredCount) {
+                $calonSiswa->data_dokumen_completed = true;
+                $calonSiswa->save();
+            } else {
+                $calonSiswa->data_dokumen_completed = false;
+                $calonSiswa->save();
+            }
         }
 
         return response()->json([
@@ -367,14 +378,24 @@ class DashboardController extends Controller
         }
 
         // Delete file
-        Storage::disk('public')->delete($dokumen->path_file);
+        Storage::disk('public')->delete($dokumen->file_path);
         
         // Delete record
         $dokumen->delete();
 
-        // Update completion status
-        $calonSiswa->data_dokumen_completed = false;
-        $calonSiswa->save();
+        // Re-check completion status after deletion
+        $settings = PpdbSettings::first();
+        $requiredDokumen = $settings?->dokumen_aktif ?? ['foto', 'kk', 'akta_lahir', 'ktp_ortu', 'ijazah', 'raport'];
+        $requiredCount = count($requiredDokumen);
+        
+        if ($requiredCount > 0) {
+            $uploadedCount = $calonSiswa->dokumen()
+                ->whereIn('jenis_dokumen', $requiredDokumen)
+                ->count();
+            
+            $calonSiswa->data_dokumen_completed = ($uploadedCount >= $requiredCount);
+            $calonSiswa->save();
+        }
 
         return response()->json([
             'success' => true,
@@ -476,16 +497,140 @@ class DashboardController extends Controller
     }
 
     /**
-     * Print bukti pendaftaran
+     * Cetak Bukti Registrasi (for TU archive)
      */
-    public function cetakBukti()
+    public function cetakBuktiRegistrasi()
+    {
+        return $this->generateBuktiRegistrasi('download');
+    }
+
+    /**
+     * Preview Bukti Registrasi
+     */
+    public function previewBuktiRegistrasi()
+    {
+        return $this->generateBuktiRegistrasi('stream');
+    }
+
+    /**
+     * Generate Bukti Registrasi PDF
+     */
+    private function generateBuktiRegistrasi($mode = 'download')
     {
         $user = Auth::user();
         $calonSiswa = CalonSiswa::where('user_id', $user->id)
-            ->with(['jalurPendaftaran', 'gelombangPendaftaran', 'tahunPelajaran', 'ortu'])
+            ->with([
+                'jalurPendaftaran', 
+                'gelombangPendaftaran', 
+                'tahunPelajaran', 
+                'ortu'
+            ])
             ->first();
 
-        return view('pendaftar.dashboard.cetak-bukti', compact('calonSiswa'));
+        if (!$calonSiswa || !$calonSiswa->is_finalisasi) {
+            return redirect()->route('pendaftar.dashboard')
+                ->with('error', 'Data belum difinalisasi');
+        }
+
+        $sekolahSettings = \App\Models\SekolahSettings::with(['province', 'city'])->first();
+        
+        $sekolah = (object) [
+            'nama_sekolah' => $sekolahSettings->nama_sekolah ?? config('app.school_name', config('app.name', 'SMK')),
+            'logo' => $this->getSchoolLogo(),
+            'alamat' => $sekolahSettings ? trim(($sekolahSettings->alamat_jalan ?? '') . ' ' . ($sekolahSettings->city->name ?? '') . ' ' . ($sekolahSettings->province->name ?? '')) : config('app.school_address', ''),
+            'telepon' => $sekolahSettings->telepon ?? config('app.school_phone', '-'),
+            'email' => $sekolahSettings->email ?? config('app.school_email', '-'),
+            'kota' => $sekolahSettings->city->name ?? config('app.school_city', ''),
+        ];
+        
+        $pdf = Pdf::loadView('pendaftar.pdf.bukti-registrasi', compact('calonSiswa', 'sekolah'));
+        
+        $filename = 'bukti-registrasi-' . preg_replace('/[\/\\\:*?"<>|]/', '-', $calonSiswa->nomor_registrasi) . '.pdf';
+        
+        return $mode === 'stream' ? $pdf->stream($filename) : $pdf->download($filename);
+    }
+
+    /**
+     * Cetak Kartu Ujian (ID card with photo & password)
+     */
+    public function cetakKartuUjian()
+    {
+        return $this->generateKartuUjian('download');
+    }
+
+    /**
+     * Preview Kartu Ujian
+     */
+    public function previewKartuUjian()
+    {
+        return $this->generateKartuUjian('stream');
+    }
+
+    /**
+     * Generate Kartu Ujian PDF
+     */
+    private function generateKartuUjian($mode = 'download')
+    {
+        $user = Auth::user();
+        $calonSiswa = CalonSiswa::where('user_id', $user->id)
+            ->with([
+                'jalurPendaftaran', 
+                'gelombangPendaftaran', 
+                'tahunPelajaran'
+            ])
+            ->first();
+
+        if (!$calonSiswa || !$calonSiswa->is_finalisasi) {
+            return redirect()->route('pendaftar.dashboard')
+                ->with('error', 'Data belum difinalisasi');
+        }
+
+        $sekolahSettings = \App\Models\SekolahSettings::with(['province', 'city'])->first();
+        
+        $sekolah = (object) [
+            'nama_sekolah' => $sekolahSettings->nama_sekolah ?? config('app.school_name', config('app.name', 'SMK')),
+            'logo' => $this->getSchoolLogo(),
+        ];
+        
+        $password = $user->plain_password ?? '********';
+        
+        $pdf = Pdf::loadView('pendaftar.pdf.kartu-ujian', compact('calonSiswa', 'sekolah', 'password'))
+            ->setPaper([0, 0, 298, 421], 'landscape');
+        
+        $filename = 'kartu-ujian-' . preg_replace('/[\/\\\:*?"<>|]/', '-', $calonSiswa->nomor_tes) . '.pdf';
+        
+        return $mode === 'stream' ? $pdf->stream($filename) : $pdf->download($filename);
+    }
+
+    /**
+     * Get school logo path
+     */
+    private function getSchoolLogo()
+    {
+        // Get logo from sekolah_settings table
+        $sekolahSettings = \App\Models\SekolahSettings::first();
+        
+        if ($sekolahSettings && $sekolahSettings->logo) {
+            $logoPath = storage_path('app/public/' . $sekolahSettings->logo);
+            if (file_exists($logoPath)) {
+                return $logoPath;
+            }
+        }
+
+        // Fallback: check common logo locations
+        $possiblePaths = [
+            public_path('logo.png'),
+            public_path('images/logo.png'),
+            public_path('assets/logo.png'),
+        ];
+
+        foreach ($possiblePaths as $path) {
+            if (file_exists($path)) {
+                return $path;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -795,25 +940,36 @@ class DashboardController extends Controller
             ], 422);
         }
 
-        // Generate nomor tes (format: PPDB-TAHUN-JALUR-SEQUENCE)
+        // Generate nomor tes using settings
+        $settings = \App\Models\PpdbSettings::first();
         $tahun = $calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y');
         $jalurCode = strtoupper(substr($calonSiswa->jalurPendaftaran->nama ?? 'REG', 0, 3));
         
-        // Get last sequence number for this year and jalur
-        $lastNumber = CalonSiswa::where('tahun_pelajaran_id', $calonSiswa->tahun_pelajaran_id)
-            ->where('jalur_pendaftaran_id', $calonSiswa->jalur_pendaftaran_id)
-            ->whereNotNull('nomor_tes')
-            ->count();
+        // Get and update counter for this jalur
+        $counters = $settings->nomor_tes_counter ?? [];
+        $jalurKey = (string) $calonSiswa->jalur_pendaftaran_id;
+        $counter = ($counters[$jalurKey] ?? 0) + 1;
         
-        $sequence = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-        $nomorTes = "PPDB-{$tahun}-{$jalurCode}-{$sequence}";
+        // Update counter atomically
+        $counters[$jalurKey] = $counter;
+        $settings->update(['nomor_tes_counter' => $counters]);
+        
+        // Generate nomor using format template
+        $format = $settings->nomor_tes_format ?? '{PREFIX}-{TAHUN}-{JALUR}-{NOMOR}';
+        $nomor = str_pad($counter, $settings->nomor_tes_digit ?? 4, '0', STR_PAD_LEFT);
+        
+        $nomorTes = str_replace(
+            ['{PREFIX}', '{TAHUN}', '{JALUR}', '{NOMOR}'],
+            [$settings->nomor_tes_prefix ?? 'NTS', $tahun, $jalurCode, $nomor],
+            $format
+        );
 
         // Update finalisasi data
         $calonSiswa->update([
             'is_finalisasi' => true,
             'tanggal_finalisasi' => now(),
             'nomor_tes' => $nomorTes,
-            'status_admisi' => 'belum_diproses'
+            'status_admisi' => 'pending'
         ]);
 
         return response()->json([

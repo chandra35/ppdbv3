@@ -198,11 +198,21 @@
 @section('content')
 <div class="row">
     <div class="col-lg-8">
+        @if($calonSiswa->is_finalisasi)
+        <div class="alert alert-warning">
+            <h5><i class="fas fa-lock mr-2"></i>Data Sudah Difinalisasi</h5>
+            <p class="mb-0">Dokumen sudah difinalisasi dan tidak dapat diubah. Jika terdapat kesalahan dokumen, silakan hubungi panitia.</p>
+        </div>
+        @endif
+        
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title">
                     <i class="fas fa-file-upload mr-2"></i>
                     Upload Dokumen Persyaratan
+                    @if($calonSiswa->is_finalisasi)
+                    <span class="badge badge-warning ml-2"><i class="fas fa-lock"></i> Terkunci</span>
+                    @endif
                 </h3>
             </div>
             <div class="card-body">
@@ -231,15 +241,16 @@
                         @endphp
                         <div class="col-lg-3 col-md-4 col-sm-6 col-12 mb-4">
                             <div class="doc-card {{ $isUploaded ? 'uploaded' : '' }} {{ $isImage ? 'has-thumbnail' : '' }} {{ $statusClass }}" 
-                                 data-toggle="modal" 
-                                 data-target="#uploadModal"
+                                 {{ !$calonSiswa->is_finalisasi ? 'data-toggle=modal' : '' }}
+                                 {{ !$calonSiswa->is_finalisasi ? 'data-target=#uploadModal' : '' }}
                                  data-doc-type="{{ $key }}"
                                  data-doc-label="{{ $label }}"
                                  @if($isUploaded)
                                  data-doc-id="{{ $doc->id }}"
                                  data-doc-path="{{ asset('storage/' . $doc->file_path) }}"
                                  data-doc-name="{{ $doc->nama_file }}"
-                                 @endif>
+                                 @endif
+                                 style="{{ $calonSiswa->is_finalisasi ? 'cursor: default;' : '' }}">
                                 @if($isUploaded && $isImage)
                                     <div class="thumbnail-preview">
                                         <img src="{{ asset('storage/' . $doc->file_path) }}" alt="{{ $label }}">
@@ -407,15 +418,20 @@
                         <a href="#" id="viewDocBtn" class="btn btn-info btn-sm" target="_blank">
                             <i class="fas fa-eye"></i> Lihat
                         </a>
+                        @if(!$calonSiswa->is_finalisasi)
                         <button type="button" id="deleteDocBtn" class="btn btn-danger btn-sm">
                             <i class="fas fa-trash"></i> Hapus
                         </button>
+                        @endif
                     </div>
+                    @if(!$calonSiswa->is_finalisasi)
                     <hr>
                     <p class="text-center text-muted mb-3">Atau upload file baru untuk mengganti</p>
+                    @endif
                 </div>
 
                 <!-- Upload form -->
+                @if(!$calonSiswa->is_finalisasi)
                 <form id="uploadForm" enctype="multipart/form-data">
                     <input type="hidden" name="jenis_dokumen" id="jenisDoc">
                     <input type="hidden" name="doc_id" id="docId">
@@ -434,12 +450,19 @@
                         <img id="newPreviewImage" src="" class="preview-img">
                     </div>
                 </form>
+                @else
+                <div class="alert alert-info text-center mb-0">
+                    <i class="fas fa-info-circle"></i> Dokumen tidak dapat diubah karena data sudah difinalisasi
+                </div>
+                @endif
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ $calonSiswa->is_finalisasi ? 'Tutup' : 'Batal' }}</button>
+                @if(!$calonSiswa->is_finalisasi)
                 <button type="button" class="btn btn-primary" id="uploadBtn" disabled>
                     <i class="fas fa-upload mr-1"></i> Upload
                 </button>
+                @endif
             </div>
         </div>
     </div>

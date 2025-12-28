@@ -731,5 +731,50 @@ class PendaftarController extends Controller
                 ->with('error', 'Gagal menghapus data: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Batalkan finalisasi pendaftar
+     */
+    public function batalFinalisasi($id)
+    {
+        try {
+            $pendaftar = CalonSiswa::findOrFail($id);
+            
+            if (!$pendaftar->is_finalisasi) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pendaftar belum difinalisasi'
+                ], 400);
+            }
+
+            // Reset finalisasi data
+            $pendaftar->update([
+                'is_finalisasi' => false,
+                'tanggal_finalisasi' => null,
+                // Keep nomor_tes for history, don't reset
+            ]);
+
+            // Log activity
+            ActivityLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'update',
+                'model_type' => 'App\Models\CalonSiswa',
+                'model_id' => $pendaftar->id,
+                'description' => "Membatalkan finalisasi pendaftar: {$pendaftar->nama_lengkap} (NISN: {$pendaftar->nisn})",
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Finalisasi berhasil dibatalkan. Pendaftar sekarang dapat mengedit data kembali.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membatalkan finalisasi: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
 

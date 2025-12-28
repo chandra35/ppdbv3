@@ -15,11 +15,21 @@
 @section('content')
 <div class="row">
     <div class="col-lg-8">
+        @if($calonSiswa->is_finalisasi)
+        <div class="alert alert-warning">
+            <h5><i class="fas fa-lock mr-2"></i>Data Sudah Difinalisasi</h5>
+            <p class="mb-0">Data pendaftaran Anda sudah difinalisasi dan tidak dapat diubah. Jika terdapat kesalahan data, silakan hubungi panitia.</p>
+        </div>
+        @endif
+        
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title">
                     <i class="fas fa-user mr-2"></i>
                     Formulir Data Pribadi
+                    @if($calonSiswa->is_finalisasi)
+                    <span class="badge badge-warning ml-2"><i class="fas fa-lock"></i> Terkunci</span>
+                    @endif
                 </h3>
             </div>
             <form action="{{ route('pendaftar.data-pribadi.update') }}" method="POST">
@@ -38,7 +48,7 @@
                             <div class="form-group">
                                 <label>NIK <span class="text-muted">(16 digit)</span></label>
                                 <input type="text" name="nik" class="form-control @error('nik') is-invalid @enderror" 
-                                       value="{{ old('nik', $calonSiswa->nik) }}" maxlength="16">
+                                       value="{{ old('nik', $calonSiswa->nik) }}" maxlength="16" {{ $calonSiswa->is_finalisasi ? 'readonly' : '' }}>
                                 @error('nik')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -250,11 +260,13 @@
                     </div>
                 </div>
 
+                @if(!$calonSiswa->is_finalisasi)
                 <div class="card-footer">
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save mr-1"></i> Simpan Data
                     </button>
                 </div>
+                @endif
             </form>
         </div>
     </div>
@@ -293,10 +305,16 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 $(document).ready(function() {
+    // Disable all form inputs if finalized
+    @if($calonSiswa->is_finalisasi)
+    $('input, select, textarea').not('[readonly]').prop('disabled', true);
+    $('.select2').select2('destroy');
+    @else
     $('.select2').select2({
         theme: 'bootstrap-5',
         width: '100%'
     });
+    @endif
 
     // Stored values
     const storedKabupaten = '{{ old('kabupaten_id_siswa', $calonSiswa->kabupaten_id_siswa) }}';

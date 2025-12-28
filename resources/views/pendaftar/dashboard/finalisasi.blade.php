@@ -261,8 +261,11 @@
             <a href="{{ route('pendaftar.dashboard') }}" class="btn btn-outline-primary btn-lg mb-2">
                 <i class="fas fa-arrow-left mr-2"></i>Kembali ke Dashboard
             </a>
-            <a href="{{ route('pendaftar.cetak-bukti') }}" class="btn btn-success btn-lg mb-2">
-                <i class="fas fa-print mr-2"></i>Cetak Kartu Ujian
+            <a href="{{ route('pendaftar.cetak-bukti-registrasi.preview') }}" target="_blank" class="btn btn-info btn-lg mb-2">
+                <i class="fas fa-file-pdf mr-2"></i>Cetak Bukti Registrasi
+            </a>
+            <a href="{{ route('pendaftar.cetak-kartu-ujian.preview') }}" target="_blank" class="btn btn-success btn-lg mb-2">
+                <i class="fas fa-id-card mr-2"></i>Cetak Kartu Ujian
             </a>
         </div>
 

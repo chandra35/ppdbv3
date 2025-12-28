@@ -142,14 +142,23 @@
                     </li>
 
                     <!-- Cetak -->
+                    @if($calonSiswa && $calonSiswa->is_finalisasi)
                     <li class="nav-header">CETAK</li>
                     
                     <li class="nav-item">
-                        <a href="{{ route('pendaftar.cetak-bukti') }}" class="nav-link" target="_blank">
-                            <i class="nav-icon fas fa-print"></i>
-                            <p>Bukti Pendaftaran</p>
+                        <a href="{{ route('pendaftar.cetak-bukti-registrasi') }}" class="nav-link" target="_blank">
+                            <i class="nav-icon fas fa-file-pdf"></i>
+                            <p>Bukti Registrasi</p>
                         </a>
                     </li>
+                    
+                    <li class="nav-item">
+                        <a href="{{ route('pendaftar.cetak-kartu-ujian') }}" class="nav-link" target="_blank">
+                            <i class="nav-icon fas fa-id-card"></i>
+                            <p>Kartu Ujian</p>
+                        </a>
+                    </li>
+                    @endif
 
                     <!-- Other -->
                     <li class="nav-header">PENGATURAN</li>

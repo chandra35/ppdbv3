@@ -75,6 +75,21 @@ class CalonSiswa extends Model
         'data_diri_completed',
         'data_ortu_completed',
         'data_dokumen_completed',
+        'nilai_rapor_completed',
+        
+        // Pilihan Program & Finalisasi
+        'pilihan_program',
+        'is_finalisasi',
+        'tanggal_finalisasi',
+        'nomor_tes',
+        
+        // Nilai & Ranking
+        'nilai_cbt',
+        'nilai_wawancara',
+        'nilai_akhir',
+        'ranking',
+        'status_admisi',
+        'catatan_admisi',
         
         // Relations
         'user_id',
@@ -89,12 +104,19 @@ class CalonSiswa extends Model
     protected $casts = [
         'tanggal_lahir' => 'date',
         'tanggal_verifikasi' => 'datetime',
+        'tanggal_finalisasi' => 'datetime',
         'nisn_valid' => 'boolean',
         'data_diri_completed' => 'boolean',
         'data_ortu_completed' => 'boolean',
         'data_dokumen_completed' => 'boolean',
+        'nilai_rapor_completed' => 'boolean',
+        'is_finalisasi' => 'boolean',
         'jumlah_saudara' => 'integer',
         'anak_ke' => 'integer',
+        'nilai_cbt' => 'decimal:2',
+        'nilai_wawancara' => 'decimal:2',
+        'nilai_akhir' => 'decimal:2',
+        'ranking' => 'integer',
     ];
 
     // Relations

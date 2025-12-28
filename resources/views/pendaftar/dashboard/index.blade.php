@@ -215,17 +215,31 @@
                         </a>
                     </div>
                     
+                    @if($calonSiswa->is_finalisasi)
                     <div class="col-md-4 col-6 mb-3">
-                        <a href="{{ route('pendaftar.cetak-bukti') }}" class="text-decoration-none">
+                        <a href="{{ route('pendaftar.cetak-bukti-registrasi.preview') }}" target="_blank" class="text-decoration-none">
                             <div class="card quick-action-card h-100 text-center p-3">
-                                <div class="icon text-danger">
-                                    <i class="fas fa-print"></i>
+                                <div class="icon text-primary">
+                                    <i class="fas fa-file-pdf"></i>
                                 </div>
-                                <h6 class="mt-2 mb-0">Cetak Bukti</h6>
-                                <small class="text-muted">Print / Download</small>
+                                <h6 class="mt-2 mb-0">Bukti Registrasi</h6>
+                                <small class="text-muted">Preview & Download</small>
                             </div>
                         </a>
                     </div>
+                    
+                    <div class="col-md-4 col-6 mb-3">
+                        <a href="{{ route('pendaftar.cetak-kartu-ujian.preview') }}" target="_blank" class="text-decoration-none">
+                            <div class="card quick-action-card h-100 text-center p-3">
+                                <div class="icon text-danger">
+                                    <i class="fas fa-id-card"></i>
+                                </div>
+                                <h6 class="mt-2 mb-0">Kartu Ujian</h6>
+                                <small class="text-muted">Preview & Print</small>
+                            </div>
+                        </a>
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>

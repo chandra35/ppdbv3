@@ -148,6 +148,59 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- Format Nomor Tes --}}
+                <div class="card card-info card-outline">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-id-card"></i> Format Nomor Tes</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="nomor_tes_prefix">Prefix Nomor Tes <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control @error('nomor_tes_prefix') is-invalid @enderror" 
+                                   id="nomor_tes_prefix" name="nomor_tes_prefix" 
+                                   value="{{ old('nomor_tes_prefix', $settings->nomor_tes_prefix) }}" 
+                                   maxlength="10" required>
+                            @error('nomor_tes_prefix')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <small class="text-muted">Contoh: NTS, TES, UJIAN</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nomor_tes_format">Format Nomor Tes</label>
+                            <input type="text" class="form-control @error('nomor_tes_format') is-invalid @enderror" 
+                                   id="nomor_tes_format" name="nomor_tes_format" 
+                                   value="{{ old('nomor_tes_format', $settings->nomor_tes_format) }}" 
+                                   readonly>
+                            @error('nomor_tes_format')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <small class="text-muted">
+                                Format: <code>{PREFIX}-{TAHUN}-{JALUR}-{NOMOR}</code>
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nomor_tes_digit">Jumlah Digit Nomor <span class="text-danger">*</span></label>
+                            <select class="form-control @error('nomor_tes_digit') is-invalid @enderror" 
+                                    id="nomor_tes_digit" name="nomor_tes_digit" required>
+                                <option value="3" {{ old('nomor_tes_digit', $settings->nomor_tes_digit) == 3 ? 'selected' : '' }}>3 Digit (001-999)</option>
+                                <option value="4" {{ old('nomor_tes_digit', $settings->nomor_tes_digit) == 4 ? 'selected' : '' }}>4 Digit (0001-9999)</option>
+                                <option value="5" {{ old('nomor_tes_digit', $settings->nomor_tes_digit) == 5 ? 'selected' : '' }}>5 Digit (00001-99999)</option>
+                            </select>
+                            @error('nomor_tes_digit')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle"></i> 
+                            <strong>Preview:</strong>
+                            <code id="preview_nomor_tes">{{ $settings->nomor_tes_prefix }}-{{ date('Y') }}-PRE-{{ str_pad(1, $settings->nomor_tes_digit, '0', STR_PAD_LEFT) }}</code>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {{-- Kolom Kanan --}}
@@ -231,6 +284,19 @@ $(document).ready(function() {
             toastr.error('{{ $error }}');
         @endforeach
     @endif
+
+    // Update preview nomor tes
+    function updateNomorTesPreview() {
+        const prefix = $('#nomor_tes_prefix').val() || 'NTS';
+        const digit = parseInt($('#nomor_tes_digit').val()) || 4;
+        const nomor = String(1).padStart(digit, '0');
+        const tahun = '{{ date("Y") }}';
+        const preview = `${prefix}-${tahun}-PRE-${nomor}`;
+        $('#preview_nomor_tes').text(preview);
+    }
+
+    // Update preview on change
+    $('#nomor_tes_prefix, #nomor_tes_digit').on('input change', updateNomorTesPreview);
 });
 </script>
 @stop

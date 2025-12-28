@@ -98,7 +98,10 @@ Route::middleware(['auth'])->prefix('pendaftar')->name('pendaftar.')->group(func
     
     // Status & Cetak
     Route::get('/status', [PendaftarDashboardController::class, 'status'])->name('status');
-    Route::get('/cetak-bukti', [PendaftarDashboardController::class, 'cetakBukti'])->name('cetak-bukti');
+    Route::get('/cetak-bukti-registrasi/preview', [PendaftarDashboardController::class, 'previewBuktiRegistrasi'])->name('cetak-bukti-registrasi.preview');
+    Route::get('/cetak-bukti-registrasi', [PendaftarDashboardController::class, 'cetakBuktiRegistrasi'])->name('cetak-bukti-registrasi');
+    Route::get('/cetak-kartu-ujian/preview', [PendaftarDashboardController::class, 'previewKartuUjian'])->name('cetak-kartu-ujian.preview');
+    Route::get('/cetak-kartu-ujian', [PendaftarDashboardController::class, 'cetakKartuUjian'])->name('cetak-kartu-ujian');
 });
 
 // ============================================
@@ -180,6 +183,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/pendaftar/{id}/verify', [PendaftarController::class, 'verify'])->name('pendaftar.verify');
     Route::post('/pendaftar/{id}/reject', [PendaftarController::class, 'reject'])->name('pendaftar.reject');
     Route::post('/pendaftar/{id}/approve', [PendaftarController::class, 'approve'])->name('pendaftar.approve');
+    Route::post('/pendaftar/{id}/batal-finalisasi', [PendaftarController::class, 'batalFinalisasi'])->name('pendaftar.batal-finalisasi');
     
     // Verifikasi Dokumen Pendaftar (Shared access)
     Route::post('/pendaftar/dokumen/{id}/approve', [PendaftarController::class, 'approveDokumen'])->name('pendaftar.dokumen.approve');

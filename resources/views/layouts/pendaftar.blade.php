@@ -339,12 +339,21 @@
                         </a>
                     </li>
                     
+                    @if($calonSiswa && $calonSiswa->is_finalisasi)
                     <li class="nav-item">
-                        <a href="{{ route('pendaftar.cetak-bukti') }}" class="nav-link {{ request()->routeIs('pendaftar.cetak-bukti') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-print"></i>
-                            <p>Cetak Bukti</p>
+                        <a href="{{ route('pendaftar.cetak-bukti-registrasi.preview') }}" target="_blank" class="nav-link">
+                            <i class="nav-icon fas fa-file-pdf"></i>
+                            <p>Cetak Bukti Registrasi</p>
                         </a>
                     </li>
+                    
+                    <li class="nav-item">
+                        <a href="{{ route('pendaftar.cetak-kartu-ujian.preview') }}" target="_blank" class="nav-link">
+                            <i class="nav-icon fas fa-id-card"></i>
+                            <p>Cetak Kartu Ujian</p>
+                        </a>
+                    </li>
+                    @endif
                 </ul>
             </nav>
             <!-- /.sidebar-menu -->
