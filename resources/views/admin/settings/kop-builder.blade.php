@@ -235,16 +235,6 @@
                     <div class="elements-panel">
                         <h5 class="mb-3"><i class="fas fa-puzzle-piece"></i> Elemen Tersedia</h5>
                         
-                        <button type="button" class="btn btn-outline-primary element-btn" data-add="logo_kemenag">
-                            <i class="fas fa-image"></i>
-                            <span>Logo Kemenag</span>
-                        </button>
-                        
-                        <button type="button" class="btn btn-outline-primary element-btn" data-add="logo_sekolah">
-                            <i class="fas fa-school"></i>
-                            <span>Logo Sekolah</span>
-                        </button>
-                        
                         <button type="button" class="btn btn-outline-secondary element-btn" data-add="text">
                             <i class="fas fa-heading"></i>
                             <span>Teks/Heading</span>
@@ -259,6 +249,12 @@
                             <i class="fas fa-address-book"></i>
                             <span>Kontak Info</span>
                         </button>
+                        
+                        <hr>
+                        
+                        <div class="alert alert-info small mb-0">
+                            <i class="fas fa-info-circle"></i> Logo Kemenag (kiri) dan Logo Sekolah (kanan) akan otomatis tampil di kop surat.
+                        </div>
                         
                         <hr>
                         
@@ -278,15 +274,11 @@
                                         @foreach($sekolah->kop_surat_config['elements'] as $index => $element)
                                             @php
                                                 $icons = [
-                                                    'logo_kemenag' => 'fas fa-image',
-                                                    'logo_sekolah' => 'fas fa-school',
                                                     'text' => 'fas fa-heading',
                                                     'divider' => 'fas fa-minus',
                                                     'contact' => 'fas fa-address-book',
                                                 ];
                                                 $labels = [
-                                                    'logo_kemenag' => 'Logo Kemenag',
-                                                    'logo_sekolah' => 'Logo Sekolah',
                                                     'text' => 'Teks',
                                                     'divider' => 'Garis Pembatas',
                                                     'contact' => 'Kontak Info',
@@ -332,11 +324,11 @@
                                 <h5 class="mb-0 text-white"><i class="fas fa-image"></i> Upload Logo Kemenag</h5>
                             </div>
                             <div class="card-body">
+                                <input type="file" id="fileLogoKemenag" accept="image/*" style="display:none;">
                                 <div class="upload-area" id="uploadAreaKemenag">
                                     <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-2"></i>
                                     <p class="mb-2">Klik atau drag file kesini</p>
                                     <small class="text-muted">Format: JPG, PNG (Max 2MB, 200x200px recommended)</small>
-                                    <input type="file" id="fileLogoKemenag" accept="image/*" style="display:none;">
                                 </div>
                                 @if($sekolah && $sekolah->logo_kemenag_path)
                                     <div class="text-center mt-3">
@@ -382,11 +374,11 @@
             <div id="customPanel" style="{{ old('kop_mode', $sekolah->kop_mode ?? 'builder') == 'custom' ? '' : 'display:none;' }}">
                 <div class="card">
                     <div class="card-body">
+                        <input type="file" id="fileKopCustom" accept="image/*" style="display:none;">
                         <div class="upload-area" id="uploadAreaCustom">
                             <i class="fas fa-file-image fa-3x text-muted mb-2"></i>
                             <p class="mb-2">Upload gambar kop surat lengkap</p>
                             <small class="text-muted">Format: JPG, PNG (A4 size recommended, Max 5MB)</small>
-                            <input type="file" id="fileKopCustom" accept="image/*" style="display:none;">
                         </div>
                         @if($sekolah && $sekolah->kop_surat_custom_path)
                             <div class="text-center mt-3">
@@ -497,8 +489,6 @@ $(document).ready(function() {
     
     function getDefaultContent(type) {
         const defaults = {
-            logo_kemenag: { height: {{ $sekolah->logo_kemenag_height ?? 100 }} },
-            logo_sekolah: { height: {{ $sekolah->logo_display_height ?? 80 }} },
             text: { 
                 line1: 'KEMENTERIAN AGAMA REPUBLIK INDONESIA',
                 line2: '{{ $sekolah->nama_sekolah ?? 'NAMA SEKOLAH' }}',
@@ -537,16 +527,12 @@ $(document).ready(function() {
         $('#emptyState').hide();
         
         const icons = {
-            logo_kemenag: 'fas fa-image',
-            logo_sekolah: 'fas fa-school',
             text: 'fas fa-heading',
             divider: 'fas fa-minus',
             contact: 'fas fa-address-book'
         };
         
         const labels = {
-            logo_kemenag: 'Logo Kemenag',
-            logo_sekolah: 'Logo Sekolah',
             text: 'Teks',
             divider: 'Garis Pembatas',
             contact: 'Kontak Info'
@@ -697,16 +683,6 @@ $(document).ready(function() {
                     </div>
                 `;
                 break;
-                
-            case 'logo_kemenag':
-            case 'logo_sekolah':
-                formHtml = `
-                    <div class="form-group">
-                        <label>Tinggi Logo (px)</label>
-                        <input type="number" class="form-control" id="editHeight" value="${element.content.height || 80}">
-                    </div>
-                `;
-                break;
         }
         
         $('#editElementForm').html(formHtml);
@@ -742,11 +718,6 @@ $(document).ready(function() {
                 element.content.email = $('#editEmail').val();
                 element.content.website = $('#editWebsite').val();
                 break;
-                
-            case 'logo_kemenag':
-            case 'logo_sekolah':
-                element.content.height = parseInt($('#editHeight').val());
-                break;
         }
         
         $('#modalEditElement').modal('hide');
@@ -774,39 +745,52 @@ $(document).ready(function() {
     });
     
     function generatePreview() {
-        let html = '';
+        // Build center content (text elements only)
+        let centerHtml = '';
         
         kopConfig.elements.forEach(element => {
             switch(element.type) {
                 case 'text':
                     const style = `text-align:${element.content.align}; font-size:${element.content.fontSize}pt; ${element.content.bold ? 'font-weight:bold;' : ''}`;
-                    if (element.content.line1) html += `<div class="preview-text" style="${style}">${element.content.line1}</div>`;
-                    if (element.content.line2) html += `<div class="preview-text" style="${style}">${element.content.line2}</div>`;
-                    if (element.content.line3) html += `<div class="preview-text" style="${style}">${element.content.line3}</div>`;
+                    if (element.content.line1) centerHtml += `<div style="${style}">${element.content.line1}</div>`;
+                    if (element.content.line2) centerHtml += `<div style="${style}">${element.content.line2}</div>`;
+                    if (element.content.line3) centerHtml += `<div style="${style}">${element.content.line3}</div>`;
                     break;
                     
                 case 'divider':
-                    html += `<hr class="preview-divider" style="border-top:${element.content.width}px ${element.content.style} ${element.content.color}; margin-top:${element.content.marginTop}px; margin-bottom:${element.content.marginBottom}px;">`;
+                    centerHtml += `<hr style="border:none; border-top:${element.content.width}px ${element.content.style} ${element.content.color}; margin-top:${element.content.marginTop}px; margin-bottom:${element.content.marginBottom}px;">`;
                     break;
                     
                 case 'contact':
-                    html += '<div class="preview-text" style="font-size:9pt;">';
-                    if (element.content.alamat) html += `${element.content.alamat} `;
-                    if (element.content.telepon) html += `| Telp: ${element.content.telepon} `;
-                    if (element.content.email) html += `| Email: ${element.content.email} `;
-                    if (element.content.website) html += `| ${element.content.website}`;
-                    html += '</div>';
-                    break;
-                    
-                case 'logo_kemenag':
-                    html += `<div class="text-center"><img src="{{ $sekolah && $sekolah->logo_kemenag_path ? asset('storage/' . $sekolah->logo_kemenag_path) : '' }}" alt="Logo Kemenag" style="height:${element.content.height}px;"></div>`;
-                    break;
-                    
-                case 'logo_sekolah':
-                    html += `<div class="text-center"><img src="{{ $sekolah && $sekolah->logo ? asset('storage/' . $sekolah->logo) : '' }}" alt="Logo Sekolah" style="height:${element.content.height}px;"></div>`;
+                    centerHtml += '<div style="font-size:9pt; text-align:center;">';
+                    if (element.content.alamat) centerHtml += `${element.content.alamat} `;
+                    if (element.content.telepon) centerHtml += `| Telp: ${element.content.telepon} `;
+                    if (element.content.email) centerHtml += `| Email: ${element.content.email} `;
+                    if (element.content.website) centerHtml += `| ${element.content.website}`;
+                    centerHtml += '</div>';
                     break;
             }
         });
+        
+        // Build 3-column layout: Logo Kemenag (left) | Text (center) | Logo Sekolah (right)
+        const logoKemenagUrl = '{{ $sekolah && $sekolah->logo_kemenag_path ? asset("storage/" . $sekolah->logo_kemenag_path) : "" }}';
+        const logoSekolahUrl = '{{ $sekolah && $sekolah->logo ? asset("storage/" . $sekolah->logo) : "" }}';
+        
+        const html = `
+            <table width="100%" border="0" cellpadding="5" cellspacing="0">
+                <tr>
+                    <td width="15%" align="center" valign="top">
+                        ${logoKemenagUrl ? `<img src="${logoKemenagUrl}" alt="Logo Kemenag" style="height:80px;">` : '<div style="color:#ccc;">Logo Kemenag</div>'}
+                    </td>
+                    <td width="70%" align="center" valign="top">
+                        ${centerHtml || '<div style="color:#ccc;">Belum ada teks</div>'}
+                    </td>
+                    <td width="15%" align="center" valign="top">
+                        ${logoSekolahUrl ? `<img src="${logoSekolahUrl}" alt="Logo Sekolah" style="height:80px;">` : '<div style="color:#ccc;">Logo Sekolah</div>'}
+                    </td>
+                </tr>
+            </table>
+        `;
         
         $('#previewContent').html(html);
     }
