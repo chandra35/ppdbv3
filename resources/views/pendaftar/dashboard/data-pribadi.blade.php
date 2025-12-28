@@ -169,71 +169,68 @@
                                 @enderror
                             </div>
                         </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Kode Pos</label>
-                                <input type="number" name="kodepos_siswa" class="form-control @error('kodepos_siswa') is-invalid @enderror" 
-                                       value="{{ old('kodepos_siswa', $calonSiswa->kodepos_siswa) }}" min="0" max="99999">
-                                @error('kodepos_siswa')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Provinsi <span class="text-danger">*</span></label>
-                                <select name="provinsi_id_siswa" id="provinsi" class="form-control select2" required>
-                                    <option value="">-- Pilih Provinsi --</option>
-                                    @foreach($provinces as $province)
-                                        <option value="{{ $province->code }}" {{ old('provinsi_id_siswa', $calonSiswa->provinsi_id_siswa) == $province->code ? 'selected' : '' }}>
-                                            {{ $province->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Kabupaten/Kota <span class="text-danger">*</span></label>
-                                <select name="kabupaten_id_siswa" id="kabupaten" class="form-control select2" required>
-                                    <option value="">-- Pilih Kabupaten/Kota --</option>
-                                </select>
-                            </div>
-                        </div>
+                    <div class="form-group">
+                        <label>Provinsi <span class="text-danger">*</span></label>
+                        <select name="provinsi_id_siswa" id="provinsi" class="form-control select2" required>
+                            <option value="">-- Pilih Provinsi --</option>
+                            @foreach($provinces as $province)
+                                <option value="{{ $province->code }}" {{ old('provinsi_id_siswa', $calonSiswa->provinsi_id_siswa) == $province->code ? 'selected' : '' }}>
+                                    {{ $province->name }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Kecamatan <span class="text-danger">*</span></label>
-                                <select name="kecamatan_id_siswa" id="kecamatan" class="form-control select2" required>
-                                    <option value="">-- Pilih Kecamatan --</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Kelurahan/Desa <span class="text-danger">*</span></label>
-                                <select name="kelurahan_id_siswa" id="kelurahan" class="form-control select2" required>
-                                    <option value="">-- Pilih Kelurahan/Desa --</option>
-                                </select>
-                            </div>
-                        </div>
+                    <div class="form-group">
+                        <label>Kabupaten/Kota <span class="text-danger">*</span></label>
+                        <select name="kabupaten_id_siswa" id="kabupaten" class="form-control select2" required>
+                            <option value="">-- Pilih Kabupaten/Kota --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Kecamatan <span class="text-danger">*</span></label>
+                        <select name="kecamatan_id_siswa" id="kecamatan" class="form-control select2" required>
+                            <option value="">-- Pilih Kecamatan --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Kelurahan/Desa <span class="text-danger">*</span></label>
+                        <select name="kelurahan_id_siswa" id="kelurahan" class="form-control select2" required>
+                            <option value="">-- Pilih Kelurahan/Desa --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Kode Pos</label>
+                        <input type="number" name="kodepos_siswa" class="form-control @error('kodepos_siswa') is-invalid @enderror" 
+                               value="{{ old('kodepos_siswa', $calonSiswa->kodepos_siswa) }}" min="0" max="99999">
+                        @error('kodepos_siswa')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <hr>
-                    <h5><i class="fas fa-phone mr-2"></i>Kontak & Asal Sekolah</h5>
+                    <h5><i class="fas fa-school mr-2"></i>Asal Sekolah</h5>
 
                     <div class="form-group">
-                        <label>Asal Sekolah</label>
+                        <label>NPSN</label>
+                        <input type="text" name="npsn_asal_sekolah" class="form-control" 
+                               value="{{ old('npsn_asal_sekolah', $calonSiswa->npsn_asal_sekolah) }}" disabled readonly>
+                        <small class="form-text text-muted">NPSN diisi otomatis dari data EMIS</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Nama Asal Sekolah</label>
                         <input type="text" name="nama_sekolah_asal" class="form-control @error('nama_sekolah_asal') is-invalid @enderror" 
-                               value="{{ old('nama_sekolah_asal', $calonSiswa->nama_sekolah_asal) }}">
+                               value="{{ old('nama_sekolah_asal', $calonSiswa->nama_sekolah_asal) }}" disabled readonly>
                         @error('nama_sekolah_asal')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
+                        <small class="form-text text-muted">Nama sekolah diisi otomatis dari data EMIS</small>
                     </div>
                 </div>
 
