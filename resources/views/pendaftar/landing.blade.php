@@ -441,6 +441,149 @@
             opacity: 0.9;
             margin-top: 0.5rem;
         }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            body {
+                font-size: 14px;
+            }
+            
+            .navbar {
+                padding: 0.75rem 1rem;
+            }
+            
+            .navbar-brand {
+                font-size: 1.1rem;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+            
+            .hero-content h1 {
+                font-size: 1.75rem;
+            }
+            
+            .hero-content p {
+                font-size: 1rem;
+            }
+            
+            .card {
+                padding: 1.25rem;
+                border-radius: 15px;
+            }
+            
+            .card-title {
+                font-size: 1.1rem;
+            }
+            
+            .card-subtitle {
+                font-size: 0.85rem;
+                margin-bottom: 1rem;
+            }
+            
+            .form-group {
+                margin-bottom: 1rem;
+            }
+            
+            .form-label {
+                font-size: 0.85rem;
+                margin-bottom: 0.35rem;
+            }
+            
+            .form-control {
+                font-size: 0.875rem;
+                padding: 0.65rem 0.875rem;
+            }
+            
+            .btn {
+                font-size: 0.875rem;
+                padding: 0.65rem 1rem;
+            }
+            
+            .result-box {
+                padding: 1rem;
+                margin-top: 1rem;
+            }
+            
+            .result-box h4 {
+                font-size: 0.9rem;
+                margin-bottom: 0.75rem;
+            }
+            
+            .data-item {
+                font-size: 0.85rem;
+                padding: 0.4rem 0;
+            }
+            
+            .data-label {
+                font-size: 0.8rem;
+            }
+            
+            .data-value {
+                font-size: 0.85rem;
+            }
+            
+            .preview-box {
+                padding: 0.75rem;
+                margin-bottom: 1rem;
+            }
+            
+            .preview-box h5 {
+                font-size: 0.85rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            .preview-grid {
+                padding: 0.75rem;
+                font-size: 0.85rem;
+                gap: 0.5rem;
+            }
+            
+            .preview-item {
+                padding: 0.4rem 0;
+            }
+            
+            .preview-label {
+                font-size: 0.75rem !important;
+            }
+            
+            .preview-value {
+                font-size: 0.85rem !important;
+            }
+            
+            .gelombang-info {
+                padding: 0.75rem;
+                margin-bottom: 1rem;
+            }
+            
+            .gelombang-info h5 {
+                font-size: 0.8rem;
+            }
+            
+            .gelombang-info .nama {
+                font-size: 1rem;
+            }
+            
+            .gelombang-info .tanggal {
+                font-size: 0.75rem;
+            }
+            
+            .info-box {
+                padding: 0.75rem;
+                font-size: 0.8rem;
+            }
+            
+            .divider {
+                margin: 1rem 0;
+                font-size: 0.85rem;
+            }
+            
+            .alert {
+                font-size: 0.85rem;
+                padding: 0.75rem;
+            }
+        }
     </style>
 </head>
 <body>

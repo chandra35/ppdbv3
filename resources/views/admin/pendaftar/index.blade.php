@@ -5,40 +5,77 @@
 @section('css')
 @include('admin.partials.action-buttons-style')
 <style>
+    /* Mobile Optimization */
     @media (max-width: 767px) {
-        .content-header h1 {
-            font-size: 18px !important;
-            margin-bottom: 8px !important;
+        body {
+            font-size: 12px !important;
         }
-        .breadcrumb {
-            font-size: 11px !important;
-            padding: 4px 8px !important;
-            margin-bottom: 8px !important;
+        .content-wrapper {
+            padding: 8px !important;
+        }
+        .content-header {
+            padding: 8px 10px !important;
+        }
+        .content-header h1 {
+            font-size: 16px !important;
+            margin: 0 !important;
+            font-weight: 600 !important;
+        }
+        .content-header .breadcrumb {
+            display: none !important;
         }
         .card {
-            margin-bottom: 10px !important;
+            margin-bottom: 8px !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
         }
         .card-header {
-            padding: 8px 12px !important;
+            padding: 6px 10px !important;
+            background: #f8f9fa !important;
         }
         .card-header h3 {
-            font-size: 14px !important;
+            font-size: 12px !important;
             margin: 0 !important;
+            font-weight: 600 !important;
         }
         .card-body {
-            padding: 10px !important;
+            padding: 8px !important;
+        }
+        .card-footer {
+            padding: 6px 10px !important;
+            background: #f8f9fa !important;
         }
         .alert {
-            padding: 8px 10px !important;
-            font-size: 12px !important;
-            margin-bottom: 10px !important;
+            padding: 6px 8px !important;
+            font-size: 11px !important;
+            margin-bottom: 8px !important;
+        }
+        .form-control-sm {
+            font-size: 11px !important;
+            padding: 4px 8px !important;
+            height: auto !important;
+        }
+        .btn-sm {
+            font-size: 11px !important;
+            padding: 4px 8px !important;
+        }
+        label {
+            font-size: 10px !important;
+            margin-bottom: 2px !important;
+            font-weight: 600 !important;
         }
         .mobile-card-item {
-            padding: 8px !important;
-            border-bottom: 1px solid #dee2e6;
+            padding: 8px 10px !important;
+            border-bottom: 1px solid #e9ecef !important;
         }
-        .mobile-card-item:last-child {
-            border-bottom: none;
+        .badge {
+            font-size: 9px !important;
+            padding: 2px 4px !important;
+        }
+        .pagination {
+            font-size: 11px !important;
+        }
+        .pagination .page-link {
+            padding: 4px 8px !important;
         }
     }
 </style>
@@ -82,18 +119,18 @@
                 </button>
             </div>
         </div>
-        <div class="card-body" style="padding: 10px;">
-            <form action="{{ route('admin.pendaftar.index') }}" method="GET" class="row" style="margin: 0 -5px;">
-                <div class="col-12 col-md-6 col-lg-3 mb-2" style="padding: 0 5px;">
+        <div class="card-body" style="padding: 8px;">
+            <form action="{{ route('admin.pendaftar.index') }}" method="GET" class="row" style="margin: 0 -4px;">
+                <div class="col-12 col-md-6 col-lg-3 mb-1" style="padding: 0 4px;">
                     <div class="form-group mb-1">
-                        <label class="mb-1" style="font-size: 12px; font-weight: 600;">Cari</label>
-                        <input type="text" name="search" class="form-control form-control-sm" style="font-size: 12px; padding: 5px 10px;" placeholder="Nama, NISN..." value="{{ request('search') }}">
+                        <label style="font-size: 10px; font-weight: 600; margin-bottom: 2px;">Cari</label>
+                        <input type="text" name="search" class="form-control form-control-sm" style="font-size: 11px; padding: 4px 8px;" placeholder="Nama, NISN..." value="{{ request('search') }}">
                     </div>
                 </div>
-                <div class="col-6 col-md-4 col-lg-2 mb-2" style="padding: 0 5px;">
+                <div class="col-6 col-md-3 col-lg-2 mb-1" style="padding: 0 4px;">
                     <div class="form-group mb-1">
-                        <label class="mb-1" style="font-size: 12px; font-weight: 600;">Jalur</label>
-                        <select name="jalur_id" class="form-control form-control-sm" style="font-size: 12px; padding: 5px 10px;">
+                        <label style="font-size: 10px; font-weight: 600; margin-bottom: 2px;">Jalur</label>
+                        <select name="jalur_id" class="form-control form-control-sm" style="font-size: 11px; padding: 4px 8px;">
                             <option value="">Semua</option>
                             @foreach($jalurList as $jalur)
                             <option value="{{ $jalur->id }}" {{ request('jalur_id') == $jalur->id ? 'selected' : '' }}>
@@ -103,10 +140,10 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-6 col-md-4 col-lg-2 mb-2" style="padding: 0 5px;">
+                <div class="col-6 col-md-3 col-lg-2 mb-1" style="padding: 0 4px;">
                     <div class="form-group mb-1">
-                        <label class="mb-1" style="font-size: 12px; font-weight: 600;">Gelombang</label>
-                        <select name="gelombang_id" class="form-control form-control-sm" style="font-size: 12px; padding: 5px 10px;">
+                        <label style="font-size: 10px; font-weight: 600; margin-bottom: 2px;">Gelombang</label>
+                        <select name="gelombang_id" class="form-control form-control-sm" style="font-size: 11px; padding: 4px 8px;">
                             <option value="">Semua</option>
                             @foreach($gelombangList as $gelombang)
                             <option value="{{ $gelombang->id }}" {{ request('gelombang_id') == $gelombang->id ? 'selected' : '' }}>
@@ -116,10 +153,10 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-6 col-md-4 col-lg-2 mb-2" style="padding: 0 5px;">
+                <div class="col-6 col-md-3 col-lg-2 mb-1" style="padding: 0 4px;">
                     <div class="form-group mb-1">
-                        <label class="mb-1" style="font-size: 12px; font-weight: 600;">Status</label>
-                        <select name="status" class="form-control form-control-sm" style="font-size: 12px; padding: 5px 10px;">
+                        <label style="font-size: 10px; font-weight: 600; margin-bottom: 2px;">Status</label>
+                        <select name="status" class="form-control form-control-sm" style="font-size: 11px; padding: 4px 8px;">
                             <option value="">Semua</option>
                             <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                             <option value="verified" {{ request('status') == 'verified' ? 'selected' : '' }}>Verified</option>
@@ -128,14 +165,14 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-6 col-md-8 col-lg-3 mb-2" style="padding: 0 5px;">
+                <div class="col-6 col-md-9 col-lg-3 mb-1" style="padding: 0 4px;">
                     <div class="form-group mb-1">
-                        <label class="mb-1 d-none d-md-block" style="font-size: 12px;">&nbsp;</label>
-                        <div class="d-flex" style="gap: 5px;">
-                            <button type="submit" class="btn btn-primary btn-sm flex-fill" style="font-size: 12px; padding: 5px 10px;">
+                        <label class="d-none d-md-block" style="font-size: 10px; margin-bottom: 2px;">&nbsp;</label>
+                        <div class="d-flex" style="gap: 4px;">
+                            <button type="submit" class="btn btn-primary btn-sm flex-fill" style="font-size: 11px; padding: 4px 8px;">
                                 <i class="fas fa-search"></i><span class="d-none d-sm-inline"> Filter</span>
                             </button>
-                            <a href="{{ route('admin.pendaftar.index') }}" class="btn btn-secondary btn-sm" style="font-size: 12px; padding: 5px 10px;">
+                            <a href="{{ route('admin.pendaftar.index') }}" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 8px;">
                                 <i class="fas fa-redo"></i>
                             </a>
                         </div>
@@ -259,31 +296,31 @@
             <!-- Mobile Card View -->
             <div class="d-lg-none">
                 @forelse($pendaftars as $key => $pendaftar)
-                <div class="mobile-card-item" style="background: {{ $loop->odd ? '#fff' : '#f9fafb' }}; padding: 10px;">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div style="flex: 1; padding-right: 10px;">
-                            <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px; line-height: 1.3;">
+                <div class="mobile-card-item" style="background: {{ $loop->odd ? '#fff' : '#fafbfc' }}; padding: 8px;">
+                    <div class="d-flex align-items-start" style="gap: 8px;">
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-size: 12px; font-weight: 600; margin-bottom: 3px; line-height: 1.2;">
                                 <a href="{{ route('admin.pendaftar.show', $pendaftar->id) }}" class="text-dark">
                                     {{ $pendaftar->nama_lengkap }}
                                 </a>
                             </div>
-                            <div style="font-size: 10px; margin-bottom: 4px;" class="text-muted">
-                                <code style="font-size: 9px; padding: 1px 3px;">{{ $pendaftar->nomor_registrasi ?? '-' }}</code>
+                            <div style="font-size: 9px; margin-bottom: 3px;" class="text-muted">
+                                <code style="font-size: 8px; padding: 1px 2px;">{{ $pendaftar->nomor_registrasi ?? '-' }}</code>
                                 @if($pendaftar->nisn)
-                                    <span style="margin-left: 3px;">NISN: {{ $pendaftar->nisn }}</span>
+                                    <span style="margin-left: 2px;">{{ $pendaftar->nisn }}</span>
                                 @endif
                             </div>
                             @if($pendaftar->jalurPendaftaran)
-                            <div style="margin-bottom: 4px;">
-                                <span class="badge" style="background: {{ $pendaftar->jalurPendaftaran->warna ?? '#007bff' }}; color: white; font-size: 8px; padding: 2px 4px;">
+                            <div style="margin-bottom: 3px;">
+                                <span class="badge" style="background: {{ $pendaftar->jalurPendaftaran->warna ?? '#007bff' }}; color: white; font-size: 8px; padding: 1px 3px;">
                                     {{ $pendaftar->jalurPendaftaran->nama }}
                                 </span>
                                 @if($pendaftar->gelombangPendaftaran)
-                                    <span class="text-muted" style="font-size: 9px; margin-left: 3px;">{{ $pendaftar->gelombangPendaftaran->nama }}</span>
+                                    <span class="text-muted" style="font-size: 8px; margin-left: 2px;">{{ $pendaftar->gelombangPendaftaran->nama }}</span>
                                 @endif
                             </div>
                             @endif
-                            <div style="margin-top: 4px;">
+                            <div style="margin-top: 3px;">
                                 @php
                                     $dokumenCount = $pendaftar->dokumen->count();
                                     $validCount = $pendaftar->dokumen->where('status_verifikasi', 'valid')->count();
@@ -309,36 +346,36 @@
                         </div>
                         <div style="text-align: right; flex-shrink: 0;">
                             @if($pendaftar->status_verifikasi == 'pending')
-                                <span class="badge badge-warning" style="font-size: 9px; padding: 2px 5px;">Pending</span>
+                                <span class="badge badge-warning" style="font-size: 8px; padding: 2px 4px; white-space: nowrap;">Pending</span>
                             @elseif($pendaftar->status_verifikasi == 'verified')
-                                <span class="badge badge-info" style="font-size: 9px; padding: 2px 5px;">Verified</span>
+                                <span class="badge badge-info" style="font-size: 8px; padding: 2px 4px; white-space: nowrap;">Verified</span>
                             @elseif($pendaftar->status_verifikasi == 'approved')
-                                <span class="badge badge-success" style="font-size: 9px; padding: 2px 5px;">Diterima</span>
+                                <span class="badge badge-success" style="font-size: 8px; padding: 2px 4px; white-space: nowrap;">Diterima</span>
                             @elseif($pendaftar->status_verifikasi == 'rejected')
-                                <span class="badge badge-danger" style="font-size: 9px; padding: 2px 5px;">Ditolak</span>
+                                <span class="badge badge-danger" style="font-size: 8px; padding: 2px 4px; white-space: nowrap;">Ditolak</span>
                             @endif
-                            <div style="margin-top: 6px;">
-                                <a href="{{ route('admin.pendaftar.show', $pendaftar->id) }}" class="btn btn-primary btn-sm" style="font-size: 10px; padding: 4px 8px;">
+                            <div style="margin-top: 4px;">
+                                <a href="{{ route('admin.pendaftar.show', $pendaftar->id) }}" class="btn btn-primary btn-sm" style="font-size: 9px; padding: 3px 6px; white-space: nowrap;">
                                     <i class="fas fa-eye"></i> Detail
                                 </a>
                             </div>
-                            <div class="text-muted" style="font-size: 8px; margin-top: 4px;">
-                                {{ $pendaftar->created_at->format('d/m/y') }}
+                            <div class="text-muted" style="font-size: 8px; margin-top: 3px;">
+                                {{ $pendaftar->created_at->format('d/m') }}
                             </div>
                         </div>
                     </div>
                 </div>
                 @empty
-                <div class="text-center text-muted py-4" style="font-size: 12px;">Tidak ada pendaftar</div>
+                <div class="text-center text-muted py-3" style="font-size: 11px;">Tidak ada pendaftar</div>
                 @endforelse
             </div>
         </div>
-        <div class="card-footer clearfix" style="padding: 8px 15px;">
-            <div class="d-flex justify-content-between align-items-center flex-wrap">
-                <div class="text-muted d-none d-md-block" style="font-size: 11px;">
-                    {{ $pendaftars->firstItem() ?? 0 }} - {{ $pendaftars->lastItem() ?? 0 }} dari {{ $pendaftars->total() }}
+        <div class="card-footer clearfix" style="padding: 6px 10px;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted d-none d-md-block" style="font-size: 10px;">
+                    {{ $pendaftars->firstItem() ?? 0 }}-{{ $pendaftars->lastItem() ?? 0 }} / {{ $pendaftars->total() }}
                 </div>
-                <div style="margin: 0 auto;">
+                <div style="flex: 1; text-align: center;">
                     {{ $pendaftars->appends(request()->query())->links() }}
                 </div>
             </div>
