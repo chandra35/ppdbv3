@@ -18,6 +18,7 @@
         transition: all 0.3s ease;
         cursor: pointer;
         height: 100%;
+        position: relative;
     }
     
     .doc-card:hover {
@@ -29,6 +30,27 @@
         border-color: #48bb78;
         border-style: solid;
         background: #f0fff4;
+    }
+    
+    .doc-card .thumbnail-preview {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 120px;
+        overflow: hidden;
+        border-radius: 8px 8px 0 0;
+        background: #f8f9fa;
+    }
+    
+    .doc-card .thumbnail-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .doc-card.uploaded.has-thumbnail {
+        padding-top: 130px;
     }
     
     .doc-card .icon {
@@ -108,9 +130,14 @@
                         @php
                             $doc = $uploadedDocs->get($key);
                             $isUploaded = $doc !== null;
+                            $isImage = false;
+                            if ($isUploaded) {
+                                $extension = strtolower(pathinfo($doc->file_path, PATHINFO_EXTENSION));
+                                $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif']);
+                            }
                         @endphp
                         <div class="col-md-4 col-6 mb-4">
-                            <div class="doc-card {{ $isUploaded ? 'uploaded' : '' }}" 
+                            <div class="doc-card {{ $isUploaded ? 'uploaded' : '' }} {{ $isImage ? 'has-thumbnail' : '' }}" 
                                  data-toggle="modal" 
                                  data-target="#uploadModal"
                                  data-doc-type="{{ $key }}"
@@ -120,6 +147,11 @@
                                  data-doc-path="{{ asset('storage/' . $doc->file_path) }}"
                                  data-doc-name="{{ $doc->nama_file }}"
                                  @endif>
+                                @if($isUploaded && $isImage)
+                                    <div class="thumbnail-preview">
+                                        <img src="{{ asset('storage/' . $doc->file_path) }}" alt="{{ $label }}">
+                                    </div>
+                                @endif
                                 <div class="icon">
                                     @if($isUploaded)
                                         <i class="fas fa-file-check"></i>
