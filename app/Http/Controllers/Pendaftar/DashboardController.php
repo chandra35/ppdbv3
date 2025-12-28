@@ -56,6 +56,11 @@ class DashboardController extends Controller
         $user = Auth::user();
         $calonSiswa = CalonSiswa::where('user_id', $user->id)->first();
 
+        // Check if already finalized
+        if ($calonSiswa && $calonSiswa->is_finalisasi) {
+            return back()->with('error', 'Data sudah difinalisasi dan tidak dapat diubah');
+        }
+
         $validated = $request->validate([
             'nik' => 'required|digits:16',
             'nama_lengkap' => 'required|string|max:255',
@@ -156,6 +161,11 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         $calonSiswa = CalonSiswa::where('user_id', $user->id)->first();
+
+        // Check if already finalized
+        if ($calonSiswa && $calonSiswa->is_finalisasi) {
+            return back()->with('error', 'Data sudah difinalisasi dan tidak dapat diubah');
+        }
 
         $request->validate([
             // KK
@@ -280,6 +290,14 @@ class DashboardController extends Controller
         $user = Auth::user();
         $calonSiswa = CalonSiswa::where('user_id', $user->id)->first();
 
+        // Check if already finalized
+        if ($calonSiswa && $calonSiswa->is_finalisasi) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data sudah difinalisasi dan tidak dapat diubah'
+            ], 403);
+        }
+
         $request->validate([
             'jenis_dokumen' => 'required|string',
             'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
@@ -328,6 +346,14 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         $calonSiswa = CalonSiswa::where('user_id', $user->id)->first();
+
+        // Check if already finalized
+        if ($calonSiswa && $calonSiswa->is_finalisasi) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data sudah difinalisasi dan tidak dapat diubah'
+            ], 403);
+        }
 
         $dokumen = CalonDokumen::where('id', $id)
             ->where('calon_siswa_id', $calonSiswa->id)
@@ -403,6 +429,11 @@ class DashboardController extends Controller
         $user = Auth::user();
         $calonSiswa = CalonSiswa::where('user_id', $user->id)->first();
 
+        // Check if already finalized
+        if ($calonSiswa && $calonSiswa->is_finalisasi) {
+            return back()->with('error', 'Data sudah difinalisasi dan tidak dapat diubah');
+        }
+
         // Validate all 5 semesters
         $rules = [];
         $messages = [];
@@ -473,9 +504,23 @@ class DashboardController extends Controller
             default => 0,
         };
 
-        $overall = ($dataDiri + $dataOrtu + $dokumen + $nilaiRapor + $verifikasi) / 5;
+        // Calculate pilihan program if enabled
+        $pilihanProgram = 0;
+        $jalur = $calonSiswa->jalurPendaftaran;
+        $includePilihanProgram = $jalur && $jalur->pilihan_program_aktif;
+        
+        if ($includePilihanProgram) {
+            $pilihanProgram = !empty($calonSiswa->pilihan_program) ? 100 : 0;
+        }
 
-        return [
+        // Calculate overall progress with conditional inclusion
+        if ($includePilihanProgram) {
+            $overall = ($dataDiri + $dataOrtu + $dokumen + $nilaiRapor + $verifikasi + $pilihanProgram) / 6;
+        } else {
+            $overall = ($dataDiri + $dataOrtu + $dokumen + $nilaiRapor + $verifikasi) / 5;
+        }
+
+        $result = [
             'data_diri' => $dataDiri,
             'data_ortu' => $dataOrtu,
             'dokumen' => $dokumen,
@@ -483,6 +528,13 @@ class DashboardController extends Controller
             'verifikasi' => $verifikasi,
             'overall' => round($overall),
         ];
+
+        // Only include pilihan_program in result if feature is enabled
+        if ($includePilihanProgram) {
+            $result['pilihan_program'] = $pilihanProgram;
+        }
+
+        return $result;
     }
 
     protected function calculateDataDiriProgress(CalonSiswa $calonSiswa): int
@@ -592,5 +644,236 @@ class DashboardController extends Controller
         ]);
         
         return back()->with('success', 'Password berhasil diubah');
+    }
+
+    /**
+     * Show pilihan program form
+     */
+    public function pilihanProgram()
+    {
+        $user = Auth::user();
+        $calonSiswa = CalonSiswa::where('user_id', $user->id)
+            ->with('jalurPendaftaran')
+            ->first();
+
+        if (!$calonSiswa) {
+            return redirect()->route('pendaftar.dashboard')
+                ->with('error', 'Data pendaftaran tidak ditemukan');
+        }
+
+        $jalur = $calonSiswa->jalurPendaftaran;
+
+        // Check if pilihan program is enabled
+        if (!$jalur->pilihan_program_aktif) {
+            return redirect()->route('pendaftar.dashboard')
+                ->with('info', 'Fitur pilihan program tidak diaktifkan untuk jalur Anda');
+        }
+
+        // Check if already finalized
+        if ($calonSiswa->is_finalisasi) {
+            return redirect()->route('pendaftar.dashboard')
+                ->with('warning', 'Data sudah difinalisasi, tidak dapat mengubah pilihan program');
+        }
+
+        return view('pendaftar.dashboard.pilihan-program', compact('calonSiswa', 'jalur'));
+    }
+
+    /**
+     * Store pilihan program
+     */
+    public function storePilihanProgram(Request $request)
+    {
+        $user = Auth::user();
+        $calonSiswa = CalonSiswa::where('user_id', $user->id)->first();
+
+        if (!$calonSiswa) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data pendaftaran tidak ditemukan'
+            ], 404);
+        }
+
+        // Check if already finalized
+        if ($calonSiswa->is_finalisasi) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data sudah difinalisasi, tidak dapat mengubah pilihan'
+            ], 403);
+        }
+
+        $jalur = $calonSiswa->jalurPendaftaran;
+
+        // Check if feature is enabled
+        if (!$jalur->pilihan_program_aktif) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Fitur pilihan program tidak diaktifkan'
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'pilihan_program' => 'required|string|in:' . implode(',', $jalur->pilihan_program_options ?? [])
+        ], [
+            'pilihan_program.required' => 'Pilihan program wajib dipilih',
+            'pilihan_program.in' => 'Pilihan program tidak valid'
+        ]);
+
+        $calonSiswa->update([
+            'pilihan_program' => $validated['pilihan_program']
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pilihan program berhasil disimpan'
+        ]);
+    }
+
+    /**
+     * Show finalisasi page
+     */
+    public function finalisasi()
+    {
+        $user = Auth::user();
+        $calonSiswa = CalonSiswa::where('user_id', $user->id)
+            ->with(['jalurPendaftaran', 'ortu', 'dokumen'])
+            ->first();
+
+        if (!$calonSiswa) {
+            return redirect()->route('pendaftar.dashboard')
+                ->with('error', 'Data pendaftaran tidak ditemukan');
+        }
+
+        // Get progress to check completion
+        $progress = $this->calculateProgress($calonSiswa);
+
+        // Check requirements
+        $requirements = $this->checkFinalisasiRequirements($calonSiswa, $progress);
+
+        return view('pendaftar.dashboard.finalisasi', compact('calonSiswa', 'progress', 'requirements'));
+    }
+
+    /**
+     * Process finalisasi
+     */
+    public function storeFinalisasi(Request $request)
+    {
+        $user = Auth::user();
+        $calonSiswa = CalonSiswa::where('user_id', $user->id)
+            ->with(['jalurPendaftaran', 'ortu', 'dokumen'])
+            ->first();
+
+        if (!$calonSiswa) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data pendaftaran tidak ditemukan'
+            ], 404);
+        }
+
+        // Check if already finalized
+        if ($calonSiswa->is_finalisasi) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data sudah difinalisasi sebelumnya'
+            ], 403);
+        }
+
+        // Validate confirmation
+        $request->validate([
+            'confirmation' => 'required|accepted'
+        ], [
+            'confirmation.accepted' => 'Anda harus menyetujui pernyataan finalisasi'
+        ]);
+
+        // Check requirements
+        $progress = $this->calculateProgress($calonSiswa);
+        $requirements = $this->checkFinalisasiRequirements($calonSiswa, $progress);
+
+        if (!$requirements['can_finalize']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Belum memenuhi syarat finalisasi: ' . implode(', ', $requirements['missing'])
+            ], 422);
+        }
+
+        // Generate nomor tes (format: PPDB-TAHUN-JALUR-SEQUENCE)
+        $tahun = $calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y');
+        $jalurCode = strtoupper(substr($calonSiswa->jalurPendaftaran->nama_jalur ?? 'REG', 0, 3));
+        
+        // Get last sequence number for this year and jalur
+        $lastNumber = CalonSiswa::where('tahun_pelajaran_id', $calonSiswa->tahun_pelajaran_id)
+            ->where('jalur_pendaftaran_id', $calonSiswa->jalur_pendaftaran_id)
+            ->whereNotNull('nomor_tes')
+            ->count();
+        
+        $sequence = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+        $nomorTes = "PPDB-{$tahun}-{$jalurCode}-{$sequence}";
+
+        // Update finalisasi data
+        $calonSiswa->update([
+            'is_finalisasi' => true,
+            'tanggal_finalisasi' => now(),
+            'nomor_tes' => $nomorTes,
+            'status_admisi' => 'belum_diproses'
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Finalisasi berhasil! Nomor Tes Anda: ' . $nomorTes,
+            'nomor_tes' => $nomorTes
+        ]);
+    }
+
+    /**
+     * Check finalisasi requirements
+     */
+    protected function checkFinalisasiRequirements(CalonSiswa $calonSiswa, array $progress): array
+    {
+        $requirements = [
+            'data_pribadi' => [
+                'status' => $progress['data_diri'] >= 100,
+                'label' => 'Data Pribadi Lengkap'
+            ],
+            'data_ortu' => [
+                'status' => $progress['data_ortu'] >= 100,
+                'label' => 'Data Orang Tua Lengkap'
+            ],
+            'dokumen' => [
+                'status' => $progress['dokumen'] >= 100,
+                'label' => 'Dokumen Lengkap'
+            ],
+            'nilai_rapor' => [
+                'status' => $progress['nilai_rapor'] >= 100,
+                'label' => 'Nilai Rapor Lengkap'
+            ],
+            'verifikasi' => [
+                'status' => $calonSiswa->status_verifikasi === 'verified',
+                'label' => 'Data Terverifikasi'
+            ]
+        ];
+
+        // Add pilihan program check if enabled
+        if (isset($progress['pilihan_program'])) {
+            $requirements['pilihan_program'] = [
+                'status' => $progress['pilihan_program'] >= 100,
+                'label' => 'Pilihan Program Dipilih'
+            ];
+        }
+
+        // Determine if can finalize
+        $canFinalize = true;
+        $missing = [];
+
+        foreach ($requirements as $key => $req) {
+            if (!$req['status']) {
+                $canFinalize = false;
+                $missing[] = $req['label'];
+            }
+        }
+
+        return [
+            'requirements' => $requirements,
+            'can_finalize' => $canFinalize,
+            'missing' => $missing
+        ];
     }
 }

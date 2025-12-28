@@ -286,6 +286,50 @@
                         </a>
                     </li>
                     
+                    @php
+                        $calonSiswaForMenu = \App\Models\CalonSiswa::where('user_id', auth()->id())->with('jalurPendaftaran')->first();
+                    @endphp
+                    
+                    @if($calonSiswaForMenu && $calonSiswaForMenu->jalurPendaftaran && $calonSiswaForMenu->jalurPendaftaran->pilihan_program_aktif)
+                    <li class="nav-item">
+                        <a href="{{ route('pendaftar.pilihan-program') }}" class="nav-link {{ request()->routeIs('pendaftar.pilihan-program') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-list-ul"></i>
+                            <p>
+                                Pilihan Program
+                                @if($calonSiswaForMenu->pilihan_program)
+                                    <span class="badge badge-success right">
+                                        <i class="fas fa-check"></i>
+                                    </span>
+                                @else
+                                    <span class="badge badge-warning right">
+                                        <i class="fas fa-exclamation"></i>
+                                    </span>
+                                @endif
+                            </p>
+                        </a>
+                    </li>
+                    @endif
+                    
+                    <li class="nav-header">FINALISASI</li>
+                    
+                    <li class="nav-item">
+                        <a href="{{ route('pendaftar.finalisasi') }}" class="nav-link {{ request()->routeIs('pendaftar.finalisasi') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-check-double"></i>
+                            <p>
+                                Finalisasi Pendaftaran
+                                @if($calonSiswaForMenu && $calonSiswaForMenu->is_finalisasi)
+                                    <span class="badge badge-success right">
+                                        <i class="fas fa-check"></i>
+                                    </span>
+                                @else
+                                    <span class="badge badge-danger right">
+                                        <i class="fas fa-exclamation"></i>
+                                    </span>
+                                @endif
+                            </p>
+                        </a>
+                    </li>
+                    
                     <li class="nav-header">INFORMASI</li>
                     
                     <li class="nav-item">

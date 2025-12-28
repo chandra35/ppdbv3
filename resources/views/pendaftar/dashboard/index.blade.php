@@ -105,6 +105,18 @@
                     </div>
                 </div>
                 
+                @if(isset($progress['pilihan_program']))
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Pilihan Program</span>
+                        <span class="font-weight-bold">{{ $progress['pilihan_program'] }}%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: {{ $progress['pilihan_program'] }}%"></div>
+                    </div>
+                </div>
+                @endif
+                
                 <div class="mb-0">
                     <div class="d-flex justify-content-between mb-1">
                         <span>Verifikasi</span>

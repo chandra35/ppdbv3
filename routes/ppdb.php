@@ -82,6 +82,14 @@ Route::middleware(['auth'])->prefix('pendaftar')->name('pendaftar.')->group(func
     Route::post('/dokumen', [PendaftarDashboardController::class, 'uploadDokumen'])->name('dokumen.upload');
     Route::delete('/dokumen/{id}', [PendaftarDashboardController::class, 'deleteDokumen'])->name('dokumen.delete');
     
+    // Pilihan Program (conditional - only if enabled in jalur)
+    Route::get('/pilihan-program', [PendaftarDashboardController::class, 'pilihanProgram'])->name('pilihan-program');
+    Route::post('/pilihan-program', [PendaftarDashboardController::class, 'storePilihanProgram'])->name('pilihan-program.store');
+    
+    // Finalisasi Pendaftaran
+    Route::get('/finalisasi', [PendaftarDashboardController::class, 'finalisasi'])->name('finalisasi');
+    Route::post('/finalisasi', [PendaftarDashboardController::class, 'storeFinalisasi'])->name('finalisasi.store');
+    
     // Profile & Password
     Route::get('/profile', [PendaftarDashboardController::class, 'profile'])->name('profile');
     Route::put('/profile', [PendaftarDashboardController::class, 'updateProfile'])->name('profile.update');
