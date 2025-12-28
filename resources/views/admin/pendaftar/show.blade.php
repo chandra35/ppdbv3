@@ -1536,7 +1536,7 @@ $(document).ready(function() {
         
         // Skip untuk pas_foto
         if (currentJenisDokumen === 'pas_foto') {
-            container.html('<p class="text-muted mb-0">Pas foto tidak perlu approval</p>');
+            container.html('<p class="text-muted mb-0"><i class="fas fa-info-circle"></i> Pas foto tidak perlu approval</p>');
             return;
         }
         
@@ -1546,23 +1546,25 @@ $(document).ready(function() {
                 .html('<i class="fas fa-check"></i> Setujui')
                 .on('click', function() { approveDokumen(currentDokumenId); });
             
-            const rejectBtn = $('<button>')
-                .addClass('btn btn-danger btn-sm ml-1')
-                .html('<i class="fas fa-times"></i> Tolak')
-                .on('click', function() { rejectDokumen(currentDokumenId); });
+            const revisiBtn = $('<button>')
+                .addClass('btn btn-warning btn-sm ml-2')
+                .html('<i class="fas fa-redo"></i> Minta Revisi')
+                .on('click', function() { revisiDokumen(currentDokumenId); });
             
-            container.append(approveBtn).append(' ').append(rejectBtn);
+            container.append(approveBtn).append(' ').append(revisiBtn);
         } else if (currentDokumenStatus === 'valid') {
+            const statusBadge = $('<span>')
+                .addClass('badge badge-success mr-2')
+                .html('<i class="fas fa-check-circle"></i> Dokumen Disetujui');
+            
             const revisiBtn = $('<button>')
                 .addClass('btn btn-warning btn-sm')
                 .html('<i class="fas fa-redo"></i> Minta Revisi')
                 .on('click', function() { revisiDokumen(currentDokumenId); });
             
-            container.append(revisiBtn);
-        } else if (currentDokumenStatus === 'invalid') {
-            container.html('<span class="badge badge-danger">Dokumen Ditolak</span>');
+            container.append(statusBadge).append(' ').append(revisiBtn);
         } else if (currentDokumenStatus === 'revision') {
-            container.html('<span class="badge badge-info">Menunggu Revisi</span>');
+            container.html('<span class="badge badge-info"><i class="fas fa-clock"></i> Menunggu Revisi dari Pendaftar</span>');
         }
     }
     
