@@ -2,6 +2,10 @@
 
 @section('title', 'Edit Jalur - ' . $jalur->nama)
 
+@section('css')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+@stop
+
 @section('content_header')
     <h1><i class="fas fa-edit mr-2"></i>Edit Jalur Pendaftaran</h1>
 @stop
@@ -201,6 +205,164 @@
                 </div>
             </div>
 
+            {{-- Pilihan Program/Jurusan Section --}}
+            <div class="card card-warning card-outline">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-list-ul mr-2"></i>Pilihan Program/Jurusan</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="pilihan_program_aktif" 
+                                   name="pilihan_program_aktif" value="1" 
+                                   {{ old('pilihan_program_aktif', $jalur->pilihan_program_aktif) ? 'checked' : '' }}>
+                            <label class="custom-control-label" for="pilihan_program_aktif">
+                                <strong>Aktifkan Pilihan Program/Jurusan</strong>
+                            </label>
+                        </div>
+                        <small class="text-muted">
+                            Jika diaktifkan, pendaftar harus memilih program sebelum finalisasi (contoh: Reguler/Asrama, IPA/IPS, dll)
+                        </small>
+                    </div>
+
+                    <div id="pilihan_program_settings" style="display: none;">
+                        <hr>
+                        
+                        <div class="form-group">
+                            <label>Tipe Pilihan <span class="text-danger">*</span></label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="custom-control custom-radio">
+                                        <input class="custom-control-input" type="radio" id="tipe_reguler_asrama" 
+                                               name="pilihan_program_tipe" value="reguler_asrama"
+                                               {{ old('pilihan_program_tipe', $jalur->pilihan_program_tipe) == 'reguler_asrama' ? 'checked' : '' }}>
+                                        <label for="tipe_reguler_asrama" class="custom-control-label">
+                                            <strong>Reguler/Asrama</strong>
+                                            <br><small class="text-muted">Untuk pemilihan tipe pendidikan</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="custom-control custom-radio">
+                                        <input class="custom-control-input" type="radio" id="tipe_jurusan" 
+                                               name="pilihan_program_tipe" value="jurusan"
+                                               {{ old('pilihan_program_tipe', $jalur->pilihan_program_tipe) == 'jurusan' ? 'checked' : '' }}>
+                                        <label for="tipe_jurusan" class="custom-control-label">
+                                            <strong>Jurusan</strong>
+                                            <br><small class="text-muted">IPA, IPS, Bahasa, dll</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="custom-control custom-radio">
+                                        <input class="custom-control-input" type="radio" id="tipe_custom" 
+                                               name="pilihan_program_tipe" value="custom"
+                                               {{ old('pilihan_program_tipe', $jalur->pilihan_program_tipe) == 'custom' ? 'checked' : '' }}>
+                                        <label for="tipe_custom" class="custom-control-label">
+                                            <strong>Custom</strong>
+                                            <br><small class="text-muted">Isi pilihan sendiri</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Pilihan yang Tersedia <span class="text-danger">*</span></label>
+                            <div id="options_container">
+                                @php
+                                    $existingOptions = old('pilihan_program_options', $jalur->pilihan_program_options ?? []);
+                                    if (empty($existingOptions)) {
+                                        $existingOptions = ['', '']; // Default 2 empty options
+                                    }
+                                @endphp
+                                @foreach($existingOptions as $index => $option)
+                                <div class="input-group mb-2 option-row">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="fas fa-grip-vertical"></i></span>
+                                    </div>
+                                    <input type="text" class="form-control" name="pilihan_program_options[]" 
+                                           value="{{ $option }}" placeholder="Contoh: Reguler, Asrama, IPA, IPS, dll">
+                                    <div class="input-group-append">
+                                        <button type="button" class="btn btn-danger btn-remove-option">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                            <button type="button" class="btn btn-sm btn-success" id="btn_add_option">
+                                <i class="fas fa-plus mr-1"></i> Tambah Pilihan
+                            </button>
+                            <small class="text-muted d-block mt-2">
+                                <i class="fas fa-info-circle"></i> Minimal 2 pilihan. Pendaftar akan memilih salah satu.
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="pilihan_program_catatan">Catatan/Instruksi untuk Pendaftar</label>
+                            <textarea class="form-control" id="pilihan_program_catatan" 
+                                      name="pilihan_program_catatan" rows="3" 
+                                      placeholder="Contoh: Pilih program sesuai minat dan kemampuan Anda. Pilihan tidak dapat diubah setelah finalisasi.">{{ old('pilihan_program_catatan', $jalur->pilihan_program_catatan) }}</textarea>
+                            <small class="text-muted">Akan ditampilkan di halaman pilihan program pendaftar</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                                    </option>
+                                    @endforeach
+                                </select>
+                                @error('icon')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input" id="tampil_di_publik" name="tampil_di_publik" value="1" {{ old('tampil_di_publik', $jalur->tampil_di_publik) ? 'checked' : '' }}>
+                                    <label class="custom-control-label" for="tampil_di_publik">Tampilkan di Halaman Publik</label>
+                                </div>
+                                <small class="text-muted">Info jalur muncul di landing page</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input" id="tampil_kuota" name="tampil_kuota" value="1" {{ old('tampil_kuota', $jalur->tampil_kuota ?? true) ? 'checked' : '' }}>
+                                    <label class="custom-control-label" for="tampil_kuota">Tampilkan Kuota ke Publik</label>
+                                </div>
+                                <small class="text-muted">Jika tidak dicentang, kuota disembunyikan</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            {{-- Status Info --}}
+                            <div class="callout callout-{{ $jalur->status == 'open' ? 'success' : ($jalur->status == 'closed' ? 'warning' : ($jalur->status == 'finished' ? 'secondary' : 'info')) }} py-2 px-3 mb-0">
+                                <small>
+                                    <strong>Status:</strong> 
+                                    @switch($jalur->status)
+                                        @case('open')
+                                            <span class="text-success"><i class="fas fa-door-open mr-1"></i>Dibuka</span>
+                                            @break
+                                        @case('closed')
+                                            <span class="text-warning"><i class="fas fa-pause mr-1"></i>Ditutup Sementara</span>
+                                            @break
+                                        @case('finished')
+                                            <span class="text-secondary"><i class="fas fa-check mr-1"></i>Selesai</span>
+                                            @break
+                                        @default
+                                            <span class="text-muted"><i class="fas fa-file mr-1"></i>Draft</span>
+                                    @endswitch
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
@@ -253,6 +415,7 @@
 @stop
 
 @section('js')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script>
 $(function() {
     $('#kode').on('input', function() {
@@ -272,6 +435,101 @@ $(function() {
     }
     
     $('#nama, #kode, #warna, #icon').on('input change', updatePreview);
+    
+    // ========== Pilihan Program Logic ==========
+    
+    // Toggle pilihan program settings
+    function togglePilihanProgramSettings() {
+        if ($('#pilihan_program_aktif').is(':checked')) {
+            $('#pilihan_program_settings').slideDown();
+            // Centang radio pertama jika belum ada yang dicentang
+            if (!$('input[name="pilihan_program_tipe"]:checked').length) {
+                $('#tipe_reguler_asrama').prop('checked', true);
+            }
+        } else {
+            $('#pilihan_program_settings').slideUp();
+        }
+    }
+    
+    $('#pilihan_program_aktif').on('change', togglePilihanProgramSettings);
+    togglePilihanProgramSettings(); // Init on page load
+    
+    // Preset options based on tipe
+    const presets = {
+        'reguler_asrama': ['Reguler', 'Asrama'],
+        'jurusan': ['IPA', 'IPS', 'Bahasa'],
+        'custom': ['', '']
+    };
+    
+    $('input[name="pilihan_program_tipe"]').on('change', function() {
+        const tipe = $(this).val();
+        const preset = presets[tipe] || ['', ''];
+        
+        // Clear existing options
+        $('#options_container').empty();
+        
+        // Add preset options
+        preset.forEach(function(value) {
+            addOptionRow(value);
+        });
+    });
+    
+    // Add option row
+    function addOptionRow(value = '') {
+        const row = $(`
+            <div class="input-group mb-2 option-row">
+                <div class="input-group-prepend">
+                    <span class="input-group-text"><i class="fas fa-grip-vertical"></i></span>
+                </div>
+                <input type="text" class="form-control" name="pilihan_program_options[]" 
+                       value="${value}" placeholder="Contoh: Reguler, Asrama, IPA, IPS, dll">
+                <div class="input-group-append">
+                    <button type="button" class="btn btn-danger btn-remove-option">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        `);
+        $('#options_container').append(row);
+    }
+    
+    // Add option button
+    $('#btn_add_option').on('click', function() {
+        addOptionRow();
+    });
+    
+    // Remove option button
+    $(document).on('click', '.btn-remove-option', function() {
+        const totalRows = $('.option-row').length;
+        if (totalRows > 2) {
+            $(this).closest('.option-row').remove();
+        } else {
+            toastr.warning('Minimal harus ada 2 pilihan!');
+        }
+    });
+    
+    // Form validation before submit
+    $('form').on('submit', function(e) {
+        if ($('#pilihan_program_aktif').is(':checked')) {
+            // Check if tipe is selected
+            if (!$('input[name="pilihan_program_tipe"]:checked').length) {
+                e.preventDefault();
+                toastr.error('Pilih tipe pilihan program terlebih dahulu!');
+                return false;
+            }
+            
+            // Check if at least 2 non-empty options
+            const options = $('input[name="pilihan_program_options[]"]').map(function() {
+                return $(this).val().trim();
+            }).get().filter(v => v !== '');
+            
+            if (options.length < 2) {
+                e.preventDefault();
+                toastr.error('Minimal harus ada 2 pilihan program yang diisi!');
+                return false;
+            }
+        }
+    });
 });
 </script>
 @stop

@@ -32,6 +32,10 @@ class JalurPendaftaran extends Model
         'tampil_di_publik',
         'tampil_kuota',
         'urutan',
+        'pilihan_program_aktif',
+        'pilihan_program_tipe',
+        'pilihan_program_options',
+        'pilihan_program_catatan',
     ];
 
     protected $casts = [
@@ -44,6 +48,8 @@ class JalurPendaftaran extends Model
         'tampil_di_publik' => 'boolean',
         'tampil_kuota' => 'boolean',
         'urutan' => 'integer',
+        'pilihan_program_aktif' => 'boolean',
+        'pilihan_program_options' => 'array',
     ];
 
     // Status constants

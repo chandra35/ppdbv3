@@ -144,10 +144,25 @@ class JalurPendaftaranController extends Controller
             'tampil_di_publik' => 'boolean',
             'tampil_kuota' => 'boolean',
             'urutan' => 'nullable|integer|min:1',
+            // Pilihan Program fields
+            'pilihan_program_aktif' => 'nullable|boolean',
+            'pilihan_program_tipe' => 'nullable|string|in:reguler_asrama,jurusan,custom',
+            'pilihan_program_options' => 'nullable|array',
+            'pilihan_program_options.*' => 'nullable|string|max:50',
+            'pilihan_program_catatan' => 'nullable|string',
         ]);
         
         $validated['tampil_di_publik'] = $request->has('tampil_di_publik');
         $validated['tampil_kuota'] = $request->has('tampil_kuota');
+        $validated['pilihan_program_aktif'] = $request->has('pilihan_program_aktif');
+        
+        // Handle pilihan_program_options JSON encoding
+        if ($validated['pilihan_program_aktif'] && isset($validated['pilihan_program_options'])) {
+            // Filter empty values
+            $validated['pilihan_program_options'] = array_filter($validated['pilihan_program_options']);
+        } else {
+            $validated['pilihan_program_options'] = null;
+        }
         
         $jalur->update($validated);
         
