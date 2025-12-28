@@ -161,6 +161,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/pendaftar/{id}', [PendaftarController::class, 'show'])->name('pendaftar.show');
     Route::get('/pendaftar/{id}/edit', [PendaftarController::class, 'edit'])->name('pendaftar.edit');
     Route::put('/pendaftar/{id}', [PendaftarController::class, 'update'])->name('pendaftar.update');
+    Route::delete('/pendaftar/{id}', [PendaftarController::class, 'destroy'])->name('pendaftar.destroy');
     Route::post('/pendaftar/{id}/reset-password', [PendaftarController::class, 'resetPassword'])->name('pendaftar.reset-password');
     Route::get('/pendaftar/{id}/show-password', [PendaftarController::class, 'showPassword'])->name('pendaftar.show-password');
     Route::get('/pendaftar/{id}/dokumen-list', [PendaftarController::class, 'getDokumenList'])->name('pendaftar.dokumen-list');
@@ -313,6 +314,16 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/whatsapp/test-connection', [PengaturanWaController::class, 'testConnection'])->name('whatsapp.test-connection');
         Route::post('/whatsapp/send-test', [PengaturanWaController::class, 'sendTest'])->name('whatsapp.send-test');
         Route::get('/whatsapp/reset-templates', [PengaturanWaController::class, 'resetTemplates'])->name('whatsapp.reset-templates');
+        
+        // ---- DATA MANAGEMENT (Soft Delete) ----
+        Route::prefix('data-management')->name('data.')->group(function () {
+            Route::get('/deleted', [\App\Http\Controllers\Admin\DataManagementController::class, 'index'])->name('deleted');
+            Route::post('/restore/{id}', [\App\Http\Controllers\Admin\DataManagementController::class, 'restore'])->name('restore');
+            Route::post('/restore-bulk', [\App\Http\Controllers\Admin\DataManagementController::class, 'restoreBulk'])->name('restore.bulk');
+            Route::delete('/force-delete/{id}', [\App\Http\Controllers\Admin\DataManagementController::class, 'forceDelete'])->name('force.delete');
+            Route::delete('/force-delete-bulk', [\App\Http\Controllers\Admin\DataManagementController::class, 'forceDeleteBulk'])->name('force.delete.bulk');
+            Route::post('/bulk-delete-gelombang', [\App\Http\Controllers\Admin\DataManagementController::class, 'bulkDeleteByGelombang'])->name('bulk.delete.gelombang');
+        });
     }); // End of can:admin middleware group
 }); // End of admin routes group
 

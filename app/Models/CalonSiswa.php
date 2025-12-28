@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 use Laravolt\Indonesia\Models\Province;
 use Laravolt\Indonesia\Models\City;
 use Laravolt\Indonesia\Models\District;
@@ -14,7 +16,7 @@ use Laravolt\Indonesia\Models\Village;
 
 class CalonSiswa extends Model
 {
-    use HasUuids;
+    use HasUuids, SoftDeletes;
 
     protected $table = 'calon_siswas';
 
@@ -78,6 +80,10 @@ class CalonSiswa extends Model
         'user_id',
         'tahun_pelajaran_id',
         'tanggal_registrasi',
+        
+        // Soft delete fields
+        'deleted_by',
+        'deleted_reason',
     ];
 
     protected $casts = [
@@ -125,6 +131,11 @@ class CalonSiswa extends Model
     public function verifiedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'verified_by');
+    }
+
+    public function deletedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'deleted_by');
     }
 
     // Laravolt Address Relations - Siswa
@@ -266,5 +277,54 @@ class CalonSiswa extends Model
         $sequence = self::whereYear('created_at', $tahun)->count() + 1;
         
         return sprintf('%s/%s/%s/%04d', $tahun, $jalur, $gelombang, $sequence);
+    }
+
+    // Boot method for cascade delete
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Event saat soft delete
+        static::deleting(function ($pendaftar) {
+            // Jika ini adalah soft delete (bukan force delete)
+            if (!$pendaftar->isForceDeleting()) {
+                // Soft delete related data
+                $pendaftar->ortu()->delete();
+                $pendaftar->dokumen()->delete();
+                $pendaftar->user()->delete();
+            }
+        });
+
+        // Event saat force delete (hapus permanen)
+        static::forceDeleting(function ($pendaftar) {
+            // Hapus file dokumen dari storage
+            $dokumenCollection = $pendaftar->dokumen()->withTrashed()->get();
+            foreach ($dokumenCollection as $dokumen) {
+                if ($dokumen->file_path && Storage::exists($dokumen->file_path)) {
+                    Storage::delete($dokumen->file_path);
+                }
+                // Hapus histories
+                $dokumen->histories()->forceDelete();
+                // Force delete dokumen
+                $dokumen->forceDelete();
+            }
+
+            // Hapus foto profile
+            if ($pendaftar->foto_profile && Storage::exists($pendaftar->foto_profile)) {
+                Storage::delete($pendaftar->foto_profile);
+            }
+
+            // Hapus related data permanen
+            $pendaftar->ortu()->withTrashed()->forceDelete();
+            $pendaftar->user()->withTrashed()->forceDelete();
+        });
+
+        // Event saat restore
+        static::restoring(function ($pendaftar) {
+            // Restore related data
+            $pendaftar->ortu()->withTrashed()->restore();
+            $pendaftar->dokumen()->withTrashed()->restore();
+            $pendaftar->user()->withTrashed()->restore();
+        });
     }
 }

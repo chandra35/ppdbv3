@@ -435,6 +435,9 @@ dl.row dt {
                         <button type="button" class="btn btn-info btn-sm" onclick="showPassword()">
                             <i class="fas fa-eye"></i> Lihat Password
                         </button>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="deletePendaftar()">
+                            <i class="fas fa-trash"></i> Hapus
+                        </button>
                     </div>
                 </div>
                 <div class="col-md-6 text-right">
@@ -1336,6 +1339,58 @@ function copyPasswordFromSwal(password) {
             icon: 'success',
             title: 'Password disalin!'
         });
+    });
+}
+
+function deletePendaftar() {
+    Swal.fire({
+        title: 'Hapus Pendaftar?',
+        html: '<div class="text-left">' +
+              '<p>Data akan dipindah ke <strong>Data Terhapus</strong> dan masih bisa di-restore.</p>' +
+              '<div class="form-group mt-3">' +
+              '<label>Alasan (opsional):</label>' +
+              '<textarea id="deleteReason" class="form-control" rows="3" placeholder="Alasan penghapusan..."></textarea>' +
+              '</div>' +
+              '</div>',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="fas fa-trash"></i> Ya, Hapus',
+        cancelButtonText: '<i class="fas fa-times"></i> Batal',
+        reverseButtons: true,
+        preConfirm: () => {
+            return document.getElementById('deleteReason').value;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ route("admin.pendaftar.destroy", $pendaftar->id) }}';
+            
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = '{{ csrf_token() }}';
+            form.appendChild(csrfInput);
+            
+            const methodInput = document.createElement('input');
+            methodInput.type = 'hidden';
+            methodInput.name = '_method';
+            methodInput.value = 'DELETE';
+            form.appendChild(methodInput);
+            
+            if (result.value) {
+                const reasonInput = document.createElement('input');
+                reasonInput.type = 'hidden';
+                reasonInput.name = 'reason';
+                reasonInput.value = result.value;
+                form.appendChild(reasonInput);
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
     });
 }
 

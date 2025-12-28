@@ -672,4 +672,44 @@ class PendaftarController extends Controller
             'email' => $pendaftar->user->email
         ]);
     }
+
+    /**
+     * Soft delete pendaftar (move to trash).
+     */
+    public function destroy(Request $request, $id)
+    {
+        $request->validate([
+            'reason' => 'nullable|string|max:500'
+        ]);
+
+        try {
+            $pendaftar = CalonSiswa::findOrFail($id);
+            
+            // Set deleted_by and deleted_reason before soft delete
+            $pendaftar->deleted_by = auth()->id();
+            $pendaftar->deleted_reason = $request->reason ?? 'Dihapus oleh admin';
+            $pendaftar->save();
+            
+            // Soft delete (akan trigger cascade di model)
+            $pendaftar->delete();
+
+            // Log activity
+            ActivityLog::create([
+                'user_id' => auth()->id(),
+                'activity' => 'Menghapus pendaftar',
+                'description' => "Menghapus pendaftar: {$pendaftar->nama_lengkap} (NISN: {$pendaftar->nisn}). Alasan: " . ($request->reason ?? 'Dihapus oleh admin'),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent()
+            ]);
+
+            return redirect()
+                ->route('admin.pendaftar.index')
+                ->with('success', 'Data pendaftar berhasil dihapus dan dipindah ke Data Terhapus. Data masih bisa di-restore.');
+        } catch (\Exception $e) {
+            return redirect()
+                ->back()
+                ->with('error', 'Gagal menghapus data: ' . $e->getMessage());
+        }
+    }
 }
+
