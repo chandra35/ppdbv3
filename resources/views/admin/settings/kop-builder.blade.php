@@ -832,22 +832,92 @@ $(document).ready(function() {
         });
     });
     
-    // Upload handlers
+    // Upload handlers - Logo Kemenag
     $('#uploadAreaKemenag').click(function() {
         $('#fileLogoKemenag').click();
     });
     
     $('#fileLogoKemenag').change(function() {
-        uploadLogo('kemenag', this.files[0]);
+        if (this.files && this.files[0]) {
+            uploadLogo('kemenag', this.files[0]);
+        }
+    });
+    
+    // Upload handlers - Custom Kop
+    $('#uploadAreaCustom').click(function() {
+        $('#fileKopCustom').click();
+    });
+    
+    $('#fileKopCustom').change(function() {
+        if (this.files && this.files[0]) {
+            uploadLogo('custom', this.files[0]);
+        }
+    });
+    
+    // Drag & Drop support
+    $('.upload-area').on('dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).addClass('drag-over');
+    });
+    
+    $('.upload-area').on('dragleave', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).removeClass('drag-over');
+    });
+    
+    $('#uploadAreaKemenag').on('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).removeClass('drag-over');
+        
+        const files = e.originalEvent.dataTransfer.files;
+        if (files.length > 0) {
+            uploadLogo('kemenag', files[0]);
+        }
+    });
+    
+    $('#uploadAreaCustom').on('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).removeClass('drag-over');
+        
+        const files = e.originalEvent.dataTransfer.files;
+        if (files.length > 0) {
+            uploadLogo('custom', files[0]);
+        }
     });
     
     function uploadLogo(type, file) {
-        if (!file) return;
+        if (!file) {
+            toastr.error('File tidak valid');
+            return;
+        }
+        
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+        if (!validTypes.includes(file.type)) {
+            toastr.error('Format file harus JPG atau PNG');
+            return;
+        }
+        
+        // Validate file size (2MB for logo, 5MB for custom)
+        const maxSize = (type === 'kemenag') ? 2 * 1024 * 1024 : 5 * 1024 * 1024;
+        if (file.size > maxSize) {
+            const maxMB = (type === 'kemenag') ? '2MB' : '5MB';
+            toastr.error(`Ukuran file maksimal ${maxMB}`);
+            return;
+        }
         
         const formData = new FormData();
         formData.append('logo', file);
         formData.append('type', type);
         formData.append('_token', '{{ csrf_token() }}');
+        
+        // Show loading
+        const loadingMsg = type === 'kemenag' ? 'Mengupload logo Kemenag...' : 'Mengupload kop custom...';
+        toastr.info(loadingMsg);
         
         $.ajax({
             url: '{{ route("admin.sekolah.logo-kemenag.upload") }}',
@@ -856,11 +926,48 @@ $(document).ready(function() {
             processData: false,
             contentType: false,
             success: function(response) {
-                toastr.success('Logo berhasil diupload');
-                location.reload();
+                toastr.success(response.message || 'Upload berhasil');
+                setTimeout(function() {
+                    location.reload();
+                }, 1000);
             },
             error: function(xhr) {
-                toastr.error(xhr.responseJSON?.message || 'Gagal upload logo');
+                console.error('Upload error:', xhr);
+                const errorMsg = xhr.responseJSON?.message || xhr.responseJSON?.errors?.logo?.[0] || 'Gagal upload file';
+                toastr.error(errorMsg);
+            }
+        });
+    }
+    
+    // Delete handlers
+    $('#btnDeleteLogoKemenag').click(function() {
+        if (!confirm('Hapus logo Kemenag?')) return;
+        
+        deleteAsset('logo_kemenag');
+    });
+    
+    $('#btnDeleteKopCustom').click(function() {
+        if (!confirm('Hapus kop surat custom?')) return;
+        
+        deleteAsset('kop_custom');
+    });
+    
+    function deleteAsset(type) {
+        $.ajax({
+            url: '{{ route("admin.sekolah.kop-asset.delete") }}',
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                type: type
+            },
+            success: function(response) {
+                toastr.success(response.message || 'Asset berhasil dihapus');
+                setTimeout(function() {
+                    location.reload();
+                }, 1000);
+            },
+            error: function(xhr) {
+                toastr.error(xhr.responseJSON?.message || 'Gagal menghapus asset');
             }
         });
     }
