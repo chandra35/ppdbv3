@@ -187,15 +187,29 @@ class DashboardController extends Controller
         $user = Auth::user();
         $calonSiswa = CalonSiswa::where('user_id', $user->id)->with('dokumen')->first();
 
-        // Define required documents
-        $requiredDocs = [
+        // Get active documents from settings
+        $settings = \App\Models\PpdbSettings::first();
+        $dokumenAktif = $settings ? $settings->dokumen_aktif : [];
+
+        // All available documents
+        $allDocs = [
             'kk' => 'Kartu Keluarga',
             'akta_kelahiran' => 'Akta Kelahiran',
             'ijazah' => 'Ijazah / SKL',
             'rapor' => 'Rapor Semester Terakhir',
             'foto' => 'Pas Foto 3x4',
             'surat_sehat' => 'Surat Keterangan Sehat',
+            'surat_pernyataan' => 'Surat Pernyataan Orang Tua',
+            'kartu_pkh' => 'Kartu PKH/KIP',
         ];
+
+        // Filter only active documents
+        $requiredDocs = [];
+        foreach ($allDocs as $key => $label) {
+            if (in_array($key, $dokumenAktif)) {
+                $requiredDocs[$key] = $label;
+            }
+        }
 
         // Get uploaded documents
         $uploadedDocs = $calonSiswa->dokumen->keyBy('jenis_dokumen');
