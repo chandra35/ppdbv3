@@ -696,14 +696,16 @@ class PendaftarController extends Controller
             // Log activity
             ActivityLog::create([
                 'user_id' => auth()->id(),
-                'activity' => 'Menghapus pendaftar',
+                'action' => 'delete',
+                'model_type' => 'App\Models\CalonSiswa',
+                'model_id' => $pendaftar->id,
                 'description' => "Menghapus pendaftar: {$pendaftar->nama_lengkap} (NISN: {$pendaftar->nisn}). Alasan: " . ($request->reason ?? 'Dihapus oleh admin'),
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent()
             ]);
 
             return redirect()
-                ->route('admin.pendaftar.index')
+                ->route('admin.data.delete-list')
                 ->with('success', 'Data pendaftar berhasil dihapus dan dipindah ke Data Terhapus. Data masih bisa di-restore.');
         } catch (\Exception $e) {
             return redirect()
