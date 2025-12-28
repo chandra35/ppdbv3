@@ -273,6 +273,13 @@
                     </li>
                     
                     <li class="nav-item">
+                        <a href="{{ route('pendaftar.nilai-rapor') }}" class="nav-link {{ request()->routeIs('pendaftar.nilai-rapor') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-graduation-cap"></i>
+                            <p>Nilai Rapor</p>
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
                         <a href="{{ route('pendaftar.dokumen') }}" class="nav-link {{ request()->routeIs('pendaftar.dokumen') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-file-upload"></i>
                             <p>Upload Dokumen</p>
@@ -324,20 +331,6 @@
         <!-- Main content -->
         <section class="content">
             <div class="container-fluid">
-                @if(session('success'))
-                    <div class="alert alert-success alert-dismissible fade show">
-                        <button type="button" class="close" data-dismiss="alert">&times;</button>
-                        <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
-                    </div>
-                @endif
-                
-                @if(session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show">
-                        <button type="button" class="close" data-dismiss="alert">&times;</button>
-                        <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
-                    </div>
-                @endif
-
                 @yield('content')
             </div>
         </section>
@@ -376,8 +369,31 @@
         "closeButton": true,
         "progressBar": true,
         "positionClass": "toast-top-right",
-        "timeOut": "3000"
+        "timeOut": "4000",
+        "extendedTimeOut": "1000",
+        "showEasing": "swing",
+        "hideEasing": "linear",
+        "showMethod": "fadeIn",
+        "hideMethod": "fadeOut",
+        "preventDuplicates": true
     };
+
+    // Show toastr notifications from session
+    @if(session('success'))
+        toastr.success("{{ session('success') }}");
+    @endif
+
+    @if(session('error'))
+        toastr.error("{{ session('error') }}");
+    @endif
+
+    @if(session('warning'))
+        toastr.warning("{{ session('warning') }}");
+    @endif
+
+    @if(session('info'))
+        toastr.info("{{ session('info') }}");
+    @endif
 </script>
 
 @yield('js')

@@ -108,6 +108,11 @@ class CalonSiswa extends Model
         return $this->hasMany(CalonDokumen::class, 'calon_siswa_id');
     }
 
+    public function nilaiRapor(): HasMany
+    {
+        return $this->hasMany(NilaiRapor::class, 'calon_siswa_id');
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -243,6 +248,26 @@ class CalonSiswa extends Model
     }
 
     // Accessors
+    public function getRataRataRaporAttribute(): ?float
+    {
+        if ($this->nilaiRapor->isEmpty()) {
+            return null;
+        }
+        
+        return $this->nilaiRapor->avg('rata_rata');
+    }
+
+    public function getNilaiRaporCompletedAttribute(): bool
+    {
+        // Cek apakah semua 5 semester sudah diisi
+        return $this->nilaiRapor()->count() === 5;
+    }
+
+    public function getNilaiRaporProgressAttribute(): int
+    {
+        $total = $this->nilaiRapor()->count();
+        return ($total / 5) * 100;
+    }
     public function getJenisKelaminLengkapAttribute(): string
     {
         return $this->jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan';

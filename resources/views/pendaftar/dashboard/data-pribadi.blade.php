@@ -235,14 +235,14 @@
                     <div class="form-group">
                         <label>NPSN</label>
                         <input type="text" name="npsn_asal_sekolah" class="form-control" 
-                               value="{{ old('npsn_asal_sekolah', $calonSiswa->npsn_asal_sekolah) }}" disabled readonly>
+                               value="{{ old('npsn_asal_sekolah', $calonSiswa->npsn_asal_sekolah) }}" readonly>
                         <small class="form-text text-muted">NPSN diisi otomatis dari data EMIS</small>
                     </div>
 
                     <div class="form-group">
                         <label>Nama Asal Sekolah</label>
                         <input type="text" name="nama_sekolah_asal" class="form-control @error('nama_sekolah_asal') is-invalid @enderror" 
-                               value="{{ old('nama_sekolah_asal', $calonSiswa->nama_sekolah_asal) }}" disabled readonly>
+                               value="{{ old('nama_sekolah_asal', $calonSiswa->nama_sekolah_asal) }}" readonly>
                         @error('nama_sekolah_asal')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror

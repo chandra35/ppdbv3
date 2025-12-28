@@ -30,7 +30,7 @@ class CalonOrtu extends Model
         'pendidikan_ayah',
         'pekerjaan_ayah',
         'penghasilan_ayah',
-        'no_hp_ayah',
+        'hp_ayah',
         
         // Data Ibu
         'status_ibu',
@@ -41,7 +41,7 @@ class CalonOrtu extends Model
         'pendidikan_ibu',
         'pekerjaan_ibu',
         'penghasilan_ibu',
-        'no_hp_ibu',
+        'hp_ibu',
         
         // Data Wali (jika tinggal dengan wali)
         'tinggal_dengan_wali',
@@ -59,11 +59,11 @@ class CalonOrtu extends Model
         'alamat_ortu',
         'rt_ortu',
         'rw_ortu',
-        'provinsi_id_ortu',
-        'kabupaten_id_ortu',
-        'kecamatan_id_ortu',
-        'kelurahan_id_ortu',
-        'kode_pos_ortu',
+        'provinsi_id',
+        'kabupaten_id',
+        'kecamatan_id',
+        'kelurahan_id',
+        'kodepos',
     ];
 
     protected $casts = [
@@ -136,22 +136,22 @@ class CalonOrtu extends Model
     // Laravolt Address Relations - Orang Tua
     public function provinsiOrtu(): BelongsTo
     {
-        return $this->belongsTo(Province::class, 'provinsi_id_ortu', 'code');
+        return $this->belongsTo(Province::class, 'provinsi_id', 'code');
     }
 
     public function kabupatenOrtu(): BelongsTo
     {
-        return $this->belongsTo(City::class, 'kabupaten_id_ortu', 'code');
+        return $this->belongsTo(City::class, 'kabupaten_id', 'code');
     }
 
     public function kecamatanOrtu(): BelongsTo
     {
-        return $this->belongsTo(District::class, 'kecamatan_id_ortu', 'code');
+        return $this->belongsTo(District::class, 'kecamatan_id', 'code');
     }
 
     public function kelurahanOrtu(): BelongsTo
     {
-        return $this->belongsTo(Village::class, 'kelurahan_id_ortu', 'code');
+        return $this->belongsTo(Village::class, 'kelurahan_id', 'code');
     }
 
     // Accessors
@@ -165,7 +165,7 @@ class CalonOrtu extends Model
             $this->kecamatanOrtu?->name,
             $this->kabupatenOrtu?->name,
             $this->provinsiOrtu?->name,
-            $this->kode_pos_ortu,
+            $this->kodepos,
         ]);
         return implode(', ', $parts);
     }

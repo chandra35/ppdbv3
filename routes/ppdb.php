@@ -73,6 +73,10 @@ Route::middleware(['auth'])->prefix('pendaftar')->name('pendaftar.')->group(func
     Route::get('/data-ortu', [PendaftarDashboardController::class, 'dataOrtu'])->name('data-ortu');
     Route::put('/data-ortu', [PendaftarDashboardController::class, 'updateDataOrtu'])->name('data-ortu.update');
     
+    // Nilai Rapor
+    Route::get('/nilai-rapor', [PendaftarDashboardController::class, 'dataNilaiRapor'])->name('nilai-rapor');
+    Route::put('/nilai-rapor', [PendaftarDashboardController::class, 'updateNilaiRapor'])->name('nilai-rapor.update');
+    
     // Dokumen
     Route::get('/dokumen', [PendaftarDashboardController::class, 'dokumen'])->name('dokumen');
     Route::post('/dokumen', [PendaftarDashboardController::class, 'uploadDokumen'])->name('dokumen.upload');

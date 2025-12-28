@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CalonSiswa;
 use App\Models\CalonOrtu;
 use App\Models\CalonDokumen;
+use App\Models\NilaiRapor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -117,10 +118,10 @@ class DashboardController extends Controller
                 ['calon_siswa_id' => $calonSiswa->id],
                 [
                     'alamat_ortu' => $validated['alamat_siswa'],
-                    'provinsi_id_ortu' => $validated['provinsi_id_siswa'],
-                    'kabupaten_id_ortu' => $validated['kabupaten_id_siswa'],
-                    'kecamatan_id_ortu' => $validated['kecamatan_id_siswa'],
-                    'kelurahan_id_ortu' => $validated['kelurahan_id_siswa'],
+                    'provinsi_id' => $validated['provinsi_id_siswa'],
+                    'kabupaten_id' => $validated['kabupaten_id_siswa'],
+                    'kecamatan_id' => $validated['kecamatan_id_siswa'],
+                    'kelurahan_id' => $validated['kelurahan_id_siswa'],
                 ]
             );
         }
@@ -178,10 +179,10 @@ class DashboardController extends Controller
             'hp_ibu' => 'nullable|string|max:15',
             // Alamat
             'alamat_ortu' => 'required|string',
-            'provinsi_id_ortu' => 'required|string',
-            'kabupaten_id_ortu' => 'required|string',
-            'kecamatan_id_ortu' => 'required|string',
-            'kelurahan_id_ortu' => 'required|string',
+            'provinsi_id' => 'required|string',
+            'kabupaten_id' => 'required|string',
+            'kecamatan_id' => 'required|string',
+            'kelurahan_id' => 'required|string',
             // Wali
             'nama_wali' => 'nullable|string|max:100',
             'hubungan_wali' => 'nullable|string|max:50',
@@ -191,16 +192,34 @@ class DashboardController extends Controller
 
         $calonSiswa->ortu()->updateOrCreate(
             ['calon_siswa_id' => $calonSiswa->id],
-            $request->only([
-                'no_kk',
-                'nama_ayah', 'nik_ayah', 'tempat_lahir_ayah', 'tanggal_lahir_ayah',
-                'pekerjaan_ayah', 'pendidikan_ayah', 'penghasilan_ayah', 'hp_ayah',
-                'nama_ibu', 'nik_ibu', 'tempat_lahir_ibu', 'tanggal_lahir_ibu',
-                'pekerjaan_ibu', 'pendidikan_ibu', 'penghasilan_ibu', 'hp_ibu',
-                'alamat_ortu', 'provinsi_id_ortu', 'kabupaten_id_ortu',
-                'kecamatan_id_ortu', 'kelurahan_id_ortu',
-                'nama_wali', 'hubungan_wali', 'pekerjaan_wali', 'nomor_hp_wali',
-            ])
+            [
+                'no_kk' => $request->no_kk,
+                'nama_ayah' => $request->nama_ayah,
+                'nik_ayah' => $request->nik_ayah,
+                'tempat_lahir_ayah' => $request->tempat_lahir_ayah,
+                'tanggal_lahir_ayah' => $request->tanggal_lahir_ayah,
+                'pekerjaan_ayah' => $request->pekerjaan_ayah,
+                'pendidikan_ayah' => $request->pendidikan_ayah,
+                'penghasilan_ayah' => $request->penghasilan_ayah,
+                'hp_ayah' => $request->hp_ayah,
+                'nama_ibu' => $request->nama_ibu,
+                'nik_ibu' => $request->nik_ibu,
+                'tempat_lahir_ibu' => $request->tempat_lahir_ibu,
+                'tanggal_lahir_ibu' => $request->tanggal_lahir_ibu,
+                'pekerjaan_ibu' => $request->pekerjaan_ibu,
+                'pendidikan_ibu' => $request->pendidikan_ibu,
+                'penghasilan_ibu' => $request->penghasilan_ibu,
+                'hp_ibu' => $request->hp_ibu,
+                'alamat_ortu' => $request->alamat_ortu,
+                'provinsi_id' => $request->provinsi_id,
+                'kabupaten_id' => $request->kabupaten_id,
+                'kecamatan_id' => $request->kecamatan_id,
+                'kelurahan_id' => $request->kelurahan_id,
+                'nama_wali' => $request->nama_wali,
+                'hubungan_wali' => $request->hubungan_wali,
+                'pekerjaan_wali' => $request->pekerjaan_wali,
+                'nomor_hp_wali' => $request->nomor_hp_wali,
+            ]
         );
 
         // Mark as completed
@@ -347,6 +366,81 @@ class DashboardController extends Controller
     }
 
     /**
+     * Show nilai rapor form
+     */
+    public function dataNilaiRapor()
+    {
+        $user = Auth::user();
+        $calonSiswa = CalonSiswa::where('user_id', $user->id)
+            ->with('nilaiRapor')
+            ->first();
+
+        // Prepare data untuk setiap semester (1-5)
+        $nilaiRapor = [];
+        for ($i = 1; $i <= 5; $i++) {
+            $nilai = $calonSiswa->nilaiRapor->where('semester', $i)->first();
+            $nilaiRapor[$i] = [
+                'semester' => $i,
+                'matematika' => $nilai->matematika ?? null,
+                'ipa' => $nilai->ipa ?? null,
+                'ips' => $nilai->ips ?? null,
+                'rata_rata' => $nilai->rata_rata ?? null,
+            ];
+        }
+
+        return view('pendaftar.dashboard.data-nilai-rapor', compact('calonSiswa', 'nilaiRapor'));
+    }
+
+    /**
+     * Update nilai rapor
+     */
+    public function updateNilaiRapor(Request $request)
+    {
+        $user = Auth::user();
+        $calonSiswa = CalonSiswa::where('user_id', $user->id)->first();
+
+        // Validate all 5 semesters
+        $rules = [];
+        $messages = [];
+        
+        for ($i = 1; $i <= 5; $i++) {
+            $rules["semester_{$i}_matematika"] = 'required|integer|min:1|max:100';
+            $rules["semester_{$i}_ipa"] = 'required|integer|min:1|max:100';
+            $rules["semester_{$i}_ips"] = 'required|integer|min:1|max:100';
+            
+            $messages["semester_{$i}_matematika.required"] = "Nilai Matematika semester {$i} harus diisi";
+            $messages["semester_{$i}_matematika.min"] = "Nilai Matematika semester {$i} minimal 1";
+            $messages["semester_{$i}_matematika.max"] = "Nilai Matematika semester {$i} maksimal 100";
+            $messages["semester_{$i}_ipa.required"] = "Nilai IPA semester {$i} harus diisi";
+            $messages["semester_{$i}_ipa.min"] = "Nilai IPA semester {$i} minimal 1";
+            $messages["semester_{$i}_ipa.max"] = "Nilai IPA semester {$i} maksimal 100";
+            $messages["semester_{$i}_ips.required"] = "Nilai IPS semester {$i} harus diisi";
+            $messages["semester_{$i}_ips.min"] = "Nilai IPS semester {$i} minimal 1";
+            $messages["semester_{$i}_ips.max"] = "Nilai IPS semester {$i} maksimal 100";
+        }
+
+        $validated = $request->validate($rules, $messages);
+
+        // Save nilai untuk setiap semester
+        for ($i = 1; $i <= 5; $i++) {
+            NilaiRapor::updateOrCreate(
+                [
+                    'calon_siswa_id' => $calonSiswa->id,
+                    'semester' => $i,
+                ],
+                [
+                    'matematika' => $validated["semester_{$i}_matematika"],
+                    'ipa' => $validated["semester_{$i}_ipa"],
+                    'ips' => $validated["semester_{$i}_ips"],
+                ]
+            );
+        }
+
+        return redirect()->route('pendaftar.nilai-rapor')
+            ->with('success', 'Nilai rapor berhasil disimpan');
+    }
+
+    /**
      * Print bukti pendaftaran
      */
     public function cetakBukti()
@@ -367,6 +461,7 @@ class DashboardController extends Controller
         $dataDiri = $calonSiswa->data_diri_completed ? 100 : $this->calculateDataDiriProgress($calonSiswa);
         $dataOrtu = $calonSiswa->data_ortu_completed ? 100 : $this->calculateDataOrtuProgress($calonSiswa);
         $dokumen = $calonSiswa->data_dokumen_completed ? 100 : $this->calculateDokumenProgress($calonSiswa);
+        $nilaiRapor = $calonSiswa->nilai_rapor_progress;
         
         $verifikasi = match ($calonSiswa->status_verifikasi) {
             'verified' => 100,
@@ -374,12 +469,13 @@ class DashboardController extends Controller
             default => 0,
         };
 
-        $overall = ($dataDiri + $dataOrtu + $dokumen + $verifikasi) / 4;
+        $overall = ($dataDiri + $dataOrtu + $dokumen + $nilaiRapor + $verifikasi) / 5;
 
         return [
             'data_diri' => $dataDiri,
             'data_ortu' => $dataOrtu,
             'dokumen' => $dokumen,
+            'nilai_rapor' => $nilaiRapor,
             'verifikasi' => $verifikasi,
             'overall' => round($overall),
         ];

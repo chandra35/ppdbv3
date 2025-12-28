@@ -287,10 +287,10 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>Provinsi <span class="text-danger">*</span></label>
-                                <select name="provinsi_id_ortu" id="provinsi_ortu" class="form-control select2" required>
+                                <select name="provinsi_id" id="provinsi_ortu" class="form-control select2" required>
                                     <option value="">-- Pilih Provinsi --</option>
                                     @foreach($provinces as $province)
-                                        <option value="{{ $province->code }}" {{ old('provinsi_id_ortu', $ortu->provinsi_id_ortu) == $province->code ? 'selected' : '' }}>
+                                        <option value="{{ $province->code }}" {{ old('provinsi_id', $ortu->provinsi_id) == $province->code ? 'selected' : '' }}>
                                             {{ $province->name }}
                                         </option>
                                     @endforeach
@@ -300,7 +300,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>Kabupaten/Kota <span class="text-danger">*</span></label>
-                                <select name="kabupaten_id_ortu" id="kabupaten_ortu" class="form-control select2" required>
+                                <select name="kabupaten_id" id="kabupaten_ortu" class="form-control select2" required>
                                     <option value="">-- Pilih Kabupaten/Kota --</option>
                                 </select>
                             </div>
@@ -311,7 +311,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>Kecamatan <span class="text-danger">*</span></label>
-                                <select name="kecamatan_id_ortu" id="kecamatan_ortu" class="form-control select2" required>
+                                <select name="kecamatan_id" id="kecamatan_ortu" class="form-control select2" required>
                                     <option value="">-- Pilih Kecamatan --</option>
                                 </select>
                             </div>
@@ -319,7 +319,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>Kelurahan/Desa <span class="text-danger">*</span></label>
-                                <select name="kelurahan_id_ortu" id="kelurahan_ortu" class="form-control select2" required>
+                                <select name="kelurahan_id" id="kelurahan_ortu" class="form-control select2" required>
                                     <option value="">-- Pilih Kelurahan/Desa --</option>
                                 </select>
                             </div>
@@ -419,9 +419,9 @@ $(document).ready(function() {
         width: '100%'
     });
 
-    const storedKabupaten = '{{ old('kabupaten_id_ortu', $ortu->kabupaten_id_ortu) }}';
-    const storedKecamatan = '{{ old('kecamatan_id_ortu', $ortu->kecamatan_id_ortu) }}';
-    const storedKelurahan = '{{ old('kelurahan_id_ortu', $ortu->kelurahan_id_ortu) }}';
+    const storedKabupaten = '{{ old('kabupaten_id', $ortu->kabupaten_id) }}';
+    const storedKecamatan = '{{ old('kecamatan_id', $ortu->kecamatan_id) }}';
+    const storedKelurahan = '{{ old('kelurahan_id', $ortu->kelurahan_id) }}';
 
     const provinsiVal = $('#provinsi_ortu').val();
     if (provinsiVal) {

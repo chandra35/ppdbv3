@@ -95,6 +95,16 @@
                     </div>
                 </div>
                 
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Nilai Rapor</span>
+                        <span class="font-weight-bold">{{ $progress['nilai_rapor'] }}%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: {{ $progress['nilai_rapor'] }}%"></div>
+                    </div>
+                </div>
+                
                 <div class="mb-0">
                     <div class="d-flex justify-content-between mb-1">
                         <span>Verifikasi</span>
@@ -141,6 +151,22 @@
                                 </div>
                                 <h6 class="mt-2 mb-0">Data Orang Tua</h6>
                                 @if($calonSiswa->data_ortu_completed)
+                                    <small class="text-success"><i class="fas fa-check"></i> Lengkap</small>
+                                @else
+                                    <small class="text-warning"><i class="fas fa-clock"></i> Belum Lengkap</small>
+                                @endif
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <div class="col-md-4 col-6 mb-3">
+                        <a href="{{ route('pendaftar.nilai-rapor') }}" class="text-decoration-none">
+                            <div class="card quick-action-card h-100 text-center p-3">
+                                <div class="icon text-warning">
+                                    <i class="fas fa-graduation-cap"></i>
+                                </div>
+                                <h6 class="mt-2 mb-0">Nilai Rapor</h6>
+                                @if($calonSiswa->nilai_rapor_completed)
                                     <small class="text-success"><i class="fas fa-check"></i> Lengkap</small>
                                 @else
                                     <small class="text-warning"><i class="fas fa-clock"></i> Belum Lengkap</small>
