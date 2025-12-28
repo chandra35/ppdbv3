@@ -303,11 +303,11 @@
                 <div class="row">
                     <div class="col-md-2">
                         <div class="form-group">
-                            <label for="kode_pos_siswa">Kode Pos</label>
-                            <input type="number" name="kode_pos_siswa" id="kode_pos_siswa" 
-                                class="form-control @error('kode_pos_siswa') is-invalid @enderror" 
-                                value="{{ old('kode_pos_siswa', $pendaftar->kode_pos_siswa) }}" min="0" max="99999">
-                            @error('kode_pos_siswa')
+                            <label for="kodepos_siswa">Kode Pos</label>
+                            <input type="number" name="kodepos_siswa" id="kodepos_siswa" 
+                                class="form-control @error('kodepos_siswa') is-invalid @enderror" 
+                                value="{{ old('kodepos_siswa', $pendaftar->kodepos_siswa) }}" min="0" max="99999">
+                            @error('kodepos_siswa')
                                 <span class="invalid-feedback">{{ $message }}</span>
                             @enderror
                         </div>
@@ -628,13 +628,14 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label for="npsn_sekolah_asal">NPSN Sekolah</label>
-                            <input type="text" name="npsn_sekolah_asal" id="npsn_sekolah_asal" 
-                                class="form-control @error('npsn_sekolah_asal') is-invalid @enderror" 
-                                value="{{ old('npsn_sekolah_asal', $pendaftar->npsn_sekolah_asal) }}"
+                            <label for="npsn_asal_sekolah">NPSN Sekolah</label>
+                            <input type="text" name="npsn_asal_sekolah" id="npsn_asal_sekolah" 
+                                class="form-control @error('npsn_asal_sekolah') is-invalid @enderror" 
+                                value="{{ old('npsn_asal_sekolah', $pendaftar->npsn_asal_sekolah) }}"
                                 maxlength="8"
-                                placeholder="8 digit">
-                            @error('npsn_sekolah_asal')
+                                placeholder="8 digit"
+                                readonly>
+                            @error('npsn_asal_sekolah')
                                 <span class="invalid-feedback">{{ $message }}</span>
                             @enderror
                             <small class="form-text text-muted">Data dari API EMIS/Kemdikbud saat registrasi</small>
@@ -646,21 +647,9 @@
                             <label for="nama_sekolah_asal">Nama Sekolah</label>
                             <input type="text" name="nama_sekolah_asal" id="nama_sekolah_asal" 
                                 class="form-control @error('nama_sekolah_asal') is-invalid @enderror" 
-                                value="{{ old('nama_sekolah_asal', $pendaftar->nama_sekolah_asal) }}">
+                                value="{{ old('nama_sekolah_asal', $pendaftar->nama_sekolah_asal) }}"
+                                readonly>
                             @error('nama_sekolah_asal')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="alamat_sekolah_asal">Alamat Sekolah</label>
-                            <textarea name="alamat_sekolah_asal" id="alamat_sekolah_asal" rows="3" 
-                                class="form-control @error('alamat_sekolah_asal') is-invalid @enderror">{{ old('alamat_sekolah_asal', $pendaftar->alamat_sekolah_asal) }}</textarea>
-                            @error('alamat_sekolah_asal')
                                 <span class="invalid-feedback">{{ $message }}</span>
                             @enderror
                         </div>
@@ -720,7 +709,7 @@ $(document).ready(function() {
 
     // Initialize Select2
     $('.select2').select2({
-        theme: 'classic',
+        theme: 'default',
         width: '100%'
     });
 

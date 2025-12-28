@@ -572,21 +572,25 @@ dl.row dt {
 
         <!-- Detail Information -->
         <div class="col-md-8">
-            <!-- Data Pribadi -->
+            <!-- Data Pribadi & Sekolah (Compact) -->
             <div class="box box-solid">
                 <div class="box-header with-border">
-                    <h3 class="box-title"><i class="fas fa-user"></i> Data Pribadi</h3>
+                    <h3 class="box-title"><i class="fas fa-user"></i> Data Pribadi & Sekolah</h3>
                 </div>
-                <div class="box-body no-padding">
-                    <table class="table table-hover">
+                <div class="box-body">
+                    <table class="table table-sm table-borderless" style="font-size: 13px;">
                         <tbody>
                             <tr>
-                                <th style="width: 200px"><i class="fas fa-user text-primary"></i> Nama Lengkap</th>
-                                <td><strong>{{ $pendaftar->nama_lengkap ?? '-' }}</strong></td>
+                                <td width="30%" class="p-1 text-muted"><i class="fas fa-user"></i> Nama</td>
+                                <td class="p-1"><strong>{{ $pendaftar->nama_lengkap ?? '-' }}</strong></td>
                             </tr>
                             <tr>
-                                <th><i class="fas fa-venus-mars text-primary"></i> Jenis Kelamin</th>
-                                <td>
+                                <td class="p-1 text-muted"><i class="fas fa-id-card-alt"></i> NIK</td>
+                                <td class="p-1">{{ $pendaftar->nik ?? '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="p-1 text-muted"><i class="fas fa-venus-mars"></i> Jenis Kelamin</td>
+                                <td class="p-1">
                                     @if($pendaftar->jenis_kelamin == 'L')
                                         <i class="fas fa-mars text-info"></i> Laki-laki
                                     @elseif($pendaftar->jenis_kelamin == 'P')
@@ -597,97 +601,172 @@ dl.row dt {
                                 </td>
                             </tr>
                             <tr>
-                                <th><i class="fas fa-map-marker-alt text-primary"></i> Tempat Lahir</th>
-                                <td>{{ $pendaftar->tempat_lahir ?? '-' }}</td>
+                                <td class="p-1 text-muted"><i class="fas fa-birthday-cake"></i> TTL</td>
+                                <td class="p-1">{{ $pendaftar->tempat_lahir ?? '-' }}, {{ $pendaftar->tanggal_lahir ? \Carbon\Carbon::parse($pendaftar->tanggal_lahir)->format('d M Y') : '-' }}</td>
                             </tr>
                             <tr>
-                                <th><i class="fas fa-birthday-cake text-primary"></i> Tanggal Lahir</th>
-                                <td>{{ $pendaftar->tanggal_lahir ? \Carbon\Carbon::parse($pendaftar->tanggal_lahir)->format('d F Y') : '-' }}</td>
+                                <td class="p-1 text-muted"><i class="fas fa-pray"></i> Agama</td>
+                                <td class="p-1">{{ ucfirst($pendaftar->agama ?? '-') }}</td>
                             </tr>
                             <tr>
-                                <th><i class="fas fa-pray text-primary"></i> Agama</th>
-                                <td>{{ ucfirst($pendaftar->agama ?? '-') }}</td>
+                                <td class="p-1 text-muted"><i class="fas fa-phone"></i> No. HP</td>
+                                <td class="p-1">
+                                    @if($pendaftar->nomor_hp)
+                                        <i class="fas fa-phone text-success"></i> {{ $pendaftar->nomor_hp }}
+                                    @else
+                                        -
+                                    @endif
+                                </td>
                             </tr>
                             <tr>
-                                <th><i class="fas fa-home text-primary"></i> Alamat Lengkap</th>
-                                <td>{{ $pendaftar->alamat ?? '-' }}</td>
+                                <td class="p-1 text-muted"><i class="fas fa-envelope"></i> Email</td>
+                                <td class="p-1">{{ $pendaftar->email ?? '-' }}</td>
                             </tr>
                             <tr>
-                                <th><i class="fas fa-school text-primary"></i> Asal Sekolah</th>
-                                <td>{{ $pendaftar->asal_sekolah ?? '-' }}</td>
+                                <td class="p-1 text-muted align-top"><i class="fas fa-home"></i> Alamat</td>
+                                <td class="p-1">
+                                    @if($pendaftar->alamat_siswa)
+                                        {{ $pendaftar->alamat_siswa }}
+                                        @if($pendaftar->rt_siswa || $pendaftar->rw_siswa)
+                                            , RT {{ $pendaftar->rt_siswa ?? '-' }}/RW {{ $pendaftar->rw_siswa ?? '-' }}
+                                        @endif
+                                        @if($pendaftar->kelurahanSiswa)
+                                            <br><small class="text-muted">{{ $pendaftar->kelurahanSiswa->name ?? '' }}, {{ $pendaftar->kecamatanSiswa->name ?? '' }}, {{ $pendaftar->kabupatenSiswa->name ?? '' }}, {{ $pendaftar->provinsiSiswa->name ?? '' }}@if($pendaftar->kodepos_siswa) {{ $pendaftar->kodepos_siswa }}@endif</small>
+                                        @endif
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="p-1 text-muted align-top"><i class="fas fa-school"></i> Asal Sekolah</td>
+                                <td class="p-1">
+                                    @if($pendaftar->nama_sekolah_asal)
+                                        <strong>{{ $pendaftar->nama_sekolah_asal }}</strong>
+                                        @if($pendaftar->npsn_asal_sekolah)
+                                            <br><small class="text-muted">NPSN: {{ $pendaftar->npsn_asal_sekolah }}</small>
+                                        @endif
+                                        @if($pendaftar->nsm_asal_sekolah)
+                                            <small class="text-muted"> | NSM: {{ $pendaftar->nsm_asal_sekolah }}</small>
+                                        @endif
+                                    @else
+                                        -
+                                    @endif
+                                </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Data Orang Tua -->
-            <!-- No. KK -->
+            <!-- Data Keluarga & Orang Tua (Compact) -->
             <div class="box box-solid">
                 <div class="box-header with-border">
-                    <h3 class="box-title"><i class="fas fa-id-card"></i> Data Keluarga</h3>
+                    <h3 class="box-title"><i class="fas fa-users"></i> Data Keluarga</h3>
                 </div>
                 <div class="box-body">
-                    <dl class="dl-horizontal">
-                        <dt>No. Kartu Keluarga</dt>
-                        <dd>{{ optional($pendaftar->ortu)->no_kk ?? '-' }}</dd>
-                    </dl>
-                </div>
-            </div>
-
-            <div class="row">
-                <!-- Data Ayah -->
-                <div class="col-md-6">
-                    <div class="box box-solid">
-                        <div class="box-header with-border bg-aqua">
-                            <h3 class="box-title"><i class="fas fa-male"></i> Data Ayah</h3>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong><i class="fas fa-id-card text-primary"></i> No. Kartu Keluarga</strong>
+                            <p class="text-muted mb-0">{{ optional($pendaftar->ortu)->no_kk ?? '-' }}</p>
                         </div>
-                        <div class="box-body">
-                            <dl class="dl-horizontal">
-                                <dt>Nama</dt>
-                                <dd>{{ optional($pendaftar->ortu)->nama_ayah ?? '-' }}</dd>
-                                <dt>Pekerjaan</dt>
-                                <dd>{{ optional($pendaftar->ortu)->pekerjaan_ayah ?? '-' }}</dd>
-                                <dt>No. HP</dt>
-                                <dd>
-                                    @if(optional($pendaftar->ortu)->hp_ayah)
-                                        <i class="fas fa-phone text-success"></i> {{ $pendaftar->ortu->hp_ayah }}
-                                    @else
-                                        -
-                                    @endif
-                                </dd>
-                            </dl>
+                        @if(optional($pendaftar->ortu)->alamat_ortu)
+                        <div class="col-md-6">
+                            <strong><i class="fas fa-home text-primary"></i> Alamat Orang Tua</strong>
+                            <p class="text-muted mb-0 small">
+                                {{ $pendaftar->ortu->alamat_ortu }}
+                                @if($pendaftar->ortu->rt_ortu || $pendaftar->ortu->rw_ortu)
+                                    , RT {{ $pendaftar->ortu->rt_ortu ?? '-' }}/RW {{ $pendaftar->ortu->rw_ortu ?? '-' }}
+                                @endif
+                                @if($pendaftar->ortu->kelurahanOrtu)
+                                    <br>{{ $pendaftar->ortu->kelurahanOrtu->name ?? '' }}, {{ $pendaftar->ortu->kecamatanOrtu->name ?? '' }}
+                                    <br>{{ $pendaftar->ortu->kabupatenOrtu->name ?? '' }}, {{ $pendaftar->ortu->provinsiOrtu->name ?? '' }}
+                                    @if($pendaftar->ortu->kodepos) {{ $pendaftar->ortu->kodepos }}@endif
+                                @endif
+                            </p>
+                        </div>
+                        @endif
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Data Ayah Compact -->
+                        <div class="col-md-6">
+                            <div style="border-left: 3px solid #17a2b8; padding-left: 10px; margin-bottom: 15px;">
+                                <strong style="color: #17a2b8;"><i class="fas fa-male"></i> Ayah</strong>
+                                <table class="table table-sm table-borderless mt-2" style="font-size: 13px;">
+                                    <tr>
+                                        <td width="35%" class="p-1 text-muted">Nama</td>
+                                        <td class="p-1"><strong>{{ optional($pendaftar->ortu)->nama_ayah ?? '-' }}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-1 text-muted">NIK</td>
+                                        <td class="p-1">{{ optional($pendaftar->ortu)->nik_ayah ?? '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-1 text-muted">Pekerjaan</td>
+                                        <td class="p-1">{{ optional($pendaftar->ortu)->pekerjaan_ayah ?? '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-1 text-muted">Pendidikan</td>
+                                        <td class="p-1">{{ optional($pendaftar->ortu)->pendidikan_ayah ?? '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-1 text-muted">No. HP</td>
+                                        <td class="p-1">
+                                            @if(optional($pendaftar->ortu)->hp_ayah)
+                                                <i class="fas fa-phone text-success"></i> {{ $pendaftar->ortu->hp_ayah }}
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Data Ibu Compact -->
+                        <div class="col-md-6">
+                            <div style="border-left: 3px solid #dc3545; padding-left: 10px; margin-bottom: 15px;">
+                                <strong style="color: #dc3545;"><i class="fas fa-female"></i> Ibu</strong>
+                                <table class="table table-sm table-borderless mt-2" style="font-size: 13px;">
+                                    <tr>
+                                        <td width="35%" class="p-1 text-muted">Nama</td>
+                                        <td class="p-1"><strong>{{ optional($pendaftar->ortu)->nama_ibu ?? '-' }}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-1 text-muted">NIK</td>
+                                        <td class="p-1">{{ optional($pendaftar->ortu)->nik_ibu ?? '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-1 text-muted">Pekerjaan</td>
+                                        <td class="p-1">{{ optional($pendaftar->ortu)->pekerjaan_ibu ?? '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-1 text-muted">Pendidikan</td>
+                                        <td class="p-1">{{ optional($pendaftar->ortu)->pendidikan_ibu ?? '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-1 text-muted">No. HP</td>
+                                        <td class="p-1">
+                                            @if(optional($pendaftar->ortu)->hp_ibu)
+                                                <i class="fas fa-phone text-success"></i> {{ $pendaftar->ortu->hp_ibu }}
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Data Ibu -->
-                <div class="col-md-6">
-                    <div class="box box-solid">
-                        <div class="box-header with-border bg-red">
-                            <h3 class="box-title"><i class="fas fa-female"></i> Data Ibu</h3>
-                        </div>
-                        <div class="box-body">
-                            <dl class="dl-horizontal">
-                                <dt>Nama</dt>
-                                <dd>{{ optional($pendaftar->ortu)->nama_ibu ?? '-' }}</dd>
-                                <dt>Pekerjaan</dt>
-                                <dd>{{ optional($pendaftar->ortu)->pekerjaan_ibu ?? '-' }}</dd>
-                                <dt>No. HP</dt>
-                                <dd>
-                                    @if(optional($pendaftar->ortu)->hp_ibu)
-                                        <i class="fas fa-phone text-success"></i> {{ $pendaftar->ortu->hp_ibu }}
-                                    @else
-                                        -
-                                    @endif
-                                </dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Dokumen -->
+    <!-- Dokumen Pendaftaran (Dipindah ke atas untuk memudahkan verifikasi) -->
+    <div class="row">
+        <div class="col-md-12">
             <div class="box box-solid box-success">
                 <div class="box-header with-border">
                     <h3 class="box-title"><i class="fas fa-file-alt"></i> Dokumen Pendaftaran</h3>
@@ -697,12 +776,12 @@ dl.row dt {
                         <span class="label label-danger">{{ $invalidCount }}</span>
                     </div>
                 </div>
-                <div class="box-body">
+                <div class="box-body" style="padding: 8px;">
                     @if($pendaftar->dokumen && $pendaftar->dokumen->count() > 0)
-                        <div class="row">
+                        <div class="row" style="margin: 0 -3px;">
                             @foreach($pendaftar->dokumen as $dokumen)
-                            <div class="col-md-3 col-sm-6 mb-3">
-                                <div class="box box-widget dokumen-card">
+                            <div class="col-xl-2 col-lg-3 col-md-3 col-sm-4 col-6 mb-2" style="padding: 0 3px;">
+                                <div class="box box-widget dokumen-card" style="margin-bottom: 0; border: 1px solid #ddd;">
                                     @php
                                         $extension = strtolower(pathinfo($dokumen->file_path, PATHINFO_EXTENSION));
                                         $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif']);
@@ -717,7 +796,7 @@ dl.row dt {
                                            data-dokumen-status="{{ $dokumen->status_verifikasi }}"
                                            data-jenis-dokumen="{{ $dokumen->jenis_dokumen }}"
                                            data-type="image">
-                                            <img src="{{ asset('storage/' . $dokumen->file_path) }}" class="card-img-top">
+                                            <img src="{{ asset('storage/' . $dokumen->file_path) }}" class="card-img-top" style="height: 85px; object-fit: cover;">
                                         </a>
                                     @else
                                         <a href="javascript:void(0);"
@@ -728,57 +807,56 @@ dl.row dt {
                                            data-dokumen-status="{{ $dokumen->status_verifikasi }}"
                                            data-jenis-dokumen="{{ $dokumen->jenis_dokumen }}"
                                            data-type="pdf">
-                                            <div class="card-img-top bg-danger d-flex align-items-center justify-content-center" style="height: 150px;">
+                                            <div class="card-img-top bg-danger d-flex align-items-center justify-content-center" style="height: 85px;">
                                                 <div class="text-center text-white">
-                                                    <i class="fas fa-file-pdf fa-4x mb-2"></i>
-                                                    <div class="font-weight-bold">PDF</div>
+                                                    <i class="fas fa-file-pdf fa-2x"></i>
+                                                    <div style="font-size: 9px;">PDF</div>
                                                 </div>
                                             </div>
                                         </a>
                                     @endif
-                                    <div class="card-body p-2">
-                                        <h6 class="card-title mb-1">{{ ucfirst(str_replace('_', ' ', $dokumen->jenis_dokumen)) }}</h6>
-                                        <p class="card-text mb-1">
+                                    <div class="card-body" style="padding: 5px;">
+                                        <div style="font-size: 10px; font-weight: 600; margin-bottom: 3px; line-height: 1.2;">{{ ucfirst(str_replace('_', ' ', $dokumen->jenis_dokumen)) }}</div>
+                                        <div style="margin-bottom: 4px;">
                                             @if($dokumen->status_verifikasi == 'pending')
-                                                <span class="badge badge-warning">Pending</span>
+                                                <span class="badge badge-warning" style="font-size: 8px; padding: 2px 4px;">Pending</span>
                                             @elseif($dokumen->status_verifikasi == 'valid')
-                                                <span class="badge badge-success">Valid</span>
+                                                <span class="badge badge-success" style="font-size: 8px; padding: 2px 4px;">Valid</span>
                                             @elseif($dokumen->status_verifikasi == 'invalid')
-                                                <span class="badge badge-danger">Invalid</span>
+                                                <span class="badge badge-danger" style="font-size: 8px; padding: 2px 4px;">Invalid</span>
                                             @elseif($dokumen->status_verifikasi == 'revision')
-                                                <span class="badge badge-info">Revisi</span>
+                                                <span class="badge badge-info" style="font-size: 8px; padding: 2px 4px;">Revisi</span>
                                             @endif
-                                        </p>
-                                        <small class="text-muted d-block mb-2">{{ number_format($dokumen->file_size / 1024, 2) }} KB</small>
+                                        </div>
                                         
                                         @if($dokumen->jenis_dokumen != 'pas_foto')
                                             @if($dokumen->status_verifikasi == 'pending')
-                                            <div class="btn-group btn-group-sm d-flex" role="group">
-                                                <button type="button" class="btn btn-success btn-sm flex-fill approve-card-btn" data-dokumen-id="{{ $dokumen->id }}" title="Setujui">
+                                            <div class="btn-group d-flex" role="group">
+                                                <button type="button" class="btn btn-success flex-fill approve-card-btn" data-dokumen-id="{{ $dokumen->id }}" title="Setujui" style="font-size: 9px; padding: 3px;">
                                                     <i class="fas fa-check"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-danger btn-sm flex-fill" data-toggle="modal" data-target="#rejectDokumenModal{{ $dokumen->id }}" title="Tolak">
+                                                <button type="button" class="btn btn-danger flex-fill" data-toggle="modal" data-target="#rejectDokumenModal{{ $dokumen->id }}" title="Tolak" style="font-size: 9px; padding: 3px;">
                                                     <i class="fas fa-times"></i>
                                                 </button>
                                             </div>
                                             @elseif($dokumen->status_verifikasi == 'valid')
-                                            <button type="button" class="btn btn-warning btn-sm btn-block mb-1" data-toggle="modal" data-target="#revisiDokumenModal{{ $dokumen->id }}">
-                                                <i class="fas fa-redo"></i> Revisi
+                                            <button type="button" class="btn btn-warning btn-block" data-toggle="modal" data-target="#revisiDokumenModal{{ $dokumen->id }}" style="font-size: 9px; padding: 3px; margin-bottom: 2px;">
+                                                <i class="fas fa-redo"></i>
                                             </button>
-                                            <button type="button" class="btn btn-secondary btn-sm btn-block" data-toggle="modal" data-target="#cancelDokumenModal{{ $dokumen->id }}">
-                                                <i class="fas fa-ban"></i> Batal Verifikasi
+                                            <button type="button" class="btn btn-secondary btn-block" data-toggle="modal" data-target="#cancelDokumenModal{{ $dokumen->id }}" style="font-size: 9px; padding: 3px;">
+                                                <i class="fas fa-ban"></i>
                                             </button>
                                             @elseif($dokumen->status_verifikasi == 'invalid')
-                                            <button type="button" class="btn btn-secondary btn-sm btn-block" data-toggle="modal" data-target="#cancelDokumenModal{{ $dokumen->id }}">
-                                                <i class="fas fa-ban"></i> Batal Verifikasi
+                                            <button type="button" class="btn btn-secondary btn-block" data-toggle="modal" data-target="#cancelDokumenModal{{ $dokumen->id }}" style="font-size: 9px; padding: 3px;">
+                                                <i class="fas fa-ban"></i>
                                             </button>
                                             @elseif($dokumen->status_verifikasi == 'revision')
-                                            <button type="button" class="btn btn-info btn-sm btn-block" data-toggle="modal" data-target="#cancelRevisiModal{{ $dokumen->id }}">
-                                                <i class="fas fa-undo"></i> Batal Revisi
+                                            <button type="button" class="btn btn-info btn-block" data-toggle="modal" data-target="#cancelRevisiModal{{ $dokumen->id }}" style="font-size: 9px; padding: 3px;">
+                                                <i class="fas fa-undo"></i>
                                             </button>
                                             @endif
                                         @else
-                                            <small class="text-muted"><i class="fas fa-info-circle"></i> Tidak perlu verifikasi</small>
+                                            <small class="text-muted" style="font-size: 8px;"><i class="fas fa-info-circle"></i> Auto</small>
                                         @endif
                                     </div>
                                 </div>

@@ -4,14 +4,52 @@
 
 @section('css')
 @include('admin.partials.action-buttons-style')
+<style>
+    @media (max-width: 767px) {
+        .content-header h1 {
+            font-size: 18px !important;
+            margin-bottom: 8px !important;
+        }
+        .breadcrumb {
+            font-size: 11px !important;
+            padding: 4px 8px !important;
+            margin-bottom: 8px !important;
+        }
+        .card {
+            margin-bottom: 10px !important;
+        }
+        .card-header {
+            padding: 8px 12px !important;
+        }
+        .card-header h3 {
+            font-size: 14px !important;
+            margin: 0 !important;
+        }
+        .card-body {
+            padding: 10px !important;
+        }
+        .alert {
+            padding: 8px 10px !important;
+            font-size: 12px !important;
+            margin-bottom: 10px !important;
+        }
+        .mobile-card-item {
+            padding: 8px !important;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .mobile-card-item:last-child {
+            border-bottom: none;
+        }
+    }
+</style>
 @stop
 
 @section('content_header')
-    <div class="row mb-2">
-        <div class="col-sm-6">
-            <h1><i class="fas fa-users"></i> Daftar Pendaftar</h1>
+    <div class="row mb-2 mb-md-3">
+        <div class="col-12 col-sm-6">
+            <h1 style="font-size: 24px;"><i class="fas fa-users"></i> Daftar Pendaftar</h1>
         </div>
-        <div class="col-sm-6">
+        <div class="col-12 col-sm-6 d-none d-sm-block">
             <ol class="breadcrumb float-sm-right">
                 <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
                 <li class="breadcrumb-item active">Pendaftar</li>
@@ -37,26 +75,26 @@
 
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Filter</h3>
+            <h3 class="card-title mb-0">Filter</h3>
             <div class="card-tools">
-                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                <button type="button" class="btn btn-tool btn-sm" data-card-widget="collapse">
                     <i class="fas fa-minus"></i>
                 </button>
             </div>
         </div>
-        <div class="card-body">
-            <form action="{{ route('admin.pendaftar.index') }}" method="GET" class="row">
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Cari</label>
-                        <input type="text" name="search" class="form-control" placeholder="Nama, NISN, Email, No Registrasi..." value="{{ request('search') }}">
+        <div class="card-body" style="padding: 10px;">
+            <form action="{{ route('admin.pendaftar.index') }}" method="GET" class="row" style="margin: 0 -5px;">
+                <div class="col-12 col-md-6 col-lg-3 mb-2" style="padding: 0 5px;">
+                    <div class="form-group mb-1">
+                        <label class="mb-1" style="font-size: 12px; font-weight: 600;">Cari</label>
+                        <input type="text" name="search" class="form-control form-control-sm" style="font-size: 12px; padding: 5px 10px;" placeholder="Nama, NISN..." value="{{ request('search') }}">
                     </div>
                 </div>
-                <div class="col-md-2">
-                    <div class="form-group">
-                        <label>Jalur</label>
-                        <select name="jalur_id" class="form-control">
-                            <option value="">Semua Jalur</option>
+                <div class="col-6 col-md-4 col-lg-2 mb-2" style="padding: 0 5px;">
+                    <div class="form-group mb-1">
+                        <label class="mb-1" style="font-size: 12px; font-weight: 600;">Jalur</label>
+                        <select name="jalur_id" class="form-control form-control-sm" style="font-size: 12px; padding: 5px 10px;">
+                            <option value="">Semua</option>
                             @foreach($jalurList as $jalur)
                             <option value="{{ $jalur->id }}" {{ request('jalur_id') == $jalur->id ? 'selected' : '' }}>
                                 {{ $jalur->nama }}
@@ -65,11 +103,11 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-2">
-                    <div class="form-group">
-                        <label>Gelombang</label>
-                        <select name="gelombang_id" class="form-control">
-                            <option value="">Semua Gelombang</option>
+                <div class="col-6 col-md-4 col-lg-2 mb-2" style="padding: 0 5px;">
+                    <div class="form-group mb-1">
+                        <label class="mb-1" style="font-size: 12px; font-weight: 600;">Gelombang</label>
+                        <select name="gelombang_id" class="form-control form-control-sm" style="font-size: 12px; padding: 5px 10px;">
+                            <option value="">Semua</option>
                             @foreach($gelombangList as $gelombang)
                             <option value="{{ $gelombang->id }}" {{ request('gelombang_id') == $gelombang->id ? 'selected' : '' }}>
                                 {{ $gelombang->jalur->nama ?? '' }} - {{ $gelombang->nama }}
@@ -78,11 +116,11 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-2">
-                    <div class="form-group">
-                        <label>Status</label>
-                        <select name="status" class="form-control">
-                            <option value="">Semua Status</option>
+                <div class="col-6 col-md-4 col-lg-2 mb-2" style="padding: 0 5px;">
+                    <div class="form-group mb-1">
+                        <label class="mb-1" style="font-size: 12px; font-weight: 600;">Status</label>
+                        <select name="status" class="form-control form-control-sm" style="font-size: 12px; padding: 5px 10px;">
+                            <option value="">Semua</option>
                             <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                             <option value="verified" {{ request('status') == 'verified' ? 'selected' : '' }}>Verified</option>
                             <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Diterima</option>
@@ -90,14 +128,14 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>&nbsp;</label>
-                        <div>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-search"></i> Filter
+                <div class="col-6 col-md-8 col-lg-3 mb-2" style="padding: 0 5px;">
+                    <div class="form-group mb-1">
+                        <label class="mb-1 d-none d-md-block" style="font-size: 12px;">&nbsp;</label>
+                        <div class="d-flex" style="gap: 5px;">
+                            <button type="submit" class="btn btn-primary btn-sm flex-fill" style="font-size: 12px; padding: 5px 10px;">
+                                <i class="fas fa-search"></i><span class="d-none d-sm-inline"> Filter</span>
                             </button>
-                            <a href="{{ route('admin.pendaftar.index') }}" class="btn btn-secondary">
+                            <a href="{{ route('admin.pendaftar.index') }}" class="btn btn-secondary btn-sm" style="font-size: 12px; padding: 5px 10px;">
                                 <i class="fas fa-redo"></i>
                             </a>
                         </div>
@@ -112,7 +150,7 @@
             <h3 class="card-title">Daftar Pendaftar</h3>
         </div>
         <div class="card-body table-responsive p-0">
-            <table class="table table-hover">
+            <table class="table table-hover d-none d-lg-table">
                 <thead>
                     <tr>
                         <th style="width: 50px;">No</th>
@@ -217,9 +255,93 @@
                     @endforelse
                 </tbody>
             </table>
+            
+            <!-- Mobile Card View -->
+            <div class="d-lg-none">
+                @forelse($pendaftars as $key => $pendaftar)
+                <div class="mobile-card-item" style="background: {{ $loop->odd ? '#fff' : '#f9fafb' }}; padding: 10px;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div style="flex: 1; padding-right: 10px;">
+                            <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px; line-height: 1.3;">
+                                <a href="{{ route('admin.pendaftar.show', $pendaftar->id) }}" class="text-dark">
+                                    {{ $pendaftar->nama_lengkap }}
+                                </a>
+                            </div>
+                            <div style="font-size: 10px; margin-bottom: 4px;" class="text-muted">
+                                <code style="font-size: 9px; padding: 1px 3px;">{{ $pendaftar->nomor_registrasi ?? '-' }}</code>
+                                @if($pendaftar->nisn)
+                                    <span style="margin-left: 3px;">NISN: {{ $pendaftar->nisn }}</span>
+                                @endif
+                            </div>
+                            @if($pendaftar->jalurPendaftaran)
+                            <div style="margin-bottom: 4px;">
+                                <span class="badge" style="background: {{ $pendaftar->jalurPendaftaran->warna ?? '#007bff' }}; color: white; font-size: 8px; padding: 2px 4px;">
+                                    {{ $pendaftar->jalurPendaftaran->nama }}
+                                </span>
+                                @if($pendaftar->gelombangPendaftaran)
+                                    <span class="text-muted" style="font-size: 9px; margin-left: 3px;">{{ $pendaftar->gelombangPendaftaran->nama }}</span>
+                                @endif
+                            </div>
+                            @endif
+                            <div style="margin-top: 4px;">
+                                @php
+                                    $dokumenCount = $pendaftar->dokumen->count();
+                                    $validCount = $pendaftar->dokumen->where('status_verifikasi', 'valid')->count();
+                                    $pendingCount = $pendaftar->dokumen->where('status_verifikasi', 'pending')->count();
+                                    $invalidCount = $pendaftar->dokumen->where('status_verifikasi', 'invalid')->count();
+                                    $revisionCount = $pendaftar->dokumen->where('status_verifikasi', 'revision')->count();
+                                @endphp
+                                @if($dokumenCount > 0)
+                                    @if($validCount > 0)
+                                        <span class="badge badge-success" style="font-size: 8px; padding: 1px 3px; margin-right: 2px;"><i class="fas fa-check"></i> {{ $validCount }}</span>
+                                    @endif
+                                    @if($pendingCount > 0)
+                                        <span class="badge badge-warning" style="font-size: 8px; padding: 1px 3px; margin-right: 2px;"><i class="fas fa-clock"></i> {{ $pendingCount }}</span>
+                                    @endif
+                                    @if($invalidCount > 0)
+                                        <span class="badge badge-danger" style="font-size: 8px; padding: 1px 3px; margin-right: 2px;"><i class="fas fa-times"></i> {{ $invalidCount }}</span>
+                                    @endif
+                                    @if($revisionCount > 0)
+                                        <span class="badge badge-info" style="font-size: 8px; padding: 1px 3px;"><i class="fas fa-redo"></i> {{ $revisionCount }}</span>
+                                    @endif
+                                @endif
+                            </div>
+                        </div>
+                        <div style="text-align: right; flex-shrink: 0;">
+                            @if($pendaftar->status_verifikasi == 'pending')
+                                <span class="badge badge-warning" style="font-size: 9px; padding: 2px 5px;">Pending</span>
+                            @elseif($pendaftar->status_verifikasi == 'verified')
+                                <span class="badge badge-info" style="font-size: 9px; padding: 2px 5px;">Verified</span>
+                            @elseif($pendaftar->status_verifikasi == 'approved')
+                                <span class="badge badge-success" style="font-size: 9px; padding: 2px 5px;">Diterima</span>
+                            @elseif($pendaftar->status_verifikasi == 'rejected')
+                                <span class="badge badge-danger" style="font-size: 9px; padding: 2px 5px;">Ditolak</span>
+                            @endif
+                            <div style="margin-top: 6px;">
+                                <a href="{{ route('admin.pendaftar.show', $pendaftar->id) }}" class="btn btn-primary btn-sm" style="font-size: 10px; padding: 4px 8px;">
+                                    <i class="fas fa-eye"></i> Detail
+                                </a>
+                            </div>
+                            <div class="text-muted" style="font-size: 8px; margin-top: 4px;">
+                                {{ $pendaftar->created_at->format('d/m/y') }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @empty
+                <div class="text-center text-muted py-4" style="font-size: 12px;">Tidak ada pendaftar</div>
+                @endforelse
+            </div>
         </div>
-        <div class="card-footer clearfix">
-            {{ $pendaftars->appends(request()->query())->links() }}
+        <div class="card-footer clearfix" style="padding: 8px 15px;">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div class="text-muted d-none d-md-block" style="font-size: 11px;">
+                    {{ $pendaftars->firstItem() ?? 0 }} - {{ $pendaftars->lastItem() ?? 0 }} dari {{ $pendaftars->total() }}
+                </div>
+                <div style="margin: 0 auto;">
+                    {{ $pendaftars->appends(request()->query())->links() }}
+                </div>
+            </div>
         </div>
     </div>
 
