@@ -54,12 +54,16 @@
         color: #ed8936;
     }
     
-    .doc-card .status.verified {
+    .doc-card .status.valid {
         color: #48bb78;
     }
     
-    .doc-card .status.rejected {
+    .doc-card .status.invalid {
         color: #f56565;
+    }
+    
+    .doc-card .status.revision {
+        color: #4299e1;
     }
     
     .preview-img {
@@ -128,10 +132,14 @@
                                     <span class="status {{ $doc->status_verifikasi }}">
                                         @if($doc->status_verifikasi === 'pending')
                                             <i class="fas fa-clock"></i> Menunggu Verifikasi
-                                        @elseif($doc->status_verifikasi === 'verified')
+                                        @elseif($doc->status_verifikasi === 'valid')
                                             <i class="fas fa-check"></i> Terverifikasi
-                                        @else
+                                        @elseif($doc->status_verifikasi === 'invalid')
                                             <i class="fas fa-times"></i> Ditolak
+                                        @elseif($doc->status_verifikasi === 'revision')
+                                            <i class="fas fa-redo"></i> Perlu Revisi
+                                        @else
+                                            <i class="fas fa-clock"></i> {{ ucfirst($doc->status_verifikasi) }}
                                         @endif
                                     </span>
                                 @else
@@ -160,10 +168,12 @@
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             {{ $label }}
                             @if($doc)
-                                @if($doc->status_verifikasi === 'verified')
+                                @if($doc->status_verifikasi === 'valid')
                                     <span class="badge badge-success"><i class="fas fa-check"></i></span>
-                                @elseif($doc->status_verifikasi === 'rejected')
+                                @elseif($doc->status_verifikasi === 'invalid')
                                     <span class="badge badge-danger"><i class="fas fa-times"></i></span>
+                                @elseif($doc->status_verifikasi === 'revision')
+                                    <span class="badge badge-info"><i class="fas fa-redo"></i></span>
                                 @else
                                     <span class="badge badge-warning"><i class="fas fa-clock"></i></span>
                                 @endif
