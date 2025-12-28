@@ -11,6 +11,40 @@ use Illuminate\Support\Facades\Storage;
 class DataManagementController extends Controller
 {
     /**
+     * Display list of active pendaftar for deletion.
+     */
+    public function deleteList(Request $request)
+    {
+        $query = CalonSiswa::with(['jalurPendaftaran', 'gelombangPendaftaran']);
+
+        // Filter by gelombang
+        if ($request->filled('gelombang_id')) {
+            $query->where('gelombang_pendaftaran_id', $request->gelombang_id);
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status_verifikasi', $request->status);
+        }
+
+        // Search by name or NISN
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_lengkap', 'like', "%{$search}%")
+                    ->orWhere('nisn', 'like', "%{$search}%");
+            });
+        }
+
+        $pendaftars = $query->latest('created_at')->paginate(20);
+
+        // Get gelombang for filter
+        $gelombangs = \App\Models\GelombangPendaftaran::all();
+
+        return view('admin.data-management.delete-list', compact('pendaftars', 'gelombangs'));
+    }
+
+    /**
      * Display a listing of deleted data.
      */
     public function index(Request $request)

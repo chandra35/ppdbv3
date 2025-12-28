@@ -324,7 +324,7 @@
             if (result.isConfirmed) {
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = '{{ route("admin.data.restore.bulk") }}';
+                form.action = '/admin/data-management/restore-bulk';
                 form.innerHTML = '@csrf';
                 ids.forEach(id => {
                     const input = document.createElement('input');
@@ -369,7 +369,7 @@
         if (confirm1) {
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = '{{ route("admin.data.force.delete", "") }}/' + id;
+            form.action = '/admin/data-management/force-delete/' + id;
             form.innerHTML = '@csrf @method("DELETE")';
             document.body.appendChild(form);
             form.submit();
@@ -411,7 +411,7 @@
         if (confirm1) {
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = '{{ route("admin.data.force.delete.bulk") }}';
+            form.action = '/admin/data-management/force-delete-bulk';
             form.innerHTML = '@csrf @method("DELETE")';
             ids.forEach(id => {
                 const input = document.createElement('input');

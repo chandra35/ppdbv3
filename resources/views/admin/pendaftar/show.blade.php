@@ -435,9 +435,6 @@ dl.row dt {
                         <button type="button" class="btn btn-info btn-sm" onclick="showPassword()">
                             <i class="fas fa-eye"></i> Lihat Password
                         </button>
-                        <button type="button" class="btn btn-danger btn-sm" onclick="deletePendaftar()">
-                            <i class="fas fa-trash"></i> Hapus
-                        </button>
                     </div>
                 </div>
                 <div class="col-md-6 text-right">

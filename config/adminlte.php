@@ -248,6 +248,11 @@ return [
                     'icon' => 'fas fa-fw fa-database text-primary',
                 ],
                 [
+                    'text' => 'Hapus Data Pendaftar',
+                    'route' => 'admin.data.delete-list',
+                    'icon' => 'fas fa-fw fa-user-minus text-warning',
+                ],
+                [
                     'text' => 'Data Terhapus',
                     'route' => 'admin.data.deleted',
                     'icon' => 'fas fa-fw fa-trash-restore text-danger',

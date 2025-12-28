@@ -325,6 +325,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         
         // ---- DATA MANAGEMENT (Soft Delete) ----
         Route::prefix('data-management')->name('data.')->group(function () {
+            Route::get('/delete-list', [\App\Http\Controllers\Admin\DataManagementController::class, 'deleteList'])->name('delete-list');
             Route::get('/deleted', [\App\Http\Controllers\Admin\DataManagementController::class, 'index'])->name('deleted');
             Route::post('/restore/{id}', [\App\Http\Controllers\Admin\DataManagementController::class, 'restore'])->name('restore');
             Route::post('/restore-bulk', [\App\Http\Controllers\Admin\DataManagementController::class, 'restoreBulk'])->name('restore.bulk');
