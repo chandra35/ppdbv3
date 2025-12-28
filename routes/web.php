@@ -7,6 +7,24 @@ Route::get('/', function () {
 });
 
 // Laravolt Indonesia AJAX Routes
+Route::middleware(['auth'])->prefix('api/indonesia')->group(function () {
+    Route::get('/cities/{provinceCode}', function($provinceCode) {
+        $cities = \Laravolt\Indonesia\Models\City::where('province_code', $provinceCode)->orderBy('name')->get();
+        return response()->json($cities);
+    });
+    
+    Route::get('/districts/{cityCode}', function($cityCode) {
+        $districts = \Laravolt\Indonesia\Models\District::where('city_code', $cityCode)->orderBy('name')->get();
+        return response()->json($districts);
+    });
+    
+    Route::get('/villages/{districtCode}', function($districtCode) {
+        $villages = \Laravolt\Indonesia\Models\Village::where('district_code', $districtCode)->orderBy('name')->get();
+        return response()->json($villages);
+    });
+});
+
+// Legacy Laravolt Indonesia AJAX Routes (for backward compatibility)
 Route::middleware(['auth'])->prefix('laravolt/indonesia')->group(function () {
     Route::get('/cities', function(\Illuminate\Http\Request $request) {
         $provinceCode = $request->get('province_code');
