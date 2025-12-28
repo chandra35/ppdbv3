@@ -62,7 +62,7 @@
 
 @section('content')
 <div class="row">
-    <div class="col-md-10 offset-md-1">
+    <div class="col-lg-8">
         {{-- Info Card --}}
         <div class="card card-info">
             <div class="card-header">

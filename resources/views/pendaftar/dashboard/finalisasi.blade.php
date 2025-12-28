@@ -34,7 +34,7 @@
 
 @section('content')
 <div class="row">
-    <div class="col-md-10 offset-md-1">
+    <div class="col-lg-8">
         @if($calonSiswa->is_finalisasi)
         {{-- Already Finalized --}}
         <div class="card card-success">
