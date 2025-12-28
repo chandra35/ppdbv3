@@ -82,6 +82,7 @@ class CalonSiswa extends Model
         'is_finalisasi',
         'tanggal_finalisasi',
         'nomor_tes',
+        'verification_hash',
         
         // Nilai & Ranking
         'nilai_cbt',
@@ -324,6 +325,27 @@ class CalonSiswa extends Model
         $sequence = self::whereYear('created_at', $tahun)->count() + 1;
         
         return sprintf('%s/%s/%s/%04d', $tahun, $jalur, $gelombang, $sequence);
+    }
+
+    /**
+     * Generate verification hash untuk QR code
+     */
+    public function generateVerificationHash(): string
+    {
+        return hash('sha256', $this->id . $this->nomor_registrasi . $this->created_at . config('app.key'));
+    }
+
+    /**
+     * Generate or get verification hash
+     */
+    public function getOrGenerateHash(): string
+    {
+        if (!$this->verification_hash) {
+            $hash = $this->generateVerificationHash();
+            $this->update(['verification_hash' => $hash]);
+            return $hash;
+        }
+        return $this->verification_hash;
     }
 
     // Boot method for cascade delete

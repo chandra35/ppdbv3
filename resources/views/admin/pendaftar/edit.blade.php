@@ -422,20 +422,9 @@
                             <select name="pekerjaan_ayah" id="pekerjaan_ayah" 
                                 class="form-control @error('pekerjaan_ayah') is-invalid @enderror">
                                 <option value="">Pilih Pekerjaan</option>
-                                <option value="tidak_bekerja" {{ old('pekerjaan_ayah', $pendaftar->ortu->pekerjaan_ayah ?? '') == 'tidak_bekerja' ? 'selected' : '' }}>Tidak Bekerja</option>
-                                <option value="pns" {{ old('pekerjaan_ayah', $pendaftar->ortu->pekerjaan_ayah ?? '') == 'pns' ? 'selected' : '' }}>PNS</option>
-                                <option value="tni_polri" {{ old('pekerjaan_ayah', $pendaftar->ortu->pekerjaan_ayah ?? '') == 'tni_polri' ? 'selected' : '' }}>TNI/Polri</option>
-                                <option value="swasta" {{ old('pekerjaan_ayah', $pendaftar->ortu->pekerjaan_ayah ?? '') == 'swasta' ? 'selected' : '' }}>Karyawan Swasta</option>
-                                <option value="wiraswasta" {{ old('pekerjaan_ayah', $pendaftar->ortu->pekerjaan_ayah ?? '') == 'wiraswasta' ? 'selected' : '' }}>Wiraswasta</option>
-                                <option value="petani" {{ old('pekerjaan_ayah', $pendaftar->ortu->pekerjaan_ayah ?? '') == 'petani' ? 'selected' : '' }}>Petani</option>
-                                <option value="nelayan" {{ old('pekerjaan_ayah', $pendaftar->ortu->pekerjaan_ayah ?? '') == 'nelayan' ? 'selected' : '' }}>Nelayan</option>
-                                <option value="buruh" {{ old('pekerjaan_ayah', $pendaftar->ortu->pekerjaan_ayah ?? '') == 'buruh' ? 'selected' : '' }}>Buruh</option>
-                                <option value="guru" {{ old('pekerjaan_ayah', $pendaftar->ortu->pekerjaan_ayah ?? '') == 'guru' ? 'selected' : '' }}>Guru/Dosen</option>
-                                <option value="dokter" {{ old('pekerjaan_ayah', $pendaftar->ortu->pekerjaan_ayah ?? '') == 'dokter' ? 'selected' : '' }}>Dokter</option>
-                                <option value="pedagang" {{ old('pekerjaan_ayah', $pendaftar->ortu->pekerjaan_ayah ?? '') == 'pedagang' ? 'selected' : '' }}>Pedagang</option>
-                                <option value="ibu_rumah_tangga" {{ old('pekerjaan_ayah', $pendaftar->ortu->pekerjaan_ayah ?? '') == 'ibu_rumah_tangga' ? 'selected' : '' }}>Ibu Rumah Tangga</option>
-                                <option value="pensiunan" {{ old('pekerjaan_ayah', $pendaftar->ortu->pekerjaan_ayah ?? '') == 'pensiunan' ? 'selected' : '' }}>Pensiunan</option>
-                                <option value="lainnya" {{ old('pekerjaan_ayah', $pendaftar->ortu->pekerjaan_ayah ?? '') == 'lainnya' ? 'selected' : '' }}>Lainnya</option>
+                                @foreach(\App\Models\CalonOrtu::PEKERJAAN as $key => $label)
+                                    <option value="{{ $key }}" {{ old('pekerjaan_ayah', $pendaftar->ortu->pekerjaan_ayah ?? '') == $key ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
                             </select>
                             @error('pekerjaan_ayah')
                                 <span class="invalid-feedback">{{ $message }}</span>
@@ -449,13 +438,9 @@
                             <select name="penghasilan_ayah" id="penghasilan_ayah" 
                                 class="form-control @error('penghasilan_ayah') is-invalid @enderror">
                                 <option value="">Pilih Penghasilan</option>
-                                <option value="tidak_ada" {{ old('penghasilan_ayah', $pendaftar->ortu->penghasilan_ayah ?? '') == 'tidak_ada' ? 'selected' : '' }}>Tidak ada</option>
-                                <option value="dibawah_1jt" {{ old('penghasilan_ayah', $pendaftar->ortu->penghasilan_ayah ?? '') == 'dibawah_1jt' ? 'selected' : '' }}>< Rp 1.000.000</option>
-                                <option value="1jt_2jt" {{ old('penghasilan_ayah', $pendaftar->ortu->penghasilan_ayah ?? '') == '1jt_2jt' ? 'selected' : '' }}>Rp 1.000.000 - Rp 2.000.000</option>
-                                <option value="2jt_3jt" {{ old('penghasilan_ayah', $pendaftar->ortu->penghasilan_ayah ?? '') == '2jt_3jt' ? 'selected' : '' }}>Rp 2.000.000 - Rp 3.000.000</option>
-                                <option value="3jt_5jt" {{ old('penghasilan_ayah', $pendaftar->ortu->penghasilan_ayah ?? '') == '3jt_5jt' ? 'selected' : '' }}>Rp 3.000.000 - Rp 5.000.000</option>
-                                <option value="5jt_10jt" {{ old('penghasilan_ayah', $pendaftar->ortu->penghasilan_ayah ?? '') == '5jt_10jt' ? 'selected' : '' }}>Rp 5.000.000 - Rp 10.000.000</option>
-                                <option value="diatas_10jt" {{ old('penghasilan_ayah', $pendaftar->ortu->penghasilan_ayah ?? '') == 'diatas_10jt' ? 'selected' : '' }}>> Rp 10.000.000</option>
+                                @foreach(\App\Models\CalonOrtu::PENGHASILAN as $key => $label)
+                                    <option value="{{ $key }}" {{ old('penghasilan_ayah', $pendaftar->ortu->penghasilan_ayah ?? '') == $key ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
                             </select>
                             @error('penghasilan_ayah')
                                 <span class="invalid-feedback">{{ $message }}</span>
@@ -560,20 +545,9 @@
                             <select name="pekerjaan_ibu" id="pekerjaan_ibu" 
                                 class="form-control @error('pekerjaan_ibu') is-invalid @enderror">
                                 <option value="">Pilih Pekerjaan</option>
-                                <option value="tidak_bekerja" {{ old('pekerjaan_ibu', $pendaftar->ortu->pekerjaan_ibu ?? '') == 'tidak_bekerja' ? 'selected' : '' }}>Tidak Bekerja</option>
-                                <option value="pns" {{ old('pekerjaan_ibu', $pendaftar->ortu->pekerjaan_ibu ?? '') == 'pns' ? 'selected' : '' }}>PNS</option>
-                                <option value="tni_polri" {{ old('pekerjaan_ibu', $pendaftar->ortu->pekerjaan_ibu ?? '') == 'tni_polri' ? 'selected' : '' }}>TNI/Polri</option>
-                                <option value="swasta" {{ old('pekerjaan_ibu', $pendaftar->ortu->pekerjaan_ibu ?? '') == 'swasta' ? 'selected' : '' }}>Karyawan Swasta</option>
-                                <option value="wiraswasta" {{ old('pekerjaan_ibu', $pendaftar->ortu->pekerjaan_ibu ?? '') == 'wiraswasta' ? 'selected' : '' }}>Wiraswasta</option>
-                                <option value="petani" {{ old('pekerjaan_ibu', $pendaftar->ortu->pekerjaan_ibu ?? '') == 'petani' ? 'selected' : '' }}>Petani</option>
-                                <option value="nelayan" {{ old('pekerjaan_ibu', $pendaftar->ortu->pekerjaan_ibu ?? '') == 'nelayan' ? 'selected' : '' }}>Nelayan</option>
-                                <option value="buruh" {{ old('pekerjaan_ibu', $pendaftar->ortu->pekerjaan_ibu ?? '') == 'buruh' ? 'selected' : '' }}>Buruh</option>
-                                <option value="guru" {{ old('pekerjaan_ibu', $pendaftar->ortu->pekerjaan_ibu ?? '') == 'guru' ? 'selected' : '' }}>Guru/Dosen</option>
-                                <option value="dokter" {{ old('pekerjaan_ibu', $pendaftar->ortu->pekerjaan_ibu ?? '') == 'dokter' ? 'selected' : '' }}>Dokter</option>
-                                <option value="pedagang" {{ old('pekerjaan_ibu', $pendaftar->ortu->pekerjaan_ibu ?? '') == 'pedagang' ? 'selected' : '' }}>Pedagang</option>
-                                <option value="ibu_rumah_tangga" {{ old('pekerjaan_ibu', $pendaftar->ortu->pekerjaan_ibu ?? '') == 'ibu_rumah_tangga' ? 'selected' : '' }}>Ibu Rumah Tangga</option>
-                                <option value="pensiunan" {{ old('pekerjaan_ibu', $pendaftar->ortu->pekerjaan_ibu ?? '') == 'pensiunan' ? 'selected' : '' }}>Pensiunan</option>
-                                <option value="lainnya" {{ old('pekerjaan_ibu', $pendaftar->ortu->pekerjaan_ibu ?? '') == 'lainnya' ? 'selected' : '' }}>Lainnya</option>
+                                @foreach(\App\Models\CalonOrtu::PEKERJAAN as $key => $label)
+                                    <option value="{{ $key }}" {{ old('pekerjaan_ibu', $pendaftar->ortu->pekerjaan_ibu ?? '') == $key ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
                             </select>
                             @error('pekerjaan_ibu')
                                 <span class="invalid-feedback">{{ $message }}</span>
@@ -587,13 +561,9 @@
                             <select name="penghasilan_ibu" id="penghasilan_ibu" 
                                 class="form-control @error('penghasilan_ibu') is-invalid @enderror">
                                 <option value="">Pilih Penghasilan</option>
-                                <option value="tidak_ada" {{ old('penghasilan_ibu', $pendaftar->ortu->penghasilan_ibu ?? '') == 'tidak_ada' ? 'selected' : '' }}>Tidak ada</option>
-                                <option value="dibawah_1jt" {{ old('penghasilan_ibu', $pendaftar->ortu->penghasilan_ibu ?? '') == 'dibawah_1jt' ? 'selected' : '' }}>< Rp 1.000.000</option>
-                                <option value="1jt_2jt" {{ old('penghasilan_ibu', $pendaftar->ortu->penghasilan_ibu ?? '') == '1jt_2jt' ? 'selected' : '' }}>Rp 1.000.000 - Rp 2.000.000</option>
-                                <option value="2jt_3jt" {{ old('penghasilan_ibu', $pendaftar->ortu->penghasilan_ibu ?? '') == '2jt_3jt' ? 'selected' : '' }}>Rp 2.000.000 - Rp 3.000.000</option>
-                                <option value="3jt_5jt" {{ old('penghasilan_ibu', $pendaftar->ortu->penghasilan_ibu ?? '') == '3jt_5jt' ? 'selected' : '' }}>Rp 3.000.000 - Rp 5.000.000</option>
-                                <option value="5jt_10jt" {{ old('penghasilan_ibu', $pendaftar->ortu->penghasilan_ibu ?? '') == '5jt_10jt' ? 'selected' : '' }}>Rp 5.000.000 - Rp 10.000.000</option>
-                                <option value="diatas_10jt" {{ old('penghasilan_ibu', $pendaftar->ortu->penghasilan_ibu ?? '') == 'diatas_10jt' ? 'selected' : '' }}>> Rp 10.000.000</option>
+                                @foreach(\App\Models\CalonOrtu::PENGHASILAN as $key => $label)
+                                    <option value="{{ $key }}" {{ old('penghasilan_ibu', $pendaftar->ortu->penghasilan_ibu ?? '') == $key ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
                             </select>
                             @error('penghasilan_ibu')
                                 <span class="invalid-feedback">{{ $message }}</span>

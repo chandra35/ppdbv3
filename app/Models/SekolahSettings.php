@@ -46,6 +46,14 @@ class SekolahSettings extends Model
         'kop_surat_custom_path',
         'kop_margin_top',
         'kop_height',
+        
+        // QR Code Settings
+        'qr_enable',
+        'qr_with_logo',
+        'qr_size',
+        'qr_position',
+        'qr_error_level',
+        'qr_function',
     ];
 
     protected $casts = [
@@ -57,6 +65,9 @@ class SekolahSettings extends Model
         'logo_column_width' => 'integer',
         'kop_margin_top' => 'integer',
         'kop_height' => 'integer',
+        'qr_enable' => 'boolean',
+        'qr_with_logo' => 'boolean',
+        'qr_size' => 'integer',
     ];
 
     /**

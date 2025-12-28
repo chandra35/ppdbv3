@@ -76,27 +76,27 @@ class KopSuratService
         // Build center content from config
         $centerContent = $this->buildCenterContent($sekolah);
 
-        // Build HTML table structure with balanced positioning
-        $html = '
-        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 5px;">
-            <tr>
-                <td width="12%" align="center" valign="middle" style="padding: 5px;">';
+        // Build HTML with flexbox-style positioning for better centering
+        $html = '<div style="position: relative; width: 100%; margin-bottom: 5px;">';
         
+        // Logo Kemenag (Left - Absolute)
         if ($logoKemenagSrc) {
-            $html .= '<img src="' . $logoKemenagSrc . '" alt="Logo Kemenag" style="height: ' . $logoKemenagHeight . 'px; display: block; margin: 0 auto;">';
+            $html .= '<div style="position: absolute; left: 20px; top: 0; width: 80px; text-align: center;">
+                        <img src="' . $logoKemenagSrc . '" alt="Logo Kemenag" style="height: ' . $logoKemenagHeight . 'px;">
+                      </div>';
         }
         
-        $html .= '</td>
-                <td width="76%" align="center" valign="middle" style="padding: 5px 15px;">' . $centerContent . '</td>
-                <td width="12%" align="center" valign="middle" style="padding: 5px;">';
+        // Center Content (Centered with margin auto)
+        $html .= '<div style="margin: 0 110px; text-align: center;">' . $centerContent . '</div>';
         
+        // Logo Sekolah (Right - Absolute)
         if ($logoSekolahSrc) {
-            $html .= '<img src="' . $logoSekolahSrc . '" alt="Logo Sekolah" style="height: ' . $logoSekolahHeight . 'px; display: block; margin: 0 auto;">';
+            $html .= '<div style="position: absolute; right: 20px; top: 0; width: 80px; text-align: center;">
+                        <img src="' . $logoSekolahSrc . '" alt="Logo Sekolah" style="height: ' . $logoSekolahHeight . 'px;">
+                      </div>';
         }
         
-        $html .= '</td>
-            </tr>
-        </table>';
+        $html .= '</div>';
 
         // Add divider line with precise spacing
         $html .= '<div style="border-bottom: 3px double #000; margin: 5px 0 10px 0; clear: both;"></div>';

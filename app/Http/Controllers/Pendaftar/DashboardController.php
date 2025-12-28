@@ -548,6 +548,15 @@ class DashboardController extends Controller
         // Generate kop surat HTML
         $kopHtml = $this->kopSuratService->renderKopHtml($sekolahSettings, true);
         
+        // Generate or get verification hash for QR code
+        $verificationHash = $calonSiswa->getOrGenerateHash();
+        
+        // Generate QR code if enabled
+        $qrCode = null;
+        if ($sekolahSettings && $sekolahSettings->qr_enable) {
+            $qrCode = $this->generateQrCode($calonSiswa, $sekolahSettings, $verificationHash);
+        }
+        
         $sekolah = (object) [
             'nama_sekolah' => $sekolahSettings->nama_sekolah ?? config('app.school_name', config('app.name', 'SMK')),
             'logo' => $this->getSchoolLogo(),
@@ -557,11 +566,36 @@ class DashboardController extends Controller
             'kota' => $sekolahSettings->city->name ?? config('app.school_city', ''),
         ];
         
-        $pdf = Pdf::loadView('pendaftar.pdf.bukti-registrasi', compact('calonSiswa', 'sekolah', 'kopHtml'));
+        $pdf = Pdf::loadView('pendaftar.pdf.bukti-registrasi', compact('calonSiswa', 'sekolah', 'kopHtml', 'qrCode', 'sekolahSettings'));
         
         $filename = 'bukti-registrasi-' . preg_replace('/[\/\\\:*?"<>|]/', '-', $calonSiswa->nomor_registrasi) . '.pdf';
         
         return $mode === 'stream' ? $pdf->stream($filename) : $pdf->download($filename);
+    }
+
+    /**
+     * Generate QR code with optional logo
+     */
+    private function generateQrCode($calonSiswa, $sekolahSettings, $verificationHash)
+    {
+        try {
+            $qrSize = $sekolahSettings->qr_size ?? 150;
+            $errorLevel = $sekolahSettings->qr_error_level ?? 'H';
+            
+            // Generate URL based on function setting
+            $url = route('verify.bukti', $verificationHash);
+            
+            // Generate QR code as SVG (works without imagick)
+            $qrSvg = \QrCode::size($qrSize)
+                ->errorCorrection($errorLevel)
+                ->generate($url);
+            
+            return 'data:image/svg+xml;base64,' . base64_encode($qrSvg);
+            
+        } catch (\Exception $e) {
+            \Log::error('QR Code generation failed: ' . $e->getMessage());
+            return null;
+        }
     }
 
     /**

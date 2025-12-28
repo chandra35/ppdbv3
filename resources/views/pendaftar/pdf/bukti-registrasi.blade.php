@@ -6,7 +6,7 @@
     <style>
         @page {
             size: A4;
-            margin: 15mm;
+            margin: 8mm 12mm 8mm 8mm;
         }
         * {
             margin: 0;
@@ -16,14 +16,23 @@
         body {
             font-family: 'Arial', 'Helvetica', sans-serif;
             font-size: 10pt;
-            line-height: 1.4;
+            line-height: 1.2;
             color: #333;
+        }
+        
+        .page-wrapper {
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+            padding-left: 3mm;
+            padding-right: 4mm;
+            padding-top: 3mm;
         }
         
         .title {
             text-align: center;
-            margin: 12px 0;
-            padding: 8px;
+            margin: 6px 0;
+            padding: 6px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             font-size: 13pt;
@@ -35,7 +44,7 @@
         .info-container {
             display: table;
             width: 100%;
-            margin-bottom: 12px;
+            margin-bottom: 6px;
         }
         
         .info-box {
@@ -46,14 +55,16 @@
         }
         
         .info-table {
-            width: 100%;
+            width: 99%;
             border-collapse: collapse;
-            border: 1px solid #2c3e50;
+            border-top: 2px solid #2c3e50;
+            border-bottom: 2px solid #2c3e50;
         }
         .info-table td {
-            padding: 4px 8px;
+            padding: 3px 8px;
             font-size: 9.5pt;
-            border: 1px solid #ddd;
+            border: none;
+            border-bottom: 1px solid #e0e0e0;
         }
         .info-table td:first-child {
             width: 38%;
@@ -129,48 +140,48 @@
             font-weight: bold;
             font-size: 10.5pt;
             border-radius: 3px;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
+            text-align: center;
         }
         
         table {
-            width: 100%;
+            width: 99%;
             border-collapse: collapse;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
         table td {
-            border: 1px solid #ddd;
-            padding: 5px 8px;
+            border: none;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 3px 8px;
             font-size: 9.5pt;
-            line-height: 1.3;
+            line-height: 1.2;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
         table td:first-child {
-            width: 35%;
+            width: 25%;
             font-weight: 600;
             color: #2c3e50;
         }
         table td:last-child {
             color: #333;
         }
+        table td:last-child::before {
+            content: ': ';
+            font-weight: 600;
+            color: #2c3e50;
+        }
         
-        .two-column {
-            display: table;
+        .content-section {
             width: 100%;
-            margin-bottom: 10px;
         }
-        .column {
-            display: table-cell;
-            width: 50%;
-            vertical-align: top;
-        }
-        .column:first-child {
-            padding-right: 6px;
-        }
-        .column:last-child {
-            padding-left: 6px;
+        
+        .section {
+            margin-bottom: 6px;
         }
         
         .footer {
-            margin-top: 15px;
+            margin-top: 10px;
             padding-top: 10px;
             border-top: 2px solid #ecf0f1;
         }
@@ -184,6 +195,9 @@
             font-size: 9pt;
             vertical-align: top;
         }
+        .footer-col:first-child {
+            padding-left: 15px;
+        }
         .signature-box {
             text-align: center;
             margin-top: 15px;
@@ -191,7 +205,7 @@
         .signature-line {
             border-top: 1px solid #34495e;
             width: 150px;
-            margin: 40px auto 4px;
+            margin: 60px auto 4px;
         }
         
         .watermark {
@@ -213,9 +227,29 @@
             font-weight: bold;
             letter-spacing: 0.3px;
         }
+        
+        .qr-code {
+            display: inline-block;
+            border: 2px solid #2c3e50;
+            padding: 8px;
+            background: white;
+            border-radius: 8px;
+            margin-top: 10px;
+            margin-left: 15px;
+        }
+        .qr-code img {
+            display: block;
+        }
+        .qr-label {
+            text-align: center;
+            font-size: 7pt;
+            color: #7f8c8d;
+            margin-top: 3px;
+        }
     </style>
 </head>
 <body>
+<div class="page-wrapper">
     {{-- Logo Watermark Background --}}
     @if($sekolah && $sekolah->logo)
     <div class="logo-watermark">
@@ -227,8 +261,10 @@
     {!! $kopHtml !!}
 
     {{-- Title --}}
-    <div class="title">BUKTI REGISTRASI PENDAFTARAN</div>
-    <div style="text-align: center; font-size: 10pt; margin-bottom: 10px; font-weight: bold; color: #e74c3c;">
+    <div style="text-align: center; font-size: 11pt; margin: 10px 0 5px 0; font-weight: bold; color: #2c3e50;">
+        Bukti Registrasi Pendaftaran Peserta Didik Baru
+    </div>
+    <div style="text-align: center; font-size: 10pt; margin-bottom: 30px; font-weight: bold; color: #2c3e50;">
         TAHUN PELAJARAN {{ $calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y') }}/{{ ($calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y')) + 1 }}
     </div>
 
@@ -277,12 +313,11 @@
         </div>
     </div>
 
-    {{-- Two Column Layout --}}
-    <div class="two-column">
-        {{-- Column 1: Data Pribadi --}}
-        <div class="column">
-            <div class="section">
-                <div class="section-title">DATA PRIBADI</div>
+    {{-- Single Column Layout --}}
+    <div class="content-section">
+        {{-- Data Pribadi --}}
+        <div class="section">
+            <div class="section-title">DATA PRIBADI</div>
                 <table>
                     <tr>
                         <td>NISN</td>
@@ -314,7 +349,7 @@
                     </tr>
                     <tr>
                         <td>Alamat</td>
-                        <td>{{ $calonSiswa->alamat_lengkap ?? '-' }}</td>
+                        <td>{{ $calonSiswa->alamat_lengkap_siswa ?? '-' }}</td>
                     </tr>
                     <tr>
                         <td>No. HP/WA</td>
@@ -324,11 +359,10 @@
             </div>
         </div>
 
-        {{-- Column 2: Data Orang Tua --}}
-        <div class="column">
-            @if($calonSiswa->ortu)
-            <div class="section">
-                <div class="section-title">DATA ORANG TUA / WALI</div>
+        {{-- Data Orang Tua --}}
+        @if($calonSiswa->ortu)
+        <div class="section">
+            <div class="section-title">DATA ORANG TUA / WALI</div>
                 <table>
                     <tr>
                         <td>Nama Ayah</td>
@@ -336,11 +370,11 @@
                     </tr>
                     <tr>
                         <td>Pekerjaan Ayah</td>
-                        <td>{{ $calonSiswa->ortu->pekerjaan_ayah ?? '-' }}</td>
+                        <td>{{ ucwords($calonSiswa->ortu->pekerjaan_ayah ?? '-') }}</td>
                     </tr>
                     <tr>
                         <td>No. HP Ayah</td>
-                        <td>{{ $calonSiswa->ortu->no_hp_ayah ?? '-' }}</td>
+                        <td>{{ $calonSiswa->ortu->hp_ayah ?? '-' }}</td>
                     </tr>
                     <tr>
                         <td>Nama Ibu</td>
@@ -348,16 +382,15 @@
                     </tr>
                     <tr>
                         <td>Pekerjaan Ibu</td>
-                        <td>{{ $calonSiswa->ortu->pekerjaan_ibu ?? '-' }}</td>
+                        <td>{{ ucwords($calonSiswa->ortu->pekerjaan_ibu ?? '-') }}</td>
                     </tr>
                     <tr>
                         <td>No. HP Ibu</td>
-                        <td>{{ $calonSiswa->ortu->no_hp_ibu ?? '-' }}</td>
+                        <td>{{ $calonSiswa->ortu->hp_ibu ?? '-' }}</td>
                     </tr>
                 </table>
             </div>
-            @endif
-        </div>
+        @endif
     </div>
 
     {{-- Footer --}}
@@ -368,11 +401,18 @@
                     <strong>Catatan:</strong> Bukti ini merupakan dokumen resmi pendaftaran PPDB. 
                     Harap dibawa saat mengikuti tahapan selanjutnya.
                 </p>
+                {{-- QR Code (if enabled) --}}
+                @if(isset($qrCode) && $qrCode && isset($sekolahSettings) && $sekolahSettings->qr_enable)
+                <div class="qr-code">
+                    <img src="{{ $qrCode }}" alt="QR Code" style="width: {{ $sekolahSettings->qr_size ?? 100 }}px; height: {{ $sekolahSettings->qr_size ?? 100 }}px;">
+                    <div class="qr-label">Scan untuk verifikasi</div>
+                </div>
+                @endif
             </div>
-            <div class="footer-col" style="text-align: right;">
-                <p>{{ ($sekolah->kota ?? '') }}, {{ \Carbon\Carbon::now()->format('d F Y') }}</p>
+            <div class="footer-col" style="text-align: right; padding-right: 20px;">
+                <p style="margin-bottom: 0px;">{{ ($sekolah->kota ?? '') }}, {{ \Carbon\Carbon::now()->format('d F Y') }}</p>
                 <div class="signature-box">
-                    <p style="font-weight: 600;">Calon Peserta Didik</p>
+                    <p style="font-weight: 600; margin-top: 0px; margin-bottom: 30px;">Calon Peserta Didik</p>
                     <div class="signature-line"></div>
                     <p><strong>{{ $calonSiswa->nama_lengkap }}</strong></p>
                 </div>
@@ -384,5 +424,6 @@
     <div class="watermark">
         Dicetak: {{ \Carbon\Carbon::now()->format('d/m/Y H:i:s') }} | <span class="badge">VALID</span>
     </div>
+</div>
 </body>
 </html>

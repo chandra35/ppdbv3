@@ -1,9 +1,16 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\VerificationController;
 
 Route::get('/', function () {
     return redirect()->route('ppdb.landing');
+});
+
+// Public Verification Routes (No Auth Required)
+Route::prefix('verify')->group(function () {
+    Route::get('/bukti/{hash}', [VerificationController::class, 'verifyBukti'])->name('verify.bukti');
+    Route::get('/admin/{hash}', [VerificationController::class, 'adminAccess'])->name('verify.admin')->middleware('auth');
 });
 
 // Laravolt Indonesia AJAX Routes
