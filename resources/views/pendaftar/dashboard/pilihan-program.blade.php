@@ -1,14 +1,68 @@
-@extends('adminlte::page')
+@extends('layouts.pendaftar')
 
 @section('title', 'Pilihan Program')
+@section('page-title', 'Pilihan Program / Jurusan')
 
-@section('content_header')
-    <h1>Pilihan Program / Jurusan</h1>
-@stop
+@section('breadcrumb')
+<li class="breadcrumb-item active">Pilihan Program</li>
+@endsection
+
+@section('css')
+<style>
+    .program-option-card {
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background-color: #fff;
+    }
+
+    .program-option-card:hover {
+        border-color: #007bff;
+        box-shadow: 0 4px 8px rgba(0,123,255,0.15);
+        transform: translateY(-2px);
+    }
+
+    .program-option-card.selected {
+        border-color: #28a745;
+        background-color: #d4edda;
+        box-shadow: 0 4px 12px rgba(40,167,69,0.3);
+    }
+
+    .program-option-card input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+    }
+
+    .program-card-content {
+        text-align: center;
+        padding: 10px;
+    }
+
+    .program-card-content h5 {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .program-option-card.selected .program-card-content h5 {
+        color: #155724;
+    }
+
+    .program-option-card.selected .program-card-content i {
+        color: #28a745 !important;
+    }
+
+    #btnSimpan {
+        font-size: 1.1rem;
+        padding: 12px;
+    }
+</style>
+@endsection
 
 @section('content')
 <div class="row">
-    <div class="col-md-8 offset-md-2">
+    <div class="col-md-10 offset-md-1">
         {{-- Info Card --}}
         <div class="card card-info">
             <div class="card-header">
@@ -101,60 +155,7 @@
         </div>
     </div>
 </div>
-@stop
-
-@section('css')
-<style>
-    .program-option-card {
-        border: 2px solid #dee2e6;
-        border-radius: 8px;
-        padding: 20px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        background-color: #fff;
-    }
-
-    .program-option-card:hover {
-        border-color: #007bff;
-        box-shadow: 0 4px 8px rgba(0,123,255,0.15);
-        transform: translateY(-2px);
-    }
-
-    .program-option-card.selected {
-        border-color: #28a745;
-        background-color: #d4edda;
-        box-shadow: 0 4px 12px rgba(40,167,69,0.3);
-    }
-
-    .program-option-card input[type="radio"] {
-        position: absolute;
-        opacity: 0;
-    }
-
-    .program-card-content {
-        text-align: center;
-        padding: 10px;
-    }
-
-    .program-card-content h5 {
-        font-weight: 600;
-        color: #333;
-    }
-
-    .program-option-card.selected .program-card-content h5 {
-        color: #155724;
-    }
-
-    .program-option-card.selected .program-card-content i {
-        color: #28a745 !important;
-    }
-
-    #btnSimpan {
-        font-size: 1.1rem;
-        padding: 12px;
-    }
-</style>
-@stop
+@endsection
 
 @section('js')
 <script>
@@ -224,4 +225,4 @@ $(document).ready(function() {
     });
 });
 </script>
-@stop
+@endsection

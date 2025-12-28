@@ -1,10 +1,36 @@
-@extends('adminlte::page')
+@extends('layouts.pendaftar')
 
 @section('title', 'Finalisasi Pendaftaran')
+@section('page-title', 'Finalisasi Pendaftaran')
 
-@section('content_header')
-    <h1>Finalisasi Pendaftaran</h1>
-@stop
+@section('breadcrumb')
+<li class="breadcrumb-item active">Finalisasi Pendaftaran</li>
+@endsection
+
+@section('css')
+<style>
+    .list-group-item {
+        border-left: 4px solid transparent;
+    }
+    
+    .list-group-item-success {
+        border-left-color: #28a745;
+    }
+    
+    .list-group-item-danger {
+        border-left-color: #dc3545;
+    }
+    
+    .custom-control-label ul {
+        list-style-type: disc;
+        padding-left: 20px;
+    }
+    
+    .info-box-number {
+        font-size: 1.2rem !important;
+    }
+</style>
+@endsection
 
 @section('content')
 <div class="row">
@@ -183,34 +209,10 @@
         @endif
     </div>
 </div>
-@stop
-
-@section('css')
-<style>
-    .list-group-item {
-        border-left: 4px solid transparent;
-    }
-    
-    .list-group-item-success {
-        border-left-color: #28a745;
-    }
-    
-    .list-group-item-danger {
-        border-left-color: #dc3545;
-    }
-    
-    .custom-control-label ul {
-        list-style-type: disc;
-        padding-left: 20px;
-    }
-    
-    .info-box-number {
-        font-size: 1.2rem !important;
-    }
-</style>
-@stop
+@endsection
 
 @section('js')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(document).ready(function() {
     $('#formFinalisasi').on('submit', function(e) {
@@ -293,4 +295,4 @@ $(document).ready(function() {
     }
 });
 </script>
-@stop
+@endsection
