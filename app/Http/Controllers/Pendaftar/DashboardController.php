@@ -797,7 +797,7 @@ class DashboardController extends Controller
 
         // Generate nomor tes (format: PPDB-TAHUN-JALUR-SEQUENCE)
         $tahun = $calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y');
-        $jalurCode = strtoupper(substr($calonSiswa->jalurPendaftaran->nama_jalur ?? 'REG', 0, 3));
+        $jalurCode = strtoupper(substr($calonSiswa->jalurPendaftaran->nama ?? 'REG', 0, 3));
         
         // Get last sequence number for this year and jalur
         $lastNumber = CalonSiswa::where('tahun_pelajaran_id', $calonSiswa->tahun_pelajaran_id)

@@ -15,7 +15,7 @@
                 <h3 class="card-title"><i class="fas fa-info-circle"></i> Informasi</h3>
             </div>
             <div class="card-body">
-                <p><strong>Jalur Pendaftaran:</strong> {{ $jalur->nama_jalur }}</p>
+                <p><strong>Jalur Pendaftaran:</strong> {{ $jalur->nama }}</p>
                 <p><strong>Tipe Pilihan:</strong> 
                     @if($jalur->pilihan_program_tipe === 'reguler_asrama')
                         <span class="badge badge-primary">Reguler / Asrama</span>
