@@ -2,6 +2,10 @@
 
 @section('title', 'Pengaturan PPDB')
 
+@section('css')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+@stop
+
 @section('content_header')
     <div class="row mb-2">
         <div class="col-sm-6">
@@ -213,6 +217,7 @@
 @stop
 
 @section('js')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script>
 $(document).ready(function() {
     // Show success message
