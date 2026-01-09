@@ -14,162 +14,209 @@
             margin: 0;
         }
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', 'Helvetica', sans-serif;
             width: 148mm;
             height: 105mm;
             padding: 0;
             margin: 0;
+            background: #f5f5f5;
         }
         .card {
             width: 148mm;
             height: 105mm;
-            border: 2px solid #333;
-            padding: 8mm;
-            position: relative;
             background: white;
-        }
-        .card-header {
-            text-align: center;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 4mm;
-            margin-bottom: 4mm;
-        }
-        .card-header img {
-            height: 15mm;
-            margin-bottom: 2mm;
-        }
-        .card-header h2 {
-            font-size: 14pt;
-            margin: 1mm 0;
-            color: #007bff;
-        }
-        .card-header h3 {
-            font-size: 11pt;
-            margin: 1mm 0;
-            font-weight: normal;
-        }
-        .card-header .tahun {
-            font-size: 9pt;
-            font-weight: bold;
-            background: #007bff;
-            color: white;
-            padding: 1mm 4mm;
-            display: inline-block;
-            margin-top: 1mm;
+            position: relative;
+            overflow: hidden;
         }
         
-        .card-body {
+        /* Header dengan gradient */
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4mm 6mm;
             display: table;
             width: 100%;
         }
+        .header-logo {
+            display: table-cell;
+            width: 20mm;
+            vertical-align: middle;
+        }
+        .header-logo img {
+            width: 18mm;
+            height: 18mm;
+            object-fit: contain;
+            background: white;
+            border-radius: 2mm;
+            padding: 1mm;
+        }
+        .header-text {
+            display: table-cell;
+            vertical-align: middle;
+            padding-left: 3mm;
+        }
+        .header-text h2 {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-bottom: 1mm;
+            letter-spacing: 0.5px;
+        }
+        .header-text h3 {
+            font-size: 10pt;
+            font-weight: normal;
+            opacity: 0.95;
+        }
+        .tahun-badge {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: right;
+            width: 30mm;
+        }
+        .tahun-badge span {
+            background: rgba(255,255,255,0.25);
+            padding: 2mm 3mm;
+            border-radius: 2mm;
+            font-size: 9pt;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        /* Body */
+        .card-body {
+            padding: 4mm 6mm;
+            display: table;
+            width: 100%;
+        }
+        
+        /* Foto Section */
         .photo-section {
             display: table-cell;
-            width: 30mm;
+            width: 32mm;
             vertical-align: top;
             padding-right: 4mm;
         }
         .photo-box {
-            width: 30mm;
-            height: 40mm;
-            border: 2px solid #333;
+            width: 28mm;
+            height: 38mm;
+            border: 2px solid #e0e0e0;
+            border-radius: 2mm;
+            overflow: hidden;
+            background: #fafafa;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #f8f9fa;
-            overflow: hidden;
         }
         .photo-box img {
-            width: auto;
-            height: auto;
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
-        .photo-box .no-photo {
-            font-size: 8pt;
-            color: #999;
+        .no-photo {
             text-align: center;
+            color: #bbb;
+            font-size: 8pt;
         }
         
+        /* Info Section */
         .info-section {
             display: table-cell;
             vertical-align: top;
         }
-        .info-row {
-            margin-bottom: 2mm;
-            font-size: 9pt;
-        }
-        .info-label {
-            font-weight: bold;
-            color: #555;
-            display: inline-block;
-            width: 35mm;
-        }
-        .info-value {
-            color: #000;
-            font-weight: bold;
-        }
-        .nomor-tes {
-            background: #ffc107;
-            color: #000;
-            padding: 2mm 3mm;
-            font-size: 12pt;
-            font-weight: bold;
-            text-align: center;
-            margin: 2mm 0;
-            border-radius: 2mm;
-            letter-spacing: 1px;
-        }
-        .password-box {
-            background: #dc3545;
+        
+        /* Nomor Tes Badge */
+        .nomor-tes-box {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             color: white;
-            padding: 2mm 3mm;
-            font-size: 10pt;
+            padding: 2mm 0;
             text-align: center;
-            margin: 2mm 0;
             border-radius: 2mm;
+            margin-bottom: 3mm;
         }
-        .password-label {
+        .nomor-tes-label {
             font-size: 7pt;
-            font-weight: normal;
+            opacity: 0.9;
+            margin-bottom: 1mm;
         }
-        .password-value {
-            font-size: 14pt;
+        .nomor-tes-value {
+            font-size: 16pt;
             font-weight: bold;
             letter-spacing: 2px;
         }
         
-        .card-footer {
-            position: absolute;
-            bottom: 8mm;
-            left: 8mm;
-            right: 8mm;
-            border-top: 1px solid #dee2e6;
-            padding-top: 2mm;
-            font-size: 7pt;
+        /* Info Table */
+        .info-table {
+            width: 100%;
+            margin-bottom: 3mm;
+        }
+        .info-table tr {
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .info-table td {
+            padding: 1.5mm 0;
+            font-size: 8pt;
+            line-height: 1.3;
+        }
+        .info-table td:first-child {
+            width: 25mm;
+            color: #666;
+            font-weight: 600;
+        }
+        .info-table td:nth-child(2) {
+            width: 3mm;
             color: #666;
         }
-        .signature-area {
-            float: right;
-            text-align: center;
-            width: 35mm;
-        }
-        .signature-line {
-            border-top: 1px solid #333;
-            margin-top: 8mm;
-            padding-top: 1mm;
+        .info-table td:last-child {
+            color: #000;
+            font-weight: 600;
         }
         
-        .instruction {
-            background: #e7f3ff;
-            border: 1px solid #007bff;
-            padding: 2mm;
-            margin-top: 2mm;
-            font-size: 7pt;
-            color: #004085;
+        /* Password Box */
+        .password-box {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            padding: 2.5mm;
+            border-radius: 2mm;
+            text-align: center;
+            margin-bottom: 2mm;
         }
-        .instruction strong {
-            color: #dc3545;
+        .password-label {
+            font-size: 7pt;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 1mm;
+        }
+        .password-value {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #000;
+            letter-spacing: 3px;
+        }
+        
+        /* Footer */
+        .card-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #f8f9fa;
+            padding: 2mm 6mm;
+            font-size: 7pt;
+            color: #666;
+            border-top: 1px solid #e0e0e0;
+            display: table;
+            width: 100%;
+        }
+        .footer-left {
+            display: table-cell;
+            vertical-align: middle;
+        }
+        .footer-right {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: right;
+        }
+        .footer-note {
+            color: #999;
+            font-style: italic;
         }
     </style>
 </head>
@@ -177,13 +224,17 @@
     <div class="card">
         {{-- Header --}}
         <div class="card-header">
-            @if($sekolah && $sekolah->logo)
-                <img src="{{ $sekolah->logo }}" alt="Logo">
-            @endif
-            <h2>{{ $sekolah->nama_sekolah ?? 'SMK' }}</h2>
-            <h3>KARTU PESERTA UJIAN</h3>
-            <div class="tahun">
-                PPDB {{ $calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y') }}/{{ ($calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y')) + 1 }}
+            <div class="header-logo">
+                @if($sekolah && $sekolah->logo)
+                    <img src="{{ $sekolah->logo }}" alt="Logo">
+                @endif
+            </div>
+            <div class="header-text">
+                <h2>{{ strtoupper($sekolah->nama_sekolah ?? 'SMK') }}</h2>
+                <h3>Kartu Peserta Ujian PPDB</h3>
+            </div>
+            <div class="tahun-badge">
+                <span>{{ $calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y') }}/{{ ($calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y')) + 1 }}</span>
             </div>
         </div>
 
@@ -200,8 +251,8 @@
                         <img src="{{ $fotoPath }}" alt="Foto">
                     @else
                         <div class="no-photo">
-                            <i class="fas fa-user" style="font-size: 20pt; color: #ccc;"></i>
-                            <p>Foto 3x4</p>
+                            <div style="font-size: 24pt; margin-bottom: 2mm;">👤</div>
+                            <div>Pas Foto</div>
                         </div>
                     @endif
                 </div>
@@ -210,59 +261,58 @@
             {{-- Info --}}
             <div class="info-section">
                 {{-- Nomor Tes --}}
-                <div class="nomor-tes">
-                    {{ $calonSiswa->nomor_tes }}
+                <div class="nomor-tes-box">
+                    <div class="nomor-tes-label">NOMOR TES</div>
+                    <div class="nomor-tes-value">{{ $calonSiswa->nomor_tes }}</div>
                 </div>
 
                 {{-- Data Peserta --}}
-                <div class="info-row">
-                    <span class="info-label">NISN</span>
-                    <span class="info-value">: {{ $calonSiswa->nisn }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Nama</span>
-                    <span class="info-value">: {{ strtoupper($calonSiswa->nama_lengkap) }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">TTL</span>
-                    <span class="info-value">: {{ $calonSiswa->tempat_lahir ?? '-' }}, {{ $calonSiswa->tanggal_lahir ? \Carbon\Carbon::parse($calonSiswa->tanggal_lahir)->format('d/m/Y') : '-' }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Jalur</span>
-                    <span class="info-value">: {{ $calonSiswa->jalurPendaftaran->nama ?? '-' }}</span>
-                </div>
-                @if($calonSiswa->pilihan_program)
-                <div class="info-row">
-                    <span class="info-label">Program</span>
-                    <span class="info-value">: {{ $calonSiswa->pilihan_program }}</span>
-                </div>
-                @endif
+                <table class="info-table">
+                    <tr>
+                        <td>NISN</td>
+                        <td>:</td>
+                        <td>{{ $calonSiswa->nisn }}</td>
+                    </tr>
+                    <tr>
+                        <td>Nama Lengkap</td>
+                        <td>:</td>
+                        <td>{{ strtoupper($calonSiswa->nama_lengkap) }}</td>
+                    </tr>
+                    <tr>
+                        <td>Tempat, Tgl Lahir</td>
+                        <td>:</td>
+                        <td>{{ $calonSiswa->tempat_lahir ?? '-' }}, {{ $calonSiswa->tanggal_lahir ? \Carbon\Carbon::parse($calonSiswa->tanggal_lahir)->format('d/m/Y') : '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td>Jalur Pendaftaran</td>
+                        <td>:</td>
+                        <td>{{ $calonSiswa->jalurPendaftaran->nama ?? '-' }}</td>
+                    </tr>
+                    @if($calonSiswa->pilihan_program)
+                    <tr>
+                        <td>Program Keahlian</td>
+                        <td>:</td>
+                        <td>{{ $calonSiswa->pilihan_program }}</td>
+                    </tr>
+                    @endif
+                </table>
 
                 {{-- Password --}}
                 <div class="password-box">
-                    <div class="password-label">PASSWORD LOGIN</div>
+                    <div class="password-label">PASSWORD LOGIN SISTEM</div>
                     <div class="password-value">{{ $password ?? '********' }}</div>
-                </div>
-
-                {{-- Instruction --}}
-                <div class="instruction">
-                    <strong>PENTING:</strong> Bawa kartu ini saat ujian. Password untuk login CBT/Sistem Ujian.
                 </div>
             </div>
         </div>
 
         {{-- Footer --}}
         <div class="card-footer">
-            <div style="float: left;">
-                Dicetak: {{ \Carbon\Carbon::now()->format('d/m/Y H:i') }}
+            <div class="footer-left">
+                <strong>Penting:</strong> Bawa kartu ini saat ujian
             </div>
-            <div class="signature-area">
-                <div>Panitia PPDB</div>
-                <div class="signature-line">
-                    ( ................... )
-                </div>
+            <div class="footer-right">
+                <span class="footer-note">Dicetak: {{ \Carbon\Carbon::now()->format('d/m/Y H:i') }}</span>
             </div>
-            <div style="clear: both;"></div>
         </div>
     </div>
 </body>
