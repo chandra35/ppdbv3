@@ -151,7 +151,10 @@
                                 @endif
                             </td>
                             <td>
-                                {{ $gelombang->tanggal_buka->format('d/m/Y') }} - {{ $gelombang->tanggal_tutup->format('d/m/Y') }}
+                                {{ $gelombang->tanggal_buka->format('d/m/Y') }} 
+                                <small class="text-muted">{{ $gelombang->waktu_buka ? substr($gelombang->waktu_buka, 0, 5) : '00:00' }}</small>
+                                - {{ $gelombang->tanggal_tutup->format('d/m/Y') }}
+                                <small class="text-muted">{{ $gelombang->waktu_tutup ? substr($gelombang->waktu_tutup, 0, 5) : '23:59' }}</small>
                                 @if($gelombang->status == 'open')
                                 <br><small class="text-success"><i class="fas fa-clock"></i> {{ $gelombang->sisa_hari }} hari lagi</small>
                                 @endif
@@ -172,7 +175,9 @@
                                         data-nama="{{ $gelombang->nama }}"
                                         data-deskripsi="{{ $gelombang->deskripsi }}"
                                         data-tanggal_buka="{{ $gelombang->tanggal_buka->format('Y-m-d') }}"
+                                        data-waktu_buka="{{ $gelombang->waktu_buka ? substr($gelombang->waktu_buka, 0, 5) : '00:00' }}"
                                         data-tanggal_tutup="{{ $gelombang->tanggal_tutup->format('Y-m-d') }}"
+                                        data-waktu_tutup="{{ $gelombang->waktu_tutup ? substr($gelombang->waktu_tutup, 0, 5) : '23:59' }}"
                                         data-kuota="{{ $gelombang->kuota }}"
                                         data-biaya_pendaftaran="{{ $gelombang->biaya_pendaftaran }}"
                                         data-tampil_nama_gelombang="{{ $gelombang->tampil_nama_gelombang ? '1' : '0' }}"
@@ -339,6 +344,15 @@
                     </button>
                 </div>
                 <div class="modal-body">
+                    {{-- Info Referensi Tanggal Jalur --}}
+                    @if($jalur->tanggal_buka && $jalur->tanggal_tutup)
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        <strong>Referensi Tanggal Jalur:</strong>
+                        {{ $jalur->tanggal_buka->format('d/m/Y') }} - {{ $jalur->tanggal_tutup->format('d/m/Y') }}
+                    </div>
+                    @endif
+                    
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
@@ -359,13 +373,31 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="tanggal_buka">Tanggal Buka <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control" id="tanggal_buka" name="tanggal_buka" required>
+                                <input type="date" class="form-control" id="tanggal_buka" name="tanggal_buka" required
+                                    min="{{ $jalur->tanggal_buka ? $jalur->tanggal_buka->format('Y-m-d') : '' }}"
+                                    max="{{ $jalur->tanggal_tutup ? $jalur->tanggal_tutup->format('Y-m-d') : '' }}">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
+                                <label for="waktu_buka">Waktu Buka</label>
+                                <input type="time" class="form-control" id="waktu_buka" name="waktu_buka" value="00:00">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
                                 <label for="tanggal_tutup">Tanggal Tutup <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control" id="tanggal_tutup" name="tanggal_tutup" required>
+                                <input type="date" class="form-control" id="tanggal_tutup" name="tanggal_tutup" required
+                                    min="{{ $jalur->tanggal_buka ? $jalur->tanggal_buka->format('Y-m-d') : '' }}"
+                                    max="{{ $jalur->tanggal_tutup ? $jalur->tanggal_tutup->format('Y-m-d') : '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="waktu_tutup">Waktu Tutup</label>
+                                <input type="time" class="form-control" id="waktu_tutup" name="waktu_tutup" value="23:59">
                             </div>
                         </div>
                     </div>
@@ -410,6 +442,15 @@
                     </button>
                 </div>
                 <div class="modal-body">
+                    {{-- Info Referensi Tanggal Jalur --}}
+                    @if($jalur->tanggal_buka && $jalur->tanggal_tutup)
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        <strong>Referensi Tanggal Jalur:</strong>
+                        {{ $jalur->tanggal_buka->format('d/m/Y') }} - {{ $jalur->tanggal_tutup->format('d/m/Y') }}
+                    </div>
+                    @endif
+                    
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
@@ -429,13 +470,31 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="edit_tanggal_buka">Tanggal Buka <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control" id="edit_tanggal_buka" name="tanggal_buka" required>
+                                <input type="date" class="form-control" id="edit_tanggal_buka" name="tanggal_buka" required
+                                    min="{{ $jalur->tanggal_buka ? $jalur->tanggal_buka->format('Y-m-d') : '' }}"
+                                    max="{{ $jalur->tanggal_tutup ? $jalur->tanggal_tutup->format('Y-m-d') : '' }}">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
+                                <label for="edit_waktu_buka">Waktu Buka</label>
+                                <input type="time" class="form-control" id="edit_waktu_buka" name="waktu_buka">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
                                 <label for="edit_tanggal_tutup">Tanggal Tutup <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control" id="edit_tanggal_tutup" name="tanggal_tutup" required>
+                                <input type="date" class="form-control" id="edit_tanggal_tutup" name="tanggal_tutup" required
+                                    min="{{ $jalur->tanggal_buka ? $jalur->tanggal_buka->format('Y-m-d') : '' }}"
+                                    max="{{ $jalur->tanggal_tutup ? $jalur->tanggal_tutup->format('Y-m-d') : '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_waktu_tutup">Waktu Tutup</label>
+                                <input type="time" class="form-control" id="edit_waktu_tutup" name="waktu_tutup">
                             </div>
                         </div>
                     </div>
@@ -494,11 +553,20 @@ $(function() {
         $('#edit_nama').val($(this).data('nama'));
         $('#edit_deskripsi').val($(this).data('deskripsi'));
         $('#edit_tanggal_buka').val($(this).data('tanggal_buka'));
+        $('#edit_waktu_buka').val($(this).data('waktu_buka') || '00:00');
         $('#edit_tanggal_tutup').val($(this).data('tanggal_tutup'));
+        $('#edit_waktu_tutup').val($(this).data('waktu_tutup') || '23:59');
         $('#edit_kuota').val($(this).data('kuota') || '');
         $('#edit_biaya_pendaftaran').val($(this).data('biaya_pendaftaran') || 0);
         $('#edit_tampil_nama_gelombang').prop('checked', $(this).data('tampil_nama_gelombang') == '1');
         $('#edit_tampil_kuota').prop('checked', $(this).data('tampil_kuota') == '1');
+    });
+    
+    // Validasi tanggal_tutup >= tanggal_buka
+    $('#tanggal_buka, #edit_tanggal_buka').on('change', function() {
+        var prefix = $(this).attr('id').includes('edit_') ? 'edit_' : '';
+        var tanggalBuka = $('#' + prefix + 'tanggal_buka').val();
+        $('#' + prefix + 'tanggal_tutup').attr('min', tanggalBuka);
     });
 });
 </script>

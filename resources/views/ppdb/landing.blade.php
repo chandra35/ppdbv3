@@ -96,6 +96,122 @@
             transform: translateY(-3px);
         }
         
+        /* Countdown Styles */
+        .countdown-wrapper {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .countdown-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        
+        .countdown-status.upcoming {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            animation: pulse 2s infinite;
+        }
+        
+        .countdown-status.open {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        
+        .countdown-status.closed {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+            50% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+        }
+        
+        .countdown-timer {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .countdown-box {
+            min-width: 85px;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1rem 0.75rem;
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .countdown-box:hover {
+            transform: translateY(-3px);
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .countdown-value {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .countdown-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            opacity: 0.85;
+            margin-top: 0.5rem;
+        }
+        
+        .countdown-separator {
+            font-size: 2rem;
+            font-weight: 700;
+            opacity: 0.5;
+            align-self: center;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.2; }
+        }
+        
+        .countdown-info {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .countdown-info-item {
+            text-align: center;
+        }
+        
+        .countdown-info-item i {
+            font-size: 1.2rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .countdown-info-item small {
+            display: block;
+            opacity: 0.8;
+            font-size: 0.75rem;
+        }
+        
         /* Cards */
         .card {
             border: none;
@@ -391,7 +507,85 @@
                         $jalurDenganGelombang = $jalurAktif->filter(fn($j) => $j->gelombang->isNotEmpty());
                     @endphp
                     
-                    {{-- Main CTA Cards --}}
+                    {{-- Status Pendaftaran dengan Countdown --}}
+                    @if($gelombangAktif)
+                    <div class="countdown-wrapper text-white text-center mb-4">
+                        {{-- Status Badge --}}
+                        <div class="countdown-status {{ $statusPendaftaran }}">
+                            @if($statusPendaftaran == 'upcoming')
+                                <i class="fas fa-hourglass-half"></i>
+                                <span>Pendaftaran Segera Dibuka</span>
+                            @elseif($statusPendaftaran == 'open')
+                                <i class="fas fa-door-open"></i>
+                                <span>Pendaftaran Sedang Berlangsung</span>
+                            @else
+                                <i class="fas fa-door-closed"></i>
+                                <span>Pendaftaran Telah Ditutup</span>
+                            @endif
+                        </div>
+                        
+                        {{-- Countdown Title --}}
+                        @if($countdownTarget)
+                        <p class="mb-3 opacity-90">
+                            @if($statusPendaftaran == 'upcoming')
+                                <i class="fas fa-clock me-1"></i> Pendaftaran akan dibuka dalam:
+                            @else
+                                <i class="fas fa-stopwatch me-1"></i> Pendaftaran akan ditutup dalam:
+                            @endif
+                        </p>
+                        
+                        {{-- Countdown Timer --}}
+                        <div id="countdown" class="countdown-timer" data-target="{{ $countdownTarget->format('Y-m-d H:i:s') }}">
+                            <div class="countdown-box">
+                                <div class="countdown-value" id="days">00</div>
+                                <div class="countdown-label">Hari</div>
+                            </div>
+                            <span class="countdown-separator d-none d-sm-block">:</span>
+                            <div class="countdown-box">
+                                <div class="countdown-value" id="hours">00</div>
+                                <div class="countdown-label">Jam</div>
+                            </div>
+                            <span class="countdown-separator d-none d-sm-block">:</span>
+                            <div class="countdown-box">
+                                <div class="countdown-value" id="minutes">00</div>
+                                <div class="countdown-label">Menit</div>
+                            </div>
+                            <span class="countdown-separator d-none d-sm-block">:</span>
+                            <div class="countdown-box">
+                                <div class="countdown-value" id="seconds">00</div>
+                                <div class="countdown-label">Detik</div>
+                            </div>
+                        </div>
+                        @endif
+                        
+                        {{-- Info Pendaftaran - Hanya tampil sesuai pengaturan --}}
+                        @if(($gelombangAktif->jalur && $gelombangAktif->jalur->tampil_di_publik) || $gelombangAktif->tampil_nama_gelombang || $gelombangAktif->tampil_kuota)
+                        <div class="countdown-info">
+                            @if($gelombangAktif->jalur && $gelombangAktif->jalur->tampil_di_publik)
+                            <div class="countdown-info-item">
+                                <i class="fas fa-route"></i>
+                                <small>Jalur: <strong>{{ $gelombangAktif->jalur->nama }}</strong></small>
+                            </div>
+                            @endif
+                            @if($gelombangAktif->tampil_nama_gelombang)
+                            <div class="countdown-info-item">
+                                <i class="fas fa-calendar-alt"></i>
+                                <small>Periode: <strong>{{ $gelombangAktif->tanggal_buka->format('d M') }} - {{ $gelombangAktif->tanggal_tutup->format('d M Y') }}</strong></small>
+                            </div>
+                            @endif
+                            @if($gelombangAktif->tampil_kuota && $gelombangAktif->kuota)
+                            <div class="countdown-info-item">
+                                <i class="fas fa-users"></i>
+                                <small>Kuota: <strong>{{ $gelombangAktif->kuota - $gelombangAktif->kuota_terisi }} tersisa</strong></small>
+                            </div>
+                            @endif
+                        </div>
+                        @endif
+                    </div>
+                    @endif
+                    
+                    {{-- Main CTA Cards - Hanya tampil jika pendaftaran dibuka --}}
+                    @if($statusPendaftaran == 'open')
                     <div class="row justify-content-center g-3 mb-4">
                         {{-- Card Daftar Baru --}}
                         <div class="col-sm-6 col-md-5 col-lg-4">
@@ -402,15 +596,9 @@
                                     </div>
                                     <h5 class="fw-bold mb-2">Pendaftaran Baru</h5>
                                     <p class="text-muted small mb-3">Belum punya akun? Daftar di sini untuk memulai pendaftaran PPDB</p>
-                                    @if($jalurDenganGelombang->isNotEmpty() || ($ppdbSettings && $ppdbSettings->status_pendaftaran))
                                     <a href="{{ route('pendaftar.landing') }}" class="btn btn-primary w-100">
                                         <i class="fas fa-arrow-right me-2"></i> Daftar Sekarang
                                     </a>
-                                    @else
-                                    <button class="btn btn-secondary w-100" disabled>
-                                        <i class="fas fa-clock me-2"></i> Belum Dibuka
-                                    </button>
-                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -431,6 +619,7 @@
                             </div>
                         </div>
                     </div>
+                    @endif
                     
                     {{-- Info Badge --}}
                     <div class="d-flex flex-wrap justify-content-center gap-2">
@@ -553,13 +742,17 @@
                         </div>
                         
                         <div class="card-footer bg-transparent border-0 pt-0 pb-3">
-                            @if($jalur->gelombang->isNotEmpty())
-                            <a href="{{ route('pendaftar.landing') }}" class="btn w-100 py-2" style="background: {{ $jalur->warna ?? '#007bff' }}; color: white;">>
+                            @if($statusPendaftaran == 'open' && $jalur->gelombang->isNotEmpty())
+                            <a href="{{ route('pendaftar.landing') }}" class="btn w-100 py-2" style="background: {{ $jalur->warna ?? '#007bff' }}; color: white;">
                                 <i class="fas fa-arrow-right me-2"></i> Daftar Sekarang
                             </a>
+                            @elseif($statusPendaftaran == 'upcoming')
+                            <button class="btn btn-outline-warning w-100 py-2" disabled>
+                                <i class="fas fa-clock me-1"></i> Segera Dibuka
+                            </button>
                             @else
                             <button class="btn btn-outline-secondary w-100 py-2" disabled>
-                                <i class="fas fa-clock me-1"></i> Menunggu Dibuka
+                                <i class="fas fa-times-circle me-1"></i> Pendaftaran Ditutup
                             </button>
                             @endif
                         </div>
@@ -928,6 +1121,35 @@
                 @endif
             `).openPopup();
         });
+        @endif
+        
+        // Countdown Timer
+        @if($countdownTarget)
+        function updateCountdown() {
+            const target = new Date("{{ $countdownTarget->format('Y-m-d H:i:s') }}").getTime();
+            const now = new Date().getTime();
+            const distance = target - now;
+            
+            if (distance < 0) {
+                // Countdown selesai, reload halaman
+                location.reload();
+                return;
+            }
+            
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            
+            document.getElementById('days').textContent = String(days).padStart(2, '0');
+            document.getElementById('hours').textContent = String(hours).padStart(2, '0');
+            document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
+            document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
+        }
+        
+        // Update countdown setiap detik
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
         @endif
     </script>
 </body>

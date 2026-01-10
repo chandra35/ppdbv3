@@ -22,6 +22,24 @@
             <i class="fas fa-check-circle mr-1"></i> {{ session('success') }}
         </div>
     @endif
+    
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show">
+            <button type="button" class="close" data-dismiss="alert">&times;</button>
+            <i class="fas fa-exclamation-circle mr-1"></i> {{ session('error') }}
+        </div>
+    @endif
+    
+    @if($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show">
+            <button type="button" class="close" data-dismiss="alert">&times;</button>
+            <ul class="mb-0">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
     <div class="card">
         <div class="card-header">
@@ -36,7 +54,8 @@
                 <table class="table table-hover mb-0">
                     <thead class="thead-light">
                         <tr>
-                            <th width="60" class="text-center">No</th>
+                            <th width="40" class="text-center"></th>
+                            <th width="50" class="text-center">No</th>
                             <th width="60" class="text-center">Icon</th>
                             <th>Judul</th>
                             <th>Deskripsi</th>
@@ -47,8 +66,11 @@
                     <tbody id="sortable-alur">
                         @foreach($alurs as $alur)
                         <tr data-id="{{ $alur->id }}">
+                            <td class="text-center drag-handle" style="cursor: grab;">
+                                <i class="fas fa-grip-vertical text-muted"></i>
+                            </td>
                             <td class="text-center">
-                                <span class="badge badge-primary">{{ $alur->urutan }}</span>
+                                <span class="badge badge-primary urutan-badge">{{ $alur->urutan }}</span>
                             </td>
                             <td class="text-center">
                                 <i class="{{ $alur->icon }} fa-lg text-primary"></i>
@@ -98,8 +120,8 @@
         @if($alurs->count() > 1)
         <div class="card-footer">
             <small class="text-muted">
-                <i class="fas fa-info-circle mr-1"></i> 
-                Drag & drop baris untuk mengubah urutan (coming soon)
+                <i class="fas fa-grip-vertical mr-1"></i> 
+                Drag & drop baris menggunakan handle <i class="fas fa-grip-vertical"></i> untuk mengubah urutan
             </small>
         </div>
         @endif
@@ -239,17 +261,86 @@
 @stop
 
 @section('js')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
     $(function () {
         $('[data-toggle="tooltip"]').tooltip();
+        
+        // Initialize SortableJS
+        var sortableEl = document.getElementById('sortable-alur');
+        if (sortableEl) {
+            var sortable = Sortable.create(sortableEl, {
+                handle: '.drag-handle',
+                animation: 150,
+                ghostClass: 'bg-light',
+                chosenClass: 'bg-info',
+                dragClass: 'shadow',
+                onEnd: function(evt) {
+                    updateOrder();
+                }
+            });
+        }
     });
+    
+    function updateOrder() {
+        var order = [];
+        document.querySelectorAll('#sortable-alur tr').forEach(function(row, index) {
+            order.push(row.dataset.id);
+            // Update nomor urutan di badge
+            row.querySelector('.urutan-badge').textContent = index + 1;
+        });
+        
+        // Kirim ke server
+        fetch('{{ route("admin.settings.alur-pendaftaran.update-order") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ order: order })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Toast notification
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Urutan berhasil diperbarui',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    timerProgressBar: true
+                });
+            } else {
+                Swal.fire('Error', data.message || 'Gagal menyimpan urutan', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire('Error', 'Terjadi kesalahan saat menyimpan urutan', 'error');
+        });
+    }
 
     function confirmDelete(id, judul) {
-        if (confirm('Yakin ingin menghapus alur "' + judul + '"?')) {
-            const form = document.getElementById('deleteForm');
-            form.action = '{{ route("admin.settings.alur-pendaftaran.index") }}/' + id;
-            form.submit();
-        }
+        Swal.fire({
+            title: 'Hapus Alur Pendaftaran?',
+            html: 'Anda yakin ingin menghapus alur <strong>"' + judul + '"</strong>?<br><small class="text-muted">Tindakan ini tidak dapat dibatalkan.</small>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-trash mr-1"></i> Ya, Hapus!',
+            cancelButtonText: '<i class="fas fa-times mr-1"></i> Batal',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.getElementById('deleteForm');
+                form.action = '{{ route("admin.settings.alur-pendaftaran.index") }}/' + id;
+                form.submit();
+            }
+        });
     }
 
     // Icon preview on select change

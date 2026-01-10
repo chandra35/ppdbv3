@@ -39,6 +39,37 @@ class LandingController extends Controller
             ->orderBy('urutan')
             ->get();
         
+        // Get gelombang aktif untuk countdown
+        $gelombangAktif = \App\Models\GelombangPendaftaran::with('jalur')
+            ->where('is_active', true)
+            ->whereIn('status', ['open', 'upcoming'])
+            ->orderBy('tanggal_buka', 'asc')
+            ->first();
+        
+        // Tentukan status pendaftaran berdasarkan tanggal dan waktu
+        $now = now();
+        $statusPendaftaran = null;
+        $countdownTarget = null;
+        
+        if ($gelombangAktif) {
+            // Kombinasi tanggal dan waktu
+            $tanggalBuka = $gelombangAktif->tanggal_buka->format('Y-m-d') . ' ' . ($gelombangAktif->waktu_buka ?? '00:00:00');
+            $tanggalTutup = $gelombangAktif->tanggal_tutup->format('Y-m-d') . ' ' . ($gelombangAktif->waktu_tutup ?? '23:59:59');
+            
+            $waktuBuka = \Carbon\Carbon::parse($tanggalBuka);
+            $waktuTutup = \Carbon\Carbon::parse($tanggalTutup);
+            
+            if ($now->lt($waktuBuka)) {
+                $statusPendaftaran = 'upcoming'; // Belum dibuka
+                $countdownTarget = $waktuBuka;
+            } elseif ($now->between($waktuBuka, $waktuTutup)) {
+                $statusPendaftaran = 'open'; // Sedang dibuka
+                $countdownTarget = $waktuTutup;
+            } else {
+                $statusPendaftaran = 'closed'; // Sudah ditutup
+            }
+        }
+        
         // Get active sliders
         $sliders = Slider::active()->ordered()->get();
         
@@ -59,6 +90,9 @@ class LandingController extends Controller
             'ppdbSettings',
             'sekolahSettings',
             'jalurAktif',
+            'gelombangAktif',
+            'statusPendaftaran',
+            'countdownTarget',
             'sliders',
             'beritas',
             'featuredBeritas',

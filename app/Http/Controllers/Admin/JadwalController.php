@@ -26,7 +26,9 @@ class JadwalController extends Controller
         $validated = $request->validate([
             'nama_kegiatan' => 'required|string|max:255',
             'tanggal_mulai' => 'required|date',
+            'waktu_mulai' => 'nullable|date_format:H:i',
             'tanggal_selesai' => 'nullable|date|after_or_equal:tanggal_mulai',
+            'waktu_selesai' => 'nullable|date_format:H:i',
             'keterangan' => 'nullable|string',
             'warna' => 'nullable|string|max:20',
             'urutan' => 'required|integer|min:0',
@@ -53,7 +55,9 @@ class JadwalController extends Controller
         $validated = $request->validate([
             'nama_kegiatan' => 'required|string|max:255',
             'tanggal_mulai' => 'required|date',
+            'waktu_mulai' => 'nullable|date_format:H:i',
             'tanggal_selesai' => 'nullable|date|after_or_equal:tanggal_mulai',
+            'waktu_selesai' => 'nullable|date_format:H:i',
             'keterangan' => 'nullable|string',
             'warna' => 'nullable|string|max:20',
             'urutan' => 'required|integer|min:0',

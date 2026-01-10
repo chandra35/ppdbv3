@@ -309,13 +309,17 @@ class JalurPendaftaranController extends Controller
             'nama' => 'required|string|max:100',
             'deskripsi' => 'nullable|string',
             'tanggal_buka' => 'required|date',
+            'waktu_buka' => 'nullable|date_format:H:i',
             'tanggal_tutup' => 'required|date|after_or_equal:tanggal_buka',
+            'waktu_tutup' => 'nullable|date_format:H:i',
             'kuota' => 'nullable|integer|min:1',
             'biaya_pendaftaran' => 'nullable|numeric|min:0',
             'is_active' => 'boolean',
         ]);
 
         $validated['jalur_id'] = $jalur->id;
+        $validated['waktu_buka'] = $validated['waktu_buka'] ?? '00:00:00';
+        $validated['waktu_tutup'] = $validated['waktu_tutup'] ?? '23:59:59';
         $validated['is_active'] = $request->has('is_active');
         $validated['status'] = $validated['is_active'] ? GelombangPendaftaran::STATUS_OPEN : GelombangPendaftaran::STATUS_DRAFT;
         $validated['urutan'] = $jalur->gelombang()->max('urutan') + 1;
@@ -337,13 +341,17 @@ class JalurPendaftaranController extends Controller
             'nama' => 'required|string|max:100',
             'deskripsi' => 'nullable|string',
             'tanggal_buka' => 'required|date',
+            'waktu_buka' => 'nullable|date_format:H:i',
             'tanggal_tutup' => 'required|date|after_or_equal:tanggal_buka',
+            'waktu_tutup' => 'nullable|date_format:H:i',
             'kuota' => 'nullable|integer|min:1',
             'biaya_pendaftaran' => 'nullable|numeric|min:0',
             'tampil_nama_gelombang' => 'boolean',
             'tampil_kuota' => 'boolean',
         ]);
 
+        $validated['waktu_buka'] = $validated['waktu_buka'] ?? '00:00:00';
+        $validated['waktu_tutup'] = $validated['waktu_tutup'] ?? '23:59:59';
         $validated['tampil_nama_gelombang'] = $request->has('tampil_nama_gelombang');
         $validated['tampil_kuota'] = $request->has('tampil_kuota');
 

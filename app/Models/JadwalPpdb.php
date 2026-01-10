@@ -14,7 +14,9 @@ class JadwalPpdb extends Model
     protected $fillable = [
         'nama_kegiatan',
         'tanggal_mulai',
+        'waktu_mulai',
         'tanggal_selesai',
+        'waktu_selesai',
         'keterangan',
         'warna',
         'urutan',

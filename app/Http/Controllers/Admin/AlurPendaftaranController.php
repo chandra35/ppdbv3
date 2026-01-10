@@ -28,16 +28,15 @@ class AlurPendaftaranController extends Controller
             'judul' => 'required|string|max:255',
             'deskripsi' => 'nullable|string|max:500',
             'icon' => 'nullable|string|max:100',
-            'is_active' => 'boolean',
         ]);
 
         $validated['urutan'] = AlurPendaftaran::getNextUrutan();
-        $validated['is_active'] = $request->has('is_active');
+        $validated['is_active'] = $request->boolean('is_active');
         $validated['icon'] = $validated['icon'] ?: 'fas fa-circle';
 
         AlurPendaftaran::create($validated);
 
-        return redirect()->route('admin.alur-pendaftaran.index')
+        return redirect()->route('admin.settings.alur-pendaftaran.index')
             ->with('success', 'Alur pendaftaran berhasil ditambahkan');
     }
 
@@ -50,15 +49,14 @@ class AlurPendaftaranController extends Controller
             'judul' => 'required|string|max:255',
             'deskripsi' => 'nullable|string|max:500',
             'icon' => 'nullable|string|max:100',
-            'is_active' => 'boolean',
         ]);
 
-        $validated['is_active'] = $request->has('is_active');
+        $validated['is_active'] = $request->boolean('is_active');
         $validated['icon'] = $validated['icon'] ?: 'fas fa-circle';
 
         $alurPendaftaran->update($validated);
 
-        return redirect()->route('admin.alur-pendaftaran.index')
+        return redirect()->route('admin.settings.alur-pendaftaran.index')
             ->with('success', 'Alur pendaftaran berhasil diperbarui');
     }
 
@@ -75,7 +73,7 @@ class AlurPendaftaranController extends Controller
             $alur->update(['urutan' => $index + 1]);
         }
 
-        return redirect()->route('admin.alur-pendaftaran.index')
+        return redirect()->route('admin.settings.alur-pendaftaran.index')
             ->with('success', 'Alur pendaftaran berhasil dihapus');
     }
 
@@ -103,7 +101,7 @@ class AlurPendaftaranController extends Controller
     {
         $alurPendaftaran->update(['is_active' => !$alurPendaftaran->is_active]);
 
-        return redirect()->route('admin.alur-pendaftaran.index')
+        return redirect()->route('admin.settings.alur-pendaftaran.index')
             ->with('success', 'Status alur pendaftaran berhasil diubah');
     }
 }

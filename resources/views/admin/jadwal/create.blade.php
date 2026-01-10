@@ -49,6 +49,19 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
+                                    <label for="waktu_mulai">Waktu Mulai</label>
+                                    <input type="time" name="waktu_mulai" id="waktu_mulai" 
+                                           class="form-control @error('waktu_mulai') is-invalid @enderror" 
+                                           value="{{ old('waktu_mulai', '00:00') }}">
+                                    @error('waktu_mulai')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
                                     <label for="tanggal_selesai">Tanggal Selesai</label>
                                     <input type="date" name="tanggal_selesai" id="tanggal_selesai" 
                                            class="form-control @error('tanggal_selesai') is-invalid @enderror" 
@@ -57,6 +70,17 @@
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                     <small class="text-muted">Kosongkan jika hanya 1 hari</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="waktu_selesai">Waktu Selesai</label>
+                                    <input type="time" name="waktu_selesai" id="waktu_selesai" 
+                                           class="form-control @error('waktu_selesai') is-invalid @enderror" 
+                                           value="{{ old('waktu_selesai', '23:59') }}">
+                                    @error('waktu_selesai')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
                             </div>
                         </div>
