@@ -85,6 +85,23 @@ class RoleSeeder extends Seeder
             ]
         );
 
+        // Create Pengunjung Role (for public visitors/guests)
+        Role::firstOrCreate(
+            ['name' => 'pengunjung'],
+            [
+                'display_name' => 'Pengunjung',
+                'description' => 'Pengunjung website (akses publik terbatas)',
+                'permissions' => [
+                    'public.view',
+                    'public.info-ppdb',
+                    'public.berita',
+                    'public.pengumuman',
+                    'public.kontak',
+                ],
+                'is_system' => true,
+            ]
+        );
+
         // Assign admin role to admin user
         $adminUser = User::where('email', 'admin@ppdb.local')->first();
         if ($adminUser) {

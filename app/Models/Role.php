@@ -109,6 +109,13 @@ class Role extends Model
                 'logs.view' => 'Lihat Activity Log',
                 'logs.clear' => 'Hapus Activity Log',
             ],
+            'public' => [
+                'public.view' => 'Lihat Halaman Publik',
+                'public.info-ppdb' => 'Lihat Informasi PPDB',
+                'public.berita' => 'Lihat Berita',
+                'public.pengumuman' => 'Lihat Pengumuman',
+                'public.kontak' => 'Lihat Kontak',
+            ],
         ];
     }
 }
