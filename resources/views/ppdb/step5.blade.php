@@ -177,8 +177,25 @@
         </div>
 
         {{-- Konfirmasi --}}
-        <form method="POST" action="{{ route('ppdb.register.step5.confirm') }}">
+        <form method="POST" action="{{ route('ppdb.register.step5.confirm') }}" id="registrationForm">
             @csrf
+            
+            {{-- Hidden GPS Fields --}}
+            <input type="hidden" name="registration_latitude" id="registration_latitude">
+            <input type="hidden" name="registration_longitude" id="registration_longitude">
+            <input type="hidden" name="registration_altitude" id="registration_altitude">
+            <input type="hidden" name="registration_accuracy" id="registration_accuracy">
+            
+            {{-- Location Status --}}
+            <div id="locationStatus" style="background: #e3f2fd; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; display: none;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fas fa-map-marker-alt" style="color: #1976d2; font-size: 1.5rem;"></i>
+                    <div>
+                        <div style="font-weight: 600; color: #1976d2;">Lokasi Pendaftaran</div>
+                        <small id="locationText" style="color: #666;">Mendeteksi lokasi...</small>
+                    </div>
+                </div>
+            </div>
             
             <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; border: 2px solid #667eea;">
                 <div class="form-group" style="margin-bottom: 0;">
@@ -197,7 +214,7 @@
                 <a href="{{ route('ppdb.register.step4') }}" class="btn btn-secondary" style="flex: 1; text-align: center;">
                     <i class="fas fa-arrow-left"></i> Kembali
                 </a>
-                <button type="submit" class="btn btn-success" style="flex: 2; font-size: 1.1rem;">
+                <button type="submit" class="btn btn-success" style="flex: 2; font-size: 1.1rem;" id="submitBtn">
                     <i class="fas fa-paper-plane"></i> Kirim Pendaftaran
                 </button>
             </div>
@@ -216,4 +233,48 @@
     background: linear-gradient(135deg, #218838 0%, #1ba87e 100%);
 }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const locationStatus = document.getElementById('locationStatus');
+    const locationText = document.getElementById('locationText');
+    
+    // Try to get GPS location
+    if (navigator.geolocation) {
+        locationStatus.style.display = 'block';
+        locationText.textContent = 'Mendeteksi lokasi GPS...';
+        
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                // Success - fill hidden fields
+                document.getElementById('registration_latitude').value = position.coords.latitude;
+                document.getElementById('registration_longitude').value = position.coords.longitude;
+                document.getElementById('registration_altitude').value = position.coords.altitude || '';
+                document.getElementById('registration_accuracy').value = position.coords.accuracy || '';
+                
+                // Update status
+                const accuracy = Math.round(position.coords.accuracy);
+                locationText.innerHTML = `
+                    <span style="color: #28a745;"><i class="fas fa-check-circle"></i> Lokasi berhasil dideteksi</span><br>
+                    <small>Koordinat: ${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)} (±${accuracy}m)</small>
+                `;
+                locationStatus.style.background = '#d4edda';
+            },
+            function(error) {
+                // Failed - show warning but allow to continue
+                locationText.innerHTML = `
+                    <span style="color: #856404;"><i class="fas fa-exclamation-triangle"></i> Lokasi tidak tersedia</span><br>
+                    <small>Pendaftaran tetap dapat dilanjutkan tanpa data lokasi.</small>
+                `;
+                locationStatus.style.background = '#fff3cd';
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
+    }
+});
+</script>
 @endsection

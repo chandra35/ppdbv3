@@ -69,6 +69,11 @@ class BeritaController extends Controller
         $validated['slug'] = Str::slug($validated['judul']) . '-' . time();
         $validated['is_featured'] = $request->boolean('is_featured');
         $validated['penulis'] = $validated['penulis'] ?? auth()->user()->name;
+        
+        // Set default kategori if empty
+        if (empty($validated['kategori'])) {
+            $validated['kategori'] = 'umum';
+        }
 
         // Handle image upload
         if ($request->hasFile('gambar')) {
@@ -134,6 +139,11 @@ class BeritaController extends Controller
         ]);
 
         $validated['is_featured'] = $request->boolean('is_featured');
+        
+        // Set default kategori if empty
+        if (empty($validated['kategori'])) {
+            $validated['kategori'] = 'umum';
+        }
 
         // Handle image upload
         if ($request->hasFile('gambar')) {

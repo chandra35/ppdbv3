@@ -9,11 +9,13 @@ use App\Models\CalonDokumen;
 use App\Models\JalurPendaftaran;
 use App\Models\GelombangPendaftaran;
 use App\Models\User;
+use App\Models\VisitorLog;
 use App\Services\EmisNisnService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Laravolt\Indonesia\Models\Province;
 use Laravolt\Indonesia\Models\City;
 use Laravolt\Indonesia\Models\District;
@@ -433,7 +435,14 @@ class RegisterController extends Controller
             return redirect()->route('ppdb.register.step1')->with('warning', 'Silahkan mulai dari step 1.');
         }
 
-        $request->validate(['agree' => 'required|accepted']);
+        $request->validate([
+            'agree' => 'required|accepted',
+            // GPS data (optional)
+            'registration_latitude' => 'nullable|numeric|between:-90,90',
+            'registration_longitude' => 'nullable|numeric|between:-180,180',
+            'registration_altitude' => 'nullable|numeric',
+            'registration_accuracy' => 'nullable|numeric',
+        ]);
 
         $validasi = $this->validateRegistrasiDibuka();
         
@@ -459,6 +468,25 @@ class RegisterController extends Controller
             // 2. Create CalonSiswa
             $dataDiri = session('ppdb_data_diri');
             
+            // Get GPS address via reverse geocoding if coordinates provided
+            $gpsAddress = null;
+            $gpsCity = null;
+            $gpsRegion = null;
+            
+            if ($request->filled('registration_latitude') && $request->filled('registration_longitude')) {
+                $geoResult = $this->reverseGeocode($request->registration_latitude, $request->registration_longitude);
+                if ($geoResult) {
+                    $gpsAddress = $geoResult['address'] ?? null;
+                    $gpsCity = $geoResult['city'] ?? null;
+                    $gpsRegion = $geoResult['region'] ?? null;
+                }
+            }
+            
+            // Parse user agent for device info
+            $userAgent = $request->header('User-Agent');
+            $deviceType = $this->getDeviceType($userAgent);
+            $browser = $this->getBrowserName($userAgent);
+            
             $calonSiswa = CalonSiswa::create([
                 'id' => Uuid::uuid4()->toString(),
                 'user_id' => $user->id,
@@ -469,6 +497,7 @@ class RegisterController extends Controller
                 'email' => session('ppdb_email'),
                 'status_verifikasi' => 'pending',
                 'status_admisi' => 'pending',
+                'tanggal_registrasi' => now(),
                 
                 // Data diri
                 'nik' => $dataDiri['nik'],
@@ -497,6 +526,19 @@ class RegisterController extends Controller
                 'npsn_asal' => $dataDiri['npsn_asal'] ?? null,
                 'sekolah_asal' => $dataDiri['sekolah_asal'],
                 'alamat_sekolah_asal' => $dataDiri['alamat_sekolah_asal'] ?? null,
+                
+                // GPS & Registration Location
+                'registration_latitude' => $request->registration_latitude,
+                'registration_longitude' => $request->registration_longitude,
+                'registration_altitude' => $request->registration_altitude,
+                'registration_accuracy' => $request->registration_accuracy,
+                'registration_address' => $gpsAddress,
+                'registration_city' => $gpsCity,
+                'registration_region' => $gpsRegion,
+                'registration_ip' => $request->ip(),
+                'registration_device' => $deviceType,
+                'registration_browser' => $browser,
+                'visitor_session_id' => session()->getId(),
                 
                 // Completion flags
                 'data_diri_completed' => true,
@@ -583,6 +625,15 @@ class RegisterController extends Controller
 
             DB::commit();
 
+            // Mark visitor logs as converted (pengunjung yang mendaftar)
+            VisitorLog::where('session_id', session()->getId())
+                ->where('converted_to_registration', false)
+                ->update([
+                    'calon_siswa_id' => $calonSiswa->id,
+                    'converted_to_registration' => true,
+                    'conversion_at' => now(),
+                ]);
+
             // Clear session
             session()->forget([
                 'ppdb_step', 'ppdb_jalur_id', 'ppdb_nisn', 'ppdb_email', 'ppdb_password', 
@@ -638,5 +689,70 @@ class RegisterController extends Controller
             ->orderBy('name')
             ->pluck('name', 'code');
         return response()->json($villages);
+    }
+
+    /**
+     * Reverse geocode coordinates to address
+     */
+    protected function reverseGeocode($lat, $lng): ?array
+    {
+        try {
+            $response = Http::timeout(5)->get('https://nominatim.openstreetmap.org/reverse', [
+                'lat' => $lat,
+                'lon' => $lng,
+                'format' => 'json',
+                'addressdetails' => 1,
+            ]);
+            
+            if ($response->successful()) {
+                $data = $response->json();
+                $address = $data['address'] ?? [];
+                
+                return [
+                    'address' => $data['display_name'] ?? null,
+                    'city' => $address['city'] ?? $address['town'] ?? $address['village'] ?? $address['county'] ?? null,
+                    'region' => $address['state'] ?? $address['province'] ?? null,
+                    'country' => $address['country'] ?? null,
+                    'postal_code' => $address['postcode'] ?? null,
+                ];
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Reverse geocode failed: ' . $e->getMessage());
+        }
+        
+        return null;
+    }
+
+    /**
+     * Get device type from user agent
+     */
+    protected function getDeviceType($userAgent): string
+    {
+        $userAgent = strtolower($userAgent);
+        
+        if (preg_match('/mobile|android|iphone|ipod|blackberry|windows phone/i', $userAgent)) {
+            return 'mobile';
+        }
+        
+        if (preg_match('/tablet|ipad/i', $userAgent)) {
+            return 'tablet';
+        }
+        
+        return 'desktop';
+    }
+
+    /**
+     * Get browser name from user agent
+     */
+    protected function getBrowserName($userAgent): string
+    {
+        if (strpos($userAgent, 'Edg') !== false) return 'Edge';
+        if (strpos($userAgent, 'OPR') !== false || strpos($userAgent, 'Opera') !== false) return 'Opera';
+        if (strpos($userAgent, 'Chrome') !== false) return 'Chrome';
+        if (strpos($userAgent, 'Safari') !== false) return 'Safari';
+        if (strpos($userAgent, 'Firefox') !== false) return 'Firefox';
+        if (strpos($userAgent, 'MSIE') !== false || strpos($userAgent, 'Trident') !== false) return 'Internet Explorer';
+        
+        return 'Unknown';
     }
 }

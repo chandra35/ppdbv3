@@ -6,6 +6,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\OperatorMiddleware;
 use App\Http\Middleware\PengujiMiddleware;
+use App\Http\Middleware\LogVisitor;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -18,6 +19,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => AdminMiddleware::class,
             'operator' => OperatorMiddleware::class,
             'penguji' => PengujiMiddleware::class,
+            'log.visitor' => LogVisitor::class,
+        ]);
+        
+        // Add LogVisitor middleware to web group
+        $middleware->web(append: [
+            LogVisitor::class,
         ]);
         
         // Replace default authenticate middleware with custom one

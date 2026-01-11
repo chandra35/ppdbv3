@@ -23,15 +23,20 @@ use App\Http\Controllers\Admin\AlurPendaftaranController;
 use App\Http\Controllers\Admin\EmisTokenController;
 use App\Http\Controllers\Admin\PengaturanWaController;
 use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\VisitorLogController;
 use App\Http\Controllers\Operator\DashboardController as OperatorDashboardController;
 use App\Http\Controllers\Operator\PendaftarController as OperatorPendaftarController;
 use App\Http\Controllers\Pendaftar\AuthController as PendaftarAuthController;
 use App\Http\Controllers\Pendaftar\DashboardController as PendaftarDashboardController;
+use App\Http\Controllers\Api\VisitorLocationController;
 
 // Public landing page
 Route::get('/login', [LandingController::class, 'showLoginForm'])->name('login');
 Route::get('/ppdb', [LandingController::class, 'index'])->name('ppdb.landing');
 Route::get('/ppdb/berita/{slug}', [LandingController::class, 'showBerita'])->name('ppdb.berita.show');
+
+// API for visitor location (GPS)
+Route::post('/api/visitor-location', [VisitorLocationController::class, 'store'])->name('api.visitor-location');
 
 // Authentication routes
 Route::post('/ppdb/login', [LandingController::class, 'login'])->name('ppdb.login');
@@ -173,6 +178,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     
     // ---- PENDAFTAR (Shared access) ----
     Route::get('/pendaftar', [PendaftarController::class, 'index'])->name('pendaftar.index');
+    Route::get('/pendaftar/map', [PendaftarController::class, 'map'])->name('pendaftar.map');
     Route::get('/pendaftar/{id}', [PendaftarController::class, 'show'])->name('pendaftar.show');
     Route::get('/pendaftar/{id}/edit', [PendaftarController::class, 'edit'])->name('pendaftar.edit');
     Route::put('/pendaftar/{id}', [PendaftarController::class, 'update'])->name('pendaftar.update');
@@ -241,7 +247,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
             Route::post('/halaman/verify-facebook', [SiteSettingsController::class, 'verifyFacebookToken'])->name('halaman.verify-facebook');
 
             // Berita
-            Route::resource('berita', BeritaController::class);
+            Route::resource('berita', BeritaController::class)->parameters(['berita' => 'berita']);
             Route::post('/berita/{berita}/share-facebook', [BeritaController::class, 'shareToFacebook'])->name('berita.share-facebook');
             Route::post('/berita/{berita}/toggle-featured', [BeritaController::class, 'toggleFeatured'])->name('berita.toggle-featured');
 
@@ -325,6 +331,20 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
         // ---- ACTIVITY LOGS ----
         Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
+        Route::get('/logs/{id}', [ActivityLogController::class, 'show'])->name('logs.show');
+        Route::delete('/logs/clear', [ActivityLogController::class, 'clear'])->name('logs.clear');
+
+        // ---- VISITOR LOGS ----
+        Route::prefix('visitor-logs')->name('visitor-logs.')->group(function () {
+            Route::get('/', [VisitorLogController::class, 'index'])->name('index');
+            Route::get('/list', [VisitorLogController::class, 'list'])->name('list');
+            Route::get('/map', [VisitorLogController::class, 'map'])->name('map');
+            Route::get('/online', [VisitorLogController::class, 'online'])->name('online');
+            Route::get('/online-data', [VisitorLogController::class, 'onlineData'])->name('online-data');
+            Route::post('/mark-offline', [VisitorLogController::class, 'markOffline'])->name('mark-offline');
+            Route::get('/export', [VisitorLogController::class, 'export'])->name('export');
+            Route::delete('/clear', [VisitorLogController::class, 'clear'])->name('clear');
+        });
 
         // ---- EMIS TOKEN MANAGEMENT ----
         Route::get('/update-emis-token', [EmisTokenController::class, 'index'])->name('update-emis-token.index');

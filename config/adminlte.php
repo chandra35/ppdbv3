@@ -224,6 +224,12 @@ return [
             'can' => 'admin',
         ],
         [
+            'text' => 'Statistik Pengunjung',
+            'route' => 'admin.visitor-logs.index',
+            'icon' => 'fas fa-fw fa-chart-line',
+            'can' => 'admin',
+        ],
+        [
             'text' => 'Activity Log',
             'route' => 'admin.logs.index',
             'icon' => 'fas fa-fw fa-history',

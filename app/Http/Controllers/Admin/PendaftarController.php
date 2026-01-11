@@ -67,6 +67,54 @@ class PendaftarController extends Controller
         return view('admin.pendaftar.index', compact('pendaftars', 'jalurList', 'gelombangList'));
     }
 
+    /**
+     * Show map of registration locations
+     */
+    public function map(Request $request)
+    {
+        $query = CalonSiswa::query()
+            ->whereNotNull('registration_latitude')
+            ->whereNotNull('registration_longitude')
+            ->with(['jalurPendaftaran']);
+        
+        // Filter by jalur
+        if ($request->filled('jalur_id')) {
+            $query->where('jalur_pendaftaran_id', $request->jalur_id);
+        }
+        
+        $pendaftars = $query->select([
+            'id', 'nama_lengkap', 'nomor_registrasi', 'nisn',
+            'registration_latitude', 'registration_longitude',
+            'registration_altitude', 'registration_accuracy',
+            'registration_address', 'registration_city', 'registration_region',
+            'registration_device', 'tanggal_registrasi',
+            'jalur_pendaftaran_id', 'status_verifikasi'
+        ])->get()->map(function ($p) {
+            return [
+                'id' => $p->id,
+                'nama' => $p->nama_lengkap,
+                'nomor_registrasi' => $p->nomor_registrasi,
+                'nisn' => $p->nisn,
+                'lat' => (float) $p->registration_latitude,
+                'lng' => (float) $p->registration_longitude,
+                'altitude' => $p->registration_altitude,
+                'accuracy' => $p->registration_accuracy,
+                'address' => $p->registration_address,
+                'city' => $p->registration_city,
+                'region' => $p->registration_region,
+                'device' => $p->registration_device,
+                'tanggal' => $p->tanggal_registrasi ? $p->tanggal_registrasi->format('d M Y H:i') : '-',
+                'jalur' => $p->jalurPendaftaran?->nama ?? '-',
+                'warna_jalur' => $p->jalurPendaftaran?->warna ?? '#007bff',
+                'status' => $p->status_verifikasi,
+            ];
+        });
+        
+        $jalurList = JalurPendaftaran::orderBy('urutan')->get();
+        
+        return view('admin.pendaftar.map', compact('pendaftars', 'jalurList'));
+    }
+
     public function getDokumenList($id)
     {
         $pendaftar = CalonSiswa::with(['dokumen.verifiedBy'])->findOrFail($id);

@@ -97,6 +97,19 @@ class CalonSiswa extends Model
         'tahun_pelajaran_id',
         'tanggal_registrasi',
         
+        // GPS & Registration Location
+        'registration_latitude',
+        'registration_longitude',
+        'registration_altitude',
+        'registration_accuracy',
+        'registration_address',
+        'registration_city',
+        'registration_region',
+        'registration_ip',
+        'registration_device',
+        'registration_browser',
+        'visitor_session_id',
+        
         // Soft delete fields
         'deleted_by',
         'deleted_reason',
@@ -106,6 +119,7 @@ class CalonSiswa extends Model
         'tanggal_lahir' => 'date',
         'tanggal_verifikasi' => 'datetime',
         'tanggal_finalisasi' => 'datetime',
+        'tanggal_registrasi' => 'datetime',
         'nisn_valid' => 'boolean',
         'data_diri_completed' => 'boolean',
         'data_ortu_completed' => 'boolean',
@@ -118,6 +132,10 @@ class CalonSiswa extends Model
         'nilai_wawancara' => 'decimal:2',
         'nilai_akhir' => 'decimal:2',
         'ranking' => 'integer',
+        'registration_latitude' => 'decimal:8',
+        'registration_longitude' => 'decimal:8',
+        'registration_altitude' => 'decimal:2',
+        'registration_accuracy' => 'decimal:2',
     ];
 
     // Relations
@@ -228,6 +246,73 @@ class CalonSiswa extends Model
         $validDokumen = $this->dokumen()->where('status_verifikasi', 'valid')->count();
         
         return $totalDokumen === $validDokumen;
+    }
+
+    /**
+     * Relation to visitor logs
+     */
+    public function visitorLogs(): HasMany
+    {
+        return $this->hasMany(VisitorLog::class, 'calon_siswa_id');
+    }
+
+    /**
+     * Check if has registration coordinates
+     */
+    public function hasRegistrationCoordinates(): bool
+    {
+        return $this->registration_latitude && $this->registration_longitude;
+    }
+
+    /**
+     * Get registration coordinates string
+     */
+    public function getRegistrationCoordinatesAttribute(): string
+    {
+        if (!$this->hasRegistrationCoordinates()) {
+            return '-';
+        }
+        
+        return sprintf('%.8f, %.8f', $this->registration_latitude, $this->registration_longitude);
+    }
+
+    /**
+     * Get registration location full info
+     */
+    public function getRegistrationLocationAttribute(): string
+    {
+        $parts = array_filter([
+            $this->registration_address,
+            $this->registration_city,
+            $this->registration_region,
+        ]);
+        
+        return $parts ? implode(', ', $parts) : '-';
+    }
+
+    /**
+     * Get device icon for registration
+     */
+    public function getRegistrationDeviceIconAttribute(): string
+    {
+        return match($this->registration_device) {
+            'mobile' => 'fas fa-mobile-alt',
+            'tablet' => 'fas fa-tablet-alt',
+            'desktop' => 'fas fa-desktop',
+            default => 'fas fa-question-circle',
+        };
+    }
+
+    /**
+     * Get Google Maps URL for registration location
+     */
+    public function getRegistrationMapsUrlAttribute(): ?string
+    {
+        if (!$this->hasRegistrationCoordinates()) {
+            return null;
+        }
+        
+        return "https://www.google.com/maps?q={$this->registration_latitude},{$this->registration_longitude}";
     }
 
     /**

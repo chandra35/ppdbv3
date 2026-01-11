@@ -549,6 +549,16 @@ dl.row dt {
                             <td><i class="fas fa-calendar text-muted"></i> <strong>Terdaftar</strong></td>
                             <td class="text-right"><small>{{ $pendaftar->created_at->format('d/m/Y') }}</small></td>
                         </tr>
+                        @if($pendaftar->hasRegistrationCoordinates())
+                        <tr>
+                            <td><i class="fas fa-map-marker-alt text-danger"></i> <strong>Lokasi Daftar</strong></td>
+                            <td class="text-right">
+                                <a href="{{ $pendaftar->registration_maps_url }}" target="_blank" class="btn btn-xs btn-success" title="Lihat di Maps">
+                                    <i class="fas fa-map"></i> Maps
+                                </a>
+                            </td>
+                        </tr>
+                        @endif
                     </table>
                     
                     <div class="row mt-3">

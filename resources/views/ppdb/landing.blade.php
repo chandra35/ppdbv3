@@ -1152,5 +1152,8 @@
         setInterval(updateCountdown, 1000);
         @endif
     </script>
+    
+    {{-- GPS Permission Component --}}
+    @include('components.gps-permission')
 </body>
 </html>

@@ -82,12 +82,15 @@
 @stop
 
 @section('content_header')
-    <div class="row mb-2 mb-md-3">
+    <div class="row mb-2 mb-md-3 align-items-center">
         <div class="col-12 col-sm-6">
             <h1 style="font-size: 24px;"><i class="fas fa-users"></i> Daftar Pendaftar</h1>
         </div>
-        <div class="col-12 col-sm-6 d-none d-sm-block">
-            <ol class="breadcrumb float-sm-right">
+        <div class="col-12 col-sm-6 d-flex justify-content-sm-end align-items-center" style="gap: 8px;">
+            <a href="{{ route('admin.pendaftar.map') }}" class="btn btn-success btn-sm" style="font-size: 12px;">
+                <i class="fas fa-map-marked-alt mr-1"></i> Peta Pendaftar
+            </a>
+            <ol class="breadcrumb float-sm-right mb-0" style="background: none; padding: 0;">
                 <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
                 <li class="breadcrumb-item active">Pendaftar</li>
             </ol>
