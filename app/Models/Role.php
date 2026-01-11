@@ -73,6 +73,9 @@ class Role extends Model
                 'pendaftar.verify' => 'Verifikasi Pendaftar',
                 'pendaftar.approve' => 'Terima Pendaftar',
                 'pendaftar.reject' => 'Tolak Pendaftar',
+                'pendaftar.cetak-registrasi' => 'Cetak Bukti Registrasi',
+                'pendaftar.cetak-ujian' => 'Cetak Kartu Ujian',
+                'pendaftar.upload-dokumen' => 'Upload Dokumen Pendaftar',
             ],
             'berita' => [
                 'berita.view' => 'Lihat Berita',

@@ -380,6 +380,59 @@ dl.row dt {
         text-align: center;
     }
 }
+
+/* Button Purple */
+.btn-purple {
+    color: #fff;
+    background-color: #6f42c1;
+    border-color: #6f42c1;
+}
+.btn-purple:hover {
+    color: #fff;
+    background-color: #5a32a3;
+    border-color: #533099;
+}
+.btn-purple:focus, .btn-purple.focus {
+    box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.5);
+}
+.btn-purple:disabled, .btn-purple.disabled {
+    color: #fff;
+    background-color: #6f42c1;
+    border-color: #6f42c1;
+    opacity: 0.65;
+}
+.btn-outline-purple {
+    color: #6f42c1;
+    border-color: #6f42c1;
+}
+.btn-outline-purple:hover {
+    color: #fff;
+    background-color: #6f42c1;
+    border-color: #6f42c1;
+}
+.bg-purple {
+    background-color: #6f42c1 !important;
+}
+
+/* Upload Dokumen Modal Camera */
+#uploadDokumenModal .modal-content {
+    border: none;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    border-radius: 15px;
+}
+#uploadDokumenModal .modal-header {
+    border-radius: 15px 15px 0 0;
+}
+#cameraVideo {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+#capturedImage, #filePreview {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-radius: 8px;
+}
+.custom-file-label::after {
+    content: "Browse";
+}
 </style>
 @stop
 
@@ -424,8 +477,8 @@ dl.row dt {
     <div class="card card-outline card-primary mb-3">
         <div class="card-body p-2">
             <div class="row">
-                <div class="col-md-6">
-                    <div class="btn-group">
+                <div class="col-md-8">
+                    <div class="btn-group mr-2">
                         <a href="{{ route('admin.pendaftar.edit', $pendaftar->id) }}" class="btn btn-primary btn-sm">
                             <i class="fas fa-edit"></i> Edit Lengkap
                         </a>
@@ -441,8 +494,27 @@ dl.row dt {
                         </button>
                         @endif
                     </div>
+                    
+                    {{-- Tombol Cetak & Upload --}}
+                    <div class="btn-group mr-2">
+                        @if($pendaftar->is_finalisasi && auth()->user()->hasPermission('pendaftar.cetak-registrasi'))
+                        <a href="{{ route('admin.pendaftar.cetak-registrasi', $pendaftar->id) }}" class="btn btn-success btn-sm" target="_blank">
+                            <i class="fas fa-print"></i> Cetak Registrasi
+                        </a>
+                        @endif
+                        @if($pendaftar->is_finalisasi && auth()->user()->hasPermission('pendaftar.cetak-ujian'))
+                        <a href="{{ route('admin.pendaftar.cetak-ujian', $pendaftar->id) }}" class="btn btn-success btn-sm" target="_blank">
+                            <i class="fas fa-id-card"></i> Cetak Kartu Ujian
+                        </a>
+                        @endif
+                        @if(auth()->user()->hasPermission('pendaftar.upload-dokumen'))
+                        <button type="button" class="btn btn-purple btn-sm" data-toggle="modal" data-target="#uploadDokumenModal">
+                            <i class="fas fa-camera"></i> Upload Dokumen
+                        </button>
+                        @endif
+                    </div>
                 </div>
-                <div class="col-md-6 text-right">
+                <div class="col-md-4 text-right">
                     <a href="{{ route('admin.pendaftar.index') }}" class="btn btn-default btn-sm">
                         <i class="fas fa-arrow-left"></i> Kembali
                     </a>
@@ -1233,6 +1305,140 @@ dl.row dt {
             </div>
         </div>
     </div>
+
+    {{-- Modal Upload Dokumen dengan Kamera --}}
+    @if(auth()->user()->hasPermission('pendaftar.upload-dokumen'))
+    <div class="modal fade" id="uploadDokumenModal" tabindex="-1" role="dialog" aria-labelledby="uploadDokumenModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-purple">
+                    <h5 class="modal-title text-white" id="uploadDokumenModalLabel">
+                        <i class="fas fa-upload mr-2"></i>Upload Dokumen untuk {{ $pendaftar->nama_lengkap }}
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="uploadDokumenForm">
+                        @csrf
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="jenis_dokumen"><i class="fas fa-file-alt mr-1"></i> Jenis Dokumen <span class="text-danger">*</span></label>
+                                    <select class="form-control" id="jenis_dokumen" name="jenis_dokumen" required>
+                                        <option value="">-- Pilih Jenis Dokumen --</option>
+                                        <option value="kk">Kartu Keluarga (KK)</option>
+                                        <option value="akta_lahir">Akta Kelahiran</option>
+                                        <option value="ijazah">Ijazah / SKL</option>
+                                        <option value="rapor">Rapor</option>
+                                        <option value="pas_foto">Pas Foto</option>
+                                        <option value="ktp_ortu">KTP Orang Tua</option>
+                                        <option value="skhun">SKHUN</option>
+                                        <option value="surat_pindah">Surat Pindah</option>
+                                        <option value="surat_keterangan">Surat Keterangan Lain</option>
+                                        <option value="lainnya">Dokumen Lainnya</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label><i class="fas fa-cog mr-1"></i> Metode Upload</label>
+                                    <div class="btn-group btn-group-toggle d-flex" data-toggle="buttons">
+                                        <label class="btn btn-outline-primary active flex-fill">
+                                            <input type="radio" name="upload_method" value="file" checked> 
+                                            <i class="fas fa-file-upload"></i> File
+                                        </label>
+                                        <label class="btn btn-outline-success flex-fill">
+                                            <input type="radio" name="upload_method" value="camera"> 
+                                            <i class="fas fa-camera"></i> Kamera
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- File Upload Section --}}
+                        <div id="fileUploadSection">
+                            <div class="form-group">
+                                <label for="file_upload"><i class="fas fa-cloud-upload-alt mr-1"></i> Pilih File</label>
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" id="file_upload" name="file" accept="image/*,.pdf">
+                                    <label class="custom-file-label" for="file_upload">Pilih file...</label>
+                                </div>
+                                <small class="form-text text-muted">Format: JPG, JPEG, PNG, PDF. Maks: 5MB</small>
+                            </div>
+                            <div id="filePreviewContainer" class="text-center mb-3" style="display: none;">
+                                <img id="filePreview" src="" alt="Preview" class="img-fluid img-thumbnail" style="max-height: 300px;">
+                                <p id="filePreviewName" class="mt-2 mb-0"></p>
+                            </div>
+                        </div>
+
+                        {{-- Camera Section --}}
+                        <div id="cameraSection" style="display: none;">
+                            <div class="text-center mb-3">
+                                <div class="position-relative d-inline-block">
+                                    <video id="cameraVideo" width="100%" autoplay playsinline style="max-width: 500px; border-radius: 8px; background: #000;"></video>
+                                    <div id="cameraOverlay" class="position-absolute" style="top: 50%; left: 50%; transform: translate(-50%, -50%); display: none;">
+                                        <i class="fas fa-camera fa-3x text-white"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <select id="cameraSelect" class="form-control form-control-sm">
+                                        <option value="">Pilih Kamera...</option>
+                                    </select>
+                                </div>
+                                <div class="col-6 text-right">
+                                    <button type="button" class="btn btn-info btn-sm" id="btnStartCamera">
+                                        <i class="fas fa-play"></i> Mulai Kamera
+                                    </button>
+                                    <button type="button" class="btn btn-danger btn-sm" id="btnStopCamera" style="display: none;">
+                                        <i class="fas fa-stop"></i> Stop
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center mb-3">
+                                <button type="button" class="btn btn-success btn-lg" id="btnCapture" disabled>
+                                    <i class="fas fa-camera"></i> Ambil Foto
+                                </button>
+                            </div>
+                            
+                            <canvas id="cameraCanvas" style="display: none;"></canvas>
+                            
+                            <div id="capturedImageContainer" class="text-center mb-3" style="display: none;">
+                                <p class="text-success mb-2"><i class="fas fa-check-circle"></i> Foto berhasil diambil</p>
+                                <img id="capturedImage" src="" alt="Captured" class="img-fluid img-thumbnail" style="max-height: 300px;">
+                                <br>
+                                <button type="button" class="btn btn-warning btn-sm mt-2" id="btnRetake">
+                                    <i class="fas fa-redo"></i> Ulangi
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="catatan"><i class="fas fa-sticky-note mr-1"></i> Catatan (Opsional)</label>
+                            <textarea class="form-control" id="catatan" name="catatan" rows="2" placeholder="Catatan tambahan..."></textarea>
+                        </div>
+
+                        <input type="hidden" id="captured_image_data" name="captured_image_data" value="">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Batal
+                    </button>
+                    <button type="button" class="btn btn-purple" id="btnUploadDokumen" disabled>
+                        <i class="fas fa-upload"></i> Upload Dokumen
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 @stop
 
 @section('js')
@@ -1930,5 +2136,296 @@ function batalFinalisasi() {
         }
     });
 }
+
+// ===============================================
+// Upload Dokumen dengan Kamera - Functions
+// ===============================================
+@if(auth()->user()->hasPermission('pendaftar.upload-dokumen'))
+let cameraStream = null;
+let capturedImageData = null;
+
+// Toggle upload method (file or camera)
+$('input[name="upload_method"]').on('change', function() {
+    const method = $(this).val();
+    if (method === 'file') {
+        $('#fileUploadSection').show();
+        $('#cameraSection').hide();
+        stopCamera();
+    } else {
+        $('#fileUploadSection').hide();
+        $('#cameraSection').show();
+        populateCameraList();
+    }
+    updateUploadButtonState();
+});
+
+// File upload preview
+$('#file_upload').on('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        // Update label
+        $(this).next('.custom-file-label').text(file.name);
+        
+        // Show preview for images
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $('#filePreview').attr('src', e.target.result);
+                $('#filePreviewName').text(file.name + ' (' + formatFileSize(file.size) + ')');
+                $('#filePreviewContainer').show();
+            };
+            reader.readAsDataURL(file);
+        } else {
+            $('#filePreview').attr('src', '');
+            $('#filePreviewName').text(file.name + ' (' + formatFileSize(file.size) + ')');
+            $('#filePreviewContainer').show();
+        }
+        
+        // Clear camera data
+        capturedImageData = null;
+        $('#captured_image_data').val('');
+        
+        updateUploadButtonState();
+    }
+});
+
+// Format file size
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Populate camera list
+async function populateCameraList() {
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        
+        const $select = $('#cameraSelect');
+        $select.empty().append('<option value="">Pilih Kamera...</option>');
+        
+        videoDevices.forEach((device, index) => {
+            const label = device.label || `Kamera ${index + 1}`;
+            $select.append(`<option value="${device.deviceId}">${label}</option>`);
+        });
+        
+        // Auto-select first camera
+        if (videoDevices.length > 0) {
+            $select.val(videoDevices[0].deviceId);
+        }
+    } catch (error) {
+        console.error('Error getting camera list:', error);
+    }
+}
+
+// Start camera
+$('#btnStartCamera').on('click', async function() {
+    const deviceId = $('#cameraSelect').val();
+    if (!deviceId) {
+        Swal.fire('Perhatian', 'Pilih kamera terlebih dahulu', 'warning');
+        return;
+    }
+    
+    try {
+        const constraints = {
+            video: {
+                deviceId: { exact: deviceId },
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            }
+        };
+        
+        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+        const video = document.getElementById('cameraVideo');
+        video.srcObject = cameraStream;
+        
+        $('#btnStartCamera').hide();
+        $('#btnStopCamera').show();
+        $('#btnCapture').prop('disabled', false);
+        $('#cameraOverlay').hide();
+        
+    } catch (error) {
+        console.error('Error starting camera:', error);
+        Swal.fire('Error', 'Gagal mengakses kamera: ' + error.message, 'error');
+    }
+});
+
+// Stop camera
+$('#btnStopCamera').on('click', function() {
+    stopCamera();
+});
+
+function stopCamera() {
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+    }
+    
+    const video = document.getElementById('cameraVideo');
+    if (video) {
+        video.srcObject = null;
+    }
+    
+    $('#btnStartCamera').show();
+    $('#btnStopCamera').hide();
+    $('#btnCapture').prop('disabled', true);
+}
+
+// Capture photo
+$('#btnCapture').on('click', function() {
+    const video = document.getElementById('cameraVideo');
+    const canvas = document.getElementById('cameraCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Set canvas size to video size
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Draw video frame to canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Get base64 data
+    capturedImageData = canvas.toDataURL('image/jpeg', 0.9);
+    $('#captured_image_data').val(capturedImageData);
+    
+    // Show captured image
+    $('#capturedImage').attr('src', capturedImageData);
+    $('#capturedImageContainer').show();
+    
+    // Stop camera after capture
+    stopCamera();
+    
+    // Clear file input
+    $('#file_upload').val('');
+    $('.custom-file-label').text('Pilih file...');
+    $('#filePreviewContainer').hide();
+    
+    updateUploadButtonState();
+});
+
+// Retake photo
+$('#btnRetake').on('click', function() {
+    capturedImageData = null;
+    $('#captured_image_data').val('');
+    $('#capturedImageContainer').hide();
+    
+    // Restart camera
+    $('#btnStartCamera').click();
+    
+    updateUploadButtonState();
+});
+
+// Update upload button state
+function updateUploadButtonState() {
+    const jenisDokumen = $('#jenis_dokumen').val();
+    const hasFile = $('#file_upload')[0].files.length > 0;
+    const hasCapture = capturedImageData !== null;
+    
+    const canUpload = jenisDokumen && (hasFile || hasCapture);
+    $('#btnUploadDokumen').prop('disabled', !canUpload);
+}
+
+// Watch jenis_dokumen change
+$('#jenis_dokumen').on('change', function() {
+    updateUploadButtonState();
+});
+
+// Upload dokumen
+$('#btnUploadDokumen').on('click', function() {
+    const jenisDokumen = $('#jenis_dokumen').val();
+    const catatan = $('#catatan').val();
+    const hasFile = $('#file_upload')[0].files.length > 0;
+    const hasCapture = capturedImageData !== null;
+    
+    if (!jenisDokumen) {
+        Swal.fire('Perhatian', 'Pilih jenis dokumen terlebih dahulu', 'warning');
+        return;
+    }
+    
+    if (!hasFile && !hasCapture) {
+        Swal.fire('Perhatian', 'Pilih file atau ambil foto terlebih dahulu', 'warning');
+        return;
+    }
+    
+    // Create FormData
+    const formData = new FormData();
+    formData.append('_token', '{{ csrf_token() }}');
+    formData.append('jenis_dokumen', jenisDokumen);
+    formData.append('catatan', catatan);
+    
+    if (hasCapture) {
+        formData.append('captured_image_data', capturedImageData);
+    } else if (hasFile) {
+        formData.append('file', $('#file_upload')[0].files[0]);
+    }
+    
+    // Show loading
+    Swal.fire({
+        title: 'Mengupload...',
+        html: 'Mohon tunggu, sedang mengupload dokumen',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    // Upload via AJAX
+    $.ajax({
+        url: '{{ route("admin.pendaftar.upload-dokumen", $pendaftar->id) }}',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            if (response.success) {
+                Swal.fire({
+                    title: 'Berhasil!',
+                    text: response.message,
+                    icon: 'success',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    // Close modal and reload
+                    $('#uploadDokumenModal').modal('hide');
+                    location.reload();
+                });
+            } else {
+                Swal.fire('Gagal!', response.message, 'error');
+            }
+        },
+        error: function(xhr) {
+            let errorMsg = 'Terjadi kesalahan saat mengupload dokumen.';
+            if (xhr.responseJSON) {
+                if (xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                if (xhr.responseJSON.errors) {
+                    const errors = Object.values(xhr.responseJSON.errors).flat();
+                    errorMsg = errors.join('<br>');
+                }
+            }
+            Swal.fire('Error!', errorMsg, 'error');
+        }
+    });
+});
+
+// Reset modal on close
+$('#uploadDokumenModal').on('hidden.bs.modal', function() {
+    stopCamera();
+    capturedImageData = null;
+    $('#captured_image_data').val('');
+    $('#uploadDokumenForm')[0].reset();
+    $('.custom-file-label').text('Pilih file...');
+    $('#filePreviewContainer').hide();
+    $('#capturedImageContainer').hide();
+    $('#fileUploadSection').show();
+    $('#cameraSection').hide();
+    $('input[name="upload_method"][value="file"]').prop('checked', true).parent().addClass('active');
+    $('input[name="upload_method"][value="camera"]').prop('checked', false).parent().removeClass('active');
+    updateUploadButtonState();
+});
+@endif
 </script>
 @stop

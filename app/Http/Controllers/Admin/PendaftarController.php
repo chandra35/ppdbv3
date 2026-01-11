@@ -10,12 +10,22 @@ use App\Models\JalurPendaftaran;
 use App\Models\GelombangPendaftaran;
 use App\Models\ActivityLog;
 use App\Models\User;
+use App\Services\KopSuratService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class PendaftarController extends Controller
 {
+    protected $kopSuratService;
+
+    public function __construct(KopSuratService $kopSuratService)
+    {
+        $this->kopSuratService = $kopSuratService;
+    }
+
     public function index(Request $request)
     {
         $query = CalonSiswa::with(['user', 'jalurPendaftaran', 'gelombangPendaftaran', 'dokumen'])->orderBy('created_at', 'desc');
@@ -824,5 +834,333 @@ class PendaftarController extends Controller
             ], 500);
         }
     }
-}
 
+    /**
+     * Cetak Bukti Registrasi (for Admin/Verifikator)
+     */
+    public function cetakBuktiRegistrasi($id)
+    {
+        // Check permission
+        if (!auth()->user()->hasPermission('pendaftar.cetak-registrasi')) {
+            abort(403, 'Anda tidak memiliki izin untuk mencetak bukti registrasi');
+        }
+
+        $calonSiswa = CalonSiswa::with([
+            'jalurPendaftaran', 
+            'gelombangPendaftaran', 
+            'tahunPelajaran', 
+            'ortu',
+            'user'
+        ])->findOrFail($id);
+
+        if (!$calonSiswa->is_finalisasi) {
+            return redirect()->route('admin.pendaftar.show', $id)
+                ->with('error', 'Pendaftar belum difinalisasi, tidak dapat mencetak bukti registrasi');
+        }
+
+        // Increase memory limit for PDF generation
+        ini_set('memory_limit', '256M');
+
+        $sekolahSettings = \App\Models\SekolahSettings::with(['province', 'city'])->first();
+        
+        // Generate kop surat HTML
+        $kopHtml = $this->kopSuratService->renderKopHtml($sekolahSettings, true);
+        
+        // Generate or get verification hash for QR code
+        $verificationHash = $calonSiswa->getOrGenerateHash();
+        
+        // Generate QR code if enabled
+        $qrCode = null;
+        if ($sekolahSettings && $sekolahSettings->qr_enable) {
+            $qrCode = $this->generateQrCode($calonSiswa, $sekolahSettings, $verificationHash);
+        }
+        
+        $sekolah = (object) [
+            'nama_sekolah' => $sekolahSettings->nama_sekolah ?? config('app.school_name', config('app.name', 'SMK')),
+            'logo' => $this->getSchoolLogo(),
+            'alamat' => $sekolahSettings ? trim(($sekolahSettings->alamat_jalan ?? '') . ' ' . ($sekolahSettings->city->name ?? '') . ' ' . ($sekolahSettings->province->name ?? '')) : config('app.school_address', ''),
+            'telepon' => $sekolahSettings->telepon ?? config('app.school_phone', '-'),
+            'email' => $sekolahSettings->email ?? config('app.school_email', '-'),
+            'kota' => $sekolahSettings->city->name ?? config('app.school_city', ''),
+        ];
+        
+        $pdf = Pdf::loadView('pendaftar.pdf.bukti-registrasi', compact('calonSiswa', 'sekolah', 'kopHtml', 'qrCode', 'sekolahSettings'));
+        
+        $filename = 'bukti-registrasi-' . preg_replace('/[\/\\\:*?"<>|]/', '-', $calonSiswa->nomor_registrasi) . '.pdf';
+        
+        // Log activity
+        ActivityLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'print',
+            'model_type' => 'App\Models\CalonSiswa',
+            'model_id' => $calonSiswa->id,
+            'description' => "Mencetak bukti registrasi: {$calonSiswa->nama_lengkap} (NISN: {$calonSiswa->nisn})",
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent()
+        ]);
+
+        return $pdf->download($filename);
+    }
+
+    /**
+     * Cetak Kartu Ujian (for Admin/Verifikator)
+     */
+    public function cetakKartuUjian($id)
+    {
+        // Check permission
+        if (!auth()->user()->hasPermission('pendaftar.cetak-ujian')) {
+            abort(403, 'Anda tidak memiliki izin untuk mencetak kartu ujian');
+        }
+
+        $calonSiswa = CalonSiswa::with([
+            'jalurPendaftaran', 
+            'gelombangPendaftaran', 
+            'tahunPelajaran',
+            'user'
+        ])->findOrFail($id);
+
+        if (!$calonSiswa->is_finalisasi) {
+            return redirect()->route('admin.pendaftar.show', $id)
+                ->with('error', 'Pendaftar belum difinalisasi, tidak dapat mencetak kartu ujian');
+        }
+
+        // Increase memory limit for PDF generation
+        ini_set('memory_limit', '256M');
+
+        $sekolahSettings = \App\Models\SekolahSettings::with(['province', 'city'])->first();
+        
+        // Generate kop surat HTML
+        $kopHtml = $this->kopSuratService->renderKopHtml($sekolahSettings, true);
+        
+        $sekolah = (object) [
+            'nama_sekolah' => $sekolahSettings->nama_sekolah ?? config('app.school_name', config('app.name', 'SMK')),
+            'logo' => $this->getSchoolLogo(),
+        ];
+        
+        $password = $calonSiswa->user->plain_password ?? '********';
+        
+        $pdf = Pdf::loadView('pendaftar.pdf.kartu-ujian', compact('calonSiswa', 'sekolah', 'password', 'kopHtml'))
+            ->setPaper([0, 0, 298, 421], 'landscape');
+        
+        $filename = 'kartu-ujian-' . preg_replace('/[\/\\\:*?"<>|]/', '-', $calonSiswa->nomor_tes ?? $calonSiswa->nomor_registrasi) . '.pdf';
+        
+        // Log activity
+        ActivityLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'print',
+            'model_type' => 'App\Models\CalonSiswa',
+            'model_id' => $calonSiswa->id,
+            'description' => "Mencetak kartu ujian: {$calonSiswa->nama_lengkap} (NISN: {$calonSiswa->nisn})",
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent()
+        ]);
+
+        return $pdf->download($filename);
+    }
+
+    /**
+     * Upload Dokumen oleh Verifikator (with camera support)
+     */
+    public function uploadDokumen(Request $request, $id)
+    {
+        // Check permission
+        if (!auth()->user()->hasPermission('pendaftar.upload-dokumen')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki izin untuk upload dokumen'
+            ], 403);
+        }
+
+        $request->validate([
+            'jenis_dokumen' => 'required|string',
+            'catatan' => 'nullable|string|max:500',
+        ]);
+
+        // Must have either file or captured_image_data
+        if (!$request->hasFile('file') && !$request->filled('captured_image_data')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'File atau foto dari kamera harus disertakan'
+            ], 422);
+        }
+
+        try {
+            $calonSiswa = CalonSiswa::findOrFail($id);
+            
+            $jenisDokumen = $request->jenis_dokumen;
+            $filePath = null;
+            $originalName = null;
+            $fileSize = 0;
+            $mimeType = null;
+            
+            // Handle file upload (from camera base64 or file upload)
+            if ($request->filled('captured_image_data') && str_starts_with($request->captured_image_data, 'data:image')) {
+                // Base64 image from camera
+                $base64Image = $request->captured_image_data;
+                $filePath = $this->saveBase64Image($base64Image, $calonSiswa->id, $jenisDokumen);
+                $originalName = 'camera_capture_' . date('Ymd_His') . '.jpg';
+                $fileSize = strlen(base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $base64Image)));
+                $mimeType = 'image/jpeg';
+            } elseif ($request->hasFile('file')) {
+                // Regular file upload
+                $request->validate(['file' => 'file|mimes:jpg,jpeg,png,pdf|max:5120']);
+                $file = $request->file('file');
+                $filePath = $file->store("dokumen/{$calonSiswa->id}", 'public');
+                $originalName = $file->getClientOriginalName();
+                $fileSize = $file->getSize();
+                $mimeType = $file->getMimeType();
+            }
+
+            // Find existing document or create new
+            $dokumen = CalonDokumen::where('calon_siswa_id', $calonSiswa->id)
+                ->where('jenis_dokumen', $jenisDokumen)
+                ->first();
+
+            if ($dokumen) {
+                // Delete old file if exists
+                if ($dokumen->file_path && Storage::disk('public')->exists($dokumen->file_path)) {
+                    Storage::disk('public')->delete($dokumen->file_path);
+                }
+
+                $dokumen->update([
+                    'file_path' => $filePath,
+                    'original_name' => $originalName,
+                    'file_size' => $fileSize,
+                    'mime_type' => $mimeType,
+                    'status_verifikasi' => 'pending',
+                    'catatan_verifikasi' => null,
+                    'uploaded_by' => auth()->id(),
+                    'uploaded_at' => now(),
+                ]);
+            } else {
+                $dokumen = CalonDokumen::create([
+                    'calon_siswa_id' => $calonSiswa->id,
+                    'jenis_dokumen' => $jenisDokumen,
+                    'file_path' => $filePath,
+                    'original_name' => $originalName,
+                    'file_size' => $fileSize,
+                    'mime_type' => $mimeType,
+                    'status_verifikasi' => 'pending',
+                    'uploaded_by' => auth()->id(),
+                    'uploaded_at' => now(),
+                ]);
+            }
+
+            // Log history
+            DokumenVerifikasiHistory::create([
+                'calon_dokumen_id' => $dokumen->id,
+                'action' => 'upload',
+                'status_before' => null,
+                'status_after' => 'pending',
+                'catatan' => $request->catatan ?? 'Dokumen diupload oleh verifikator: ' . auth()->user()->name,
+                'user_id' => auth()->id(),
+            ]);
+
+            // Log activity
+            ActivityLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'upload',
+                'model_type' => 'App\Models\CalonDokumen',
+                'model_id' => $dokumen->id,
+                'description' => "Mengupload dokumen {$jenisDokumen} untuk pendaftar: {$calonSiswa->nama_lengkap}",
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent()
+            ]);
+
+            // Update completion status
+            $calonSiswa->updateDokumenCompletion();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Dokumen berhasil diupload',
+                'dokumen' => [
+                    'id' => $dokumen->id,
+                    'jenis_dokumen' => $dokumen->jenis_dokumen,
+                    'file_path' => $dokumen->file_path,
+                    'status_verifikasi' => $dokumen->status_verifikasi,
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal upload dokumen: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Save base64 image from camera capture
+     */
+    private function saveBase64Image($base64Image, $calonSiswaId, $jenisDokumen)
+    {
+        // Remove data:image prefix
+        $image = preg_replace('#^data:image/\w+;base64,#i', '', $base64Image);
+        $image = base64_decode($image);
+        
+        // Generate filename
+        $filename = $jenisDokumen . '_' . time() . '_' . Str::random(8) . '.jpg';
+        $path = "dokumen/{$calonSiswaId}/{$filename}";
+        
+        // Save to storage
+        Storage::disk('public')->put($path, $image);
+        
+        return $path;
+    }
+
+    /**
+     * Generate QR code with optional logo
+     */
+    private function generateQrCode($calonSiswa, $sekolahSettings, $verificationHash)
+    {
+        try {
+            $qrSize = $sekolahSettings->qr_size ?? 150;
+            $errorLevel = $sekolahSettings->qr_error_level ?? 'H';
+            
+            // Generate URL based on function setting
+            $url = route('verify.bukti', $verificationHash);
+            
+            // Generate QR code as SVG (works without imagick)
+            $qrSvg = \QrCode::size($qrSize)
+                ->errorCorrection($errorLevel)
+                ->generate($url);
+            
+            return 'data:image/svg+xml;base64,' . base64_encode($qrSvg);
+            
+        } catch (\Exception $e) {
+            \Log::error('QR Code generation failed: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Get school logo path (optimized for PDF)
+     */
+    private function getSchoolLogo()
+    {
+        // Get logo from sekolah_settings table
+        $sekolahSettings = \App\Models\SekolahSettings::first();
+        
+        if ($sekolahSettings && $sekolahSettings->logo) {
+            $logoPath = storage_path('app/public/' . $sekolahSettings->logo);
+            if (file_exists($logoPath)) {
+                return $logoPath;
+            }
+        }
+
+        // Fallback: check common logo locations
+        $possiblePaths = [
+            public_path('logo.png'),
+            public_path('images/logo.png'),
+            public_path('assets/logo.png'),
+        ];
+
+        foreach ($possiblePaths as $path) {
+            if (file_exists($path)) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+}

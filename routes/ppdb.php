@@ -191,6 +191,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/pendaftar/{id}/approve', [PendaftarController::class, 'approve'])->name('pendaftar.approve');
     Route::post('/pendaftar/{id}/batal-finalisasi', [PendaftarController::class, 'batalFinalisasi'])->name('pendaftar.batal-finalisasi');
     
+    // Cetak Kartu (Admin/Verifikator)
+    Route::get('/pendaftar/{id}/cetak-registrasi', [PendaftarController::class, 'cetakBuktiRegistrasi'])->name('pendaftar.cetak-registrasi');
+    Route::get('/pendaftar/{id}/cetak-ujian', [PendaftarController::class, 'cetakKartuUjian'])->name('pendaftar.cetak-ujian');
+    
+    // Upload Dokumen oleh Verifikator
+    Route::post('/pendaftar/{id}/upload-dokumen', [PendaftarController::class, 'uploadDokumen'])->name('pendaftar.upload-dokumen');
+    
     // Verifikasi Dokumen Pendaftar (Shared access)
     Route::post('/pendaftar/dokumen/{id}/approve', [PendaftarController::class, 'approveDokumen'])->name('pendaftar.dokumen.approve');
     Route::post('/pendaftar/dokumen/{id}/reject', [PendaftarController::class, 'rejectDokumen'])->name('pendaftar.dokumen.reject');
