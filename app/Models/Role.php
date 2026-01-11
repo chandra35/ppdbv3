@@ -109,6 +109,13 @@ class Role extends Model
                 'logs.view' => 'Lihat Activity Log',
                 'logs.clear' => 'Hapus Activity Log',
             ],
+            'visitor' => [
+                'visitor.view' => 'Lihat Statistik Pengunjung',
+                'visitor.online' => 'Lihat Pengunjung Online',
+                'visitor.detail' => 'Lihat Detail Pengunjung',
+                'visitor.export' => 'Export Data Pengunjung',
+                'visitor.clear' => 'Hapus Data Pengunjung',
+            ],
             'public' => [
                 'public.view' => 'Lihat Halaman Publik',
                 'public.info-ppdb' => 'Lihat Informasi PPDB',
