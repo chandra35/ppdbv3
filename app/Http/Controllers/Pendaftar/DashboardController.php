@@ -438,12 +438,14 @@ class DashboardController extends Controller
         $nilaiRapor = [];
         for ($i = 1; $i <= 5; $i++) {
             $nilai = $calonSiswa->nilaiRapor->where('semester', $i)->first();
+            $raporDokumen = $calonSiswa->dokumen()->where('jenis_dokumen', 'rapor_sem_' . $i)->first();
             $nilaiRapor[$i] = [
                 'semester' => $i,
                 'matematika' => $nilai->matematika ?? null,
                 'ipa' => $nilai->ipa ?? null,
                 'ips' => $nilai->ips ?? null,
                 'rata_rata' => $nilai->rata_rata ?? null,
+                'dokumen' => $raporDokumen,
             ];
         }
 
@@ -502,6 +504,115 @@ class DashboardController extends Controller
 
         return redirect()->route('pendaftar.nilai-rapor')
             ->with('success', 'Nilai rapor berhasil disimpan');
+    }
+
+    /**
+     * Upload file rapor per semester
+     */
+    public function uploadRaporSemester(Request $request, $semester)
+    {
+        $user = Auth::user();
+        $calonSiswa = CalonSiswa::where('user_id', $user->id)->first();
+
+        if (!$calonSiswa) {
+            return response()->json(['success' => false, 'message' => 'Data pendaftar tidak ditemukan'], 404);
+        }
+
+        // Check if already finalized
+        if ($calonSiswa->is_finalisasi) {
+            return response()->json(['success' => false, 'message' => 'Data sudah difinalisasi dan tidak dapat diubah'], 403);
+        }
+
+        // Validate semester
+        if ($semester < 1 || $semester > 5) {
+            return response()->json(['success' => false, 'message' => 'Semester tidak valid'], 400);
+        }
+
+        // Validate file
+        $request->validate([
+            'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120', // Max 5MB
+        ], [
+            'file.required' => 'File rapor harus diupload',
+            'file.mimes' => 'Format file harus PDF, JPG, JPEG, atau PNG',
+            'file.max' => 'Ukuran file maksimal 5MB',
+        ]);
+
+        $file = $request->file('file');
+        $jenisDokumen = 'rapor_sem_' . $semester;
+        
+        // Delete existing file if any
+        $existingDokumen = $calonSiswa->dokumen()->where('jenis_dokumen', $jenisDokumen)->first();
+        if ($existingDokumen) {
+            Storage::disk('public')->delete($existingDokumen->file_path);
+            $existingDokumen->delete();
+        }
+
+        // Generate filename
+        $extension = $file->getClientOriginalExtension();
+        $filename = 'rapor_sem' . $semester . '_' . $calonSiswa->nisn . '_' . time() . '.' . $extension;
+        
+        // Store file
+        $path = $file->storeAs('dokumen_pendaftar/' . $calonSiswa->id, $filename, 'public');
+
+        // Create dokumen record
+        $dokumen = CalonDokumen::create([
+            'calon_siswa_id' => $calonSiswa->id,
+            'jenis_dokumen' => $jenisDokumen,
+            'nama_dokumen' => CalonDokumen::JENIS_DOKUMEN[$jenisDokumen],
+            'nama_file' => $file->getClientOriginalName(),
+            'file_path' => $path,
+            'file_size' => $file->getSize(),
+            'mime_type' => $file->getMimeType(),
+            'storage_disk' => 'public',
+            'is_required' => false,
+            'status_verifikasi' => 'pending',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'File rapor semester ' . $semester . ' berhasil diupload',
+            'dokumen' => [
+                'id' => $dokumen->id,
+                'nama_file' => $dokumen->nama_file,
+                'file_url' => asset('storage/' . $dokumen->file_path),
+                'file_size' => $dokumen->file_size_formatted,
+                'status' => $dokumen->status_verifikasi,
+            ]
+        ]);
+    }
+
+    /**
+     * Delete file rapor semester
+     */
+    public function deleteRaporSemester($semester)
+    {
+        $user = Auth::user();
+        $calonSiswa = CalonSiswa::where('user_id', $user->id)->first();
+
+        if (!$calonSiswa) {
+            return response()->json(['success' => false, 'message' => 'Data pendaftar tidak ditemukan'], 404);
+        }
+
+        // Check if already finalized
+        if ($calonSiswa->is_finalisasi) {
+            return response()->json(['success' => false, 'message' => 'Data sudah difinalisasi dan tidak dapat diubah'], 403);
+        }
+
+        $jenisDokumen = 'rapor_sem_' . $semester;
+        $dokumen = $calonSiswa->dokumen()->where('jenis_dokumen', $jenisDokumen)->first();
+
+        if (!$dokumen) {
+            return response()->json(['success' => false, 'message' => 'File rapor tidak ditemukan'], 404);
+        }
+
+        // Delete file
+        Storage::disk('public')->delete($dokumen->file_path);
+        $dokumen->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'File rapor semester ' . $semester . ' berhasil dihapus'
+        ]);
     }
 
     /**

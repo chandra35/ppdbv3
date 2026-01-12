@@ -51,10 +51,24 @@ class CalonDokumen extends Model
         'ijazah' => 'Ijazah/SKL',
         'skhun' => 'SKHUN',
         'raport' => 'Raport',
+        'rapor_sem_1' => 'Rapor Semester 1',
+        'rapor_sem_2' => 'Rapor Semester 2',
+        'rapor_sem_3' => 'Rapor Semester 3',
+        'rapor_sem_4' => 'Rapor Semester 4',
+        'rapor_sem_5' => 'Rapor Semester 5',
         'sertifikat_prestasi' => 'Sertifikat Prestasi',
         'surat_keterangan' => 'Surat Keterangan Lainnya',
         'surat_sehat' => 'Surat Keterangan Sehat',
         'surat_kelakuan_baik' => 'Surat Kelakuan Baik',
+    ];
+
+    // Jenis dokumen rapor semester
+    public const RAPOR_SEMESTER = [
+        1 => 'rapor_sem_1',
+        2 => 'rapor_sem_2',
+        3 => 'rapor_sem_3',
+        4 => 'rapor_sem_4',
+        5 => 'rapor_sem_5',
     ];
 
     // Relations

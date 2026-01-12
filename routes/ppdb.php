@@ -85,6 +85,8 @@ Route::middleware(['auth'])->prefix('pendaftar')->name('pendaftar.')->group(func
     // Nilai Rapor
     Route::get('/nilai-rapor', [PendaftarDashboardController::class, 'dataNilaiRapor'])->name('nilai-rapor');
     Route::put('/nilai-rapor', [PendaftarDashboardController::class, 'updateNilaiRapor'])->name('nilai-rapor.update');
+    Route::post('/nilai-rapor/upload-rapor/{semester}', [PendaftarDashboardController::class, 'uploadRaporSemester'])->name('nilai-rapor.upload-rapor');
+    Route::delete('/nilai-rapor/delete-rapor/{semester}', [PendaftarDashboardController::class, 'deleteRaporSemester'])->name('nilai-rapor.delete-rapor');
     
     // Dokumen
     Route::get('/dokumen', [PendaftarDashboardController::class, 'dokumen'])->name('dokumen');

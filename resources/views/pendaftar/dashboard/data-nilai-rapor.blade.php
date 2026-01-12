@@ -182,6 +182,38 @@
             padding: 8px 12px;
         }
     }
+    
+    /* Upload Rapor Styles */
+    .rapor-upload-section {
+        min-height: 40px;
+    }
+    .rapor-upload-section .uploaded-file {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+    }
+    .rapor-upload-section .uploaded-file .btn {
+        font-size: 11px;
+    }
+    .upload-btn-wrapper {
+        position: relative;
+    }
+    .upload-progress {
+        margin-top: 5px;
+    }
+    .upload-progress .progress {
+        height: 5px;
+    }
+    .mobile-rapor-upload {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 6px;
+    }
+    .uploaded-file-mobile {
+        gap: 8px;
+        flex-wrap: wrap;
+    }
 </style>
 @endsection
 
@@ -220,6 +252,7 @@
                             <li>Nilai yang diinput adalah <strong>nilai akhir semester</strong> yang tertera pada raport.</li>
                             <li>Rentang nilai: <strong>1 sampai 100</strong> (angka bulat, tanpa desimal/koma).</li>
                             <li>Rata-rata per semester akan <strong>dihitung otomatis</strong> dari 3 mata pelajaran.</li>
+                            <li><strong class="text-primary">Upload file rapor</strong> untuk setiap semester (format: PDF, JPG, PNG, max 5MB).</li>
                             <li>Pastikan semua nilai sudah diisi dengan benar sebelum menyimpan.</li>
                             <li><strong>Nilai rapor berkontribusi 30%</strong> terhadap penilaian akhir PPDB.</li>
                         </ul>
@@ -229,11 +262,12 @@
                         <table class="nilai-table table table-bordered">
                             <thead>
                                 <tr>
-                                    <th width="15%">Semester</th>
-                                    <th width="20%">Matematika</th>
-                                    <th width="20%">IPA</th>
-                                    <th width="20%">IPS</th>
-                                    <th width="25%">Rata-Rata</th>
+                                    <th width="12%">Semester</th>
+                                    <th width="15%">Matematika</th>
+                                    <th width="15%">IPA</th>
+                                    <th width="15%">IPS</th>
+                                    <th width="18%">Rata-Rata</th>
+                                    <th width="25%">File Rapor</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -295,12 +329,42 @@
                                             {{ $nilai['rata_rata'] ? number_format($nilai['rata_rata'], 2) : '-' }}
                                         </div>
                                     </td>
+                                    <td>
+                                        <div class="rapor-upload-section" id="rapor_upload_{{ $semester }}">
+                                            @if($nilai['dokumen'])
+                                                <div class="uploaded-file">
+                                                    <a href="{{ asset('storage/' . $nilai['dokumen']->file_path) }}" target="_blank" class="btn btn-sm btn-outline-success mb-1" title="Lihat File">
+                                                        <i class="fas fa-file-pdf"></i> {{ Str::limit($nilai['dokumen']->nama_file, 15) }}
+                                                    </a>
+                                                    <span class="badge badge-{{ $nilai['dokumen']->status_verifikasi == 'valid' ? 'success' : ($nilai['dokumen']->status_verifikasi == 'invalid' ? 'danger' : 'warning') }}">
+                                                        {{ ucfirst($nilai['dokumen']->status_verifikasi) }}
+                                                    </span>
+                                                    @if(!$calonSiswa->is_finalisasi)
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteRapor({{ $semester }})" title="Hapus">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                    @endif
+                                                </div>
+                                            @else
+                                                @if(!$calonSiswa->is_finalisasi)
+                                                <div class="upload-btn-wrapper">
+                                                    <input type="file" id="rapor_file_{{ $semester }}" accept=".pdf,.jpg,.jpeg,.png" onchange="uploadRapor({{ $semester }})" style="display: none;">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="$('#rapor_file_{{ $semester }}').click()">
+                                                        <i class="fas fa-upload"></i> Upload
+                                                    </button>
+                                                </div>
+                                                @else
+                                                <span class="text-muted"><i class="fas fa-times-circle"></i> Tidak ada</span>
+                                                @endif
+                                            @endif
+                                        </div>
+                                    </td>
                                 </tr>
                                 @endforeach
                             </tbody>
                             <tfoot>
                                 <tr style="background: #f8f9fa;">
-                                    <td colspan="4" class="text-right"><strong>Rata-Rata Keseluruhan:</strong></td>
+                                    <td colspan="5" class="text-right"><strong>Rata-Rata Keseluruhan:</strong></td>
                                     <td>
                                         <div class="rata-rata-display" id="rata_rata_keseluruhan" style="font-size: 20px; color: #28a745;">
                                             {{ $calonSiswa->rata_rata_rapor ? number_format($calonSiswa->rata_rata_rapor, 2) : '-' }}
@@ -383,6 +447,39 @@
                             <label><i class="fas fa-chart-line mr-1"></i> Rata-Rata</label>
                             <div class="rata-rata-display" id="mobile_rata_rata_{{ $semester }}">
                                 {{ $nilai['rata_rata'] ? number_format($nilai['rata_rata'], 2) : '-' }}
+                            </div>
+                        </div>
+
+                        {{-- Upload Rapor Section for Mobile --}}
+                        <div class="form-group mt-3" style="border-top: 1px dashed #ddd; padding-top: 12px;">
+                            <label><i class="fas fa-file-pdf mr-1"></i> File Rapor</label>
+                            <div class="mobile-rapor-upload" id="mobile_rapor_upload_{{ $semester }}">
+                                @if($nilai['dokumen'])
+                                    <div class="uploaded-file-mobile d-flex align-items-center justify-content-between">
+                                        <a href="{{ asset('storage/' . $nilai['dokumen']->file_path) }}" target="_blank" class="btn btn-sm btn-outline-success">
+                                            <i class="fas fa-file-pdf"></i> Lihat File
+                                        </a>
+                                        <span class="badge badge-{{ $nilai['dokumen']->status_verifikasi == 'valid' ? 'success' : ($nilai['dokumen']->status_verifikasi == 'invalid' ? 'danger' : 'warning') }}">
+                                            {{ ucfirst($nilai['dokumen']->status_verifikasi) }}
+                                        </span>
+                                        @if(!$calonSiswa->is_finalisasi)
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteRapor({{ $semester }})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        @endif
+                                    </div>
+                                @else
+                                    @if(!$calonSiswa->is_finalisasi)
+                                    <div class="upload-btn-wrapper">
+                                        <input type="file" id="mobile_rapor_file_{{ $semester }}" accept=".pdf,.jpg,.jpeg,.png" onchange="uploadRapor({{ $semester }}, 'mobile')" style="display: none;">
+                                        <button type="button" class="btn btn-block btn-outline-primary" onclick="$('#mobile_rapor_file_{{ $semester }}').click()">
+                                            <i class="fas fa-upload mr-1"></i> Upload Rapor
+                                        </button>
+                                    </div>
+                                    @else
+                                    <span class="text-muted"><i class="fas fa-times-circle"></i> Tidak ada file</span>
+                                    @endif
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -568,5 +665,149 @@ $('#formNilaiRapor').on('submit', function(e) {
         return false;
     }
 });
+
+// Upload Rapor per Semester
+function uploadRapor(semester, source = 'desktop') {
+    const fileInput = source === 'mobile' ? $(`#mobile_rapor_file_${semester}`)[0] : $(`#rapor_file_${semester}`)[0];
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        toastr.error('Pilih file terlebih dahulu');
+        return;
+    }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        toastr.error('Ukuran file maksimal 5MB');
+        fileInput.value = '';
+        return;
+    }
+    
+    // Validate file type
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+    if (!allowedTypes.includes(file.type)) {
+        toastr.error('Format file harus PDF, JPG, JPEG, atau PNG');
+        fileInput.value = '';
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+    
+    // Show loading
+    const uploadSection = $(`#rapor_upload_${semester}`);
+    const mobileUploadSection = $(`#mobile_rapor_upload_${semester}`);
+    uploadSection.html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Uploading...</div>');
+    mobileUploadSection.html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Uploading...</div>');
+    
+    $.ajax({
+        url: `{{ url('pendaftar/nilai-rapor/upload-rapor') }}/${semester}`,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            if (response.success) {
+                toastr.success(response.message);
+                // Refresh the upload section with new file info
+                const fileHtml = `
+                    <div class="uploaded-file">
+                        <a href="${response.dokumen.file_url}" target="_blank" class="btn btn-sm btn-outline-success mb-1" title="Lihat File">
+                            <i class="fas fa-file-pdf"></i> ${response.dokumen.nama_file.substring(0, 15)}...
+                        </a>
+                        <span class="badge badge-warning">Pending</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteRapor(${semester})" title="Hapus">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                uploadSection.html(fileHtml);
+                
+                const mobileFileHtml = `
+                    <div class="uploaded-file-mobile d-flex align-items-center justify-content-between">
+                        <a href="${response.dokumen.file_url}" target="_blank" class="btn btn-sm btn-outline-success">
+                            <i class="fas fa-file-pdf"></i> Lihat File
+                        </a>
+                        <span class="badge badge-warning">Pending</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteRapor(${semester})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                mobileUploadSection.html(mobileFileHtml);
+            } else {
+                toastr.error(response.message);
+                resetUploadSection(semester);
+            }
+        },
+        error: function(xhr) {
+            let errorMessage = 'Terjadi kesalahan saat upload file';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMessage = xhr.responseJSON.message;
+            } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                errorMessage = Object.values(xhr.responseJSON.errors).flat().join(', ');
+            }
+            toastr.error(errorMessage);
+            resetUploadSection(semester);
+        }
+    });
+}
+
+// Delete Rapor
+function deleteRapor(semester) {
+    if (!confirm('Yakin ingin menghapus file rapor semester ' + semester + '?')) {
+        return;
+    }
+    
+    const uploadSection = $(`#rapor_upload_${semester}`);
+    const mobileUploadSection = $(`#mobile_rapor_upload_${semester}`);
+    
+    $.ajax({
+        url: `{{ url('pendaftar/nilai-rapor/delete-rapor') }}/${semester}`,
+        type: 'DELETE',
+        data: {
+            _token: $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(response) {
+            if (response.success) {
+                toastr.success(response.message);
+                resetUploadSection(semester);
+            } else {
+                toastr.error(response.message);
+            }
+        },
+        error: function(xhr) {
+            let errorMessage = 'Terjadi kesalahan saat menghapus file';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMessage = xhr.responseJSON.message;
+            }
+            toastr.error(errorMessage);
+        }
+    });
+}
+
+// Reset upload section to initial state
+function resetUploadSection(semester) {
+    const uploadHtml = `
+        <div class="upload-btn-wrapper">
+            <input type="file" id="rapor_file_${semester}" accept=".pdf,.jpg,.jpeg,.png" onchange="uploadRapor(${semester})" style="display: none;">
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="$('#rapor_file_${semester}').click()">
+                <i class="fas fa-upload"></i> Upload
+            </button>
+        </div>
+    `;
+    $(`#rapor_upload_${semester}`).html(uploadHtml);
+    
+    const mobileUploadHtml = `
+        <div class="upload-btn-wrapper">
+            <input type="file" id="mobile_rapor_file_${semester}" accept=".pdf,.jpg,.jpeg,.png" onchange="uploadRapor(${semester}, 'mobile')" style="display: none;">
+            <button type="button" class="btn btn-block btn-outline-primary" onclick="$('#mobile_rapor_file_${semester}').click()">
+                <i class="fas fa-upload mr-1"></i> Upload Rapor
+            </button>
+        </div>
+    `;
+    $(`#mobile_rapor_upload_${semester}`).html(mobileUploadHtml);
+}
 </script>
 @endsection
