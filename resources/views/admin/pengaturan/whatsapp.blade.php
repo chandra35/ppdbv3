@@ -9,7 +9,7 @@
 @section('content')
 <div class="row">
     <div class="col-md-8">
-        <form action="{{ route('admin.pengaturan.whatsapp.update') }}" method="POST">
+        <form action="{{ route('admin.whatsapp.update') }}" method="POST">
             @csrf
             @method('PUT')
             
@@ -99,7 +99,7 @@
                 <div class="card-header">
                     <h3 class="card-title"><i class="fas fa-file-alt"></i> Template Pesan</h3>
                     <div class="card-tools">
-                        <a href="{{ route('admin.pengaturan.whatsapp.reset-templates') }}" 
+                        <a href="{{ route('admin.whatsapp.reset-templates') }}" 
                             class="btn btn-sm btn-warning" 
                             onclick="return confirm('Reset semua template ke default?')">
                             <i class="fas fa-undo"></i> Reset Default
@@ -134,6 +134,11 @@
                                 <i class="fas fa-thumbs-down"></i> Ditolak
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="lupa-password-tab" data-toggle="tab" href="#lupa-password">
+                                <i class="fas fa-key"></i> Lupa Password
+                            </a>
+                        </li>
                     </ul>
                     
                     <div class="tab-content pt-3" id="templateTabsContent">
@@ -165,6 +170,14 @@
                                     placeholder="Template pesan untuk calon siswa ditolak">{{ old('template_ditolak', $settings->template_ditolak ?? $defaultTemplates['template_ditolak']) }}</textarea>
                             </div>
                         </div>
+                        <div class="tab-pane fade" id="lupa-password">
+                            <div class="form-group">
+                                <label>Template Lupa Password</label>
+                                <textarea name="template_lupa_password" class="form-control" rows="6"
+                                    placeholder="Template pesan untuk reset password">{{ old('template_lupa_password', $settings->template_lupa_password ?? $defaultTemplates['template_lupa_password']) }}</textarea>
+                                <small class="text-muted">Variabel khusus: <code>{password}</code> = password baru yang digenerate</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -186,7 +199,7 @@
                 <h3 class="card-title"><i class="fas fa-plug"></i> Test Koneksi</h3>
             </div>
             <div class="card-body">
-                <button type="button" class="btn btn-block btn-outline-success" id="btn-test-connection" {{ !$settings->is_active ? 'disabled' : '' }}>
+                <button type="button" class="btn btn-block btn-outline-success" id="btn-test-connection" {{ !($settings->is_active ?? false) ? 'disabled' : '' }}>
                     <i class="fas fa-sync-alt"></i> Test Koneksi API
                 </button>
                 <div id="connection-result" class="mt-3" style="display: none;"></div>
@@ -207,7 +220,7 @@
                     <label>Pesan</label>
                     <textarea id="test-message" class="form-control" rows="3" placeholder="Pesan test dari PPDB">Test pesan dari sistem PPDB {{ config('app.name') }}</textarea>
                 </div>
-                <button type="button" class="btn btn-block btn-warning" id="btn-send-test" {{ !$settings->is_active ? 'disabled' : '' }}>
+                <button type="button" class="btn btn-block btn-warning" id="btn-send-test" {{ !($settings->is_active ?? false) ? 'disabled' : '' }}>
                     <i class="fas fa-paper-plane"></i> Kirim Test
                 </button>
                 <div id="send-result" class="mt-3" style="display: none;"></div>
@@ -317,7 +330,7 @@ $(function() {
         btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Testing...');
         
         $.ajax({
-            url: '{{ route("admin.pengaturan.whatsapp.test-connection") }}',
+            url: '{{ route("admin.whatsapp.test-connection") }}',
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
@@ -362,7 +375,7 @@ $(function() {
         btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Mengirim...');
         
         $.ajax({
-            url: '{{ route("admin.pengaturan.whatsapp.send-test") }}',
+            url: '{{ route("admin.whatsapp.send-test") }}',
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'

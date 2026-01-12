@@ -60,6 +60,10 @@ Route::prefix('pendaftar')->name('pendaftar.')->group(function () {
     // Login
     Route::get('/login', [PendaftarAuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [PendaftarAuthController::class, 'login'])->name('login.post');
+    
+    // Forgot Password (via WhatsApp)
+    Route::get('/forgot-password', [\App\Http\Controllers\Ppdb\ForgotPasswordController::class, 'showForm'])->name('forgot-password');
+    Route::post('/forgot-password', [\App\Http\Controllers\Ppdb\ForgotPasswordController::class, 'sendReset'])->name('forgot-password.send');
 });
 
 // Dashboard Pendaftar (Auth Required)
@@ -179,6 +183,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // ---- PENDAFTAR (Shared access) ----
     Route::get('/pendaftar', [PendaftarController::class, 'index'])->name('pendaftar.index');
     Route::get('/pendaftar/map', [PendaftarController::class, 'map'])->name('pendaftar.map');
+    Route::get('/pendaftar/create', [PendaftarController::class, 'create'])->name('pendaftar.create');
+    Route::post('/pendaftar', [PendaftarController::class, 'store'])->name('pendaftar.store');
     Route::get('/pendaftar/{id}', [PendaftarController::class, 'show'])->name('pendaftar.show');
     Route::get('/pendaftar/{id}/edit', [PendaftarController::class, 'edit'])->name('pendaftar.edit');
     Route::put('/pendaftar/{id}', [PendaftarController::class, 'update'])->name('pendaftar.update');

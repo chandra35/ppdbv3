@@ -507,31 +507,24 @@
                         $jalurDenganGelombang = $jalurAktif->filter(fn($j) => $j->gelombang->isNotEmpty());
                     @endphp
                     
-                    {{-- Status Pendaftaran dengan Countdown --}}
-                    @if($gelombangAktif)
+                    {{-- Status Pendaftaran dengan Countdown - Hidden saat open --}}
+                    @if($gelombangAktif && $statusPendaftaran != 'open')
                     <div class="countdown-wrapper text-white text-center mb-4">
                         {{-- Status Badge --}}
                         <div class="countdown-status {{ $statusPendaftaran }}">
                             @if($statusPendaftaran == 'upcoming')
                                 <i class="fas fa-hourglass-half"></i>
                                 <span>Pendaftaran Segera Dibuka</span>
-                            @elseif($statusPendaftaran == 'open')
-                                <i class="fas fa-door-open"></i>
-                                <span>Pendaftaran Sedang Berlangsung</span>
                             @else
                                 <i class="fas fa-door-closed"></i>
                                 <span>Pendaftaran Telah Ditutup</span>
                             @endif
                         </div>
                         
-                        {{-- Countdown Title --}}
-                        @if($countdownTarget)
+                        {{-- Countdown Title - Hanya tampil saat belum dibuka --}}
+                        @if($countdownTarget && $statusPendaftaran == 'upcoming')
                         <p class="mb-3 opacity-90">
-                            @if($statusPendaftaran == 'upcoming')
-                                <i class="fas fa-clock me-1"></i> Pendaftaran akan dibuka dalam:
-                            @else
-                                <i class="fas fa-stopwatch me-1"></i> Pendaftaran akan ditutup dalam:
-                            @endif
+                            <i class="fas fa-clock me-1"></i> Pendaftaran akan dibuka dalam:
                         </p>
                         
                         {{-- Countdown Timer --}}

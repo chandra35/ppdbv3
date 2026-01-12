@@ -4,18 +4,23 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CalonSiswa;
+use App\Models\CalonOrtu;
 use App\Models\CalonDokumen;
 use App\Models\DokumenVerifikasiHistory;
 use App\Models\JalurPendaftaran;
 use App\Models\GelombangPendaftaran;
+use App\Models\TahunPelajaran;
 use App\Models\ActivityLog;
 use App\Models\User;
+use App\Models\Role;
 use App\Services\KopSuratService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Laravolt\Indonesia\Models\Province;
 
 class PendaftarController extends Controller
 {
@@ -123,6 +128,282 @@ class PendaftarController extends Controller
         $jalurList = JalurPendaftaran::orderBy('urutan')->get();
         
         return view('admin.pendaftar.map', compact('pendaftars', 'jalurList'));
+    }
+
+    /**
+     * Show form to create new pendaftar (Manual Registration)
+     */
+    public function create()
+    {
+        // Check permission
+        if (!auth()->user()->hasPermission('pendaftar.create')) {
+            abort(403, 'Anda tidak memiliki izin untuk menambah pendaftar');
+        }
+
+        // Get tahun pelajaran aktif
+        $tahunPelajaran = TahunPelajaran::active()->first();
+        if (!$tahunPelajaran) {
+            return redirect()->route('admin.pendaftar.index')
+                ->with('error', 'Tidak ada tahun pelajaran aktif. Silakan aktifkan tahun pelajaran terlebih dahulu.');
+        }
+
+        // Get jalur pendaftaran (aktif atau tidak untuk manual input)
+        $jalurList = JalurPendaftaran::where('tahun_pelajaran_id', $tahunPelajaran->id)
+            ->with('gelombang')
+            ->orderBy('urutan')
+            ->get();
+
+        if ($jalurList->isEmpty()) {
+            return redirect()->route('admin.pendaftar.index')
+                ->with('error', 'Tidak ada jalur pendaftaran. Silakan buat jalur pendaftaran terlebih dahulu.');
+        }
+
+        // Get provinces for address selection
+        $provinces = Province::orderBy('name')->get();
+
+        return view('admin.pendaftar.create', compact('tahunPelajaran', 'jalurList', 'provinces'));
+    }
+
+    /**
+     * Store new pendaftar (Manual Registration by Admin/Verifikator)
+     */
+    public function store(Request $request)
+    {
+        // Check permission
+        if (!auth()->user()->hasPermission('pendaftar.create')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki izin untuk menambah pendaftar'
+            ], 403);
+        }
+
+        // Validate request
+        $request->validate([
+            // Data Diri Wajib
+            'nisn' => 'required|string|size:10|unique:calon_siswas,nisn',
+            'nama_lengkap' => 'required|string|max:100',
+            'jenis_kelamin' => 'required|in:L,P',
+            'tempat_lahir' => 'required|string|max:100',
+            'tanggal_lahir' => 'required|date',
+            'agama' => 'required|string',
+            'nomor_hp' => 'required|string|max:20',
+            
+            // Alamat Siswa
+            'alamat_siswa' => 'required|string',
+            'provinsi_id_siswa' => 'required|string',
+            'kabupaten_id_siswa' => 'required|string',
+            'kecamatan_id_siswa' => 'required|string',
+            'kelurahan_id_siswa' => 'required|string',
+            
+            // PPDB Selection
+            'jalur_pendaftaran_id' => 'required|exists:jalur_pendaftaran,id',
+            'gelombang_pendaftaran_id' => 'required|exists:gelombang_pendaftaran,id',
+            
+            // Data Orang Tua Wajib
+            'nama_ayah' => 'required|string|max:100',
+            'nama_ibu' => 'required|string|max:100',
+        ], [
+            'nisn.unique' => 'NISN sudah terdaftar dalam sistem',
+            'nisn.size' => 'NISN harus 10 digit',
+        ]);
+
+        DB::beginTransaction();
+        
+        try {
+            // Get jalur & gelombang
+            $jalur = JalurPendaftaran::findOrFail($request->jalur_pendaftaran_id);
+            $gelombang = GelombangPendaftaran::findOrFail($request->gelombang_pendaftaran_id);
+            $tahunPelajaran = TahunPelajaran::active()->first();
+
+            // Generate nomor registrasi
+            $nomorRegistrasi = $this->generateNomorRegistrasi($jalur);
+            
+            // Generate username & password
+            $username = $request->nisn;
+            $password = Str::random(8);
+            $hashedPassword = Hash::make($password);
+
+            // Create user account
+            $user = User::create([
+                'name' => $request->nama_lengkap,
+                'email' => $request->email ?? $request->nisn . '@ppdb.local',
+                'password' => $hashedPassword,
+                'plain_password' => $password, // Simpan sementara untuk dicetak
+            ]);
+
+            // Assign pendaftar role
+            $pendaftarRole = Role::where('name', 'pendaftar')->first();
+            if ($pendaftarRole) {
+                $user->roles()->attach($pendaftarRole->id);
+            }
+
+            // Normalize phone number
+            $nomorHp = $request->nomor_hp;
+            if (str_starts_with($nomorHp, '08')) {
+                $nomorHp = '+62' . substr($nomorHp, 1);
+            }
+
+            // Create calon siswa
+            $calonSiswa = CalonSiswa::create([
+                'user_id' => $user->id,
+                'tahun_pelajaran_id' => $tahunPelajaran->id,
+                'jalur_pendaftaran_id' => $jalur->id,
+                'gelombang_pendaftaran_id' => $gelombang->id,
+                'nomor_registrasi' => $nomorRegistrasi,
+                
+                // Data Diri
+                'nisn' => $request->nisn,
+                'nisn_valid' => false, // Manual input, tidak divalidasi API
+                'nik' => $request->nik,
+                'nama_lengkap' => $request->nama_lengkap,
+                'jenis_kelamin' => $request->jenis_kelamin,
+                'tempat_lahir' => $request->tempat_lahir,
+                'tanggal_lahir' => $request->tanggal_lahir,
+                'agama' => $request->agama,
+                'nomor_hp' => $nomorHp,
+                'email' => $request->email,
+                
+                // Data Tambahan
+                'jumlah_saudara' => $request->jumlah_saudara,
+                'anak_ke' => $request->anak_ke,
+                'hobi' => $request->hobi,
+                'cita_cita' => $request->cita_cita,
+                
+                // Alamat Siswa
+                'alamat_siswa' => $request->alamat_siswa,
+                'rt_siswa' => $request->rt_siswa,
+                'rw_siswa' => $request->rw_siswa,
+                'provinsi_id_siswa' => $request->provinsi_id_siswa,
+                'kabupaten_id_siswa' => $request->kabupaten_id_siswa,
+                'kecamatan_id_siswa' => $request->kecamatan_id_siswa,
+                'kelurahan_id_siswa' => $request->kelurahan_id_siswa,
+                'kodepos_siswa' => $request->kodepos_siswa,
+                
+                // Asal Sekolah
+                'npsn_asal_sekolah' => $request->npsn_asal_sekolah,
+                'nama_sekolah_asal' => $request->nama_sekolah_asal,
+                
+                // Status
+                'status_verifikasi' => 'pending',
+                'tanggal_registrasi' => now(),
+                'data_diri_completed' => true,
+                
+                // GPS location (from admin's browser if available)
+                'registration_latitude' => $request->registration_latitude,
+                'registration_longitude' => $request->registration_longitude,
+                'registration_ip' => $request->ip(),
+                'registration_device' => 'Admin Manual Input',
+                'registration_browser' => $request->userAgent(),
+            ]);
+
+            // Create calon ortu record
+            $calonOrtu = CalonOrtu::create([
+                'calon_siswa_id' => $calonSiswa->id,
+                'no_kk' => $request->no_kk,
+                
+                // Data Ayah
+                'nama_ayah' => $request->nama_ayah,
+                'nik_ayah' => $request->nik_ayah,
+                'tempat_lahir_ayah' => $request->tempat_lahir_ayah,
+                'tanggal_lahir_ayah' => $request->tanggal_lahir_ayah,
+                'pendidikan_ayah' => $request->pendidikan_ayah,
+                'pekerjaan_ayah' => $request->pekerjaan_ayah,
+                'penghasilan_ayah' => $request->penghasilan_ayah,
+                'hp_ayah' => $request->hp_ayah,
+                
+                // Data Ibu
+                'nama_ibu' => $request->nama_ibu,
+                'nik_ibu' => $request->nik_ibu,
+                'tempat_lahir_ibu' => $request->tempat_lahir_ibu,
+                'tanggal_lahir_ibu' => $request->tanggal_lahir_ibu,
+                'pendidikan_ibu' => $request->pendidikan_ibu,
+                'pekerjaan_ibu' => $request->pekerjaan_ibu,
+                'penghasilan_ibu' => $request->penghasilan_ibu,
+                'hp_ibu' => $request->hp_ibu,
+                
+                // Alamat Ortu (sama dengan siswa jika copy)
+                'alamat_ortu' => $request->copy_alamat_to_ortu ? $request->alamat_siswa : $request->alamat_ortu,
+                'rt_ortu' => $request->copy_alamat_to_ortu ? $request->rt_siswa : $request->rt_ortu,
+                'rw_ortu' => $request->copy_alamat_to_ortu ? $request->rw_siswa : $request->rw_ortu,
+                'provinsi_id' => $request->copy_alamat_to_ortu ? $request->provinsi_id_siswa : $request->provinsi_id_ortu,
+                'kabupaten_id' => $request->copy_alamat_to_ortu ? $request->kabupaten_id_siswa : $request->kabupaten_id_ortu,
+                'kecamatan_id' => $request->copy_alamat_to_ortu ? $request->kecamatan_id_siswa : $request->kecamatan_id_ortu,
+                'kelurahan_id' => $request->copy_alamat_to_ortu ? $request->kelurahan_id_siswa : $request->kelurahan_id_ortu,
+                'kodepos' => $request->copy_alamat_to_ortu ? $request->kodepos_siswa : $request->kodepos_ortu,
+            ]);
+
+            // Update completion flags
+            $calonSiswa->update([
+                'data_ortu_completed' => true,
+            ]);
+
+            // Update kuota terisi
+            $jalur->increment('kuota_terisi');
+            $gelombang->increment('kuota_terisi');
+
+            // Log activity
+            ActivityLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'create',
+                'model_type' => 'App\Models\CalonSiswa',
+                'model_id' => $calonSiswa->id,
+                'description' => "Menambahkan pendaftar baru secara manual: {$calonSiswa->nama_lengkap} (NISN: {$calonSiswa->nisn})",
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent()
+            ]);
+
+            DB::commit();
+
+            // Return success with credentials
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Pendaftar berhasil ditambahkan',
+                    'data' => [
+                        'id' => $calonSiswa->id,
+                        'nomor_registrasi' => $nomorRegistrasi,
+                        'nama_lengkap' => $calonSiswa->nama_lengkap,
+                        'nisn' => $calonSiswa->nisn,
+                        'username' => $username,
+                        'password' => $password, // Plain password for printing
+                        'jalur' => $jalur->nama,
+                        'gelombang' => $gelombang->nama,
+                    ]
+                ]);
+            }
+
+            return redirect()->route('admin.pendaftar.show', $calonSiswa->id)
+                ->with('success', 'Pendaftar berhasil ditambahkan. Username: ' . $username . ', Password: ' . $password);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal menambahkan pendaftar: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Gagal menambahkan pendaftar: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Generate nomor registrasi
+     */
+    private function generateNomorRegistrasi(JalurPendaftaran $jalur): string
+    {
+        $prefix = $jalur->prefix_nomor ?? 'REG';
+        $counter = $jalur->counter_nomor + 1;
+        
+        // Update counter
+        $jalur->update(['counter_nomor' => $counter]);
+        
+        // Format: PREFIX-YYYYMM-XXXXX
+        return $prefix . '-' . date('Ym') . '-' . str_pad($counter, 5, '0', STR_PAD_LEFT);
     }
 
     public function getDokumenList($id)

@@ -15,8 +15,19 @@ class PengaturanWaController extends Controller
      */
     public function index()
     {
-        $settings = PengaturanWa::first() ?? new PengaturanWa();
+        $settings = PengaturanWa::first();
         $defaultTemplates = PengaturanWa::getDefaultTemplates();
+        
+        // If no settings exist, create a new instance with defaults
+        if (!$settings) {
+            $settings = new PengaturanWa([
+                'provider' => 'fonnte',
+                'is_active' => false,
+                'api_key' => '',
+                'api_url' => '',
+                'sender_number' => '',
+            ]);
+        }
         
         return view('admin.pengaturan.whatsapp', compact('settings', 'defaultTemplates'));
     }
@@ -36,6 +47,7 @@ class PengaturanWaController extends Controller
             'template_verifikasi' => 'nullable|string|max:2000',
             'template_diterima' => 'nullable|string|max:2000',
             'template_ditolak' => 'nullable|string|max:2000',
+            'template_lupa_password' => 'nullable|string|max:2000',
         ]);
 
         $settings = PengaturanWa::first();
@@ -54,12 +66,13 @@ class PengaturanWaController extends Controller
             'template_verifikasi' => $request->template_verifikasi,
             'template_diterima' => $request->template_diterima,
             'template_ditolak' => $request->template_ditolak,
+            'template_lupa_password' => $request->template_lupa_password,
             'updated_by' => Auth::id(),
         ]);
 
         $settings->save();
 
-        return redirect()->route('admin.pengaturan.whatsapp.index')
+        return redirect()->route('admin.whatsapp.index')
             ->with('success', 'Pengaturan WhatsApp berhasil disimpan');
     }
 
@@ -110,7 +123,7 @@ class PengaturanWaController extends Controller
             $settings->update($defaults);
         }
 
-        return redirect()->route('admin.pengaturan.whatsapp.index')
+        return redirect()->route('admin.whatsapp.index')
             ->with('success', 'Template berhasil direset ke default');
     }
 }

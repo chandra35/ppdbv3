@@ -19,6 +19,7 @@ class PengaturanWa extends Model
         'template_verifikasi',
         'template_diterima',
         'template_ditolak',
+        'template_lupa_password',
         'settings',
         'updated_by',
     ];
@@ -80,6 +81,8 @@ class PengaturanWa extends Model
             'template_diterima' => "🎓 *PPDB {nama_sekolah}*\n\n🎉 *SELAMAT!*\n\nHalo *{nama_siswa}*,\n\nAnda *DITERIMA* sebagai calon siswa baru di {nama_sekolah}.\n\nNo. Registrasi: {nomor_registrasi}\nJalur: {jalur_pendaftaran}\n\nSilakan lakukan daftar ulang sesuai jadwal yang ditentukan.\n\nTerima kasih.\n_Tim PPDB {nama_sekolah}_",
             
             'template_ditolak' => "🎓 *PPDB {nama_sekolah}*\n\nHalo *{nama_siswa}*,\n\nMohon maaf, Anda *TIDAK DITERIMA* pada seleksi PPDB {nama_sekolah}.\n\nNo. Registrasi: {nomor_registrasi}\nJalur: {jalur_pendaftaran}\n\nTetap semangat dan jangan menyerah!\n\nTerima kasih.\n_Tim PPDB {nama_sekolah}_",
+            
+            'template_lupa_password' => "🔐 *Reset Password PPDB*\n\n{nama_sekolah}\n\nHalo *{nama_siswa}*,\n\nAnda telah meminta reset password untuk akun PPDB Anda.\n\n📋 *Detail Akun:*\n• Username: `{username}`\n• Password Baru: `{password}`\n\n🔗 Link Login:\n{url_login}\n\n⚠️ Segera login dan ganti password Anda.\nJika Anda tidak meminta reset password, abaikan pesan ini.\n\nTerima kasih.\n_Tim PPDB {nama_sekolah}_",
         ];
     }
 }

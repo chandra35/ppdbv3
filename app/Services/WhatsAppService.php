@@ -133,6 +133,21 @@ class WhatsAppService
     }
 
     /**
+     * Send password reset notification
+     */
+    public function sendPasswordResetNotification(array $data): array
+    {
+        if (!$this->isActive()) {
+            return ['success' => false, 'message' => 'WhatsApp service is not active'];
+        }
+
+        $template = $this->settings->template_lupa_password ?? PengaturanWa::getDefaultTemplates()['template_lupa_password'];
+        $message = $this->parseTemplate($template, $data);
+
+        return $this->send($data['phone'], $message);
+    }
+
+    /**
      * Format phone number to international format (62xxx)
      */
     protected function formatPhoneNumber(string $phone): string

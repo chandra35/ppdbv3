@@ -86,14 +86,17 @@
         <div class="col-12 col-sm-6">
             <h1 style="font-size: 24px;"><i class="fas fa-users"></i> Daftar Pendaftar</h1>
         </div>
-        <div class="col-12 col-sm-6 d-flex justify-content-sm-end align-items-center" style="gap: 8px;">
-            <a href="{{ route('admin.pendaftar.map') }}" class="btn btn-success btn-sm" style="font-size: 12px;">
-                <i class="fas fa-map-marked-alt mr-1"></i> Peta Pendaftar
-            </a>
-            <ol class="breadcrumb float-sm-right mb-0" style="background: none; padding: 0;">
-                <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-                <li class="breadcrumb-item active">Pendaftar</li>
-            </ol>
+        <div class="col-12 col-sm-6">
+            <div class="d-flex justify-content-sm-end align-items-center flex-wrap" style="gap: 8px;">
+                @if(auth()->user()->hasPermission('pendaftar.create'))
+                <a href="{{ route('admin.pendaftar.create') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-user-plus mr-1"></i> Tambah Pendaftar
+                </a>
+                @endif
+                <a href="{{ route('admin.pendaftar.map') }}" class="btn btn-success btn-sm">
+                    <i class="fas fa-map-marked-alt mr-1"></i> Peta Pendaftar
+                </a>
+            </div>
         </div>
     </div>
 @stop

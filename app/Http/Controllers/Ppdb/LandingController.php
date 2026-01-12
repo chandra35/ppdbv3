@@ -61,12 +61,13 @@ class LandingController extends Controller
             
             if ($now->lt($waktuBuka)) {
                 $statusPendaftaran = 'upcoming'; // Belum dibuka
-                $countdownTarget = $waktuBuka;
+                $countdownTarget = $waktuBuka; // Countdown ke tanggal buka
             } elseif ($now->between($waktuBuka, $waktuTutup)) {
                 $statusPendaftaran = 'open'; // Sedang dibuka
-                $countdownTarget = $waktuTutup;
+                $countdownTarget = null; // Tidak perlu countdown saat pendaftaran dibuka
             } else {
                 $statusPendaftaran = 'closed'; // Sudah ditutup
+                $countdownTarget = null;
             }
         }
         
