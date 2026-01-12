@@ -220,7 +220,7 @@
                                             @if($gelombang->kuota_terisi == 0)
                                             <div class="dropdown-divider"></div>
                                             <form action="{{ route('admin.jalur.gelombang.destroy', [$jalur, $gelombang]) }}" method="POST" 
-                                                  onsubmit="return confirm('Yakin ingin menghapus gelombang ini?')">
+                                                  class="form-delete-gelombang">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="dropdown-item text-danger">
@@ -271,7 +271,7 @@
                 @if($jalur->kuota_terisi == 0)
                 <hr>
                 <form action="{{ route('admin.jalur.destroy', $jalur) }}" method="POST" 
-                      onsubmit="return confirm('Yakin ingin menghapus jalur ini beserta semua gelombangnya?')">
+                      id="form-delete-jalur">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-outline-danger btn-block">
@@ -567,6 +567,52 @@ $(function() {
         var prefix = $(this).attr('id').includes('edit_') ? 'edit_' : '';
         var tanggalBuka = $('#' + prefix + 'tanggal_buka').val();
         $('#' + prefix + 'tanggal_tutup').attr('min', tanggalBuka);
+    });
+    
+    // SweetAlert2 for delete gelombang
+    $('.form-delete-gelombang').on('submit', function(e) {
+        e.preventDefault();
+        var form = this;
+        
+        Swal.fire({
+            title: 'Hapus Gelombang?',
+            text: 'Gelombang yang dihapus tidak dapat dikembalikan!',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-trash mr-1"></i> Ya, Hapus!',
+            cancelButtonText: '<i class="fas fa-times mr-1"></i> Batal',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    });
+    
+    // SweetAlert2 for delete jalur
+    $('#form-delete-jalur').on('submit', function(e) {
+        e.preventDefault();
+        var form = this;
+        
+        Swal.fire({
+            title: 'Hapus Jalur "{{ $jalur->nama }}"?',
+            html: '<p class="text-danger"><strong>Perhatian!</strong></p>' +
+                  '<p>Semua gelombang dalam jalur ini juga akan dihapus.</p>' +
+                  '<p>Data yang dihapus tidak dapat dikembalikan!</p>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-trash mr-1"></i> Ya, Hapus Jalur!',
+            cancelButtonText: '<i class="fas fa-times mr-1"></i> Batal',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
     });
 });
 </script>

@@ -1184,6 +1184,42 @@ class PendaftarController extends Controller
     }
 
     /**
+     * Preview Kartu Ujian (HTML view for Admin/Verifikator)
+     */
+    public function previewKartuUjian($id)
+    {
+        // Check permission
+        if (!auth()->user()->hasPermission('pendaftar.cetak-ujian')) {
+            abort(403, 'Anda tidak memiliki izin untuk mencetak kartu ujian');
+        }
+
+        $calonSiswa = CalonSiswa::with([
+            'jalurPendaftaran', 
+            'gelombangPendaftaran', 
+            'tahunPelajaran',
+            'user'
+        ])->findOrFail($id);
+
+        if (!$calonSiswa->is_finalisasi) {
+            return redirect()->route('admin.pendaftar.show', $id)
+                ->with('error', 'Pendaftar belum difinalisasi, tidak dapat mencetak kartu ujian');
+        }
+
+        $sekolahSettings = \App\Models\SekolahSettings::with(['province', 'city'])->first();
+        
+        $sekolah = (object) [
+            'nama_sekolah' => $sekolahSettings->nama_sekolah ?? config('app.school_name', config('app.name', 'SMK')),
+            'logo' => $sekolahSettings->logo ?? null,
+        ];
+        
+        $password = $calonSiswa->user->plain_password ?? '********';
+        $isAdmin = true;
+        
+        // Return HTML view for preview (not PDF)
+        return view('pendaftar.pdf.kartu-ujian', compact('calonSiswa', 'sekolah', 'password', 'isAdmin'));
+    }
+
+    /**
      * Cetak Kartu Ujian (for Admin/Verifikator)
      */
     public function cetakKartuUjian($id)

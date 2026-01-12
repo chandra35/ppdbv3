@@ -607,11 +607,35 @@ class DashboardController extends Controller
     }
 
     /**
-     * Preview Kartu Ujian
+     * Preview Kartu Ujian (HTML view with print/download buttons)
      */
     public function previewKartuUjian()
     {
-        return $this->generateKartuUjian('stream');
+        $user = Auth::user();
+        $calonSiswa = CalonSiswa::where('user_id', $user->id)
+            ->with([
+                'jalurPendaftaran', 
+                'gelombangPendaftaran', 
+                'tahunPelajaran'
+            ])
+            ->first();
+
+        if (!$calonSiswa || !$calonSiswa->is_finalisasi) {
+            return redirect()->route('pendaftar.dashboard')
+                ->with('error', 'Data belum difinalisasi');
+        }
+
+        $sekolahSettings = \App\Models\SekolahSettings::with(['province', 'city'])->first();
+        
+        $sekolah = (object) [
+            'nama_sekolah' => $sekolahSettings->nama_sekolah ?? config('app.school_name', config('app.name', 'SMK')),
+            'logo' => $sekolahSettings->logo ?? null,
+        ];
+        
+        $password = $user->plain_password ?? '********';
+        
+        // Return HTML view for preview (not PDF)
+        return view('pendaftar.pdf.kartu-ujian', compact('calonSiswa', 'sekolah', 'password'));
     }
 
     /**
@@ -1065,29 +1089,34 @@ class DashboardController extends Controller
             ], 422);
         }
 
-        // Generate nomor tes using settings
-        $settings = \App\Models\PpdbSettings::first();
-        $tahun = $calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y');
-        $jalurCode = strtoupper(substr($calonSiswa->jalurPendaftaran->nama ?? 'REG', 0, 3));
+        // Check if already has nomor_tes (re-finalisasi after cancel)
+        $nomorTes = $calonSiswa->nomor_tes;
         
-        // Get and update counter for this jalur
-        $counters = $settings->nomor_tes_counter ?? [];
-        $jalurKey = (string) $calonSiswa->jalur_pendaftaran_id;
-        $counter = ($counters[$jalurKey] ?? 0) + 1;
-        
-        // Update counter atomically
-        $counters[$jalurKey] = $counter;
-        $settings->update(['nomor_tes_counter' => $counters]);
-        
-        // Generate nomor using format template
-        $format = $settings->nomor_tes_format ?? '{PREFIX}-{TAHUN}-{JALUR}-{NOMOR}';
-        $nomor = str_pad($counter, $settings->nomor_tes_digit ?? 4, '0', STR_PAD_LEFT);
-        
-        $nomorTes = str_replace(
-            ['{PREFIX}', '{TAHUN}', '{JALUR}', '{NOMOR}'],
-            [$settings->nomor_tes_prefix ?? 'NTS', $tahun, $jalurCode, $nomor],
-            $format
-        );
+        if (!$nomorTes) {
+            // Generate nomor tes using settings (only if doesn't have one yet)
+            $settings = \App\Models\PpdbSettings::first();
+            $tahun = $calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y');
+            $jalurCode = strtoupper(substr($calonSiswa->jalurPendaftaran->nama ?? 'REG', 0, 3));
+            
+            // Get and update counter for this jalur
+            $counters = $settings->nomor_tes_counter ?? [];
+            $jalurKey = (string) $calonSiswa->jalur_pendaftaran_id;
+            $counter = ($counters[$jalurKey] ?? 0) + 1;
+            
+            // Update counter atomically
+            $counters[$jalurKey] = $counter;
+            $settings->update(['nomor_tes_counter' => $counters]);
+            
+            // Generate nomor using format template
+            $format = $settings->nomor_tes_format ?? '{PREFIX}-{TAHUN}-{JALUR}-{NOMOR}';
+            $nomor = str_pad($counter, $settings->nomor_tes_digit ?? 4, '0', STR_PAD_LEFT);
+            
+            $nomorTes = str_replace(
+                ['{PREFIX}', '{TAHUN}', '{JALUR}', '{NOMOR}'],
+                [$settings->nomor_tes_prefix ?? 'NTS', $tahun, $jalurCode, $nomor],
+                $format
+            );
+        }
 
         // Update finalisasi data
         $calonSiswa->update([

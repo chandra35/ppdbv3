@@ -264,9 +264,9 @@
             <a href="{{ route('pendaftar.cetak-bukti-registrasi.preview') }}" target="_blank" class="btn btn-info btn-lg mb-2">
                 <i class="fas fa-file-pdf mr-2"></i>Cetak Bukti Registrasi
             </a>
-            <a href="{{ route('pendaftar.cetak-kartu-ujian.preview') }}" target="_blank" class="btn btn-success btn-lg mb-2">
+            <button type="button" class="btn btn-success btn-lg mb-2" data-toggle="modal" data-target="#kartuUjianModal">
                 <i class="fas fa-id-card mr-2"></i>Cetak Kartu Ujian
-            </a>
+            </button>
         </div>
 
         @else

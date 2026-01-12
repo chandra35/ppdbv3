@@ -83,18 +83,26 @@ class TahunPelajaranController extends Controller
      */
     public function destroy(TahunPelajaran $tahunPelajaran)
     {
-        // Cek apakah ada jalur yang menggunakan tahun pelajaran ini
-        $jalurCount = $tahunPelajaran->jalurPendaftaran()->count();
-        
-        if ($jalurCount > 0) {
+        // Proteksi 1: Tidak bisa hapus tahun pelajaran aktif
+        if ($tahunPelajaran->is_active) {
             return redirect()->back()->with('error', 
-                "Tahun Pelajaran \"{$tahunPelajaran->nama}\" tidak dapat dihapus karena sudah digunakan oleh {$jalurCount} jalur pendaftaran!"
+                "Tahun Pelajaran \"{$tahunPelajaran->nama}\" tidak dapat dihapus karena sedang aktif! Aktifkan tahun pelajaran lain terlebih dahulu."
             );
         }
         
-        if ($tahunPelajaran->is_active) {
+        // Proteksi 2: Cek apakah ada jalur yang menggunakan tahun pelajaran ini
+        $jalurCount = $tahunPelajaran->jalurPendaftaran()->count();
+        if ($jalurCount > 0) {
             return redirect()->back()->with('error', 
-                "Tahun Pelajaran aktif tidak dapat dihapus. Silahkan aktifkan tahun pelajaran lain terlebih dahulu."
+                "Tahun Pelajaran \"{$tahunPelajaran->nama}\" tidak dapat dihapus karena sudah digunakan oleh {$jalurCount} jalur pendaftaran! Hapus semua jalur terkait terlebih dahulu."
+            );
+        }
+        
+        // Proteksi 3: Cek apakah ada pendaftar di tahun pelajaran ini
+        $pendaftarCount = \App\Models\CalonSiswa::where('tahun_pelajaran_id', $tahunPelajaran->id)->count();
+        if ($pendaftarCount > 0) {
+            return redirect()->back()->with('error', 
+                "Tahun Pelajaran \"{$tahunPelajaran->nama}\" tidak dapat dihapus karena sudah memiliki {$pendaftarCount} data pendaftar!"
             );
         }
         

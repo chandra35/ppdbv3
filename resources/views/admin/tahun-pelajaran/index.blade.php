@@ -117,9 +117,9 @@
                         <td>
                             <div class="action-btns">
                                 @if(!$tp->is_active)
-                                <form action="{{ route('admin.tahun-pelajaran.aktifkan', $tp) }}" method="POST" class="d-inline action-form">
+                                <form action="{{ route('admin.tahun-pelajaran.aktifkan', $tp) }}" method="POST" class="d-inline action-form form-aktifkan" data-nama="{{ $tp->nama }}">
                                     @csrf
-                                    <button type="submit" class="btn btn-action-success" data-toggle="tooltip" title="Aktifkan" onclick="return confirm('Aktifkan tahun pelajaran {{ $tp->nama }}?')">
+                                    <button type="submit" class="btn btn-action-success" data-toggle="tooltip" title="Aktifkan">
                                         <i class="fas fa-check"></i>
                                     </button>
                                 </form>
@@ -128,10 +128,10 @@
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 @if(!$tp->is_active && $jalurCount == 0)
-                                <form action="{{ route('admin.tahun-pelajaran.destroy', $tp) }}" method="POST" class="d-inline action-form">
+                                <form action="{{ route('admin.tahun-pelajaran.destroy', $tp) }}" method="POST" class="d-inline action-form form-hapus" data-nama="{{ $tp->nama }}">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-action-delete" data-toggle="tooltip" title="Hapus" onclick="return confirm('Hapus tahun pelajaran {{ $tp->nama }}?')">
+                                    <button type="submit" class="btn btn-action-delete" data-toggle="tooltip" title="Hapus">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
@@ -271,15 +271,63 @@
 
 @section('js')
 <script>
-    $(function () {
-        $('[data-toggle="tooltip"]').tooltip();
+$(function () {
+    $('[data-toggle="tooltip"]').tooltip();
+    
+    // SweetAlert2 for Aktifkan
+    $('.form-aktifkan').on('submit', function(e) {
+        e.preventDefault();
+        var form = this;
+        var nama = $(this).data('nama');
+        
+        Swal.fire({
+            title: 'Aktifkan Tahun Pelajaran?',
+            html: '<p>Tahun pelajaran <strong>"' + nama + '"</strong> akan diaktifkan.</p>' +
+                  '<p class="text-warning"><small><i class="fas fa-info-circle mr-1"></i>Tahun pelajaran aktif sebelumnya akan dinonaktifkan.</small></p>',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-check mr-1"></i> Ya, Aktifkan!',
+            cancelButtonText: '<i class="fas fa-times mr-1"></i> Batal',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
     });
     
-    // Auto open modal if there are validation errors
-    @if($errors->any() && old('_method') != 'PUT')
-    $(document).ready(function() {
-        $('#modalTambah').modal('show');
+    // SweetAlert2 for Hapus
+    $('.form-hapus').on('submit', function(e) {
+        e.preventDefault();
+        var form = this;
+        var nama = $(this).data('nama');
+        
+        Swal.fire({
+            title: 'Hapus Tahun Pelajaran?',
+            html: '<p>Tahun pelajaran <strong>"' + nama + '"</strong> akan dihapus.</p>' +
+                  '<p class="text-danger"><i class="fas fa-exclamation-triangle mr-1"></i>Data yang dihapus tidak dapat dikembalikan!</p>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-trash mr-1"></i> Ya, Hapus!',
+            cancelButtonText: '<i class="fas fa-times mr-1"></i> Batal',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
     });
-    @endif
+});
+
+// Auto open modal if there are validation errors
+@if($errors->any() && old('_method') != 'PUT')
+$(document).ready(function() {
+    $('#modalTambah').modal('show');
+});
+@endif
 </script>
 @stop

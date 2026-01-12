@@ -161,37 +161,37 @@
                                 <div class="action-btns-full mb-2">
                                     @switch($jalur->status)
                                         @case('draft')
-                                            <form action="{{ route('admin.jalur.aktifkan', $jalur) }}" method="POST" class="d-inline flex-fill">
+                                            <form action="{{ route('admin.jalur.aktifkan', $jalur) }}" method="POST" class="d-inline flex-fill form-buka-pendaftaran">
                                                 @csrf
-                                                <button type="submit" class="btn btn-action-success btn-block" onclick="return confirm('Buka pendaftaran untuk jalur ini?')">
+                                                <button type="submit" class="btn btn-action-success btn-block">
                                                     <i class="fas fa-play mr-1"></i> Buka Pendaftaran
                                                 </button>
                                             </form>
                                             @break
                                         @case('open')
-                                            <form action="{{ route('admin.jalur.tutup', $jalur) }}" method="POST" class="d-inline flex-fill">
+                                            <form action="{{ route('admin.jalur.tutup', $jalur) }}" method="POST" class="d-inline flex-fill form-tutup-pendaftaran">
                                                 @csrf
-                                                <button type="submit" class="btn btn-action-warning btn-block" onclick="return confirm('Tutup sementara pendaftaran?')">
+                                                <button type="submit" class="btn btn-action-warning btn-block">
                                                     <i class="fas fa-pause mr-1"></i> Tutup
                                                 </button>
                                             </form>
-                                            <form action="{{ route('admin.jalur.selesaikan', $jalur) }}" method="POST" class="d-inline flex-fill">
+                                            <form action="{{ route('admin.jalur.selesaikan', $jalur) }}" method="POST" class="d-inline flex-fill form-selesaikan">
                                                 @csrf
-                                                <button type="submit" class="btn btn-action-secondary btn-block" onclick="return confirm('Selesaikan pendaftaran? Status akan menjadi Selesai dan tidak bisa dibuka lagi.')">
+                                                <button type="submit" class="btn btn-action-secondary btn-block">
                                                     <i class="fas fa-check mr-1"></i> Selesai
                                                 </button>
                                             </form>
                                             @break
                                         @case('closed')
-                                            <form action="{{ route('admin.jalur.aktifkan', $jalur) }}" method="POST" class="d-inline flex-fill">
+                                            <form action="{{ route('admin.jalur.aktifkan', $jalur) }}" method="POST" class="d-inline flex-fill form-buka-kembali">
                                                 @csrf
-                                                <button type="submit" class="btn btn-action-success btn-block" onclick="return confirm('Buka kembali pendaftaran?')">
+                                                <button type="submit" class="btn btn-action-success btn-block">
                                                     <i class="fas fa-play mr-1"></i> Buka
                                                 </button>
                                             </form>
-                                            <form action="{{ route('admin.jalur.selesaikan', $jalur) }}" method="POST" class="d-inline flex-fill">
+                                            <form action="{{ route('admin.jalur.selesaikan', $jalur) }}" method="POST" class="d-inline flex-fill form-selesaikan">
                                                 @csrf
-                                                <button type="submit" class="btn btn-action-secondary btn-block" onclick="return confirm('Selesaikan pendaftaran?')">
+                                                <button type="submit" class="btn btn-action-secondary btn-block">
                                                     <i class="fas fa-check mr-1"></i> Selesai
                                                 </button>
                                             </form>
@@ -212,9 +212,9 @@
                                     <a href="{{ route('admin.jalur.edit', $jalur) }}" class="btn btn-action-edit" data-toggle="tooltip" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <form action="{{ route('admin.jalur.duplicate', $jalur) }}" method="POST" class="d-inline action-form">
+                                    <form action="{{ route('admin.jalur.duplicate', $jalur) }}" method="POST" class="d-inline action-form form-duplikasi">
                                         @csrf
-                                        <button type="submit" class="btn btn-action-primary" data-toggle="tooltip" title="Duplikasi" onclick="return confirm('Duplikasi jalur ini?')">
+                                        <button type="submit" class="btn btn-action-primary" data-toggle="tooltip" title="Duplikasi">
                                             <i class="fas fa-copy"></i>
                                         </button>
                                     </form>
@@ -284,8 +284,120 @@
 
 @section('js')
 <script>
-    $(function () {
-        $('[data-toggle="tooltip"]').tooltip();
+$(function () {
+    $('[data-toggle="tooltip"]').tooltip();
+    
+    // SweetAlert2 for Buka Pendaftaran
+    $('.form-buka-pendaftaran').on('submit', function(e) {
+        e.preventDefault();
+        var form = this;
+        
+        Swal.fire({
+            title: 'Buka Pendaftaran?',
+            text: 'Pendaftaran akan dibuka dan bisa menerima pendaftar baru.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-play mr-1"></i> Ya, Buka!',
+            cancelButtonText: '<i class="fas fa-times mr-1"></i> Batal',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
     });
+    
+    // SweetAlert2 for Buka Kembali
+    $('.form-buka-kembali').on('submit', function(e) {
+        e.preventDefault();
+        var form = this;
+        
+        Swal.fire({
+            title: 'Buka Kembali Pendaftaran?',
+            text: 'Pendaftaran akan dibuka kembali untuk menerima pendaftar.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-play mr-1"></i> Ya, Buka!',
+            cancelButtonText: '<i class="fas fa-times mr-1"></i> Batal',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    });
+    
+    // SweetAlert2 for Tutup Pendaftaran
+    $('.form-tutup-pendaftaran').on('submit', function(e) {
+        e.preventDefault();
+        var form = this;
+        
+        Swal.fire({
+            title: 'Tutup Sementara Pendaftaran?',
+            text: 'Pendaftaran akan ditutup sementara. Anda bisa membukanya kembali kapan saja.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ffc107',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-pause mr-1"></i> Ya, Tutup!',
+            cancelButtonText: '<i class="fas fa-times mr-1"></i> Batal',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    });
+    
+    // SweetAlert2 for Selesaikan
+    $('.form-selesaikan').on('submit', function(e) {
+        e.preventDefault();
+        var form = this;
+        
+        Swal.fire({
+            title: 'Selesaikan Pendaftaran?',
+            html: '<p class="text-danger"><strong>Perhatian!</strong></p>' +
+                  '<p>Status akan menjadi <strong>SELESAI</strong> dan <strong>tidak bisa dibuka lagi</strong>.</p>' +
+                  '<p>Pastikan proses pendaftaran sudah benar-benar selesai.</p>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#6c757d',
+            cancelButtonColor: '#007bff',
+            confirmButtonText: '<i class="fas fa-check mr-1"></i> Ya, Selesaikan!',
+            cancelButtonText: '<i class="fas fa-times mr-1"></i> Batal',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    });
+    
+    // SweetAlert2 for Duplikasi
+    $('.form-duplikasi').on('submit', function(e) {
+        e.preventDefault();
+        var form = this;
+        
+        Swal.fire({
+            title: 'Duplikasi Jalur?',
+            text: 'Jalur ini akan diduplikasi dengan pengaturan yang sama.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#007bff',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-copy mr-1"></i> Ya, Duplikasi!',
+            cancelButtonText: '<i class="fas fa-times mr-1"></i> Batal',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    });
+});
 </script>
 @stop

@@ -199,6 +199,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     
     // Cetak Kartu (Admin/Verifikator)
     Route::get('/pendaftar/{id}/cetak-registrasi', [PendaftarController::class, 'cetakBuktiRegistrasi'])->name('pendaftar.cetak-registrasi');
+    Route::get('/pendaftar/{id}/cetak-ujian/preview', [PendaftarController::class, 'previewKartuUjian'])->name('pendaftar.cetak-ujian.preview');
     Route::get('/pendaftar/{id}/cetak-ujian', [PendaftarController::class, 'cetakKartuUjian'])->name('pendaftar.cetak-ujian');
     
     // Upload Dokumen oleh Verifikator

@@ -176,11 +176,40 @@ class JalurPendaftaranController extends Controller
      */
     public function destroy(JalurPendaftaran $jalur)
     {
+        // Proteksi 1: Tidak bisa hapus jalur yang sedang aktif/dibuka
+        if ($jalur->status === JalurPendaftaran::STATUS_OPEN) {
+            return redirect()->back()->with('error', 
+                "Jalur \"{$jalur->nama}\" tidak dapat dihapus karena sedang dibuka! Tutup atau selesaikan jalur terlebih dahulu."
+            );
+        }
+        
+        // Proteksi 2: Tidak bisa hapus jalur yang sudah memiliki pendaftar
         if ($jalur->kuota_terisi > 0) {
-            return redirect()->back()->with('error', "Jalur \"{$jalur->nama}\" tidak dapat dihapus karena sudah memiliki {$jalur->kuota_terisi} pendaftar!");
+            return redirect()->back()->with('error', 
+                "Jalur \"{$jalur->nama}\" tidak dapat dihapus karena sudah memiliki {$jalur->kuota_terisi} pendaftar!"
+            );
+        }
+        
+        // Proteksi 3: Cek pendaftar dari relasi calon_siswa
+        $pendaftarCount = \App\Models\CalonSiswa::where('jalur_pendaftaran_id', $jalur->id)->count();
+        if ($pendaftarCount > 0) {
+            return redirect()->back()->with('error', 
+                "Jalur \"{$jalur->nama}\" tidak dapat dihapus karena sudah memiliki {$pendaftarCount} data pendaftar terkait!"
+            );
+        }
+        
+        // Proteksi 4: Cek gelombang yang masih aktif
+        $gelombangAktif = $jalur->gelombang()->where('status', 'open')->count();
+        if ($gelombangAktif > 0) {
+            return redirect()->back()->with('error', 
+                "Jalur \"{$jalur->nama}\" tidak dapat dihapus karena masih memiliki {$gelombangAktif} gelombang yang aktif!"
+            );
         }
         
         $nama = $jalur->nama;
+        
+        // Hapus semua gelombang terlebih dahulu
+        $jalur->gelombang()->delete();
         $jalur->delete();
         
         return redirect()
@@ -367,10 +396,26 @@ class JalurPendaftaranController extends Controller
      */
     public function destroyGelombang(JalurPendaftaran $jalur, GelombangPendaftaran $gelombang)
     {
+        // Proteksi 1: Tidak bisa hapus gelombang yang sedang aktif/dibuka
+        if ($gelombang->status === GelombangPendaftaran::STATUS_OPEN) {
+            return redirect()
+                ->route('admin.jalur.show', $jalur)
+                ->with('error', "Gelombang \"{$gelombang->nama}\" tidak dapat dihapus karena sedang dibuka! Tutup atau selesaikan gelombang terlebih dahulu.");
+        }
+        
+        // Proteksi 2: Tidak bisa hapus gelombang yang sudah memiliki kuota terisi
         if ($gelombang->kuota_terisi > 0) {
             return redirect()
                 ->route('admin.jalur.show', $jalur)
-                ->with('error', "Tidak dapat menghapus gelombang yang sudah memiliki pendaftar!");
+                ->with('error', "Gelombang \"{$gelombang->nama}\" tidak dapat dihapus karena sudah memiliki {$gelombang->kuota_terisi} pendaftar!");
+        }
+        
+        // Proteksi 3: Cek pendaftar dari relasi calon_siswa
+        $pendaftarCount = \App\Models\CalonSiswa::where('gelombang_pendaftaran_id', $gelombang->id)->count();
+        if ($pendaftarCount > 0) {
+            return redirect()
+                ->route('admin.jalur.show', $jalur)
+                ->with('error', "Gelombang \"{$gelombang->nama}\" tidak dapat dihapus karena sudah memiliki {$pendaftarCount} data pendaftar terkait!");
         }
 
         $nama = $gelombang->nama;
