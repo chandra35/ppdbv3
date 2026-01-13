@@ -249,6 +249,125 @@
         </div>
     </div>
 </div>
+
+{{-- Filter & Daftar Pendaftar --}}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-filter"></i> Daftar Pendaftar Berdasarkan Kriteria</h3>
+        <div class="card-tools">
+            <form class="form-inline" method="GET">
+                <input type="hidden" name="tahun_pelajaran_id" value="{{ $tahunAktif?->id }}">
+                <select name="filter_type" class="form-control form-control-sm mr-1" onchange="this.form.submit()">
+                    <option value="">-- Pilih Filter --</option>
+                    <option value="status" {{ $filterType == 'status' ? 'selected' : '' }}>Status</option>
+                    <option value="jenis_kelamin" {{ $filterType == 'jenis_kelamin' ? 'selected' : '' }}>Jenis Kelamin</option>
+                    <option value="jalur" {{ $filterType == 'jalur' ? 'selected' : '' }}>Jalur</option>
+                    <option value="gelombang" {{ $filterType == 'gelombang' ? 'selected' : '' }}>Gelombang</option>
+                    <option value="pilihan_program" {{ $filterType == 'pilihan_program' ? 'selected' : '' }}>Pilihan Program</option>
+                </select>
+                @if($filterType == 'status')
+                <select name="filter_value" class="form-control form-control-sm" onchange="this.form.submit()">
+                    <option value="">-- Pilih Status --</option>
+                    <option value="pending" {{ $filterValue == 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="verified" {{ $filterValue == 'verified' ? 'selected' : '' }}>Verified</option>
+                    <option value="final" {{ $filterValue == 'final' ? 'selected' : '' }}>Final</option>
+                    <option value="rejected" {{ $filterValue == 'rejected' ? 'selected' : '' }}>Ditolak</option>
+                </select>
+                @elseif($filterType == 'jenis_kelamin')
+                <select name="filter_value" class="form-control form-control-sm" onchange="this.form.submit()">
+                    <option value="">-- Pilih Jenis Kelamin --</option>
+                    <option value="laki-laki" {{ $filterValue == 'laki-laki' ? 'selected' : '' }}>Laki-laki</option>
+                    <option value="perempuan" {{ $filterValue == 'perempuan' ? 'selected' : '' }}>Perempuan</option>
+                </select>
+                @elseif($filterType == 'jalur')
+                <select name="filter_value" class="form-control form-control-sm" onchange="this.form.submit()">
+                    <option value="">-- Pilih Jalur --</option>
+                    @foreach($jalurList as $jalur)
+                    <option value="{{ $jalur->id }}" {{ $filterValue == $jalur->id ? 'selected' : '' }}>{{ $jalur->nama }}</option>
+                    @endforeach
+                </select>
+                @elseif($filterType == 'gelombang')
+                <select name="filter_value" class="form-control form-control-sm" onchange="this.form.submit()">
+                    <option value="">-- Pilih Gelombang --</option>
+                    @foreach($gelombangList as $gel)
+                    <option value="{{ $gel->id }}" {{ $filterValue == $gel->id ? 'selected' : '' }}>{{ $gel->nama }}</option>
+                    @endforeach
+                </select>
+                @elseif($filterType == 'pilihan_program')
+                <select name="filter_value" class="form-control form-control-sm" onchange="this.form.submit()">
+                    <option value="">-- Pilih Program --</option>
+                    @foreach(array_keys($byPilihanProgram) as $prog)
+                    <option value="{{ $prog }}" {{ $filterValue == $prog ? 'selected' : '' }}>{{ $prog }}</option>
+                    @endforeach
+                </select>
+                @endif
+            </form>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped table-hover mb-0">
+            <thead>
+                <tr>
+                    <th width="50">#</th>
+                    <th>No. Pendaftaran</th>
+                    <th>Nama Lengkap</th>
+                    <th>Jalur</th>
+                    <th>Gelombang</th>
+                    <th>Status</th>
+                    <th class="text-center">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($pendaftarList as $i => $p)
+                <tr>
+                    <td>{{ ($pendaftarList->currentPage() - 1) * $pendaftarList->perPage() + $i + 1 }}</td>
+                    <td><code>{{ $p->nomor_pendaftaran }}</code></td>
+                    <td>{{ $p->nama_lengkap }}</td>
+                    <td>
+                        @if($p->jalurPendaftaran)
+                        <span class="badge" style="background: {{ $p->jalurPendaftaran->warna }}; color: white;">
+                            {{ $p->jalurPendaftaran->nama }}
+                        </span>
+                        @endif
+                    </td>
+                    <td>{{ $p->gelombangPendaftaran?->nama ?? '-' }}</td>
+                    <td>
+                        @php
+                            $statusColors = [
+                                'pending' => 'secondary',
+                                'verified' => 'info',
+                                'final' => 'success',
+                                'rejected' => 'danger'
+                            ];
+                        @endphp
+                        <span class="badge badge-{{ $statusColors[$p->status_verifikasi] ?? 'secondary' }}">
+                            {{ ucfirst($p->status_verifikasi) }}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <a href="{{ route('admin.pendaftar.show', $p->id) }}" class="btn btn-xs btn-info">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                @empty
+                <tr><td colspan="7" class="text-center text-muted">
+                    @if($filterType)
+                    Tidak ada pendaftar dengan kriteria tersebut
+                    @else
+                    Pilih filter untuk melihat daftar pendaftar
+                    @endif
+                </td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+    @if($pendaftarList->hasPages())
+    <div class="card-footer clearfix">
+        {{ $pendaftarList->appends(request()->except('page'))->links('pagination::bootstrap-4') }}
+    </div>
+    @endif
+</div>
 @stop
 
 @section('js')

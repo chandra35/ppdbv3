@@ -106,6 +106,45 @@ class StatistikController extends Controller
             ->orderBy('tanggal')
             ->get();
         
+        // Get filtered pendaftar list based on criteria
+        $filterType = $request->get('filter_type');
+        $filterValue = $request->get('filter_value');
+        
+        $pendaftarQuery = CalonSiswa::query()
+            ->with(['jalurPendaftaran', 'gelombangPendaftaran'])
+            ->when($tahunAktif, function($q) use ($tahunAktif) {
+                $jalurIds = JalurPendaftaran::where('tahun_pelajaran_id', $tahunAktif->id)->pluck('id');
+                $q->whereIn('jalur_pendaftaran_id', $jalurIds);
+            });
+        
+        if ($filterType && $filterValue !== null) {
+            switch ($filterType) {
+                case 'status':
+                    $pendaftarQuery->where('status_verifikasi', $filterValue);
+                    break;
+                case 'jenis_kelamin':
+                    $pendaftarQuery->where('jenis_kelamin', $filterValue);
+                    break;
+                case 'jalur':
+                    $pendaftarQuery->where('jalur_pendaftaran_id', $filterValue);
+                    break;
+                case 'gelombang':
+                    $pendaftarQuery->where('gelombang_pendaftaran_id', $filterValue);
+                    break;
+                case 'pilihan_program':
+                    $pendaftarQuery->where('pilihan_program', $filterValue);
+                    break;
+            }
+        }
+        
+        $pendaftarList = $pendaftarQuery->orderBy('created_at', 'desc')->paginate(20);
+        
+        // Get jalur and gelombang for filter dropdowns
+        $jalurList = $tahunAktif ? JalurPendaftaran::where('tahun_pelajaran_id', $tahunAktif->id)->get() : collect();
+        $gelombangList = $tahunAktif ? GelombangPendaftaran::whereHas('jalurPendaftaran', function($q) use ($tahunAktif) {
+            $q->where('tahun_pelajaran_id', $tahunAktif->id);
+        })->get() : collect();
+        
         return view('admin.statistik.index', compact(
             'tahunAktif',
             'tahunPelajaranList',
@@ -115,7 +154,12 @@ class StatistikController extends Controller
             'byJalur',
             'byGelombang',
             'byPilihanProgram',
-            'trendPendaftaran'
+            'trendPendaftaran',
+            'pendaftarList',
+            'filterType',
+            'filterValue',
+            'jalurList',
+            'gelombangList'
         ));
     }
     
@@ -131,81 +175,83 @@ class StatistikController extends Controller
         
         $tahunPelajaranList = TahunPelajaran::orderBy('nama', 'desc')->get();
         
-        // Base query
-        $baseQuery = function() use ($tahunAktif) {
-            $query = CalonSiswa::query();
-            if ($tahunAktif) {
-                $jalurIds = JalurPendaftaran::where('tahun_pelajaran_id', $tahunAktif->id)->pluck('id');
-                $query->whereIn('jalur_pendaftaran_id', $jalurIds);
-            }
-            return $query;
-        };
+        // Get jalur IDs for current tahun
+        $jalurIds = $tahunAktif ? JalurPendaftaran::where('tahun_pelajaran_id', $tahunAktif->id)->pluck('id') : collect();
         
-        // By provinsi
-        $byProvinsi = $baseQuery()
-            ->select('provinsi', DB::raw('count(*) as total'))
-            ->whereNotNull('provinsi')
-            ->where('provinsi', '!=', '')
-            ->groupBy('provinsi')
+        // By provinsi - use join with indonesia_provinces
+        $byProvinsi = CalonSiswa::query()
+            ->when($tahunAktif, function($q) use ($jalurIds) {
+                $q->whereIn('jalur_pendaftaran_id', $jalurIds);
+            })
+            ->join('indonesia_provinces', 'calon_siswas.provinsi_id_siswa', '=', 'indonesia_provinces.code')
+            ->select('indonesia_provinces.name as provinsi', 'indonesia_provinces.code as provinsi_code', DB::raw('count(*) as total'))
+            ->whereNotNull('provinsi_id_siswa')
+            ->groupBy('indonesia_provinces.code', 'indonesia_provinces.name')
             ->orderByDesc('total')
             ->get();
         
         // By kabupaten
         $filterProvinsi = $request->get('provinsi');
-        $byKabupaten = $baseQuery()
-            ->select('kabupaten', 'provinsi', DB::raw('count(*) as total'))
-            ->whereNotNull('kabupaten')
-            ->where('kabupaten', '!=', '')
-            ->when($filterProvinsi, function($q) use ($filterProvinsi) {
-                $q->where('provinsi', $filterProvinsi);
+        $byKabupaten = CalonSiswa::query()
+            ->when($tahunAktif, function($q) use ($jalurIds) {
+                $q->whereIn('jalur_pendaftaran_id', $jalurIds);
             })
-            ->groupBy('kabupaten', 'provinsi')
+            ->join('indonesia_cities', 'calon_siswas.kabupaten_id_siswa', '=', 'indonesia_cities.code')
+            ->join('indonesia_provinces', 'indonesia_cities.province_code', '=', 'indonesia_provinces.code')
+            ->select('indonesia_cities.name as kabupaten', 'indonesia_cities.code as kabupaten_code', 'indonesia_provinces.name as provinsi', DB::raw('count(*) as total'))
+            ->whereNotNull('kabupaten_id_siswa')
+            ->when($filterProvinsi, function($q) use ($filterProvinsi) {
+                $q->where('indonesia_provinces.code', $filterProvinsi);
+            })
+            ->groupBy('indonesia_cities.code', 'indonesia_cities.name', 'indonesia_provinces.name')
             ->orderByDesc('total')
             ->get();
         
         // By kecamatan
         $filterKabupaten = $request->get('kabupaten');
-        $byKecamatan = $baseQuery()
-            ->select('kecamatan', 'kabupaten', DB::raw('count(*) as total'))
-            ->whereNotNull('kecamatan')
-            ->where('kecamatan', '!=', '')
-            ->when($filterKabupaten, function($q) use ($filterKabupaten) {
-                $q->where('kabupaten', $filterKabupaten);
+        $byKecamatan = CalonSiswa::query()
+            ->when($tahunAktif, function($q) use ($jalurIds) {
+                $q->whereIn('jalur_pendaftaran_id', $jalurIds);
             })
-            ->groupBy('kecamatan', 'kabupaten')
+            ->join('indonesia_districts', 'calon_siswas.kecamatan_id_siswa', '=', 'indonesia_districts.code')
+            ->join('indonesia_cities', 'indonesia_districts.city_code', '=', 'indonesia_cities.code')
+            ->select('indonesia_districts.name as kecamatan', 'indonesia_districts.code as kecamatan_code', 'indonesia_cities.name as kabupaten', DB::raw('count(*) as total'))
+            ->whereNotNull('kecamatan_id_siswa')
+            ->when($filterKabupaten, function($q) use ($filterKabupaten) {
+                $q->where('indonesia_cities.code', $filterKabupaten);
+            })
+            ->groupBy('indonesia_districts.code', 'indonesia_districts.name', 'indonesia_cities.name')
             ->orderByDesc('total')
             ->limit(50)
             ->get();
         
         // By kelurahan
         $filterKecamatan = $request->get('kecamatan');
-        $byKelurahan = $baseQuery()
-            ->select('kelurahan', 'kecamatan', DB::raw('count(*) as total'))
-            ->whereNotNull('kelurahan')
-            ->where('kelurahan', '!=', '')
-            ->when($filterKecamatan, function($q) use ($filterKecamatan) {
-                $q->where('kecamatan', $filterKecamatan);
+        $byKelurahan = CalonSiswa::query()
+            ->when($tahunAktif, function($q) use ($jalurIds) {
+                $q->whereIn('jalur_pendaftaran_id', $jalurIds);
             })
-            ->groupBy('kelurahan', 'kecamatan')
+            ->join('indonesia_villages', 'calon_siswas.kelurahan_id_siswa', '=', 'indonesia_villages.code')
+            ->join('indonesia_districts', 'indonesia_villages.district_code', '=', 'indonesia_districts.code')
+            ->select('indonesia_villages.name as kelurahan', 'indonesia_districts.name as kecamatan', DB::raw('count(*) as total'))
+            ->whereNotNull('kelurahan_id_siswa')
+            ->when($filterKecamatan, function($q) use ($filterKecamatan) {
+                $q->where('indonesia_districts.code', $filterKecamatan);
+            })
+            ->groupBy('indonesia_villages.code', 'indonesia_villages.name', 'indonesia_districts.name')
             ->orderByDesc('total')
             ->limit(50)
             ->get();
         
         // Data untuk peta (koordinat registrasi)
-        $mapData = $baseQuery()
+        $mapData = CalonSiswa::query()
+            ->when($tahunAktif, function($q) use ($jalurIds) {
+                $q->whereIn('jalur_pendaftaran_id', $jalurIds);
+            })
             ->whereNotNull('registration_latitude')
             ->whereNotNull('registration_longitude')
             ->select('id', 'nama_lengkap', 'registration_latitude', 'registration_longitude', 'registration_address')
             ->get();
-        
-        // List provinsi untuk filter
-        $provinsiList = $baseQuery()
-            ->select('provinsi')
-            ->whereNotNull('provinsi')
-            ->where('provinsi', '!=', '')
-            ->distinct()
-            ->orderBy('provinsi')
-            ->pluck('provinsi');
         
         return view('admin.statistik.geografis', compact(
             'tahunAktif',
@@ -215,7 +261,6 @@ class StatistikController extends Controller
             'byKecamatan',
             'byKelurahan',
             'mapData',
-            'provinsiList',
             'filterProvinsi',
             'filterKabupaten',
             'filterKecamatan'
@@ -235,45 +280,62 @@ class StatistikController extends Controller
         $tahunPelajaranList = TahunPelajaran::orderBy('nama', 'desc')->get();
         
         $search = $request->get('search');
+        $jalurIds = $tahunAktif ? JalurPendaftaran::where('tahun_pelajaran_id', $tahunAktif->id)->pluck('id') : collect();
         
-        // Base query
-        $query = CalonSiswa::query();
-        if ($tahunAktif) {
-            $jalurIds = JalurPendaftaran::where('tahun_pelajaran_id', $tahunAktif->id)->pluck('id');
-            $query->whereIn('jalur_pendaftaran_id', $jalurIds);
-        }
-        
-        // By asal sekolah
-        $byAsalSekolah = (clone $query)
-            ->select('asal_sekolah', 'npsn', DB::raw('count(*) as total'))
-            ->whereNotNull('asal_sekolah')
-            ->where('asal_sekolah', '!=', '')
+        // By asal sekolah - using correct column names
+        $byAsalSekolah = CalonSiswa::query()
+            ->when($tahunAktif, function($q) use ($jalurIds) {
+                $q->whereIn('jalur_pendaftaran_id', $jalurIds);
+            })
+            ->select('nama_sekolah_asal', 'npsn_asal_sekolah', DB::raw('count(*) as total'))
+            ->whereNotNull('nama_sekolah_asal')
+            ->where('nama_sekolah_asal', '!=', '')
             ->when($search, function($q) use ($search) {
                 $q->where(function($q2) use ($search) {
-                    $q2->where('asal_sekolah', 'like', "%{$search}%")
-                       ->orWhere('npsn', 'like', "%{$search}%");
+                    $q2->where('nama_sekolah_asal', 'like', "%{$search}%")
+                       ->orWhere('npsn_asal_sekolah', 'like', "%{$search}%");
                 });
             })
-            ->groupBy('asal_sekolah', 'npsn')
+            ->groupBy('nama_sekolah_asal', 'npsn_asal_sekolah')
             ->orderByDesc('total')
             ->paginate(20);
         
         // Top 10 sekolah
-        $topSekolah = (clone $query)
-            ->select('asal_sekolah', 'npsn', DB::raw('count(*) as total'))
-            ->whereNotNull('asal_sekolah')
-            ->where('asal_sekolah', '!=', '')
-            ->groupBy('asal_sekolah', 'npsn')
+        $topSekolah = CalonSiswa::query()
+            ->when($tahunAktif, function($q) use ($jalurIds) {
+                $q->whereIn('jalur_pendaftaran_id', $jalurIds);
+            })
+            ->select('nama_sekolah_asal', 'npsn_asal_sekolah', DB::raw('count(*) as total'))
+            ->whereNotNull('nama_sekolah_asal')
+            ->where('nama_sekolah_asal', '!=', '')
+            ->groupBy('nama_sekolah_asal', 'npsn_asal_sekolah')
             ->orderByDesc('total')
             ->limit(10)
             ->get();
         
         // Total sekolah unik
-        $totalSekolah = (clone $query)
-            ->whereNotNull('asal_sekolah')
-            ->where('asal_sekolah', '!=', '')
-            ->distinct('asal_sekolah')
-            ->count('asal_sekolah');
+        $totalSekolah = CalonSiswa::query()
+            ->when($tahunAktif, function($q) use ($jalurIds) {
+                $q->whereIn('jalur_pendaftaran_id', $jalurIds);
+            })
+            ->whereNotNull('nama_sekolah_asal')
+            ->where('nama_sekolah_asal', '!=', '')
+            ->distinct('nama_sekolah_asal')
+            ->count('nama_sekolah_asal');
+        
+        // Get selected school detail with pendaftar list
+        $selectedSekolah = $request->get('sekolah');
+        $pendaftarSekolah = null;
+        if ($selectedSekolah) {
+            $pendaftarSekolah = CalonSiswa::query()
+                ->with(['jalurPendaftaran', 'gelombangPendaftaran'])
+                ->when($tahunAktif, function($q) use ($jalurIds) {
+                    $q->whereIn('jalur_pendaftaran_id', $jalurIds);
+                })
+                ->where('nama_sekolah_asal', $selectedSekolah)
+                ->orderBy('nama_lengkap')
+                ->paginate(20, ['*'], 'pendaftar_page');
+        }
         
         return view('admin.statistik.asal-sekolah', compact(
             'tahunAktif',
@@ -281,7 +343,9 @@ class StatistikController extends Controller
             'byAsalSekolah',
             'topSekolah',
             'totalSekolah',
-            'search'
+            'search',
+            'selectedSekolah',
+            'pendaftarSekolah'
         ));
     }
     

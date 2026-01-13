@@ -122,11 +122,13 @@
                                 @endif
                             </td>
                             <td>
-                                {{ $sekolah->asal_sekolah ?? 'Tidak Diketahui' }}
+                                <a href="?sekolah={{ urlencode($sekolah->nama_sekolah_asal) }}&tahun_pelajaran_id={{ $tahunAktif?->id }}">
+                                    {{ $sekolah->nama_sekolah_asal ?? 'Tidak Diketahui' }}
+                                </a>
                             </td>
                             <td>
-                                @if($sekolah->npsn)
-                                <code class="school-badge">{{ $sekolah->npsn }}</code>
+                                @if($sekolah->npsn_asal_sekolah)
+                                <code class="school-badge">{{ $sekolah->npsn_asal_sekolah }}</code>
                                 @else
                                 <span class="text-muted">-</span>
                                 @endif
@@ -175,10 +177,14 @@
                 @forelse($byAsalSekolah as $i => $sekolah)
                 <tr>
                     <td>{{ ($byAsalSekolah->currentPage() - 1) * $byAsalSekolah->perPage() + $i + 1 }}</td>
-                    <td>{{ $sekolah->asal_sekolah ?? 'Tidak Diketahui' }}</td>
                     <td>
-                        @if($sekolah->npsn)
-                        <code class="school-badge">{{ $sekolah->npsn }}</code>
+                        <a href="?sekolah={{ urlencode($sekolah->nama_sekolah_asal) }}&tahun_pelajaran_id={{ $tahunAktif?->id }}">
+                            {{ $sekolah->nama_sekolah_asal ?? 'Tidak Diketahui' }}
+                        </a>
+                    </td>
+                    <td>
+                        @if($sekolah->npsn_asal_sekolah)
+                        <code class="school-badge">{{ $sekolah->npsn_asal_sekolah }}</code>
                         @else
                         <span class="text-muted">-</span>
                         @endif
@@ -200,6 +206,76 @@
     </div>
     @endif
 </div>
+
+{{-- Pendaftar dari Sekolah Terpilih --}}
+@if($selectedSekolah && $pendaftarSekolah)
+<div class="card card-primary">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-users"></i> Pendaftar dari: {{ $selectedSekolah }}</h3>
+        <div class="card-tools">
+            <span class="badge badge-light">{{ $pendaftarSekolah->total() }} pendaftar</span>
+            <a href="{{ route('admin.statistik.asal-sekolah', ['tahun_pelajaran_id' => $tahunAktif?->id]) }}" class="btn btn-tool">
+                <i class="fas fa-times"></i>
+            </a>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped table-hover mb-0">
+            <thead>
+                <tr>
+                    <th width="50">#</th>
+                    <th>No. Pendaftaran</th>
+                    <th>Nama Lengkap</th>
+                    <th>Jalur</th>
+                    <th>Status</th>
+                    <th class="text-center">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($pendaftarSekolah as $i => $pendaftar)
+                <tr>
+                    <td>{{ ($pendaftarSekolah->currentPage() - 1) * $pendaftarSekolah->perPage() + $i + 1 }}</td>
+                    <td><code>{{ $pendaftar->nomor_pendaftaran }}</code></td>
+                    <td>{{ $pendaftar->nama_lengkap }}</td>
+                    <td>
+                        @if($pendaftar->jalurPendaftaran)
+                        <span class="badge" style="background: {{ $pendaftar->jalurPendaftaran->warna }}; color: white;">
+                            {{ $pendaftar->jalurPendaftaran->nama }}
+                        </span>
+                        @endif
+                    </td>
+                    <td>
+                        @php
+                            $statusColors = [
+                                'pending' => 'secondary',
+                                'verified' => 'info',
+                                'final' => 'success',
+                                'rejected' => 'danger'
+                            ];
+                        @endphp
+                        <span class="badge badge-{{ $statusColors[$pendaftar->status_verifikasi] ?? 'secondary' }}">
+                            {{ ucfirst($pendaftar->status_verifikasi) }}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <a href="{{ route('admin.pendaftar.show', $pendaftar->id) }}" class="btn btn-xs btn-info">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                @empty
+                <tr><td colspan="6" class="text-center text-muted">Tidak ada data</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+    @if($pendaftarSekolah->hasPages())
+    <div class="card-footer clearfix">
+        {{ $pendaftarSekolah->appends(request()->except('pendaftar_page'))->links('pagination::bootstrap-4') }}
+    </div>
+    @endif
+</div>
+@endif
 @stop
 
 @section('js')
@@ -210,7 +286,7 @@
     new Chart(document.getElementById('top10Chart'), {
         type: 'bar',
         data: {
-            labels: top10Data.map(s => (s.asal_sekolah || 'Tidak Diketahui').substring(0, 25)),
+            labels: top10Data.map(s => (s.nama_sekolah_asal || 'Tidak Diketahui').substring(0, 25)),
             datasets: [{
                 label: 'Jumlah Pendaftar',
                 data: top10Data.map(s => s.total),

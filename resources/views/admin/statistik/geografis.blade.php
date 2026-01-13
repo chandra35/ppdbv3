@@ -80,7 +80,7 @@
                         <tr>
                             <td>{{ $i + 1 }}</td>
                             <td>
-                                <a href="?provinsi={{ urlencode($prov->provinsi) }}&tahun_pelajaran_id={{ $tahunAktif?->id }}">
+                                <a href="?provinsi={{ urlencode($prov->provinsi_code) }}&tahun_pelajaran_id={{ $tahunAktif?->id }}">
                                     {{ $prov->provinsi }}
                                 </a>
                             </td>
@@ -128,7 +128,7 @@
                         <tr>
                             <td>{{ $i + 1 }}</td>
                             <td>
-                                <a href="?kabupaten={{ urlencode($kab->kabupaten) }}&tahun_pelajaran_id={{ $tahunAktif?->id }}">
+                                <a href="?kabupaten={{ urlencode($kab->kabupaten_code) }}&tahun_pelajaran_id={{ $tahunAktif?->id }}">
                                     {{ $kab->kabupaten }}
                                 </a>
                                 @if(!$filterProvinsi)
@@ -178,7 +178,7 @@
                         <tr>
                             <td>{{ $i + 1 }}</td>
                             <td>
-                                <a href="?kecamatan={{ urlencode($kec->kecamatan) }}&tahun_pelajaran_id={{ $tahunAktif?->id }}">
+                                <a href="?kecamatan={{ urlencode($kec->kecamatan_code) }}&tahun_pelajaran_id={{ $tahunAktif?->id }}">
                                     {{ $kec->kecamatan }}
                                 </a>
                                 @if(!$filterKabupaten)
