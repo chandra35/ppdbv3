@@ -66,7 +66,7 @@ class StatistikController extends Controller
                 $jalurIds = JalurPendaftaran::where('tahun_pelajaran_id', $tahunAktif->id)->pluck('id');
                 $q->whereIn('jalur_pendaftaran_id', $jalurIds);
             })
-            ->join('jalur_pendaftaran', 'calon_siswa.jalur_pendaftaran_id', '=', 'jalur_pendaftaran.id')
+            ->join('jalur_pendaftaran', 'calon_siswas.jalur_pendaftaran_id', '=', 'jalur_pendaftaran.id')
             ->select('jalur_pendaftaran.nama', 'jalur_pendaftaran.warna', DB::raw('count(*) as total'))
             ->groupBy('jalur_pendaftaran.id', 'jalur_pendaftaran.nama', 'jalur_pendaftaran.warna')
             ->get();
@@ -77,7 +77,7 @@ class StatistikController extends Controller
                 $jalurIds = JalurPendaftaran::where('tahun_pelajaran_id', $tahunAktif->id)->pluck('id');
                 $q->whereIn('jalur_pendaftaran_id', $jalurIds);
             })
-            ->join('gelombang_pendaftaran', 'calon_siswa.gelombang_pendaftaran_id', '=', 'gelombang_pendaftaran.id')
+            ->join('gelombang_pendaftaran', 'calon_siswas.gelombang_pendaftaran_id', '=', 'gelombang_pendaftaran.id')
             ->select('gelombang_pendaftaran.nama', DB::raw('count(*) as total'))
             ->groupBy('gelombang_pendaftaran.id', 'gelombang_pendaftaran.nama')
             ->get();
