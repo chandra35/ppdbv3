@@ -221,6 +221,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/pendaftar/dokumen/{id}/cancel', [PendaftarController::class, 'cancelVerifikasi'])->name('pendaftar.dokumen.cancel');
     Route::post('/pendaftar/dokumen/{id}/cancel-revisi', [PendaftarController::class, 'cancelRevisi'])->name('pendaftar.dokumen.cancel-revisi');
 
+    // ---- STATISTIK PENDAFTAR ----
+    Route::prefix('statistik')->name('statistik.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\StatistikController::class, 'index'])->name('index');
+        Route::get('/geografis', [\App\Http\Controllers\Admin\StatistikController::class, 'geografis'])->name('geografis');
+        Route::get('/asal-sekolah', [\App\Http\Controllers\Admin\StatistikController::class, 'asalSekolah'])->name('asal-sekolah');
+        Route::get('/ekonomi', [\App\Http\Controllers\Admin\StatistikController::class, 'ekonomi'])->name('ekonomi');
+        Route::get('/dokumen-prestasi', [\App\Http\Controllers\Admin\StatistikController::class, 'dokumenPrestasi'])->name('dokumen-prestasi');
+    });
+
     // ============================================
     // ADMIN-ONLY ROUTES - Only accessible by admin
     // ============================================

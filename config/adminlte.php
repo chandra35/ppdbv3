@@ -124,6 +124,11 @@ return [
                     'icon' => 'fas fa-fw fa-list',
                 ],
                 [
+                    'text' => 'Statistik',
+                    'route' => 'admin.statistik.index',
+                    'icon' => 'fas fa-fw fa-chart-bar',
+                ],
+                [
                     'text' => 'Verifikator',
                     'route' => 'admin.verifikator.index',
                     'icon' => 'fas fa-fw fa-user-shield',
