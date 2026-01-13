@@ -441,9 +441,9 @@ class AuthController extends Controller
                 'jarak_ke_sekolah' => $emisData['jarak_ke_sekolah'] ?? null,
                 
                 // Administrasi
-                'jalur_pendaftaran_id' => $gelombangAktif?->jalur_pendaftaran_id,
+                'jalur_pendaftaran_id' => $gelombangAktif?->jalur_id,
                 'gelombang_pendaftaran_id' => $gelombangAktif?->id,
-                'tahun_pelajaran_id' => $tahunAktif?->id,
+                'tahun_pelajaran_id' => $tahunAktif?->id ?? $gelombangAktif?->jalur?->tahun_pelajaran_id,
                 'tanggal_registrasi' => now(),
                 'status_verifikasi' => 'pending',
                 'status_admisi' => 'pending',
@@ -453,13 +453,17 @@ class AuthController extends Controller
                 'registration_longitude' => $request->registration_longitude,
                 'registration_accuracy' => $request->registration_accuracy,
                 'registration_location_source' => $request->registration_location_source,
+                'registration_city' => $request->registration_city,
+                'registration_region' => $request->registration_region,
+                'registration_address' => $request->registration_address,
                 'registration_ip' => $request->ip(),
                 'registration_device' => $this->getDeviceType($request->header('User-Agent')),
                 'registration_browser' => $this->getBrowserName($request->header('User-Agent')),
             ]);
 
-            // Reverse geocode if coordinates available (async-friendly, won't block)
-            if ($request->filled('registration_latitude') && $request->filled('registration_longitude')) {
+            // Reverse geocode if coordinates available but location data not provided from client
+            if ($request->filled('registration_latitude') && $request->filled('registration_longitude') 
+                && !$request->filled('registration_city')) {
                 try {
                     $geoData = $this->reverseGeocode(
                         (float) $request->registration_latitude,

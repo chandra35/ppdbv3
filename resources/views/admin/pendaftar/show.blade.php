@@ -851,146 +851,129 @@ dl.row dt {
         </div>
     </div>
 
-    <!-- Info Registrasi & Lokasi -->
+    <!-- Nilai Rapor -->
     <div class="row">
         <div class="col-md-12">
-            <div class="box box-solid box-info">
+            <div class="box box-solid box-primary">
                 <div class="box-header with-border">
-                    <h3 class="box-title"><i class="fas fa-map-marker-alt"></i> Info Registrasi & Lokasi</h3>
+                    <h3 class="box-title"><i class="fas fa-chart-line"></i> Nilai Rapor</h3>
                     <div class="box-tools pull-right">
-                        @if($pendaftar->registration_location_source)
-                            {!! $pendaftar->registration_location_source_badge !!}
+                        @if($pendaftar->nilaiRapor && $pendaftar->nilaiRapor->count() > 0)
+                            <span class="label label-success">{{ $pendaftar->nilaiRapor->count() }} Semester</span>
                         @else
-                            <span class="badge badge-secondary"><i class="fas fa-question-circle"></i> Tidak Tersedia</span>
+                            <span class="label label-secondary">Belum Diisi</span>
                         @endif
                     </div>
                 </div>
                 <div class="box-body">
-                    {{-- Alert jika data lokasi kosong --}}
-                    @if(!$pendaftar->registration_ip && !$pendaftar->hasRegistrationCoordinates())
-                        <div class="alert alert-warning" style="margin-bottom: 15px;">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <strong>Data lokasi tidak tersedia.</strong>
-                            @if(!$wajibLokasiRegistrasi)
-                                <br><small>
-                                    Fitur <b>"Wajibkan Lokasi Saat Registrasi"</b> belum diaktifkan. 
-                                    <a href="{{ route('admin.settings.index') }}#lokasi-registrasi" class="alert-link">
-                                        <i class="fas fa-cog"></i> Aktifkan di Pengaturan
-                                    </a>
-                                </small>
-                            @else
-                                <br><small>Pendaftar ini mungkin mendaftar sebelum fitur lokasi diaktifkan.</small>
-                            @endif
-                        </div>
-                    @endif
-                    
-                    <div class="row">
-                        <!-- Lokasi -->
-                        <div class="col-md-6">
-                            <table class="table table-sm table-borderless" style="font-size: 13px;">
-                                @if($pendaftar->hasRegistrationCoordinates())
-                                <tr>
-                                    <td width="35%" class="p-1 text-muted"><i class="fas fa-crosshairs"></i> Koordinat</td>
-                                    <td class="p-1">
-                                        <code style="font-size: 11px;">{{ $pendaftar->registration_coordinates }}</code>
-                                        <a href="{{ $pendaftar->registration_maps_url }}" target="_blank" class="btn btn-xs btn-success ml-1" title="Lihat di Google Maps">
-                                            <i class="fas fa-external-link-alt"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                                @endif
-                                @if($pendaftar->registration_accuracy)
-                                <tr>
-                                    <td class="p-1 text-muted"><i class="fas fa-bullseye"></i> Akurasi</td>
-                                    <td class="p-1">± {{ number_format($pendaftar->registration_accuracy, 0) }} meter</td>
-                                </tr>
-                                @endif
-                                {{-- Lokasi Tempat - dengan fallback reverse geocode jika data kosong --}}
-                                <tr>
-                                    <td class="p-1 text-muted"><i class="fas fa-map-pin"></i> Lokasi Tempat</td>
-                                    <td class="p-1">
-                                        @if($pendaftar->registration_city || $pendaftar->registration_region || $pendaftar->registration_address)
-                                            <span class="text-success">
-                                                @if($pendaftar->registration_address)
-                                                    <small>{{ $pendaftar->registration_address }}</small>
-                                                @else
-                                                    {{ $pendaftar->registration_full_location }}
-                                                @endif
+                    @if($pendaftar->nilaiRapor && $pendaftar->nilaiRapor->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped table-sm" style="font-size: 12px;">
+                                <thead class="bg-primary text-white">
+                                    <tr>
+                                        <th class="text-center" style="width: 100px;">Semester</th>
+                                        <th class="text-center">Matematika</th>
+                                        <th class="text-center">IPA</th>
+                                        <th class="text-center">IPS</th>
+                                        <th class="text-center">Rata-Rata</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php
+                                        $totalRataRata = 0;
+                                        $countSemester = 0;
+                                    @endphp
+                                    @foreach($pendaftar->nilaiRapor->sortBy('semester') as $nilai)
+                                        @php
+                                            $totalRataRata += $nilai->rata_rata;
+                                            $countSemester++;
+                                        @endphp
+                                        <tr>
+                                            <td class="text-center">
+                                                <span class="badge badge-info">Semester {{ $nilai->semester }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <strong class="{{ $nilai->matematika >= 75 ? 'text-success' : ($nilai->matematika >= 60 ? 'text-warning' : 'text-danger') }}">
+                                                    {{ $nilai->matematika }}
+                                                </strong>
+                                            </td>
+                                            <td class="text-center">
+                                                <strong class="{{ $nilai->ipa >= 75 ? 'text-success' : ($nilai->ipa >= 60 ? 'text-warning' : 'text-danger') }}">
+                                                    {{ $nilai->ipa }}
+                                                </strong>
+                                            </td>
+                                            <td class="text-center">
+                                                <strong class="{{ $nilai->ips >= 75 ? 'text-success' : ($nilai->ips >= 60 ? 'text-warning' : 'text-danger') }}">
+                                                    {{ $nilai->ips }}
+                                                </strong>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge {{ $nilai->rata_rata >= 75 ? 'badge-success' : ($nilai->rata_rata >= 60 ? 'badge-warning' : 'badge-danger') }}" style="font-size: 11px;">
+                                                    {{ number_format($nilai->rata_rata, 2) }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot class="bg-light">
+                                    <tr>
+                                        <td colspan="4" class="text-right"><strong>Rata-Rata Keseluruhan:</strong></td>
+                                        <td class="text-center">
+                                            @php
+                                                $rataRataTotal = $countSemester > 0 ? $totalRataRata / $countSemester : 0;
+                                            @endphp
+                                            <span class="badge {{ $rataRataTotal >= 75 ? 'badge-success' : ($rataRataTotal >= 60 ? 'badge-warning' : 'badge-danger') }}" style="font-size: 12px; padding: 5px 10px;">
+                                                {{ number_format($rataRataTotal, 2) }}
                                             </span>
-                                        @elseif($pendaftar->hasRegistrationCoordinates())
-                                            <span id="location-address-{{ $pendaftar->id }}" class="text-muted">
-                                                <i class="fas fa-spinner fa-spin"></i> Memuat lokasi...
-                                            </span>
-                                            <script>
-                                                (function() {
-                                                    var lat = {{ $pendaftar->registration_latitude }};
-                                                    var lng = {{ $pendaftar->registration_longitude }};
-                                                    var el = document.getElementById('location-address-{{ $pendaftar->id }}');
-                                                    
-                                                    fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1', {
-                                                        headers: { 'Accept-Language': 'id' }
-                                                    })
-                                                    .then(function(r) { return r.json(); })
-                                                    .then(function(data) {
-                                                        if (data && data.address) {
-                                                            var addr = data.address;
-                                                            var parts = [
-                                                                addr.village || addr.suburb || addr.neighbourhood,
-                                                                addr.city || addr.town || addr.county,
-                                                                addr.state
-                                                            ].filter(Boolean);
-                                                            el.innerHTML = '<span class="text-success"><i class="fas fa-check-circle"></i> ' + parts.join(', ') + '</span>';
-                                                        } else {
-                                                            el.innerHTML = '<span class="text-warning">-</span>';
-                                                        }
-                                                    })
-                                                    .catch(function() {
-                                                        el.innerHTML = '<span class="text-warning">-</span>';
-                                                    });
-                                                })();
-                                            </script>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </td>
-                                </tr>
+                                        </td>
+                                    </tr>
+                                </tfoot>
                             </table>
                         </div>
                         
-                        <!-- Device Info -->
-                        <div class="col-md-6">
-                            <table class="table table-sm table-borderless" style="font-size: 13px;">
-                                <tr>
-                                    <td width="35%" class="p-1 text-muted"><i class="{{ $pendaftar->registration_device_icon }}"></i> Perangkat</td>
-                                    <td class="p-1">{{ ucfirst($pendaftar->registration_device ?? '-') }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="p-1 text-muted"><i class="fab fa-chrome"></i> Browser</td>
-                                    <td class="p-1">{{ $pendaftar->registration_browser ?? '-' }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="p-1 text-muted"><i class="fas fa-globe"></i> IP Address</td>
-                                    <td class="p-1"><code style="font-size: 11px;">{{ $pendaftar->registration_ip ?? '-' }}</code></td>
-                                </tr>
-                                @if($pendaftar->registration_isp)
-                                <tr>
-                                    <td class="p-1 text-muted"><i class="fas fa-wifi"></i> ISP</td>
-                                    <td class="p-1"><small>{{ $pendaftar->registration_isp }}</small></td>
-                                </tr>
-                                @endif
-                                <tr>
-                                    <td class="p-1 text-muted"><i class="fas fa-clock"></i> Waktu Daftar</td>
-                                    <td class="p-1">{{ $pendaftar->tanggal_registrasi ? $pendaftar->tanggal_registrasi->format('d M Y H:i:s') : $pendaftar->created_at->format('d M Y H:i:s') }}</td>
-                                </tr>
-                            </table>
+                        <!-- Progress Bar Visualisasi -->
+                        <div class="row mt-3">
+                            <div class="col-md-4">
+                                <div class="info-box bg-gradient-info">
+                                    <span class="info-box-icon"><i class="fas fa-calculator"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Matematika (Avg)</span>
+                                        <span class="info-box-number">{{ number_format($pendaftar->nilaiRapor->avg('matematika'), 1) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-box bg-gradient-success">
+                                    <span class="info-box-icon"><i class="fas fa-flask"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">IPA (Avg)</span>
+                                        <span class="info-box-number">{{ number_format($pendaftar->nilaiRapor->avg('ipa'), 1) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-box bg-gradient-warning">
+                                    <span class="info-box-icon"><i class="fas fa-globe"></i></span>
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">IPS (Avg)</span>
+                                        <span class="info-box-number">{{ number_format($pendaftar->nilaiRapor->avg('ips'), 1) }}</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    @else
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                            <p class="text-muted mb-0">Pendaftar belum mengisi data nilai rapor</p>
+                            <small class="text-muted">Data nilai rapor akan ditampilkan setelah pendaftar mengisinya</small>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Dokumen Pendaftaran (Dipindah ke atas untuk memudahkan verifikasi) -->
+    <!-- Dokumen Pendaftaran -->
     <div class="row">
         <div class="col-md-12">
             <div class="box box-solid box-success">
@@ -1342,6 +1325,141 @@ dl.row dt {
                 </div>
             </div>
             @endif
+
+            <!-- Info Registrasi & Lokasi -->
+            <div class="box box-solid box-info">
+                <div class="box-header with-border">
+                    <h3 class="box-title"><i class="fas fa-map-marker-alt"></i> Info Registrasi & Lokasi</h3>
+                    <div class="box-tools pull-right">
+                        @if($pendaftar->registration_location_source)
+                            {!! $pendaftar->registration_location_source_badge !!}
+                        @else
+                            <span class="badge badge-secondary"><i class="fas fa-question-circle"></i> Tidak Tersedia</span>
+                        @endif
+                    </div>
+                </div>
+                <div class="box-body">
+                    {{-- Alert jika data lokasi kosong --}}
+                    @if(!$pendaftar->registration_ip && !$pendaftar->hasRegistrationCoordinates())
+                        <div class="alert alert-warning" style="margin-bottom: 15px;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Data lokasi tidak tersedia.</strong>
+                            @if(!$wajibLokasiRegistrasi)
+                                <br><small>
+                                    Fitur <b>"Wajibkan Lokasi Saat Registrasi"</b> belum diaktifkan. 
+                                    <a href="{{ route('admin.settings.index') }}#lokasi-registrasi" class="alert-link">
+                                        <i class="fas fa-cog"></i> Aktifkan di Pengaturan
+                                    </a>
+                                </small>
+                            @else
+                                <br><small>Pendaftar ini mungkin mendaftar sebelum fitur lokasi diaktifkan.</small>
+                            @endif
+                        </div>
+                    @endif
+                    
+                    <div class="row">
+                        <!-- Lokasi -->
+                        <div class="col-md-6">
+                            <table class="table table-sm table-borderless" style="font-size: 13px;">
+                                @if($pendaftar->hasRegistrationCoordinates())
+                                <tr>
+                                    <td width="35%" class="p-1 text-muted"><i class="fas fa-crosshairs"></i> Koordinat</td>
+                                    <td class="p-1">
+                                        <code style="font-size: 11px;">{{ $pendaftar->registration_coordinates }}</code>
+                                        <a href="{{ $pendaftar->registration_maps_url }}" target="_blank" class="btn btn-xs btn-success ml-1" title="Lihat di Google Maps">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                @endif
+                                @if($pendaftar->registration_accuracy)
+                                <tr>
+                                    <td class="p-1 text-muted"><i class="fas fa-bullseye"></i> Akurasi</td>
+                                    <td class="p-1">± {{ number_format($pendaftar->registration_accuracy, 0) }} meter</td>
+                                </tr>
+                                @endif
+                                {{-- Lokasi Tempat - dengan fallback reverse geocode jika data kosong --}}
+                                <tr>
+                                    <td class="p-1 text-muted"><i class="fas fa-map-pin"></i> Lokasi Tempat</td>
+                                    <td class="p-1">
+                                        @if($pendaftar->registration_city || $pendaftar->registration_region || $pendaftar->registration_address)
+                                            <span class="text-success">
+                                                @if($pendaftar->registration_address)
+                                                    <small>{{ $pendaftar->registration_address }}</small>
+                                                @else
+                                                    {{ $pendaftar->registration_full_location }}
+                                                @endif
+                                            </span>
+                                        @elseif($pendaftar->hasRegistrationCoordinates())
+                                            <span id="location-address-{{ $pendaftar->id }}" class="text-muted">
+                                                <i class="fas fa-spinner fa-spin"></i> Memuat lokasi...
+                                            </span>
+                                            <script>
+                                                (function() {
+                                                    var lat = {{ $pendaftar->registration_latitude }};
+                                                    var lng = {{ $pendaftar->registration_longitude }};
+                                                    var el = document.getElementById('location-address-{{ $pendaftar->id }}');
+                                                    
+                                                    fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1', {
+                                                        headers: { 'Accept-Language': 'id' }
+                                                    })
+                                                    .then(function(r) { return r.json(); })
+                                                    .then(function(data) {
+                                                        if (data && data.address) {
+                                                            var addr = data.address;
+                                                            var parts = [
+                                                                addr.village || addr.suburb || addr.neighbourhood,
+                                                                addr.city || addr.town || addr.county,
+                                                                addr.state
+                                                            ].filter(Boolean);
+                                                            el.innerHTML = '<span class="text-success"><i class="fas fa-check-circle"></i> ' + parts.join(', ') + '</span>';
+                                                        } else {
+                                                            el.innerHTML = '<span class="text-warning">-</span>';
+                                                        }
+                                                    })
+                                                    .catch(function() {
+                                                        el.innerHTML = '<span class="text-warning">-</span>';
+                                                    });
+                                                })();
+                                            </script>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <!-- Device Info -->
+                        <div class="col-md-6">
+                            <table class="table table-sm table-borderless" style="font-size: 13px;">
+                                <tr>
+                                    <td width="35%" class="p-1 text-muted"><i class="{{ $pendaftar->registration_device_icon }}"></i> Perangkat</td>
+                                    <td class="p-1">{{ ucfirst($pendaftar->registration_device ?? '-') }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-1 text-muted"><i class="fab fa-chrome"></i> Browser</td>
+                                    <td class="p-1">{{ $pendaftar->registration_browser ?? '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-1 text-muted"><i class="fas fa-globe"></i> IP Address</td>
+                                    <td class="p-1"><code style="font-size: 11px;">{{ $pendaftar->registration_ip ?? '-' }}</code></td>
+                                </tr>
+                                @if($pendaftar->registration_isp)
+                                <tr>
+                                    <td class="p-1 text-muted"><i class="fas fa-wifi"></i> ISP</td>
+                                    <td class="p-1"><small>{{ $pendaftar->registration_isp }}</small></td>
+                                </tr>
+                                @endif
+                                <tr>
+                                    <td class="p-1 text-muted"><i class="fas fa-clock"></i> Waktu Daftar</td>
+                                    <td class="p-1">{{ $pendaftar->tanggal_registrasi ? $pendaftar->tanggal_registrasi->format('d M Y H:i:s') : $pendaftar->created_at->format('d M Y H:i:s') }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Histori Verifikasi Dokumen -->
             @if($pendaftar->dokumen && $pendaftar->dokumen->count() > 0)

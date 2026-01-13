@@ -23,6 +23,7 @@ class User extends Authenticatable
         'photo',
         'phone',
         'plain_password',
+        'last_activity',
     ];
 
     protected $hidden = [
@@ -153,5 +154,42 @@ class User extends Authenticatable
     public function adminlte_profile_url()
     {
         return 'admin.profile.index';
+    }
+
+    /**
+     * Check if user is online (active within last 5 minutes)
+     */
+    public function isOnline(): bool
+    {
+        if (!$this->last_activity) {
+            return false;
+        }
+        
+        // last_activity is stored as unix timestamp
+        return (time() - $this->last_activity) < 300; // 5 minutes
+    }
+
+    /**
+     * Get last activity as Carbon instance
+     */
+    public function getLastActivityAtAttribute(): ?\Carbon\Carbon
+    {
+        if (!$this->last_activity) {
+            return null;
+        }
+        
+        return \Carbon\Carbon::createFromTimestamp($this->last_activity);
+    }
+
+    /**
+     * Get human readable last activity
+     */
+    public function getLastActivityHumanAttribute(): string
+    {
+        if (!$this->last_activity) {
+            return 'Belum pernah login';
+        }
+        
+        return \Carbon\Carbon::createFromTimestamp($this->last_activity)->diffForHumans();
     }
 }

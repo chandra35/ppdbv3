@@ -10,6 +10,7 @@
 @section('css')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 @endsection
 
 @section('content')
@@ -94,8 +95,9 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>Tanggal Lahir</label>
-                                <input type="date" name="tanggal_lahir_ayah" class="form-control" 
-                                       value="{{ old('tanggal_lahir_ayah', $ortu->tanggal_lahir_ayah?->format('Y-m-d') ?? $ortu->tanggal_lahir_ayah) }}">
+                                <input type="text" name="tanggal_lahir_ayah" id="tanggal_lahir_ayah" class="form-control datepicker" 
+                                       value="{{ old('tanggal_lahir_ayah', $ortu->tanggal_lahir_ayah?->format('d/m/Y') ?? '') }}"
+                                       placeholder="dd/mm/yyyy">
                             </div>
                         </div>
                     </div>
@@ -190,8 +192,9 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>Tanggal Lahir</label>
-                                <input type="date" name="tanggal_lahir_ibu" class="form-control" 
-                                       value="{{ old('tanggal_lahir_ibu', $ortu->tanggal_lahir_ibu?->format('Y-m-d') ?? $ortu->tanggal_lahir_ibu) }}">
+                                <input type="text" name="tanggal_lahir_ibu" id="tanggal_lahir_ibu" class="form-control datepicker" 
+                                       value="{{ old('tanggal_lahir_ibu', $ortu->tanggal_lahir_ibu?->format('d/m/Y') ?? '') }}"
+                                       placeholder="dd/mm/yyyy">
                             </div>
                         </div>
                     </div>
@@ -487,6 +490,18 @@ $(document).ready(function() {
             $('#kelurahan_ortu').html(options);
         });
     }
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    flatpickr('.datepicker', {
+        dateFormat: 'd/m/Y',
+        locale: 'id',
+        allowInput: true,
+        maxDate: 'today'
+    });
 });
 </script>
 @endsection

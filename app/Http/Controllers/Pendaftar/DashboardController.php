@@ -74,6 +74,18 @@ class DashboardController extends Controller
             return back()->with('error', 'Data sudah difinalisasi dan tidak dapat diubah');
         }
 
+        // Convert tanggal_lahir from dd/mm/Y to Y-m-d before validation
+        if ($request->filled('tanggal_lahir')) {
+            $tanggalLahir = $request->input('tanggal_lahir');
+            // Check if format is dd/mm/Y
+            if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $tanggalLahir)) {
+                $parsed = \Carbon\Carbon::createFromFormat('d/m/Y', $tanggalLahir);
+                if ($parsed) {
+                    $request->merge(['tanggal_lahir' => $parsed->format('Y-m-d')]);
+                }
+            }
+        }
+
         $validated = $request->validate([
             'nik' => 'required|digits:16',
             'nama_lengkap' => 'required|string|max:255',
@@ -89,12 +101,12 @@ class DashboardController extends Controller
             'kecamatan_id_siswa' => 'required|exists:indonesia_districts,code',
             'kelurahan_id_siswa' => 'required|exists:indonesia_villages,code',
             'kodepos_siswa' => 'nullable|string|max:10',
-            'nomor_hp' => 'required|string|regex:/^0[0-9]{9,12}$/|max:20',
+            'nomor_hp' => 'required|string|regex:/^(0|62|\+62)[0-9]{9,13}$/|max:20',
             'email' => 'nullable|email|max:255',
             'nama_sekolah_asal' => 'nullable|string|max:255',
         ], [
             'nik.digits' => 'NIK harus 16 digit angka.',
-            'nomor_hp.regex' => 'Format No. HP harus 08xxxxxxxxxx (0 diikuti 9-12 digit).',
+            'nomor_hp.regex' => 'Format No. HP harus 08xx, 628xx, atau +628xx.',
         ]);
 
         // Normalize phone number untuk pengecekan
@@ -194,6 +206,19 @@ class DashboardController extends Controller
         // Check if already finalized
         if ($calonSiswa && $calonSiswa->is_finalisasi) {
             return back()->with('error', 'Data sudah difinalisasi dan tidak dapat diubah');
+        }
+
+        // Convert tanggal_lahir fields from dd/mm/Y to Y-m-d before validation
+        foreach (['tanggal_lahir_ayah', 'tanggal_lahir_ibu'] as $field) {
+            if ($request->filled($field)) {
+                $tanggal = $request->input($field);
+                if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $tanggal)) {
+                    $parsed = \Carbon\Carbon::createFromFormat('d/m/Y', $tanggal);
+                    if ($parsed) {
+                        $request->merge([$field => $parsed->format('Y-m-d')]);
+                    }
+                }
+            }
         }
 
         $request->validate([
@@ -1093,7 +1118,19 @@ class DashboardController extends Controller
 
     protected function calculateDataDiriProgress(CalonSiswa $calonSiswa): int
     {
-        $requiredFields = ['nama_lengkap', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'agama', 'alamat_siswa', 'nomor_hp'];
+        $requiredFields = [
+            'nama_lengkap', 
+            'tempat_lahir', 
+            'tanggal_lahir', 
+            'jenis_kelamin', 
+            'agama', 
+            'alamat_siswa', 
+            'nomor_hp',
+            'provinsi_id_siswa',
+            'kabupaten_id_siswa',
+            'kecamatan_id_siswa',
+            'kelurahan_id_siswa'
+        ];
         $filled = 0;
         foreach ($requiredFields as $field) {
             if (!empty($calonSiswa->$field)) {

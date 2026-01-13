@@ -445,12 +445,12 @@ function reverseGeocode(lat, lng, callback) {
 }
 
 function fetchIPLocation(callback) {
-    // Using ip-api.com (free, no API key)
-    fetch('http://ip-api.com/json/?fields=city,regionName,country&lang=id')
+    // Using ipwho.is (free HTTPS API)
+    fetch('https://ipwho.is/?fields=city,region,country_code,success')
     .then(response => response.json())
     .then(data => {
-        if (data && data.city) {
-            const location = [data.city, data.regionName, data.country].filter(Boolean).join(', ').toLowerCase();
+        if (data && data.success && data.city) {
+            const location = [data.city, data.region, data.country_code].filter(Boolean).join(', ').toLowerCase();
             callback(location);
         } else {
             callback(null);

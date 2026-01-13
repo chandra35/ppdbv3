@@ -33,11 +33,38 @@ class PendaftarController extends Controller
 
     public function index(Request $request)
     {
-        $query = CalonSiswa::with(['user', 'jalurPendaftaran', 'gelombangPendaftaran', 'dokumen'])->orderBy('created_at', 'desc');
+        // Get active tahun pelajaran
+        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        
+        // Get default jalur from active tahun pelajaran
+        $defaultJalurId = null;
+        if ($tahunAktif) {
+            $defaultJalur = JalurPendaftaran::where('tahun_pelajaran_id', $tahunAktif->id)
+                ->orderBy('urutan')
+                ->first();
+            $defaultJalurId = $defaultJalur?->id;
+        }
+        
+        // Use request jalur_id or default to active tahun's jalur
+        $selectedJalurId = $request->filled('jalur_id') ? $request->jalur_id : ($request->has('jalur_id') ? null : $defaultJalurId);
+        
+        $query = CalonSiswa::with(['user', 'jalurPendaftaran', 'gelombangPendaftaran', 'dokumen']);
+
+        // Sorting
+        $sortBy = $request->get('sort', 'created_at');
+        $sortDir = $request->get('dir', 'desc');
+        $allowedSorts = ['nama_lengkap', 'nisn', 'nomor_registrasi', 'created_at', 'status_verifikasi'];
+        if (!in_array($sortBy, $allowedSorts)) {
+            $sortBy = 'created_at';
+        }
+        if (!in_array($sortDir, ['asc', 'desc'])) {
+            $sortDir = 'desc';
+        }
+        $query->orderBy($sortBy, $sortDir);
 
         // Filter by jalur
-        if ($request->filled('jalur_id')) {
-            $query->where('jalur_pendaftaran_id', $request->jalur_id);
+        if ($selectedJalurId) {
+            $query->where('jalur_pendaftaran_id', $selectedJalurId);
         }
 
         // Filter by gelombang
@@ -61,10 +88,26 @@ class PendaftarController extends Controller
             });
         }
 
-        $pendaftars = $query->paginate(20);
+        // Pagination with flexible per_page option
+        $perPage = $request->get('per_page', 20);
+        if ($perPage === 'all') {
+            $pendaftars = $query->get();
+            // Wrap in a custom paginator for view compatibility
+            $pendaftars = new \Illuminate\Pagination\LengthAwarePaginator(
+                $pendaftars,
+                $pendaftars->count(),
+                $pendaftars->count() > 0 ? $pendaftars->count() : 1,
+                1,
+                ['path' => request()->url(), 'query' => request()->query()]
+            );
+        } else {
+            $perPage = in_array((int)$perPage, [20, 50, 100]) ? (int)$perPage : 20;
+            $pendaftars = $query->paginate($perPage);
+        }
         
-        // Get jalur list for filter
+        // Get jalur list for filter - prioritize active tahun pelajaran
         $jalurList = JalurPendaftaran::with('tahunPelajaran')
+            ->orderByRaw('(SELECT is_active FROM tahun_pelajarans WHERE tahun_pelajarans.id = jalur_pendaftaran.tahun_pelajaran_id) DESC')
             ->orderByDesc(function ($query) {
                 $query->select('nama')
                       ->from('tahun_pelajarans')
@@ -74,12 +117,12 @@ class PendaftarController extends Controller
             ->orderBy('urutan')
             ->get();
             
-        // Get gelombang list for filter
-        $gelombangList = GelombangPendaftaran::with('jalur')
+        // Get gelombang list for filter - grouped by jalur
+        $gelombangList = GelombangPendaftaran::with('jalur.tahunPelajaran')
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('admin.pendaftar.index', compact('pendaftars', 'jalurList', 'gelombangList'));
+        return view('admin.pendaftar.index', compact('pendaftars', 'jalurList', 'gelombangList', 'selectedJalurId', 'sortBy', 'sortDir'));
     }
 
     /**
@@ -458,7 +501,8 @@ class PendaftarController extends Controller
             'provinsiSiswa',
             'kabupatenSiswa',
             'kecamatanSiswa',
-            'kelurahanSiswa'
+            'kelurahanSiswa',
+            'nilaiRapor'
         ])->findOrFail($id);
         
         // Get active documents from settings

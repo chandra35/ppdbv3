@@ -10,6 +10,7 @@
 @section('css')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 @endsection
 
 @section('content')
@@ -79,8 +80,9 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>Tanggal Lahir <span class="text-danger">*</span></label>
-                                <input type="date" name="tanggal_lahir" class="form-control @error('tanggal_lahir') is-invalid @enderror" 
-                                       value="{{ old('tanggal_lahir', $calonSiswa->tanggal_lahir?->format('Y-m-d')) }}" required>
+                                <input type="text" name="tanggal_lahir" id="tanggal_lahir" class="form-control datepicker @error('tanggal_lahir') is-invalid @enderror" 
+                                       value="{{ old('tanggal_lahir', $calonSiswa->tanggal_lahir?->format('d/m/Y')) }}" 
+                                       placeholder="dd/mm/yyyy" required>
                                 @error('tanggal_lahir')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -127,18 +129,20 @@
                                     // Convert +628xxx to 08xxx for display
                                     if (!empty($displayPhone) && str_starts_with($displayPhone, '+62')) {
                                         $displayPhone = '0' . substr($displayPhone, 3);
+                                    } elseif (!empty($displayPhone) && str_starts_with($displayPhone, '62')) {
+                                        $displayPhone = '0' . substr($displayPhone, 2);
                                     }
                                 @endphp
                                 <input type="text" name="nomor_hp" class="form-control @error('nomor_hp') is-invalid @enderror" 
                                        value="{{ $displayPhone }}" 
                                        placeholder="08xxxxxxxxxx"
-                                       pattern="0[0-9]{9,12}"
+                                       pattern="(0|62|\+62)[0-9]{9,13}"
                                        inputmode="tel"
                                        required>
                                 @error('nomor_hp')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                                <small class="form-text text-muted">Hanya angka. Format: 08xx (tersimpan sebagai +628xx)</small>
+                                <small class="form-text text-muted">Format: 08xx, 628xx, atau +628xx (tersimpan sebagai +628xx)</small>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -303,8 +307,20 @@
 
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
 <script>
 $(document).ready(function() {
+    // Initialize flatpickr for date input
+    flatpickr("#tanggal_lahir", {
+        dateFormat: "d/m/Y",
+        altInput: true,
+        altFormat: "d/m/Y",
+        locale: "id",
+        allowInput: true,
+        maxDate: "today"
+    });
+
     // Disable all form inputs if finalized
     @if($calonSiswa->is_finalisasi)
     $('input, select, textarea').not('[readonly]').prop('disabled', true);

@@ -793,6 +793,9 @@
                     <input type="hidden" id="reg_longitude" name="registration_longitude">
                     <input type="hidden" id="reg_accuracy" name="registration_accuracy">
                     <input type="hidden" id="reg_location_source" name="registration_location_source">
+                    <input type="hidden" id="reg_city" name="registration_city">
+                    <input type="hidden" id="reg_region" name="registration_region">
+                    <input type="hidden" id="reg_address" name="registration_address">
                     
                     <!-- Preview Data EMIS -->
                     <div class="preview-box" id="previewBox" style="display: none; margin-bottom: 1.5rem;">
@@ -1273,6 +1276,7 @@
             addressDiv.style.display = 'none';
             retryDiv.style.display = 'none';
             
+            // Check if geolocation is available
             if (!navigator.geolocation) {
                 handleLocationFallback('browser tidak mendukung gps');
                 return;
@@ -1339,20 +1343,20 @@
                 icon.className = 'fas fa-globe';
                 text.innerHTML = 'lokasi via ip <span style="background:#17a2b8;color:white;padding:1px 6px;border-radius:3px;font-size:0.7rem;margin-left:4px;">ip</span>';
                 
-                // Fetch IP location with lat/lon
-                fetch('http://ip-api.com/json/?fields=status,lat,lon,city,regionName,country&lang=id')
+                // Fetch IP location - using ipwho.is (free HTTPS API)
+                fetch('https://ipwho.is/?fields=city,region,latitude,longitude,success&lang=id')
                 .then(r => r.json())
                 .then(data => {
-                    if (data && data.status === 'success') {
+                    if (data && data.success) {
                         // Store IP-based coordinates
-                        if (data.lat && data.lon) {
-                            document.getElementById('landing_latitude').value = data.lat;
-                            document.getElementById('landing_longitude').value = data.lon;
+                        if (data.latitude && data.longitude) {
+                            document.getElementById('landing_latitude').value = data.latitude;
+                            document.getElementById('landing_longitude').value = data.longitude;
                             document.getElementById('landing_accuracy').value = 5000; // IP accuracy ~5km
                         }
                         
                         if (data.city) {
-                            addressDiv.innerHTML = '<i class="fas fa-map-pin"></i> ' + [data.city, data.regionName].filter(Boolean).join(', ').toLowerCase();
+                            addressDiv.innerHTML = '<i class="fas fa-map-pin"></i> ' + [data.city, data.region].filter(Boolean).join(', ').toLowerCase();
                             addressDiv.style.display = 'block';
                         }
                     }
@@ -1377,10 +1381,23 @@
             .then(data => {
                 if (data && data.address) {
                     const addr = data.address;
+                    const city = addr.city || addr.town || addr.county || '';
+                    const region = addr.state || '';
+                    const displayAddress = data.display_name || '';
+                    
+                    // Store location data in hidden fields for form submission
+                    const regCity = document.getElementById('reg_city');
+                    const regRegion = document.getElementById('reg_region');
+                    const regAddress = document.getElementById('reg_address');
+                    
+                    if (regCity) regCity.value = city;
+                    if (regRegion) regRegion.value = region;
+                    if (regAddress) regAddress.value = displayAddress;
+                    
                     const parts = [
                         addr.village || addr.suburb || addr.neighbourhood,
-                        addr.city || addr.town || addr.county,
-                        addr.state
+                        city,
+                        region
                     ].filter(Boolean);
                     callback(parts.join(', ').toLowerCase());
                 } else {

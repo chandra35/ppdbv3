@@ -136,22 +136,51 @@ return [
             'can' => 'admin',
         ],
         [
-            'text' => 'Pengaturan Sekolah',
-            'route' => 'admin.sekolah.index',
-            'icon' => 'fas fa-fw fa-school',
+            'text' => 'Settings',
+            'icon' => 'fas fa-fw fa-cog',
             'can' => 'admin',
-        ],
-        [
-            'text' => 'Jalur Pendaftaran',
-            'route' => 'admin.jalur.index',
-            'icon' => 'fas fa-fw fa-route',
-            'can' => 'admin',
-        ],
-        [
-            'text' => 'Tahun Pelajaran',
-            'route' => 'admin.tahun-pelajaran.index',
-            'icon' => 'fas fa-fw fa-calendar-check',
-            'can' => 'admin',
+            'submenu' => [
+                [
+                    'text' => 'Pengaturan Sekolah',
+                    'route' => 'admin.sekolah.index',
+                    'icon' => 'fas fa-fw fa-school',
+                ],
+                [
+                    'text' => 'Jalur Pendaftaran',
+                    'route' => 'admin.jalur.index',
+                    'icon' => 'fas fa-fw fa-route',
+                ],
+                [
+                    'text' => 'Tahun Pelajaran',
+                    'route' => 'admin.tahun-pelajaran.index',
+                    'icon' => 'fas fa-fw fa-calendar-check',
+                ],
+                [
+                    'text' => 'EMIS Token',
+                    'route' => 'admin.update-emis-token.index',
+                    'icon' => 'fas fa-fw fa-key',
+                ],
+                [
+                    'text' => 'WhatsApp API',
+                    'route' => 'admin.whatsapp.index',
+                    'icon' => 'fab fa-fw fa-whatsapp',
+                ],
+                [
+                    'text' => 'Backup & Restore',
+                    'route' => 'admin.backup.index',
+                    'icon' => 'fas fa-fw fa-database',
+                ],
+                [
+                    'text' => 'Hapus Data Pendaftar',
+                    'route' => 'admin.data.delete-list',
+                    'icon' => 'fas fa-fw fa-user-minus text-warning',
+                ],
+                [
+                    'text' => 'Data Terhapus',
+                    'route' => 'admin.data.deleted',
+                    'icon' => 'fas fa-fw fa-trash-restore text-danger',
+                ],
+            ],
         ],
         [
             'text' => 'Pengaturan PPDB',
@@ -201,22 +230,26 @@ return [
             'can' => 'admin',
         ],
         [
-            'text' => 'User Management',
-            'route' => 'admin.users.index',
-            'icon' => 'fas fa-fw fa-user-cog',
-            'can' => 'admin',
-        ],
-        [
-            'text' => 'Role Management',
-            'route' => 'admin.roles.index',
-            'icon' => 'fas fa-fw fa-user-tag',
-            'can' => 'admin',
-        ],
-        [
-            'text' => 'GTK (SIMANSA)',
-            'route' => 'admin.gtk.index',
+            'text' => 'User & Role',
             'icon' => 'fas fa-fw fa-users-cog',
             'can' => 'admin',
+            'submenu' => [
+                [
+                    'text' => 'User Management',
+                    'route' => 'admin.users.index',
+                    'icon' => 'fas fa-fw fa-user-cog',
+                ],
+                [
+                    'text' => 'Role Management',
+                    'route' => 'admin.roles.index',
+                    'icon' => 'fas fa-fw fa-user-tag',
+                ],
+                [
+                    'text' => 'GTK (SIMANSA)',
+                    'route' => 'admin.gtk.index',
+                    'icon' => 'fas fa-fw fa-chalkboard-teacher',
+                ],
+            ],
         ],
 
         [
@@ -234,41 +267,6 @@ return [
             'route' => 'admin.logs.index',
             'icon' => 'fas fa-fw fa-history',
             'can' => 'admin',
-        ],
-        [
-            'text' => 'Pengaturan',
-            'icon' => 'fas fa-fw fa-tools',
-            'can' => 'admin',
-            'submenu' => [
-                [
-                    'text' => 'EMIS Token',
-                    'route' => 'admin.update-emis-token.index',
-                    'icon' => 'fas fa-fw fa-key',
-                ],
-                [
-                    'text' => 'WhatsApp API',
-                    'route' => 'admin.whatsapp.index',
-                    'icon' => 'fab fa-fw fa-whatsapp',
-                ],
-                [
-                    'header' => 'BACKUP & DATA',
-                ],
-                [
-                    'text' => 'Backup & Restore',
-                    'route' => 'admin.backup.index',
-                    'icon' => 'fas fa-fw fa-database text-primary',
-                ],
-                [
-                    'text' => 'Hapus Data Pendaftar',
-                    'route' => 'admin.data.delete-list',
-                    'icon' => 'fas fa-fw fa-user-minus text-warning',
-                ],
-                [
-                    'text' => 'Data Terhapus',
-                    'route' => 'admin.data.deleted',
-                    'icon' => 'fas fa-fw fa-trash-restore text-danger',
-                ],
-            ],
         ],
 
         // ============================================

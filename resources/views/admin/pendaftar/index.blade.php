@@ -126,21 +126,26 @@
             </div>
         </div>
         <div class="card-body" style="padding: 8px;">
-            <form action="{{ route('admin.pendaftar.index') }}" method="GET" class="row" style="margin: 0 -4px;">
+            <form id="filterForm" action="{{ route('admin.pendaftar.index') }}" method="GET" class="row" style="margin: 0 -4px;">
+                {{-- Hidden inputs for sorting --}}
+                <input type="hidden" name="sort" value="{{ $sortBy }}">
+                <input type="hidden" name="dir" value="{{ $sortDir }}">
                 <div class="col-12 col-md-6 col-lg-3 mb-1" style="padding: 0 4px;">
                     <div class="form-group mb-1">
                         <label style="font-size: 10px; font-weight: 600; margin-bottom: 2px;">Cari</label>
-                        <input type="text" name="search" class="form-control form-control-sm" style="font-size: 11px; padding: 4px 8px;" placeholder="Nama, NISN..." value="{{ request('search') }}">
+                        <input type="text" name="search" id="search_filter" class="form-control form-control-sm" style="font-size: 11px; padding: 4px 8px;" placeholder="Nama, NISN..." value="{{ request('search') }}">
                     </div>
                 </div>
                 <div class="col-6 col-md-3 col-lg-2 mb-1" style="padding: 0 4px;">
                     <div class="form-group mb-1">
                         <label style="font-size: 10px; font-weight: 600; margin-bottom: 2px;">Jalur</label>
-                        <select name="jalur_id" class="form-control form-control-sm" style="font-size: 11px; padding: 4px 8px;">
-                            <option value="">Semua</option>
+                        <select name="jalur_id" id="jalur_filter" class="form-control form-control-sm auto-submit" style="font-size: 11px; padding: 4px 8px;">
+                            <option value="">Semua Jalur</option>
                             @foreach($jalurList as $jalur)
-                            <option value="{{ $jalur->id }}" {{ request('jalur_id') == $jalur->id ? 'selected' : '' }}>
-                                {{ $jalur->nama }}
+                            <option value="{{ $jalur->id }}" 
+                                {{ $selectedJalurId == $jalur->id ? 'selected' : '' }}
+                                data-tahun-aktif="{{ $jalur->tahunPelajaran->is_active ?? false }}">
+                                {{ $jalur->nama }} ({{ $jalur->tahunPelajaran->nama ?? '-' }})
                             </option>
                             @endforeach
                         </select>
@@ -149,11 +154,14 @@
                 <div class="col-6 col-md-3 col-lg-2 mb-1" style="padding: 0 4px;">
                     <div class="form-group mb-1">
                         <label style="font-size: 10px; font-weight: 600; margin-bottom: 2px;">Gelombang</label>
-                        <select name="gelombang_id" class="form-control form-control-sm" style="font-size: 11px; padding: 4px 8px;">
-                            <option value="">Semua</option>
+                        <select name="gelombang_id" id="gelombang_filter" class="form-control form-control-sm auto-submit" style="font-size: 11px; padding: 4px 8px;">
+                            <option value="">Semua Gelombang</option>
                             @foreach($gelombangList as $gelombang)
-                            <option value="{{ $gelombang->id }}" {{ request('gelombang_id') == $gelombang->id ? 'selected' : '' }}>
-                                {{ $gelombang->jalur->nama ?? '' }} - {{ $gelombang->nama }}
+                            <option value="{{ $gelombang->id }}" 
+                                data-jalur-id="{{ $gelombang->jalur_id }}"
+                                {{ request('gelombang_id') == $gelombang->id ? 'selected' : '' }}
+                                style="{{ ($selectedJalurId && $gelombang->jalur_id != $selectedJalurId) ? 'display:none;' : '' }}">
+                                {{ $gelombang->nama }}
                             </option>
                             @endforeach
                         </select>
@@ -162,7 +170,7 @@
                 <div class="col-6 col-md-3 col-lg-2 mb-1" style="padding: 0 4px;">
                     <div class="form-group mb-1">
                         <label style="font-size: 10px; font-weight: 600; margin-bottom: 2px;">Status</label>
-                        <select name="status" class="form-control form-control-sm" style="font-size: 11px; padding: 4px 8px;">
+                        <select name="status" class="form-control form-control-sm auto-submit" style="font-size: 11px; padding: 4px 8px;">
                             <option value="">Semua</option>
                             <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                             <option value="verified" {{ request('status') == 'verified' ? 'selected' : '' }}>Verified</option>
@@ -171,7 +179,18 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-6 col-md-9 col-lg-3 mb-1" style="padding: 0 4px;">
+                <div class="col-6 col-md-2 col-lg-1 mb-1" style="padding: 0 4px;">
+                    <div class="form-group mb-1">
+                        <label style="font-size: 10px; font-weight: 600; margin-bottom: 2px;">Per Hal</label>
+                        <select name="per_page" class="form-control form-control-sm auto-submit" style="font-size: 11px; padding: 4px 8px;">
+                            <option value="20" {{ request('per_page', 20) == 20 ? 'selected' : '' }}>20</option>
+                            <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
+                            <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100</option>
+                            <option value="all" {{ request('per_page') == 'all' ? 'selected' : '' }}>Semua</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-6 col-md-7 col-lg-2 mb-1" style="padding: 0 4px;">
                     <div class="form-group mb-1">
                         <label class="d-none d-md-block" style="font-size: 10px; margin-bottom: 2px;">&nbsp;</label>
                         <div class="d-flex" style="gap: 4px;">
@@ -197,14 +216,81 @@
                 <thead>
                     <tr>
                         <th style="width: 50px;">No</th>
-                        <th>No. Registrasi</th>
-                        <th>Nama Lengkap</th>
-                        <th>NISN</th>
+                        <th>
+                            @php
+                                $isNoRegSort = $sortBy == 'nomor_registrasi';
+                                $noRegDir = $isNoRegSort && $sortDir == 'asc' ? 'desc' : 'asc';
+                            @endphp
+                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'nomor_registrasi', 'dir' => $noRegDir]) }}" class="text-dark">
+                                No. Registrasi
+                                @if($isNoRegSort)
+                                    <i class="fas fa-sort-{{ $sortDir == 'asc' ? 'up' : 'down' }} text-primary"></i>
+                                @else
+                                    <i class="fas fa-sort text-muted"></i>
+                                @endif
+                            </a>
+                        </th>
+                        <th>
+                            @php
+                                $isNamaSort = $sortBy == 'nama_lengkap';
+                                $namaDir = $isNamaSort && $sortDir == 'asc' ? 'desc' : 'asc';
+                            @endphp
+                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'nama_lengkap', 'dir' => $namaDir]) }}" class="text-dark">
+                                Nama Lengkap
+                                @if($isNamaSort)
+                                    <i class="fas fa-sort-{{ $sortDir == 'asc' ? 'up' : 'down' }} text-primary"></i>
+                                @else
+                                    <i class="fas fa-sort text-muted"></i>
+                                @endif
+                            </a>
+                        </th>
+                        <th>
+                            @php
+                                $isNisnSort = $sortBy == 'nisn';
+                                $nisnDir = $isNisnSort && $sortDir == 'asc' ? 'desc' : 'asc';
+                            @endphp
+                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'nisn', 'dir' => $nisnDir]) }}" class="text-dark">
+                                NISN
+                                @if($isNisnSort)
+                                    <i class="fas fa-sort-{{ $sortDir == 'asc' ? 'up' : 'down' }} text-primary"></i>
+                                @else
+                                    <i class="fas fa-sort text-muted"></i>
+                                @endif
+                            </a>
+                        </th>
                         <th>Jalur / Gelombang</th>
+                        <th>Lokasi</th>
                         <th>Dokumen</th>
-                        <th>Status</th>
-                        <th>Terdaftar</th>
-                        <th style="width: 120px;">Aksi</th>
+                        <th>
+                            @php
+                                $isStatusSort = $sortBy == 'status_verifikasi';
+                                $statusDir = $isStatusSort && $sortDir == 'asc' ? 'desc' : 'asc';
+                            @endphp
+                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'status_verifikasi', 'dir' => $statusDir]) }}" class="text-dark">
+                                Status
+                                @if($isStatusSort)
+                                    <i class="fas fa-sort-{{ $sortDir == 'asc' ? 'up' : 'down' }} text-primary"></i>
+                                @else
+                                    <i class="fas fa-sort text-muted"></i>
+                                @endif
+                            </a>
+                        </th>
+                        <th>
+                            @php
+                                $isDateSort = $sortBy == 'created_at';
+                                $dateDir = $isDateSort && $sortDir == 'asc' ? 'desc' : 'asc';
+                            @endphp
+                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'created_at', 'dir' => $dateDir]) }}" class="text-dark">
+                                Tgl Daftar
+                                @if($isDateSort)
+                                    <i class="fas fa-sort-{{ $sortDir == 'asc' ? 'up' : 'down' }} text-primary"></i>
+                                @else
+                                    <i class="fas fa-sort text-muted"></i>
+                                @endif
+                            </a>
+                        </th>
+                        <th>Last Login</th>
+                        <th style="width: 100px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -216,9 +302,6 @@
                             <a href="{{ route('admin.pendaftar.show', $pendaftar->id) }}" class="text-dark">
                                 <strong>{{ $pendaftar->nama_lengkap }}</strong>
                             </a>
-                            @if($pendaftar->jenis_kelamin)
-                                <br><small class="text-muted">{{ $pendaftar->jenis_kelamin == 'laki-laki' ? 'Laki-laki' : 'Perempuan' }}</small>
-                            @endif
                         </td>
                         <td>{{ $pendaftar->nisn ?? '-' }}</td>
                         <td>
@@ -231,6 +314,20 @@
                                 @endif
                             @else
                                 <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($pendaftar->registration_address)
+                                <small title="{{ $pendaftar->registration_address }}">
+                                    <i class="fas fa-map-marker-alt text-success"></i>
+                                    {{ Str::limit($pendaftar->registration_address, 35) }}
+                                </small>
+                            @elseif($pendaftar->hasRegistrationCoordinates())
+                                <small class="text-muted" title="Koordinat: {{ $pendaftar->registration_coordinates }}">
+                                    <i class="fas fa-crosshairs text-warning"></i> GPS
+                                </small>
+                            @else
+                                <small class="text-muted">-</small>
                             @endif
                         </td>
                         <td>
@@ -284,6 +381,17 @@
                         </td>
                         <td>{{ $pendaftar->created_at->format('d/m/Y H:i') }}</td>
                         <td>
+                            @if($pendaftar->user)
+                                @if($pendaftar->user->isOnline())
+                                    <span class="badge badge-success" style="font-size: 10px;"><i class="fas fa-circle"></i> Online</span>
+                                @else
+                                    <small class="text-muted">{{ $pendaftar->user->last_activity_human }}</small>
+                                @endif
+                            @else
+                                <small class="text-muted">-</small>
+                            @endif
+                        </td>
+                        <td>
                             <div class="action-btns">
                                 <a href="{{ route('admin.pendaftar.show', $pendaftar->id) }}" class="btn btn-action-view" data-toggle="tooltip" title="Lihat Detail">
                                     <i class="fas fa-eye"></i> <span class="btn-text">Detail</span>
@@ -293,7 +401,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="9" class="text-center text-muted py-4">Tidak ada pendaftar</td>
+                        <td colspan="10" class="text-center text-muted py-4">Tidak ada pendaftar</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -351,6 +459,9 @@
                             </div>
                         </div>
                         <div style="text-align: right; flex-shrink: 0;">
+                            @if($pendaftar->user && $pendaftar->user->isOnline())
+                                <span class="badge badge-success" style="font-size: 7px; padding: 1px 3px;"><i class="fas fa-circle"></i></span>
+                            @endif
                             @if($pendaftar->status_verifikasi == 'pending')
                                 <span class="badge badge-warning" style="font-size: 8px; padding: 2px 4px; white-space: nowrap;">Pending</span>
                             @elseif($pendaftar->status_verifikasi == 'verified')
@@ -365,7 +476,12 @@
                                     <i class="fas fa-eye"></i> Detail
                                 </a>
                             </div>
-                            <div class="text-muted" style="font-size: 8px; margin-top: 3px;">
+                            @if($pendaftar->registration_address)
+                                <div class="text-muted" style="font-size: 7px; margin-top: 2px;" title="{{ $pendaftar->registration_address }}">
+                                    <i class="fas fa-map-marker-alt text-success"></i> {{ Str::limit($pendaftar->registration_address, 20) }}
+                                </div>
+                            @endif
+                            <div class="text-muted" style="font-size: 8px; margin-top: 1px;">
                                 {{ $pendaftar->created_at->format('d/m') }}
                             </div>
                         </div>
@@ -797,5 +913,62 @@
         $('body').append(toast);
         setTimeout(() => toast.fadeOut(() => toast.remove()), 3000);
     }
+    
+    // Dynamic Gelombang filter based on Jalur selection
+    $('#jalur_filter').on('change', function() {
+        var selectedJalurId = $(this).val();
+        var gelombangSelect = $('#gelombang_filter');
+        
+        // Reset gelombang selection
+        gelombangSelect.val('');
+        
+        // Show/hide gelombang options based on selected jalur
+        gelombangSelect.find('option').each(function() {
+            var jalurId = $(this).data('jalur-id');
+            if (!jalurId) {
+                // "Semua Gelombang" option - always show
+                $(this).show();
+            } else if (!selectedJalurId) {
+                // No jalur selected - show all
+                $(this).show();
+            } else if (jalurId === selectedJalurId) {
+                // Jalur matches - show
+                $(this).show();
+            } else {
+                // Jalur doesn't match - hide
+                $(this).hide();
+            }
+        });
+        
+        // Auto-submit form after filtering gelombang options
+        $('#filterForm').submit();
+    });
+    
+    // Auto-submit for other dropdowns (status, per_page, gelombang)
+    $('.auto-submit').not('#jalur_filter').on('change', function() {
+        $('#filterForm').submit();
+    });
+    
+    // Auto-submit for search input with debounce (wait 500ms after typing stops)
+    var searchTimeout;
+    $('#search_filter').on('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function() {
+            $('#filterForm').submit();
+        }, 500);
+    });
+    
+    // Initialize gelombang filter on page load
+    $(document).ready(function() {
+        var selectedJalurId = $('#jalur_filter').val();
+        if (selectedJalurId) {
+            $('#gelombang_filter').find('option').each(function() {
+                var jalurId = $(this).data('jalur-id');
+                if (jalurId && jalurId !== selectedJalurId) {
+                    $(this).hide();
+                }
+            });
+        }
+    });
 </script>
 @stop

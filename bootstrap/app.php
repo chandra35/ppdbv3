@@ -7,6 +7,7 @@ use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\OperatorMiddleware;
 use App\Http\Middleware\PengujiMiddleware;
 use App\Http\Middleware\LogVisitor;
+use App\Http\Middleware\TrackUserActivity;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -22,9 +23,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'log.visitor' => LogVisitor::class,
         ]);
         
-        // Add LogVisitor middleware to web group
+        // Add LogVisitor and TrackUserActivity middleware to web group
         $middleware->web(append: [
             LogVisitor::class,
+            TrackUserActivity::class,
         ]);
         
         // Replace default authenticate middleware with custom one
