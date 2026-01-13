@@ -108,6 +108,9 @@ class CalonSiswa extends Model
         'registration_ip',
         'registration_device',
         'registration_browser',
+        'registration_location_source',
+        'registration_country',
+        'registration_isp',
         'visitor_session_id',
         
         // Soft delete fields
@@ -313,6 +316,32 @@ class CalonSiswa extends Model
         }
         
         return "https://www.google.com/maps?q={$this->registration_latitude},{$this->registration_longitude}";
+    }
+
+    /**
+     * Get location source badge HTML
+     */
+    public function getRegistrationLocationSourceBadgeAttribute(): string
+    {
+        return match($this->registration_location_source) {
+            'gps' => '<span class="badge badge-success" title="GPS Browser"><i class="fas fa-satellite"></i> GPS</span>',
+            'ip' => '<span class="badge badge-info" title="IP Geolocation"><i class="fas fa-globe"></i> IP</span>',
+            default => '<span class="badge badge-secondary" title="Tidak Tersedia"><i class="fas fa-question-circle"></i> N/A</span>',
+        };
+    }
+
+    /**
+     * Get full registration location info
+     */
+    public function getRegistrationFullLocationAttribute(): string
+    {
+        $parts = array_filter([
+            $this->registration_city,
+            $this->registration_region,
+            $this->registration_country,
+        ]);
+        
+        return $parts ? implode(', ', $parts) : '-';
     }
 
     /**

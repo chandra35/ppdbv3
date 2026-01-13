@@ -192,6 +192,11 @@
             font-size: 0.938rem;
         }
     }
+    
+    /* Background for revision notes */
+    .bg-warning-light {
+        background-color: #fffbeb !important;
+    }
 </style>
 @endsection
 
@@ -298,6 +303,90 @@
                 </div>
             </div>
         </div>
+        
+        {{-- Section Dokumen Tambahan --}}
+        @if($izinkanDokumenTambahan)
+        <div class="card card-outline card-success mt-3">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-plus-circle mr-2"></i>
+                    Dokumen Tambahan (Opsional)
+                </h3>
+                @if(!$calonSiswa->is_finalisasi)
+                <div class="card-tools">
+                    <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#uploadDokumenTambahanModal">
+                        <i class="fas fa-plus mr-1"></i> Tambah Dokumen
+                    </button>
+                </div>
+                @endif
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-3" style="font-size: 0.9rem;">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Upload dokumen pendukung seperti: Sertifikat Prestasi, KIP/PIP, SKTM, Piagam Penghargaan, dll.
+                    <br><small class="text-muted">Format: PDF, JPG, JPEG, PNG. Maksimal 5MB per file.</small>
+                </div>
+                
+                @if($uploadedDokumenTambahan->count() > 0)
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover mb-0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th width="5%">#</th>
+                                <th width="30%">Jenis</th>
+                                <th width="35%">Nama File</th>
+                                <th width="30%">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($uploadedDokumenTambahan as $idx => $dok)
+                            <tr>
+                                <td>{{ $idx + 1 }}</td>
+                                <td>
+                                    <strong>{{ $dokumenTambahanOptions[$dok->jenis_dokumen] ?? $dok->jenis_dokumen }}</strong>
+                                    @if($dok->nama_dokumen && $dok->nama_dokumen != ($dokumenTambahanOptions[$dok->jenis_dokumen] ?? ''))
+                                    <br><small class="text-muted">{{ Str::limit($dok->nama_dokumen, 40) }}</small>
+                                    @endif
+                                </td>
+                                <td>
+                                    <i class="fas fa-file-{{ Str::endsWith($dok->nama_file, '.pdf') ? 'pdf text-danger' : 'image text-info' }} mr-1"></i>
+                                    {{ Str::limit($dok->nama_file, 25) }}
+                                    <br><small class="text-muted">{{ $dok->file_size_formatted }}</small>
+                                </td>
+                                <td>
+                                    @php
+                                        $extension = strtolower(pathinfo($dok->file_path, PATHINFO_EXTENSION));
+                                        $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif']);
+                                    @endphp
+                                    <button type="button" class="btn btn-xs btn-info btn-preview-dokumen-tambahan" 
+                                            data-url="{{ asset('storage/' . $dok->file_path) }}"
+                                            data-title="{{ $dokumenTambahanOptions[$dok->jenis_dokumen] ?? $dok->jenis_dokumen }}"
+                                            data-type="{{ $isImage ? 'image' : 'pdf' }}"
+                                            title="Lihat">
+                                        <i class="fas fa-eye"></i> Lihat
+                                    </button>
+                                    @if(!$calonSiswa->is_finalisasi)
+                                    <button type="button" class="btn btn-xs btn-danger btn-delete-dokumen-tambahan" 
+                                            data-id="{{ $dok->id }}" 
+                                            data-nama="{{ $dok->nama_file }}" title="Hapus">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    @endif
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @else
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-folder-open fa-3x mb-3"></i>
+                    <p class="mb-0">Belum ada dokumen tambahan yang diupload</p>
+                </div>
+                @endif
+            </div>
+        </div>
+        @endif
     </div>
 
     <div class="col-lg-4">
@@ -388,6 +477,137 @@
             </p>
         </div>
         @endif
+    </div>
+</div>
+
+{{-- Modal Upload Dokumen Tambahan --}}
+@if($izinkanDokumenTambahan && !$calonSiswa->is_finalisasi)
+<div class="modal fade" id="uploadDokumenTambahanModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success">
+                <h5 class="modal-title text-white">
+                    <i class="fas fa-plus-circle mr-2"></i>Upload Dokumen Tambahan
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="formDokumenTambahan" enctype="multipart/form-data">
+                    @csrf
+                    <div class="form-group">
+                        <label for="jenis_dokumen_tambahan"><i class="fas fa-tag mr-1"></i> Jenis Dokumen <span class="text-danger">*</span></label>
+                        <select class="form-control" id="jenis_dokumen_tambahan" name="jenis_dokumen" required>
+                            <option value="">-- Pilih Jenis Dokumen --</option>
+                            @foreach($dokumenTambahanOptions as $key => $label)
+                            <option value="{{ $key }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="keterangan_dokumen"><i class="fas fa-edit mr-1"></i> Keterangan (Opsional)</label>
+                        <input type="text" class="form-control" id="keterangan_dokumen" name="keterangan" 
+                               placeholder="Contoh: Juara 1 Olimpiade Matematika 2025" maxlength="255">
+                        <small class="text-muted">Tambahkan keterangan untuk memudahkan identifikasi dokumen</small>
+                    </div>
+                    
+                    {{-- Pilih Sumber File --}}
+                    <div class="form-group">
+                        <label><i class="fas fa-image mr-1"></i> Sumber File <span class="text-danger">*</span></label>
+                        <div class="btn-group btn-group-toggle d-flex" data-toggle="buttons">
+                            <label class="btn btn-outline-success active flex-fill">
+                                <input type="radio" name="file_source" id="sourceFile" value="file" checked> 
+                                <i class="fas fa-folder-open mr-1"></i> Pilih File
+                            </label>
+                            <label class="btn btn-outline-primary flex-fill">
+                                <input type="radio" name="file_source" id="sourceCamera" value="camera"> 
+                                <i class="fas fa-camera mr-1"></i> Kamera
+                            </label>
+                        </div>
+                    </div>
+                    
+                    {{-- File Input --}}
+                    <div class="form-group" id="fileInputGroup">
+                        <label for="file_dokumen_tambahan"><i class="fas fa-file mr-1"></i> Pilih File</label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="file_dokumen_tambahan" name="file" 
+                                   accept=".pdf,.jpg,.jpeg,.png">
+                            <label class="custom-file-label" for="file_dokumen_tambahan">Pilih file...</label>
+                        </div>
+                        <small class="text-muted">Format: PDF, JPG, JPEG, PNG. Maksimal 5MB</small>
+                    </div>
+                    
+                    {{-- Camera Input --}}
+                    <div class="form-group" id="cameraInputGroup" style="display: none;">
+                        <div class="text-center">
+                            <video id="cameraVideoTambahan" autoplay playsinline style="width: 100%; max-width: 400px; border-radius: 8px; border: 2px solid #ddd; display: none;"></video>
+                            <canvas id="cameraCanvasTambahan" style="display: none;"></canvas>
+                        </div>
+                        <div class="text-center mt-2" id="cameraControlsTambahan" style="display: none;">
+                            <button type="button" class="btn btn-primary btn-lg" id="btnCaptureTambahan">
+                                <i class="fas fa-camera"></i> Ambil Foto
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-lg" id="btnRetakeTambahan" style="display: none;">
+                                <i class="fas fa-redo"></i> Ulangi
+                            </button>
+                        </div>
+                        <div class="text-center mt-2" id="cameraStartBtn">
+                            <button type="button" class="btn btn-primary" id="btnStartCameraTambahan">
+                                <i class="fas fa-video"></i> Mulai Kamera
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {{-- Preview --}}
+                    <div id="previewDokumenTambahan" class="text-center mb-3" style="display: none;">
+                        <p class="text-muted mb-2"><small>Preview:</small></p>
+                        <img id="previewImgTambahan" src="" style="max-width: 300px; max-height: 200px; border-radius: 8px; border: 1px solid #ddd;">
+                    </div>
+                    
+                    {{-- Hidden input for camera captured image --}}
+                    <input type="hidden" id="camera_captured_tambahan" name="camera_captured">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>Batal
+                </button>
+                <button type="button" class="btn btn-success" id="btnUploadDokumenTambahan">
+                    <i class="fas fa-upload mr-1"></i>Upload
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
+{{-- Modal Preview Dokumen Tambahan --}}
+<div class="modal fade" id="previewDokumenTambahanModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info">
+                <h5 class="modal-title text-white" id="previewDokTambahanTitle">
+                    <i class="fas fa-eye mr-2"></i>Preview Dokumen
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center" style="min-height: 300px;">
+                <img id="previewDokTambahanImage" src="" style="max-width: 100%; max-height: 500px; display: none; border-radius: 8px;">
+                <iframe id="previewDokTambahanPdf" src="" style="width: 100%; height: 500px; display: none; border: none;"></iframe>
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="btn btn-primary" id="downloadDokTambahan" target="_blank">
+                    <i class="fas fa-download mr-1"></i>Download
+                </a>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>Tutup
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -605,6 +825,288 @@ $(document).ready(function() {
             },
             complete: function() {
                 btn.prop('disabled', false).html('<i class="fas fa-trash"></i> Hapus');
+            }
+        });
+    });
+    
+    // ==========================================
+    // DOKUMEN TAMBAHAN
+    // ==========================================
+    
+    let cameraStreamTambahan = null;
+    let capturedImageTambahan = null;
+    
+    // Toggle file/camera source
+    $('input[name="file_source"]').on('change', function() {
+        const source = $(this).val();
+        if (source === 'file') {
+            $('#fileInputGroup').show();
+            $('#cameraInputGroup').hide();
+            stopCameraTambahan();
+        } else {
+            $('#fileInputGroup').hide();
+            $('#cameraInputGroup').show();
+            $('#cameraStartBtn').show();
+        }
+        // Reset preview
+        $('#previewDokumenTambahan').hide();
+        capturedImageTambahan = null;
+        $('#camera_captured_tambahan').val('');
+    });
+    
+    // Start camera
+    $('#btnStartCameraTambahan').on('click', function() {
+        startCameraTambahan();
+    });
+    
+    function startCameraTambahan() {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
+            })
+            .then(function(stream) {
+                cameraStreamTambahan = stream;
+                const video = document.getElementById('cameraVideoTambahan');
+                video.srcObject = stream;
+                video.style.display = 'block';
+                $('#cameraControlsTambahan').show();
+                $('#cameraStartBtn').hide();
+                $('#btnCaptureTambahan').show();
+                $('#btnRetakeTambahan').hide();
+            })
+            .catch(function(err) {
+                console.error('Camera error:', err);
+                toastr.error('Tidak dapat mengakses kamera. Pastikan browser diizinkan mengakses kamera.');
+            });
+        } else {
+            toastr.error('Browser tidak mendukung akses kamera');
+        }
+    }
+    
+    function stopCameraTambahan() {
+        if (cameraStreamTambahan) {
+            cameraStreamTambahan.getTracks().forEach(track => track.stop());
+            cameraStreamTambahan = null;
+        }
+        $('#cameraVideoTambahan').hide();
+        $('#cameraControlsTambahan').hide();
+    }
+    
+    // Capture photo
+    $('#btnCaptureTambahan').on('click', function() {
+        const video = document.getElementById('cameraVideoTambahan');
+        const canvas = document.getElementById('cameraCanvasTambahan');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+        
+        capturedImageTambahan = canvas.toDataURL('image/jpeg', 0.8);
+        $('#camera_captured_tambahan').val(capturedImageTambahan);
+        
+        // Show preview
+        $('#previewImgTambahan').attr('src', capturedImageTambahan);
+        $('#previewDokumenTambahan').show();
+        
+        // Hide video, show retake
+        $('#cameraVideoTambahan').hide();
+        $('#btnCaptureTambahan').hide();
+        $('#btnRetakeTambahan').show();
+        
+        stopCameraTambahan();
+    });
+    
+    // Retake photo
+    $('#btnRetakeTambahan').on('click', function() {
+        capturedImageTambahan = null;
+        $('#camera_captured_tambahan').val('');
+        $('#previewDokumenTambahan').hide();
+        startCameraTambahan();
+    });
+    
+    // Preview file dokumen tambahan
+    $('#file_dokumen_tambahan').on('change', function() {
+        const file = this.files[0];
+        if (file) {
+            // Validate size (5MB max)
+            if (file.size > 5 * 1024 * 1024) {
+                toastr.error('Ukuran file maksimal 5MB');
+                this.value = '';
+                $(this).next('.custom-file-label').text('Pilih file...');
+                return;
+            }
+            
+            $(this).next('.custom-file-label').text(file.name);
+            
+            // Show preview for images
+            if (file.type.match(/image\/(jpg|jpeg|png)/i)) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#previewImgTambahan').attr('src', e.target.result);
+                    $('#previewDokumenTambahan').show();
+                };
+                reader.readAsDataURL(file);
+            } else {
+                $('#previewDokumenTambahan').hide();
+            }
+        }
+    });
+    
+    // Reset modal dokumen tambahan
+    $('#uploadDokumenTambahanModal').on('hidden.bs.modal', function() {
+        $('#formDokumenTambahan')[0].reset();
+        $('#file_dokumen_tambahan').next('.custom-file-label').text('Pilih file...');
+        $('#previewDokumenTambahan').hide();
+        stopCameraTambahan();
+        capturedImageTambahan = null;
+        $('#camera_captured_tambahan').val('');
+        // Reset to file source
+        $('input[name="file_source"][value="file"]').prop('checked', true).parent().addClass('active');
+        $('input[name="file_source"][value="camera"]').parent().removeClass('active');
+        $('#fileInputGroup').show();
+        $('#cameraInputGroup').hide();
+        $('#cameraStartBtn').show();
+    });
+    
+    // Upload dokumen tambahan
+    $('#btnUploadDokumenTambahan').on('click', function() {
+        const jenisDokumen = $('#jenis_dokumen_tambahan').val();
+        const fileSource = $('input[name="file_source"]:checked').val();
+        const fileInput = $('#file_dokumen_tambahan')[0];
+        
+        // Validate required fields
+        if (!jenisDokumen) {
+            toastr.error('Pilih jenis dokumen terlebih dahulu');
+            return;
+        }
+        
+        // Validate file or camera capture
+        if (fileSource === 'file' && !fileInput.files.length) {
+            toastr.error('Pilih file untuk diupload');
+            return;
+        }
+        
+        if (fileSource === 'camera' && !capturedImageTambahan) {
+            toastr.error('Ambil foto terlebih dahulu');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('_token', '{{ csrf_token() }}');
+        formData.append('jenis_dokumen', jenisDokumen);
+        formData.append('keterangan', $('#keterangan_dokumen').val());
+        
+        if (fileSource === 'file') {
+            formData.append('file', fileInput.files[0]);
+        } else {
+            // Convert base64 to blob
+            const blob = dataURLtoBlob(capturedImageTambahan);
+            formData.append('file', blob, 'camera_capture_' + Date.now() + '.jpg');
+        }
+        
+        const btn = $(this);
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Uploading...');
+        
+        $.ajax({
+            url: '{{ route("pendaftar.dokumen-tambahan.upload") }}',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    toastr.success(response.message);
+                    $('#uploadDokumenTambahanModal').modal('hide');
+                    location.reload();
+                } else {
+                    toastr.error(response.message || 'Gagal upload dokumen');
+                }
+            },
+            error: function(xhr) {
+                let message = 'Terjadi kesalahan';
+                if (xhr.responseJSON) {
+                    if (xhr.responseJSON.errors) {
+                        const errors = Object.values(xhr.responseJSON.errors);
+                        message = errors[0][0] || message;
+                    } else if (xhr.responseJSON.message) {
+                        message = xhr.responseJSON.message;
+                    }
+                }
+                toastr.error(message);
+            },
+            complete: function() {
+                btn.prop('disabled', false).html('<i class="fas fa-upload mr-1"></i>Upload');
+            }
+        });
+    });
+    
+    // Helper: Convert dataURL to Blob
+    function dataURLtoBlob(dataURL) {
+        const parts = dataURL.split(',');
+        const mime = parts[0].match(/:(.*?);/)[1];
+        const bstr = atob(parts[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new Blob([u8arr], { type: mime });
+    }
+    
+    // Preview dokumen tambahan modal
+    $(document).on('click', '.btn-preview-dokumen-tambahan', function() {
+        const url = $(this).data('url');
+        const title = $(this).data('title');
+        const type = $(this).data('type');
+        
+        $('#previewDokTambahanTitle').html('<i class="fas fa-eye mr-2"></i>' + title);
+        $('#downloadDokTambahan').attr('href', url);
+        
+        if (type === 'image') {
+            $('#previewDokTambahanImage').attr('src', url).show();
+            $('#previewDokTambahanPdf').hide();
+        } else {
+            $('#previewDokTambahanImage').hide();
+            $('#previewDokTambahanPdf').attr('src', url).show();
+        }
+        
+        $('#previewDokumenTambahanModal').modal('show');
+    });
+    
+    // Delete dokumen tambahan
+    $(document).on('click', '.btn-delete-dokumen-tambahan', function() {
+        const id = $(this).data('id');
+        const nama = $(this).data('nama');
+        
+        if (!confirm('Yakin ingin menghapus dokumen "' + nama + '"?')) return;
+        
+        const btn = $(this);
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+        
+        $.ajax({
+            url: '{{ url("pendaftar/dokumen-tambahan") }}/' + id,
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    toastr.success(response.message);
+                    location.reload();
+                } else {
+                    toastr.error(response.message || 'Gagal menghapus dokumen');
+                }
+            },
+            error: function(xhr) {
+                let message = 'Terjadi kesalahan';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    message = xhr.responseJSON.message;
+                }
+                toastr.error(message);
+            },
+            complete: function() {
+                btn.prop('disabled', false).html('<i class="fas fa-trash"></i>');
             }
         });
     });

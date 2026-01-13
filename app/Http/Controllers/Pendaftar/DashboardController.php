@@ -40,8 +40,12 @@ class DashboardController extends Controller
 
         // Calculate progress
         $progress = $this->calculateProgress($calonSiswa);
+        
+        // Get location setting
+        $settings = \App\Models\PpdbSettings::first();
+        $wajibLokasi = $settings?->wajib_lokasi_registrasi ?? false;
 
-        return view('pendaftar.dashboard.index', compact('calonSiswa', 'progress'));
+        return view('pendaftar.dashboard.index', compact('calonSiswa', 'progress', 'wajibLokasi'));
     }
 
     /**
@@ -92,6 +96,22 @@ class DashboardController extends Controller
             'nik.digits' => 'NIK harus 16 digit angka.',
             'nomor_hp.regex' => 'Format No. HP harus 08xxxxxxxxxx (0 diikuti 9-12 digit).',
         ]);
+
+        // Normalize phone number untuk pengecekan
+        $phoneNormalized = $this->normalizePhoneNumber($validated['nomor_hp']);
+        
+        // Check if phone number already registered by other user
+        $existingPhone = CalonSiswa::where('id', '!=', $calonSiswa->id)
+            ->where(function($query) use ($phoneNormalized, $validated) {
+                $query->where('nomor_hp', $phoneNormalized)
+                      ->orWhere('nomor_hp', $validated['nomor_hp'])
+                      ->orWhere('nomor_hp', '+62' . ltrim($validated['nomor_hp'], '0'))
+                      ->orWhere('nomor_hp', '0' . substr($phoneNormalized, 3));
+            })->first();
+        
+        if ($existingPhone) {
+            return back()->withErrors(['nomor_hp' => 'Nomor WhatsApp sudah digunakan oleh pendaftar lain.'])->withInput();
+        }
 
         // Convert phone number from 08xx to +628xx format
         if (!empty($validated['nomor_hp'])) {
@@ -261,6 +281,7 @@ class DashboardController extends Controller
         // Get active documents from settings
         $settings = \App\Models\PpdbSettings::first();
         $dokumenAktif = $settings ? $settings->dokumen_aktif : [];
+        $izinkanDokumenTambahan = $settings ? $settings->izinkan_dokumen_tambahan : false;
 
         // All available documents
         $allDocs = [
@@ -287,8 +308,23 @@ class DashboardController extends Controller
 
         // Get uploaded documents
         $uploadedDocs = $calonSiswa->dokumen->keyBy('jenis_dokumen');
+        
+        // Get dokumen tambahan options
+        $dokumenTambahanOptions = CalonDokumen::DOKUMEN_TAMBAHAN;
+        
+        // Get uploaded dokumen tambahan
+        $uploadedDokumenTambahan = $calonSiswa->dokumen
+            ->whereIn('jenis_dokumen', array_keys($dokumenTambahanOptions))
+            ->values();
 
-        return view('pendaftar.dashboard.dokumen', compact('calonSiswa', 'requiredDocs', 'uploadedDocs'));
+        return view('pendaftar.dashboard.dokumen', compact(
+            'calonSiswa', 
+            'requiredDocs', 
+            'uploadedDocs',
+            'izinkanDokumenTambahan',
+            'dokumenTambahanOptions',
+            'uploadedDokumenTambahan'
+        ));
     }
 
     /**
@@ -408,6 +444,119 @@ class DashboardController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Dokumen berhasil dihapus',
+        ]);
+    }
+
+    /**
+     * Upload dokumen tambahan
+     */
+    public function uploadDokumenTambahan(Request $request)
+    {
+        $user = Auth::user();
+        $calonSiswa = CalonSiswa::where('user_id', $user->id)->first();
+
+        if (!$calonSiswa) {
+            return response()->json(['success' => false, 'message' => 'Data pendaftar tidak ditemukan'], 404);
+        }
+
+        // Check if already finalized
+        if ($calonSiswa->is_finalisasi) {
+            return response()->json(['success' => false, 'message' => 'Data sudah difinalisasi dan tidak dapat diubah'], 403);
+        }
+
+        // Check if dokumen tambahan is allowed
+        $settings = PpdbSettings::first();
+        if (!$settings || !$settings->izinkan_dokumen_tambahan) {
+            return response()->json(['success' => false, 'message' => 'Fitur upload dokumen tambahan tidak diaktifkan'], 403);
+        }
+
+        $request->validate([
+            'jenis_dokumen' => 'required|string|in:' . implode(',', array_keys(CalonDokumen::DOKUMEN_TAMBAHAN)),
+            'keterangan' => 'nullable|string|max:255',
+            'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120', // Max 5MB
+        ], [
+            'jenis_dokumen.required' => 'Pilih jenis dokumen',
+            'jenis_dokumen.in' => 'Jenis dokumen tidak valid',
+            'file.required' => 'File harus diupload',
+            'file.mimes' => 'Format file harus PDF, JPG, JPEG, atau PNG',
+            'file.max' => 'Ukuran file maksimal 5MB',
+        ]);
+
+        $file = $request->file('file');
+        $jenisDokumen = $request->jenis_dokumen;
+        $keterangan = $request->keterangan;
+
+        // Generate filename
+        $extension = $file->getClientOriginalExtension();
+        $filename = $jenisDokumen . '_' . $calonSiswa->nisn . '_' . time() . '.' . $extension;
+        
+        // Store file
+        $path = $file->storeAs('dokumen_pendaftar/' . $calonSiswa->id . '/tambahan', $filename, 'public');
+
+        // Create dokumen record - dokumen tambahan langsung valid (tidak perlu verifikasi)
+        $dokumen = CalonDokumen::create([
+            'calon_siswa_id' => $calonSiswa->id,
+            'jenis_dokumen' => $jenisDokumen,
+            'nama_dokumen' => CalonDokumen::DOKUMEN_TAMBAHAN[$jenisDokumen] . ($keterangan ? ' - ' . $keterangan : ''),
+            'nama_file' => $file->getClientOriginalName(),
+            'file_path' => $path,
+            'file_size' => $file->getSize(),
+            'mime_type' => $file->getMimeType(),
+            'storage_disk' => 'public',
+            'is_required' => false,
+            'status_verifikasi' => 'valid', // Langsung valid karena opsional
+            'verified_at' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Dokumen tambahan berhasil diupload',
+            'dokumen' => [
+                'id' => $dokumen->id,
+                'jenis' => $jenisDokumen,
+                'nama' => $dokumen->nama_dokumen,
+                'nama_file' => $dokumen->nama_file,
+                'file_url' => asset('storage/' . $dokumen->file_path),
+                'file_size' => $dokumen->file_size_formatted,
+                'status' => $dokumen->status_verifikasi,
+            ]
+        ]);
+    }
+
+    /**
+     * Delete dokumen tambahan
+     */
+    public function deleteDokumenTambahan($id)
+    {
+        $user = Auth::user();
+        $calonSiswa = CalonSiswa::where('user_id', $user->id)->first();
+
+        if (!$calonSiswa) {
+            return response()->json(['success' => false, 'message' => 'Data pendaftar tidak ditemukan'], 404);
+        }
+
+        // Check if already finalized
+        if ($calonSiswa->is_finalisasi) {
+            return response()->json(['success' => false, 'message' => 'Data sudah difinalisasi dan tidak dapat diubah'], 403);
+        }
+
+        // Find dokumen - must be dokumen tambahan type
+        $dokumen = $calonSiswa->dokumen()
+            ->where('id', $id)
+            ->whereIn('jenis_dokumen', array_keys(CalonDokumen::DOKUMEN_TAMBAHAN))
+            ->first();
+
+        if (!$dokumen) {
+            return response()->json(['success' => false, 'message' => 'Dokumen tidak ditemukan'], 404);
+        }
+
+        // Delete file
+        Storage::disk('public')->delete($dokumen->file_path);
+        $dokumen->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Dokumen tambahan berhasil dihapus'
         ]);
     }
 
@@ -1296,5 +1445,127 @@ class DashboardController extends Controller
             'can_finalize' => $canFinalize,
             'missing' => $missing
         ];
+    }
+
+    /**
+     * Normalize phone number to +62 format
+     */
+    protected function normalizePhoneNumber(string $phone): string
+    {
+        // Remove all non-numeric characters except +
+        $phone = preg_replace('/[^0-9+]/', '', $phone);
+        
+        // Convert various formats to +62
+        if (substr($phone, 0, 1) === '0') {
+            return '+62' . substr($phone, 1);
+        } elseif (substr($phone, 0, 2) === '62') {
+            return '+' . $phone;
+        } elseif (substr($phone, 0, 3) === '+62') {
+            return $phone;
+        }
+        
+        return $phone;
+    }
+
+    /**
+     * Update registration location from dashboard
+     */
+    public function updateLocation(Request $request)
+    {
+        $user = Auth::user();
+        $calonSiswa = CalonSiswa::where('user_id', $user->id)->first();
+
+        if (!$calonSiswa) {
+            return response()->json(['success' => false, 'message' => 'Data pendaftar tidak ditemukan'], 404);
+        }
+
+        $validated = $request->validate([
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'accuracy' => 'nullable|numeric',
+            'altitude' => 'nullable|numeric',
+            'location_source' => 'required|in:gps,ip',
+        ]);
+
+        $updateData = [
+            'registration_location_source' => $validated['location_source'],
+        ];
+
+        if ($validated['location_source'] === 'gps' && $validated['latitude'] && $validated['longitude']) {
+            $updateData['registration_latitude'] = $validated['latitude'];
+            $updateData['registration_longitude'] = $validated['longitude'];
+            $updateData['registration_accuracy'] = $validated['accuracy'] ?? null;
+            $updateData['registration_altitude'] = $validated['altitude'] ?? null;
+            
+            // Get address from coordinates using reverse geocoding (server-side)
+            try {
+                $geoResponse = file_get_contents("https://nominatim.openstreetmap.org/reverse?format=json&lat={$validated['latitude']}&lon={$validated['longitude']}&zoom=18&addressdetails=1", false, stream_context_create([
+                    'http' => ['header' => "User-Agent: PPDB-App\r\n"]
+                ]));
+                
+                if ($geoResponse) {
+                    $geoData = json_decode($geoResponse, true);
+                    if (isset($geoData['address'])) {
+                        $addr = $geoData['address'];
+                        $updateData['registration_city'] = $addr['city'] ?? $addr['town'] ?? $addr['county'] ?? null;
+                        $updateData['registration_region'] = $addr['state'] ?? null;
+                        $updateData['registration_country'] = $addr['country'] ?? null;
+                        $updateData['registration_address'] = $geoData['display_name'] ?? null;
+                    }
+                }
+            } catch (\Exception $e) {
+                // Ignore geocoding errors
+            }
+        } elseif ($validated['location_source'] === 'ip') {
+            // Get location from IP
+            $ip = $request->ip();
+            if ($ip && $ip !== '127.0.0.1') {
+                try {
+                    $ipResponse = file_get_contents("http://ip-api.com/json/{$ip}?fields=status,city,regionName,country,lat,lon,isp");
+                    if ($ipResponse) {
+                        $ipData = json_decode($ipResponse, true);
+                        if ($ipData && $ipData['status'] === 'success') {
+                            $updateData['registration_latitude'] = $ipData['lat'] ?? null;
+                            $updateData['registration_longitude'] = $ipData['lon'] ?? null;
+                            $updateData['registration_city'] = $ipData['city'] ?? null;
+                            $updateData['registration_region'] = $ipData['regionName'] ?? null;
+                            $updateData['registration_country'] = $ipData['country'] ?? null;
+                            $updateData['registration_isp'] = $ipData['isp'] ?? null;
+                        }
+                    }
+                } catch (\Exception $e) {
+                    // Ignore IP lookup errors
+                }
+            }
+            $updateData['registration_ip'] = $ip;
+        }
+
+        // Update device info
+        $userAgent = $request->userAgent();
+        if (stripos($userAgent, 'mobile') !== false || stripos($userAgent, 'android') !== false || stripos($userAgent, 'iphone') !== false) {
+            $updateData['registration_device'] = 'mobile';
+        } elseif (stripos($userAgent, 'tablet') !== false || stripos($userAgent, 'ipad') !== false) {
+            $updateData['registration_device'] = 'tablet';
+        } else {
+            $updateData['registration_device'] = 'desktop';
+        }
+
+        // Extract browser
+        if (preg_match('/(Chrome|Firefox|Safari|Edge|Opera|MSIE|Trident)[\/\s](\d+)/i', $userAgent, $matches)) {
+            $updateData['registration_browser'] = $matches[1] . ' ' . $matches[2];
+        }
+
+        $calonSiswa->update($updateData);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lokasi berhasil disimpan',
+            'data' => [
+                'location_source' => $updateData['registration_location_source'],
+                'city' => $updateData['registration_city'] ?? null,
+                'region' => $updateData['registration_region'] ?? null,
+                'country' => $updateData['registration_country'] ?? null,
+            ]
+        ]);
     }
 }

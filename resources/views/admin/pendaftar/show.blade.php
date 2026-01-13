@@ -851,6 +851,145 @@ dl.row dt {
         </div>
     </div>
 
+    <!-- Info Registrasi & Lokasi -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="box box-solid box-info">
+                <div class="box-header with-border">
+                    <h3 class="box-title"><i class="fas fa-map-marker-alt"></i> Info Registrasi & Lokasi</h3>
+                    <div class="box-tools pull-right">
+                        @if($pendaftar->registration_location_source)
+                            {!! $pendaftar->registration_location_source_badge !!}
+                        @else
+                            <span class="badge badge-secondary"><i class="fas fa-question-circle"></i> Tidak Tersedia</span>
+                        @endif
+                    </div>
+                </div>
+                <div class="box-body">
+                    {{-- Alert jika data lokasi kosong --}}
+                    @if(!$pendaftar->registration_ip && !$pendaftar->hasRegistrationCoordinates())
+                        <div class="alert alert-warning" style="margin-bottom: 15px;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Data lokasi tidak tersedia.</strong>
+                            @if(!$wajibLokasiRegistrasi)
+                                <br><small>
+                                    Fitur <b>"Wajibkan Lokasi Saat Registrasi"</b> belum diaktifkan. 
+                                    <a href="{{ route('admin.settings.index') }}#lokasi-registrasi" class="alert-link">
+                                        <i class="fas fa-cog"></i> Aktifkan di Pengaturan
+                                    </a>
+                                </small>
+                            @else
+                                <br><small>Pendaftar ini mungkin mendaftar sebelum fitur lokasi diaktifkan.</small>
+                            @endif
+                        </div>
+                    @endif
+                    
+                    <div class="row">
+                        <!-- Lokasi -->
+                        <div class="col-md-6">
+                            <table class="table table-sm table-borderless" style="font-size: 13px;">
+                                @if($pendaftar->hasRegistrationCoordinates())
+                                <tr>
+                                    <td width="35%" class="p-1 text-muted"><i class="fas fa-crosshairs"></i> Koordinat</td>
+                                    <td class="p-1">
+                                        <code style="font-size: 11px;">{{ $pendaftar->registration_coordinates }}</code>
+                                        <a href="{{ $pendaftar->registration_maps_url }}" target="_blank" class="btn btn-xs btn-success ml-1" title="Lihat di Google Maps">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                @endif
+                                @if($pendaftar->registration_accuracy)
+                                <tr>
+                                    <td class="p-1 text-muted"><i class="fas fa-bullseye"></i> Akurasi</td>
+                                    <td class="p-1">± {{ number_format($pendaftar->registration_accuracy, 0) }} meter</td>
+                                </tr>
+                                @endif
+                                {{-- Lokasi Tempat - dengan fallback reverse geocode jika data kosong --}}
+                                <tr>
+                                    <td class="p-1 text-muted"><i class="fas fa-map-pin"></i> Lokasi Tempat</td>
+                                    <td class="p-1">
+                                        @if($pendaftar->registration_city || $pendaftar->registration_region || $pendaftar->registration_address)
+                                            <span class="text-success">
+                                                @if($pendaftar->registration_address)
+                                                    <small>{{ $pendaftar->registration_address }}</small>
+                                                @else
+                                                    {{ $pendaftar->registration_full_location }}
+                                                @endif
+                                            </span>
+                                        @elseif($pendaftar->hasRegistrationCoordinates())
+                                            <span id="location-address-{{ $pendaftar->id }}" class="text-muted">
+                                                <i class="fas fa-spinner fa-spin"></i> Memuat lokasi...
+                                            </span>
+                                            <script>
+                                                (function() {
+                                                    var lat = {{ $pendaftar->registration_latitude }};
+                                                    var lng = {{ $pendaftar->registration_longitude }};
+                                                    var el = document.getElementById('location-address-{{ $pendaftar->id }}');
+                                                    
+                                                    fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1', {
+                                                        headers: { 'Accept-Language': 'id' }
+                                                    })
+                                                    .then(function(r) { return r.json(); })
+                                                    .then(function(data) {
+                                                        if (data && data.address) {
+                                                            var addr = data.address;
+                                                            var parts = [
+                                                                addr.village || addr.suburb || addr.neighbourhood,
+                                                                addr.city || addr.town || addr.county,
+                                                                addr.state
+                                                            ].filter(Boolean);
+                                                            el.innerHTML = '<span class="text-success"><i class="fas fa-check-circle"></i> ' + parts.join(', ') + '</span>';
+                                                        } else {
+                                                            el.innerHTML = '<span class="text-warning">-</span>';
+                                                        }
+                                                    })
+                                                    .catch(function() {
+                                                        el.innerHTML = '<span class="text-warning">-</span>';
+                                                    });
+                                                })();
+                                            </script>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <!-- Device Info -->
+                        <div class="col-md-6">
+                            <table class="table table-sm table-borderless" style="font-size: 13px;">
+                                <tr>
+                                    <td width="35%" class="p-1 text-muted"><i class="{{ $pendaftar->registration_device_icon }}"></i> Perangkat</td>
+                                    <td class="p-1">{{ ucfirst($pendaftar->registration_device ?? '-') }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-1 text-muted"><i class="fab fa-chrome"></i> Browser</td>
+                                    <td class="p-1">{{ $pendaftar->registration_browser ?? '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-1 text-muted"><i class="fas fa-globe"></i> IP Address</td>
+                                    <td class="p-1"><code style="font-size: 11px;">{{ $pendaftar->registration_ip ?? '-' }}</code></td>
+                                </tr>
+                                @if($pendaftar->registration_isp)
+                                <tr>
+                                    <td class="p-1 text-muted"><i class="fas fa-wifi"></i> ISP</td>
+                                    <td class="p-1"><small>{{ $pendaftar->registration_isp }}</small></td>
+                                </tr>
+                                @endif
+                                <tr>
+                                    <td class="p-1 text-muted"><i class="fas fa-clock"></i> Waktu Daftar</td>
+                                    <td class="p-1">{{ $pendaftar->tanggal_registrasi ? $pendaftar->tanggal_registrasi->format('d M Y H:i:s') : $pendaftar->created_at->format('d M Y H:i:s') }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Dokumen Pendaftaran (Dipindah ke atas untuk memudahkan verifikasi) -->
     <div class="row">
         <div class="col-md-12">
@@ -1136,6 +1275,73 @@ dl.row dt {
                     @endif
                 </div>
             </div>
+            
+            {{-- Dokumen Tambahan (Opsional) --}}
+            @if(isset($dokumenTambahan) && $dokumenTambahan->count() > 0)
+            <div class="box box-solid box-success">
+                <div class="box-header with-border">
+                    <h3 class="box-title"><i class="fas fa-plus-circle"></i> Dokumen Tambahan (Opsional)</h3>
+                    <div class="box-tools pull-right">
+                        <span class="badge badge-success">{{ $dokumenTambahan->count() }} dokumen</span>
+                    </div>
+                </div>
+                <div class="box-body" style="padding: 8px;">
+                    <div class="row" style="margin: 0 -3px;">
+                        @foreach($dokumenTambahan as $dokTambahan)
+                        @php
+                            $extension = strtolower(pathinfo($dokTambahan->file_path, PATHINFO_EXTENSION));
+                            $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif']);
+                            $isPdf = $extension === 'pdf';
+                            $docLabel = $dokumenTambahanOptions[$dokTambahan->jenis_dokumen] ?? ucfirst(str_replace('_', ' ', $dokTambahan->jenis_dokumen));
+                        @endphp
+                        <div class="col-xl-2 col-lg-3 col-md-3 col-sm-4 col-6 mb-2" style="padding: 0 3px;">
+                            <div class="box box-widget dokumen-card" style="margin-bottom: 0; border: 1px solid #28a745;">
+                                @if($isImage)
+                                    <a href="{{ asset('storage/' . $dokTambahan->file_path) }}" 
+                                       class="dokumen-link"
+                                       data-url="{{ asset('storage/' . $dokTambahan->file_path) }}"
+                                       data-title="{{ $docLabel }} (Opsional)"
+                                       data-dokumen-id=""
+                                       data-dokumen-status="valid"
+                                       data-jenis-dokumen="{{ $dokTambahan->jenis_dokumen }}"
+                                       data-type="image">
+                                        <img src="{{ asset('storage/' . $dokTambahan->file_path) }}" class="card-img-top" style="height: 85px; object-fit: cover;">
+                                    </a>
+                                @else
+                                    <a href="javascript:void(0);"
+                                       class="dokumen-link"
+                                       data-url="{{ asset('storage/' . $dokTambahan->file_path) }}"
+                                       data-title="{{ $docLabel }} (Opsional)"
+                                       data-dokumen-id=""
+                                       data-dokumen-status="valid"
+                                       data-jenis-dokumen="{{ $dokTambahan->jenis_dokumen }}"
+                                       data-type="pdf">
+                                        <div class="card-img-top bg-danger d-flex align-items-center justify-content-center" style="height: 85px;">
+                                            <div class="text-center text-white">
+                                                <i class="fas fa-file-pdf fa-2x"></i>
+                                                <div style="font-size: 9px;">PDF</div>
+                                            </div>
+                                        </div>
+                                    </a>
+                                @endif
+                                <div class="card-body" style="padding: 5px;">
+                                    <div style="font-size: 10px; font-weight: 600; margin-bottom: 3px; line-height: 1.2;">{{ $docLabel }}</div>
+                                    @if($dokTambahan->nama_dokumen && $dokTambahan->nama_dokumen != $docLabel)
+                                    <div style="font-size: 8px; color: #666; margin-bottom: 2px;" title="{{ $dokTambahan->nama_dokumen }}">{{ Str::limit($dokTambahan->nama_dokumen, 25) }}</div>
+                                    @endif
+                                    <div style="margin-bottom: 4px;">
+                                        <span class="badge badge-success" style="font-size: 8px; padding: 2px 4px;">
+                                            <i class="fas fa-check"></i> Opsional
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+            @endif
 
             <!-- Histori Verifikasi Dokumen -->
             @if($pendaftar->dokumen && $pendaftar->dokumen->count() > 0)
@@ -1876,6 +2082,12 @@ $(document).ready(function() {
     function updateApprovalButtons() {
         const container = $('#dokumenApprovalButtons');
         container.empty();
+        
+        // Skip untuk dokumen tambahan (opsional) - tidak punya ID
+        if (!currentDokumenId) {
+            container.html('<p class="text-muted mb-0"><i class="fas fa-info-circle"></i> Dokumen opsional tidak perlu verifikasi</p>');
+            return;
+        }
         
         // Skip untuk pas_foto
         if (currentJenisDokumen === 'pas_foto') {

@@ -215,6 +215,28 @@
                         </a>
                     </div>
                     
+                    {{-- Lokasi Card --}}
+                    <div class="col-md-4 col-6 mb-3">
+                        <div class="card quick-action-card h-100 text-center p-3" id="locationCard" style="cursor: pointer;" onclick="requestLocation()">
+                            @if($calonSiswa->registration_location_source)
+                                <div class="icon text-success">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <h6 class="mt-2 mb-0">Lokasi</h6>
+                                <small class="text-success"><i class="fas fa-check"></i> Terdeteksi</small>
+                            @else
+                                <div class="icon text-danger" id="locationIcon">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <h6 class="mt-2 mb-0" id="locationTitle">Lokasi</h6>
+                                <small class="text-danger" id="locationStatus">
+                                    <i class="fas fa-times"></i> Belum Aktif
+                                    @if($wajibLokasi)<span class="badge badge-danger ml-1" style="font-size: 0.6rem;">WAJIB</span>@endif
+                                </small>
+                            @endif
+                        </div>
+                    </div>
+                    
                     @if($calonSiswa->is_finalisasi)
                     <div class="col-md-4 col-6 mb-3">
                         <a href="{{ route('pendaftar.cetak-bukti-registrasi.preview') }}" target="_blank" class="text-decoration-none">
@@ -338,4 +360,127 @@
         </div>
     </div>
 </div>
+
+@if(!$calonSiswa->registration_location_source)
+@push('scripts')
+<script>
+function requestLocation() {
+    const card = document.getElementById('locationCard');
+    const icon = document.getElementById('locationIcon');
+    const title = document.getElementById('locationTitle');
+    const status = document.getElementById('locationStatus');
+    
+    // Show loading state
+    icon.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    icon.className = 'icon text-primary';
+    status.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Mendeteksi...';
+    status.className = 'text-primary';
+    
+    if (!navigator.geolocation) {
+        handleFallbackIP('Browser tidak mendukung GPS');
+        return;
+    }
+    
+    navigator.geolocation.getCurrentPosition(
+        function(position) {
+            // GPS success
+            saveLocation({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+                altitude: position.coords.altitude,
+                location_source: 'gps'
+            });
+        },
+        function(error) {
+            let errorMsg = 'Gagal mendapatkan lokasi';
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMsg = 'Izin ditolak';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMsg = 'Tidak tersedia';
+                    break;
+                case error.TIMEOUT:
+                    errorMsg = 'Waktu habis';
+                    break;
+            }
+            handleFallbackIP(errorMsg);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0
+        }
+    );
+}
+
+function handleFallbackIP(errorMsg) {
+    const status = document.getElementById('locationStatus');
+    status.innerHTML = '<i class="fas fa-globe"></i> Via IP...';
+    status.className = 'text-info';
+    
+    // Use IP fallback
+    saveLocation({
+        location_source: 'ip'
+    });
+}
+
+function saveLocation(data) {
+    fetch('{{ route("pendaftar.update-location") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        const icon = document.getElementById('locationIcon');
+        const status = document.getElementById('locationStatus');
+        const card = document.getElementById('locationCard');
+        
+        if (result.success) {
+            // Success state
+            icon.innerHTML = '<i class="fas fa-map-marker-alt"></i>';
+            icon.className = 'icon text-success';
+            
+            if (data.location_source === 'gps') {
+                status.innerHTML = '<i class="fas fa-check"></i> GPS';
+            } else {
+                status.innerHTML = '<i class="fas fa-check"></i> IP';
+            }
+            status.className = 'text-success';
+            
+            // Add location info as tooltip
+            const locationParts = [result.data.city, result.data.region].filter(Boolean);
+            if (locationParts.length) {
+                card.title = locationParts.join(', ');
+            }
+            
+            // Remove click handler
+            card.onclick = null;
+            card.style.cursor = 'default';
+        } else {
+            resetLocationCard(result.message || 'Gagal menyimpan');
+        }
+    })
+    .catch(error => {
+        resetLocationCard('Error');
+    });
+}
+
+function resetLocationCard(message) {
+    const icon = document.getElementById('locationIcon');
+    const status = document.getElementById('locationStatus');
+    
+    icon.innerHTML = '<i class="fas fa-map-marker-alt"></i>';
+    icon.className = 'icon text-danger';
+    status.innerHTML = '<i class="fas fa-times"></i> ' + message;
+    status.className = 'text-danger';
+}
+</script>
+@endpush
+@endif
 @endsection

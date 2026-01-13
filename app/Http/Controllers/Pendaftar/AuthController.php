@@ -40,8 +40,12 @@ class AuthController extends Controller
             ->where('tanggal_buka', '<=', now())
             ->where('tanggal_tutup', '>=', now())
             ->first();
+        
+        // Get location setting
+        $settings = \App\Models\PpdbSettings::first();
+        $wajibLokasi = $settings?->wajib_lokasi_registrasi ?? false;
 
-        return view('pendaftar.landing', compact('tahunAktif', 'jalurPendaftaran', 'gelombangAktif'));
+        return view('pendaftar.landing', compact('tahunAktif', 'jalurPendaftaran', 'gelombangAktif', 'wajibLokasi'));
     }
 
     /**
@@ -65,6 +69,28 @@ class AuthController extends Controller
             ]);
         }
 
+        // Check if NISN validation is enabled
+        $settings = \App\Models\PpdbSettings::first();
+        $validasiNisnAktif = $settings ? $settings->validasi_nisn_aktif : true;
+
+        // If validation is disabled, allow direct registration with manual input
+        if (!$validasiNisnAktif) {
+            // Store empty data for manual input
+            session(['emis_data_' . $nisn => null]);
+            
+            // Encrypt NISN for URL security
+            $encryptedNisn = encrypt($nisn);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Validasi NISN dinonaktifkan. Silakan lanjutkan dengan input manual.',
+                'data' => null,
+                'manual_input' => true,
+                'validation_disabled' => true,
+                'encrypted_nisn' => $encryptedNisn,
+            ]);
+        }
+
         // Check via EMIS API
         try {
             $result = $this->emisService->cekNisn($nisn);
@@ -75,6 +101,9 @@ class AuthController extends Controller
                 // Transform nested data structure to flat structure for frontend
                 $emisData = $result['data'];
                 $transformedData = null;
+                $dataSource = [];
+                $isEligible = true;
+                $warningMessage = null;
                 
                 if ($emisData) {
                     $kemdikbud = $emisData['kemdikbud'] ?? null;
@@ -86,7 +115,6 @@ class AuthController extends Controller
                     ]);
                     
                     // Determine data source with proper labels
-                    $dataSource = [];
                     if ($kemdikbud) $dataSource[] = 'Kemdikbud Pusdatin';
                     if ($kemenag) $dataSource[] = 'Kemenag PPDB';
                     
@@ -169,9 +197,14 @@ class AuthController extends Controller
                 // Encrypt NISN for URL security
                 $encryptedNisn = encrypt($nisn);
                 
+                // Build message
+                $message = !empty($dataSource) 
+                    ? 'Data ditemukan di ' . implode(' & ', $dataSource)
+                    : 'NISN valid';
+                
                 return response()->json([
                     'success' => true,
-                    'message' => 'Data ditemukan di ' . implode(' & ', $dataSource),
+                    'message' => $message,
                     'data' => $transformedData,
                     'data_source' => implode(' & ', $dataSource),
                     'is_eligible' => $isEligible,
@@ -290,6 +323,12 @@ class AuthController extends Controller
             'nama_lengkap' => $request->nama_lengkap,
             'encrypted_token' => $request->encrypted_token ? 'present' : 'missing',
             'emis_data' => $request->emis_data ? 'present' : 'missing',
+            'location' => [
+                'latitude' => $request->registration_latitude,
+                'longitude' => $request->registration_longitude,
+                'accuracy' => $request->registration_accuracy,
+                'source' => $request->registration_location_source,
+            ],
         ]);
         
         // Validate input
@@ -305,6 +344,27 @@ class AuthController extends Controller
             'email.unique' => 'Email sudah digunakan',
             'nomor_hp.required' => 'Nomor WhatsApp wajib diisi',
         ]);
+
+        // Normalize phone number untuk pengecekan
+        $phoneNormalized = $this->normalizePhoneNumber($request->nomor_hp);
+        
+        // Check if phone number already registered
+        $existingPhone = CalonSiswa::where(function($query) use ($phoneNormalized, $request) {
+            $query->where('nomor_hp', $phoneNormalized)
+                  ->orWhere('nomor_hp', $request->nomor_hp)
+                  ->orWhere('nomor_hp', '+62' . ltrim($request->nomor_hp, '0'))
+                  ->orWhere('nomor_hp', '0' . substr($phoneNormalized, 3));
+        })->first();
+        
+        if ($existingPhone) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['nomor_hp' => ['Nomor WhatsApp sudah digunakan oleh pendaftar lain.']]
+                ], 422);
+            }
+            return back()->withErrors(['nomor_hp' => 'Nomor WhatsApp sudah digunakan oleh pendaftar lain.'])->withInput();
+        }
 
         DB::beginTransaction();
         try {
@@ -387,7 +447,36 @@ class AuthController extends Controller
                 'tanggal_registrasi' => now(),
                 'status_verifikasi' => 'pending',
                 'status_admisi' => 'pending',
+                
+                // Location tracking (from landing page)
+                'registration_latitude' => $request->registration_latitude,
+                'registration_longitude' => $request->registration_longitude,
+                'registration_accuracy' => $request->registration_accuracy,
+                'registration_location_source' => $request->registration_location_source,
+                'registration_ip' => $request->ip(),
+                'registration_device' => $this->getDeviceType($request->header('User-Agent')),
+                'registration_browser' => $this->getBrowserName($request->header('User-Agent')),
             ]);
+
+            // Reverse geocode if coordinates available (async-friendly, won't block)
+            if ($request->filled('registration_latitude') && $request->filled('registration_longitude')) {
+                try {
+                    $geoData = $this->reverseGeocode(
+                        (float) $request->registration_latitude,
+                        (float) $request->registration_longitude
+                    );
+                    if ($geoData) {
+                        $calonSiswa->update([
+                            'registration_address' => $geoData['address'] ?? null,
+                            'registration_city' => $geoData['city'] ?? null,
+                            'registration_region' => $geoData['region'] ?? null,
+                            'registration_country' => $geoData['country'] ?? null,
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Reverse geocode failed', ['error' => $e->getMessage()]);
+                }
+            }
 
             // Generate nomor registrasi
             $calonSiswa->nomor_registrasi = $calonSiswa->generateNomorRegistrasi();
@@ -436,6 +525,14 @@ class AuthController extends Controller
             // Clear EMIS data from session
             session()->forget('emis_data_' . $request->nisn);
 
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Pendaftaran berhasil!',
+                    'redirect' => route('pendaftar.register.success')
+                ]);
+            }
+
             return redirect()->route('pendaftar.register.success');
 
         } catch (\Exception $e) {
@@ -444,6 +541,13 @@ class AuthController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan saat mendaftar. Silakan coba lagi.'
+                ], 500);
+            }
             
             return back()->withInput()->with('error', 'Terjadi kesalahan saat mendaftar. Silakan coba lagi.');
         }
@@ -523,14 +627,145 @@ class AuthController extends Controller
 
     /**
      * Generate random password
+     * Format: Huruf kapital + Angka + 1 karakter spesial
+     * Excluded: I, O, Q (mirip angka), 1, 0 (mirip huruf)
      */
     protected function generatePassword(int $length = 8): string
     {
-        $chars = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        // Karakter yang digunakan (tanpa I, O, Q, 1, 0)
+        $uppercase = 'ABCDEFGHJKLMNPRSTUVWXYZ'; // tanpa I, O, Q
+        $numbers = '23456789'; // tanpa 1, 0
+        $special = '@#$%&*!';
+        
+        // Pastikan minimal ada 1 huruf kapital, 1 angka, dan 1 karakter spesial
         $password = '';
-        for ($i = 0; $i < $length; $i++) {
-            $password .= $chars[random_int(0, strlen($chars) - 1)];
+        $password .= $uppercase[random_int(0, strlen($uppercase) - 1)]; // 1 huruf kapital
+        $password .= $uppercase[random_int(0, strlen($uppercase) - 1)]; // 1 huruf kapital lagi
+        $password .= $numbers[random_int(0, strlen($numbers) - 1)]; // 1 angka
+        $password .= $numbers[random_int(0, strlen($numbers) - 1)]; // 1 angka lagi
+        $password .= $special[random_int(0, strlen($special) - 1)]; // 1 karakter spesial
+        
+        // Sisa karakter (campuran huruf kapital dan angka)
+        $allChars = $uppercase . $numbers;
+        for ($i = strlen($password); $i < $length; $i++) {
+            $password .= $allChars[random_int(0, strlen($allChars) - 1)];
         }
+        
+        // Acak urutan password
+        $password = str_shuffle($password);
+        
         return $password;
+    }
+
+    /**
+     * Normalize phone number to +62 format
+     */
+    protected function normalizePhoneNumber(string $phone): string
+    {
+        // Remove all non-numeric characters except +
+        $phone = preg_replace('/[^0-9+]/', '', $phone);
+        
+        // Convert various formats to +62
+        if (substr($phone, 0, 1) === '0') {
+            return '+62' . substr($phone, 1);
+        } elseif (substr($phone, 0, 2) === '62') {
+            return '+' . $phone;
+        } elseif (substr($phone, 0, 3) === '+62') {
+            return $phone;
+        }
+        
+        return $phone;
+    }
+
+    /**
+     * Reverse geocode coordinates to address
+     */
+    protected function reverseGeocode(float $lat, float $lng): ?array
+    {
+        try {
+            $url = "https://nominatim.openstreetmap.org/reverse?format=json&lat={$lat}&lon={$lng}&zoom=18&addressdetails=1";
+            
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'User-Agent' => 'PPDB-App/1.0',
+                'Accept-Language' => 'id',
+            ])->timeout(5)->get($url);
+            
+            if ($response->successful()) {
+                $data = $response->json();
+                $addr = $data['address'] ?? [];
+                
+                // Build display name from parts
+                $parts = array_filter([
+                    $addr['village'] ?? $addr['suburb'] ?? $addr['neighbourhood'] ?? null,
+                    $addr['city'] ?? $addr['town'] ?? $addr['county'] ?? null,
+                    $addr['state'] ?? null,
+                ]);
+                
+                return [
+                    'address' => $data['display_name'] ?? implode(', ', $parts),
+                    'city' => $addr['city'] ?? $addr['town'] ?? $addr['county'] ?? null,
+                    'region' => $addr['state'] ?? null,
+                    'country' => $addr['country'] ?? null,
+                ];
+            }
+        } catch (\Exception $e) {
+            Log::warning('Reverse geocode error', ['error' => $e->getMessage()]);
+        }
+        
+        return null;
+    }
+
+    /**
+     * Get device type from user agent
+     */
+    protected function getDeviceType(?string $userAgent): string
+    {
+        if (!$userAgent) return 'unknown';
+        
+        $userAgent = strtolower($userAgent);
+        
+        if (preg_match('/(tablet|ipad|playbook)|(android(?!.*(mobi|opera mini)))/i', $userAgent)) {
+            return 'tablet';
+        }
+        if (preg_match('/(mobile|iphone|ipod|blackberry|opera mini|iemobile|wpdesktop)/i', $userAgent)) {
+            return 'mobile';
+        }
+        
+        return 'desktop';
+    }
+
+    /**
+     * Get browser name from user agent
+     */
+    protected function getBrowserName(?string $userAgent): string
+    {
+        if (!$userAgent) return 'Unknown';
+        
+        if (preg_match('/MSIE/i', $userAgent) || preg_match('/Trident/i', $userAgent)) {
+            return 'Internet Explorer';
+        }
+        if (preg_match('/Edge/i', $userAgent)) {
+            return 'Edge';
+        }
+        if (preg_match('/Edg/i', $userAgent)) {
+            return 'Edge (Chromium)';
+        }
+        if (preg_match('/Firefox/i', $userAgent)) {
+            return 'Firefox';
+        }
+        if (preg_match('/Chrome/i', $userAgent)) {
+            if (preg_match('/OPR/i', $userAgent)) {
+                return 'Opera';
+            }
+            return 'Chrome';
+        }
+        if (preg_match('/Safari/i', $userAgent)) {
+            return 'Safari';
+        }
+        if (preg_match('/Opera/i', $userAgent)) {
+            return 'Opera';
+        }
+        
+        return 'Unknown';
     }
 }

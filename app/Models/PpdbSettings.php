@@ -20,8 +20,10 @@ class PpdbSettings extends Model
         'tanggal_ditutup',
         'status_pendaftaran',
         'validasi_nisn_aktif',
+        'wajib_lokasi_registrasi',
         'cegah_pendaftar_ganda',
         'dokumen_aktif',
+        'izinkan_dokumen_tambahan',
         'nomor_registrasi_prefix',
         'nomor_registrasi_counter',
         'nomor_tes_prefix',
@@ -35,14 +37,17 @@ class PpdbSettings extends Model
         'tanggal_ditutup' => 'date',
         'status_pendaftaran' => 'boolean',
         'validasi_nisn_aktif' => 'boolean',
+        'wajib_lokasi_registrasi' => 'boolean',
         'cegah_pendaftar_ganda' => 'boolean',
         'dokumen_aktif' => 'array',
+        'izinkan_dokumen_tambahan' => 'boolean',
         'nomor_tes_counter' => 'array',
     ];
 
     protected $attributes = [
         'status_pendaftaran' => true,
         'validasi_nisn_aktif' => true,
+        'wajib_lokasi_registrasi' => false,
         'cegah_pendaftar_ganda' => true,
         'kuota_penerimaan' => 200,
         'nomor_registrasi_prefix' => 'PPDB',

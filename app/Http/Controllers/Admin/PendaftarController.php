@@ -207,6 +207,19 @@ class PendaftarController extends Controller
             'nisn.size' => 'NISN harus 10 digit',
         ]);
 
+        // Check if phone number already registered
+        $phoneNormalized = $this->normalizePhoneNumber($request->nomor_hp);
+        $existingPhone = CalonSiswa::where(function($query) use ($phoneNormalized, $request) {
+            $query->where('nomor_hp', $phoneNormalized)
+                  ->orWhere('nomor_hp', $request->nomor_hp)
+                  ->orWhere('nomor_hp', '+62' . ltrim($request->nomor_hp, '0'))
+                  ->orWhere('nomor_hp', '0' . substr($phoneNormalized, 3));
+        })->first();
+        
+        if ($existingPhone) {
+            return back()->withErrors(['nomor_hp' => 'Nomor WhatsApp sudah digunakan oleh pendaftar lain.'])->withInput();
+        }
+
         DB::beginTransaction();
         
         try {
@@ -220,7 +233,7 @@ class PendaftarController extends Controller
             
             // Generate username & password
             $username = $request->nisn;
-            $password = Str::random(8);
+            $password = $this->generateSecurePassword(8);
             $hashedPassword = Hash::make($password);
 
             // Create user account
@@ -452,6 +465,9 @@ class PendaftarController extends Controller
         $settings = \App\Models\PpdbSettings::first();
         $requiredDocs = $settings?->dokumen_aktif ?? ['kk', 'akta_lahir', 'ijazah', 'foto'];
         
+        // Get location tracking setting
+        $wajibLokasiRegistrasi = $settings?->wajib_lokasi_registrasi ?? false;
+        
         // Map document types to labels
         $dokumenLabels = [
             'kk' => 'Kartu Keluarga',
@@ -465,7 +481,13 @@ class PendaftarController extends Controller
             'surat_kelakuan_baik' => 'Surat Kelakuan Baik',
         ];
         
-        return view('admin.pendaftar.show', compact('pendaftar', 'requiredDocs', 'dokumenLabels'));
+        // Get dokumen tambahan
+        $dokumenTambahanOptions = \App\Models\CalonDokumen::DOKUMEN_TAMBAHAN;
+        $dokumenTambahan = $pendaftar->dokumen
+            ->whereIn('jenis_dokumen', array_keys($dokumenTambahanOptions))
+            ->values();
+        
+        return view('admin.pendaftar.show', compact('pendaftar', 'requiredDocs', 'dokumenLabels', 'dokumenTambahanOptions', 'dokumenTambahan', 'wajibLokasiRegistrasi'));
     }
 
     public function verify(Request $request, $id)
@@ -880,6 +902,20 @@ class PendaftarController extends Controller
             'hp_ayah.regex' => 'Format No. HP Ayah harus 08xxxxxxxxxx (0 diikuti 9-12 digit).',
             'hp_ibu.regex' => 'Format No. HP Ibu harus 08xxxxxxxxxx (0 diikuti 9-12 digit).',
         ]);
+
+        // Check if phone number already registered by other user
+        $phoneNormalized = $this->normalizePhoneNumber($validated['nomor_hp']);
+        $existingPhone = CalonSiswa::where('id', '!=', $pendaftar->id)
+            ->where(function($query) use ($phoneNormalized, $validated) {
+                $query->where('nomor_hp', $phoneNormalized)
+                      ->orWhere('nomor_hp', $validated['nomor_hp'])
+                      ->orWhere('nomor_hp', '+62' . ltrim($validated['nomor_hp'], '0'))
+                      ->orWhere('nomor_hp', '0' . substr($phoneNormalized, 3));
+            })->first();
+        
+        if ($existingPhone) {
+            return back()->withErrors(['nomor_hp' => 'Nomor WhatsApp sudah digunakan oleh pendaftar lain.'])->withInput();
+        }
         
         // Convert phone numbers from 08xx to +628xx format
         $phoneFields = ['nomor_hp', 'hp_ayah', 'hp_ibu'];
@@ -986,7 +1022,7 @@ class PendaftarController extends Controller
         }
         
         // Generate random password
-        $newPassword = Str::random(8);
+        $newPassword = $this->generateSecurePassword(8);
         
         $pendaftar->user->update([
             'password' => Hash::make($newPassword),
@@ -1479,5 +1515,51 @@ class PendaftarController extends Controller
         }
 
         return null;
+    }
+    
+    /**
+     * Generate secure password
+     * Format: Huruf kapital + Angka + 1 karakter spesial
+     * Excluded: I, O, Q (mirip angka), 1, 0 (mirip huruf)
+     */
+    protected function generateSecurePassword(int $length = 8): string
+    {
+        $uppercase = 'ABCDEFGHJKLMNPRSTUVWXYZ'; // tanpa I, O, Q
+        $numbers = '23456789'; // tanpa 1, 0
+        $special = '@#$%&*!';
+        
+        $password = '';
+        $password .= $uppercase[random_int(0, strlen($uppercase) - 1)];
+        $password .= $uppercase[random_int(0, strlen($uppercase) - 1)];
+        $password .= $numbers[random_int(0, strlen($numbers) - 1)];
+        $password .= $numbers[random_int(0, strlen($numbers) - 1)];
+        $password .= $special[random_int(0, strlen($special) - 1)];
+        
+        $allChars = $uppercase . $numbers;
+        for ($i = strlen($password); $i < $length; $i++) {
+            $password .= $allChars[random_int(0, strlen($allChars) - 1)];
+        }
+        
+        return str_shuffle($password);
+    }
+
+    /**
+     * Normalize phone number to +62 format
+     */
+    protected function normalizePhoneNumber(string $phone): string
+    {
+        // Remove all non-numeric characters except +
+        $phone = preg_replace('/[^0-9+]/', '', $phone);
+        
+        // Convert various formats to +62
+        if (substr($phone, 0, 1) === '0') {
+            return '+62' . substr($phone, 1);
+        } elseif (substr($phone, 0, 2) === '62') {
+            return '+' . $phone;
+        } elseif (substr($phone, 0, 3) === '+62') {
+            return $phone;
+        }
+        
+        return $phone;
     }
 }

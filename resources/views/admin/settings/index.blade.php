@@ -124,6 +124,18 @@
                                 </label>
                             </div>
                         </div>
+
+                        <div class="form-group">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" class="custom-control-input" id="wajib_lokasi_registrasi" 
+                                       name="wajib_lokasi_registrasi" value="1"
+                                       {{ old('wajib_lokasi_registrasi', $settings->wajib_lokasi_registrasi) ? 'checked' : '' }}>
+                                <label class="custom-control-label" for="wajib_lokasi_registrasi">
+                                    <strong>Wajib Lokasi saat Registrasi</strong>
+                                    <small class="text-muted d-block">Pendaftar wajib mengizinkan akses lokasi (GPS/IP) saat mendaftar untuk tracking lokasi pendaftaran</small>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -238,6 +250,22 @@
                                 </div>
                             @endforeach
                         </div>
+                        
+                        <hr>
+                        
+                        {{-- Izinkan Dokumen Tambahan --}}
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" 
+                                   id="izinkan_dokumen_tambahan" name="izinkan_dokumen_tambahan" value="1"
+                                   {{ old('izinkan_dokumen_tambahan', $settings->izinkan_dokumen_tambahan ?? false) ? 'checked' : '' }}>
+                            <label class="custom-control-label" for="izinkan_dokumen_tambahan">
+                                <strong>Izinkan Upload Dokumen Tambahan</strong>
+                            </label>
+                        </div>
+                        <small class="text-muted d-block mt-1">
+                            <i class="fas fa-info-circle"></i>
+                            Pendaftar bisa upload dokumen lain seperti: Sertifikat Prestasi, KIP/PIP, SKTM, Piagam, dll
+                        </small>
                     </div>
                 </div>
 

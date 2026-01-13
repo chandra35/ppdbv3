@@ -60,6 +60,26 @@ class CalonDokumen extends Model
         'surat_keterangan' => 'Surat Keterangan Lainnya',
         'surat_sehat' => 'Surat Keterangan Sehat',
         'surat_kelakuan_baik' => 'Surat Kelakuan Baik',
+        // Dokumen Tambahan
+        'kip' => 'KIP (Kartu Indonesia Pintar)',
+        'pip' => 'PIP (Program Indonesia Pintar)',
+        'sktm' => 'SKTM (Surat Ket. Tidak Mampu)',
+        'piagam' => 'Piagam Penghargaan',
+        'surat_domisili' => 'Surat Keterangan Domisili',
+        'surat_rekomendasi' => 'Surat Rekomendasi',
+        'dokumen_lainnya' => 'Dokumen Lainnya',
+    ];
+
+    // Jenis dokumen tambahan yang bisa diupload pendaftar
+    public const DOKUMEN_TAMBAHAN = [
+        'sertifikat_prestasi' => 'Sertifikat Prestasi/Lomba',
+        'kip' => 'KIP (Kartu Indonesia Pintar)',
+        'pip' => 'PIP (Program Indonesia Pintar)',
+        'sktm' => 'SKTM (Surat Ket. Tidak Mampu)',
+        'piagam' => 'Piagam Penghargaan',
+        'surat_domisili' => 'Surat Keterangan Domisili',
+        'surat_rekomendasi' => 'Surat Rekomendasi',
+        'dokumen_lainnya' => 'Dokumen Lainnya',
     ];
 
     // Jenis dokumen rapor semester

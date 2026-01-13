@@ -8,6 +8,7 @@ use App\Models\CalonOrtu;
 use App\Models\CalonDokumen;
 use App\Models\JalurPendaftaran;
 use App\Models\GelombangPendaftaran;
+use App\Models\PpdbSettings;
 use App\Models\User;
 use App\Models\VisitorLog;
 use App\Services\EmisNisnService;
@@ -100,9 +101,9 @@ class RegisterController extends Controller
             'password.confirmed' => 'Konfirmasi password tidak sesuai.',
         ]);
 
-        // Validate NISN against EMIS API
-        $emisService = new EmisNisnService();
-        $emisResult = $emisService->cekNisn($validated['nisn']);
+        // Check if NISN validation is enabled
+        $settings = \App\Models\PpdbSettings::first();
+        $validasiNisnAktif = $settings ? $settings->validasi_nisn_aktif : true;
         
         // Prepare session data
         $sessionData = [
@@ -112,6 +113,19 @@ class RegisterController extends Controller
             'ppdb_email' => $validated['email'],
             'ppdb_password' => $validated['password'],
         ];
+
+        // If NISN validation is disabled, skip EMIS check and proceed with manual input
+        if (!$validasiNisnAktif) {
+            $sessionData['ppdb_nisn_valid'] = false;
+            $sessionData['ppdb_emis_data'] = null;
+            session($sessionData);
+            return redirect()->route('ppdb.register.step2')
+                ->with('info', 'Validasi NISN dinonaktifkan. Silahkan isi data secara manual.');
+        }
+
+        // Validate NISN against EMIS API
+        $emisService = new EmisNisnService();
+        $emisResult = $emisService->cekNisn($validated['nisn']);
         
         // Store EMIS data if found (for pre-filling form in step 2)
         if ($emisResult['success'] && $emisResult['data']) {
@@ -148,6 +162,21 @@ class RegisterController extends Controller
                 'success' => false,
                 'message' => 'NISN sudah terdaftar di sistem PPDB.',
                 'data' => null
+            ]);
+        }
+        
+        // Check if NISN validation is enabled
+        $settings = \App\Models\PpdbSettings::first();
+        $validasiNisnAktif = $settings ? $settings->validasi_nisn_aktif : true;
+        
+        // If validation is disabled, allow direct registration with manual input
+        if (!$validasiNisnAktif) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Validasi NISN dinonaktifkan. Silakan lanjutkan dengan input manual.',
+                'data' => null,
+                'manual_input' => true,
+                'validation_disabled' => true,
             ]);
         }
         
@@ -426,7 +455,11 @@ class RegisterController extends Controller
         $dataOrtu['kecamatan_nama'] = District::where('code', $dataOrtu['kecamatan_id_ortu'])->value('name');
         $dataOrtu['kelurahan_nama'] = Village::where('code', $dataOrtu['kelurahan_id_ortu'])->value('name');
 
-        return view('ppdb.step5', compact('dataSiswa', 'dataOrtu', 'uploadedDocs', 'nisn', 'email'));
+        // Get setting wajib lokasi
+        $ppdbSettings = PpdbSettings::first();
+        $wajibLokasi = $ppdbSettings?->wajib_lokasi_registrasi ?? false;
+
+        return view('ppdb.step5', compact('dataSiswa', 'dataOrtu', 'uploadedDocs', 'nisn', 'email', 'wajibLokasi'));
     }
 
     public function confirmRegistration(Request $request)
@@ -437,12 +470,22 @@ class RegisterController extends Controller
 
         $request->validate([
             'agree' => 'required|accepted',
-            // GPS data (optional)
+            // GPS data (optional, bisa nullable atau required tergantung setting)
             'registration_latitude' => 'nullable|numeric|between:-90,90',
             'registration_longitude' => 'nullable|numeric|between:-180,180',
             'registration_altitude' => 'nullable|numeric',
             'registration_accuracy' => 'nullable|numeric',
+            'location_source' => 'nullable|string|in:gps,ip,unavailable',
         ]);
+
+        // Check if location is required
+        $ppdbSettings = PpdbSettings::first();
+        $wajibLokasi = $ppdbSettings?->wajib_lokasi_registrasi ?? false;
+        
+        // Validate location is provided if required
+        if ($wajibLokasi && !$request->filled('registration_latitude') && $request->input('location_source') !== 'ip') {
+            return back()->with('error', 'Lokasi pendaftaran wajib diizinkan. Silakan aktifkan GPS atau izinkan akses lokasi.');
+        }
 
         $validasi = $this->validateRegistrasiDibuka();
         
@@ -468,17 +511,40 @@ class RegisterController extends Controller
             // 2. Create CalonSiswa
             $dataDiri = session('ppdb_data_diri');
             
-            // Get GPS address via reverse geocoding if coordinates provided
+            // Determine location source and get location data
+            $locationSource = $request->input('location_source', 'unavailable');
             $gpsAddress = null;
             $gpsCity = null;
             $gpsRegion = null;
+            $gpsCountry = null;
+            $gpsIsp = null;
+            $regLatitude = $request->registration_latitude;
+            $regLongitude = $request->registration_longitude;
             
+            // If GPS coordinates provided, reverse geocode
             if ($request->filled('registration_latitude') && $request->filled('registration_longitude')) {
                 $geoResult = $this->reverseGeocode($request->registration_latitude, $request->registration_longitude);
                 if ($geoResult) {
                     $gpsAddress = $geoResult['address'] ?? null;
                     $gpsCity = $geoResult['city'] ?? null;
                     $gpsRegion = $geoResult['region'] ?? null;
+                    $gpsCountry = $geoResult['country'] ?? null;
+                }
+                $locationSource = 'gps';
+            } 
+            // If no GPS but IP fallback requested, get location from IP
+            elseif ($locationSource === 'ip' || !$request->filled('registration_latitude')) {
+                $ipGeoData = $this->getIpGeolocation($request->ip());
+                if ($ipGeoData) {
+                    $regLatitude = $ipGeoData['latitude'] ?? null;
+                    $regLongitude = $ipGeoData['longitude'] ?? null;
+                    $gpsCity = $ipGeoData['city'] ?? null;
+                    $gpsRegion = $ipGeoData['region'] ?? null;
+                    $gpsCountry = $ipGeoData['country'] ?? null;
+                    $gpsIsp = $ipGeoData['isp'] ?? null;
+                    $locationSource = 'ip';
+                } else {
+                    $locationSource = 'unavailable';
                 }
             }
             
@@ -528,13 +594,16 @@ class RegisterController extends Controller
                 'alamat_sekolah_asal' => $dataDiri['alamat_sekolah_asal'] ?? null,
                 
                 // GPS & Registration Location
-                'registration_latitude' => $request->registration_latitude,
-                'registration_longitude' => $request->registration_longitude,
+                'registration_latitude' => $regLatitude,
+                'registration_longitude' => $regLongitude,
                 'registration_altitude' => $request->registration_altitude,
                 'registration_accuracy' => $request->registration_accuracy,
                 'registration_address' => $gpsAddress,
                 'registration_city' => $gpsCity,
                 'registration_region' => $gpsRegion,
+                'registration_country' => $gpsCountry,
+                'registration_isp' => $gpsIsp,
+                'registration_location_source' => $locationSource,
                 'registration_ip' => $request->ip(),
                 'registration_device' => $deviceType,
                 'registration_browser' => $browser,
@@ -718,6 +787,44 @@ class RegisterController extends Controller
             }
         } catch (\Exception $e) {
             \Log::warning('Reverse geocode failed: ' . $e->getMessage());
+        }
+        
+        return null;
+    }
+
+    /**
+     * Get geolocation from IP address using ip-api.com (free, no API key needed)
+     * Fallback for devices without GPS
+     */
+    protected function getIpGeolocation(string $ip): ?array
+    {
+        // Skip for localhost/private IPs
+        if (in_array($ip, ['127.0.0.1', '::1']) || 
+            preg_match('/^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)/', $ip)) {
+            return null;
+        }
+
+        try {
+            $response = Http::timeout(5)->get("http://ip-api.com/json/{$ip}", [
+                'fields' => 'status,message,country,regionName,city,lat,lon,isp',
+            ]);
+            
+            if ($response->successful()) {
+                $data = $response->json();
+                
+                if (($data['status'] ?? '') === 'success') {
+                    return [
+                        'latitude' => $data['lat'] ?? null,
+                        'longitude' => $data['lon'] ?? null,
+                        'city' => $data['city'] ?? null,
+                        'region' => $data['regionName'] ?? null,
+                        'country' => $data['country'] ?? null,
+                        'isp' => $data['isp'] ?? null,
+                    ];
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::warning('IP geolocation failed: ' . $e->getMessage());
         }
         
         return null;

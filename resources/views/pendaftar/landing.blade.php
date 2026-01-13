@@ -188,6 +188,15 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
         
+        .form-control.is-invalid {
+            border-color: #dc3545;
+            background-color: #fff5f5;
+        }
+        
+        .form-control.is-invalid:focus {
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+        }
+        
         .input-group {
             display: flex;
             gap: 0.5rem;
@@ -584,6 +593,30 @@
                 padding: 0.75rem;
             }
         }
+        
+        /* Location Box Styles */
+        .location-detecting {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+        }
+        .location-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        .location-success #locationIcon { color: #28a745; }
+        .location-success #locationText { color: #155724; }
+        .location-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+        }
+        .location-warning #locationIcon { color: #856404; }
+        .location-warning #locationText { color: #856404; }
+        .location-info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+        }
+        .location-info #locationIcon { color: #0c5460; }
+        .location-info #locationText { color: #0c5460; }
     </style>
 </head>
 <body>
@@ -632,6 +665,29 @@
             <div class="card" id="nisnCheckCard">
                 <h2 class="card-title">Mulai Pendaftaran</h2>
                 <p class="card-subtitle">Masukkan NISN untuk memulai</p>
+
+                {{-- Location Detection Box --}}
+                <div id="locationBox" style="margin-bottom: 1.5rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.9rem;" class="location-detecting">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                        <i id="locationIcon" class="fas fa-spinner fa-spin" style="color: #6c757d;"></i>
+                        <span id="locationText" style="color: #6c757d;">mendeteksi lokasi...</span>
+                        @if($wajibLokasi ?? false)
+                        <span style="margin-left: auto; background: #dc3545; color: white; padding: 2px 8px; border-radius: 3px; font-size: 0.7rem;">wajib</span>
+                        @endif
+                    </div>
+                    <div id="locationAddress" style="display: none; margin-top: 0.25rem; padding-left: 1.5rem; font-size: 0.8rem; color: #6c757d;"></div>
+                    <div id="locationRetry" style="display: none; margin-top: 0.5rem; padding-left: 1.5rem;">
+                        <button type="button" onclick="requestLocationLanding()" style="background: #667eea; color: white; border: none; padding: 4px 12px; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">
+                            <i class="fas fa-location-arrow"></i> aktifkan lokasi
+                        </button>
+                    </div>
+                </div>
+                
+                {{-- Hidden fields to store location data --}}
+                <input type="hidden" id="landing_latitude" name="landing_latitude">
+                <input type="hidden" id="landing_longitude" name="landing_longitude">
+                <input type="hidden" id="landing_accuracy" name="landing_accuracy">
+                <input type="hidden" id="landing_location_source" name="landing_location_source" value="">
 
                 @if($gelombangAktif)
                 <div class="gelombang-info">
@@ -731,6 +787,12 @@
                     <input type="hidden" id="reg_nisn_hidden" name="nisn">
                     <input type="hidden" id="reg_encrypted_token" name="encrypted_token">
                     <input type="hidden" id="reg_emis_data" name="emis_data">
+                    
+                    <!-- Hidden fields for location -->
+                    <input type="hidden" id="reg_latitude" name="registration_latitude">
+                    <input type="hidden" id="reg_longitude" name="registration_longitude">
+                    <input type="hidden" id="reg_accuracy" name="registration_accuracy">
+                    <input type="hidden" id="reg_location_source" name="registration_location_source">
                     
                     <!-- Preview Data EMIS -->
                     <div class="preview-box" id="previewBox" style="display: none; margin-bottom: 1.5rem;">
@@ -1006,6 +1068,12 @@
                     $('#reg_encrypted_token').val(encryptedToken);
                     $('#reg_emis_data').val(JSON.stringify(emisData || {}));
                     
+                    // Copy location data from landing to registration form
+                    $('#reg_latitude').val($('#landing_latitude').val());
+                    $('#reg_longitude').val($('#landing_longitude').val());
+                    $('#reg_accuracy').val($('#landing_accuracy').val());
+                    $('#reg_location_source').val($('#landing_location_source').val());
+                    
                     // Set readonly for nama if from EMIS
                     if (emisData?.nama) {
                         $('#reg_nama_lengkap').attr('readonly', true);
@@ -1098,27 +1166,72 @@
             }
 
 
-            // Registration form submission
+            // Registration form submission via AJAX
             $('#registrationForm').on('submit', function(e) {
+                e.preventDefault();
+                
                 const nomorHp = $('#reg_nomor_hp').val();
                 
                 // Validate phone format
                 if (!nomorHp.startsWith('62')) {
-                    e.preventDefault();
                     toastr.error('Nomor WhatsApp harus diawali dengan 62 (contoh: 628123456789)');
                     $('#reg_nomor_hp').focus();
                     return false;
                 }
                 
                 if (nomorHp.length < 10) {
-                    e.preventDefault();
                     toastr.error('Nomor WhatsApp tidak valid. Minimal 10 digit.');
                     $('#reg_nomor_hp').focus();
                     return false;
                 }
                 
+                // Clear previous errors
+                $('.form-error').remove();
+                $('.form-control').removeClass('is-invalid');
+                
                 // Disable submit button
                 $('#btnRegister').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Memproses...');
+                
+                // Submit via AJAX
+                $.ajax({
+                    url: $(this).attr('action'),
+                    method: 'POST',
+                    data: $(this).serialize(),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            // Redirect to success page or dashboard
+                            toastr.success('Pendaftaran berhasil!');
+                            window.location.href = response.redirect;
+                        }
+                    },
+                    error: function(xhr) {
+                        $('#btnRegister').prop('disabled', false).html('<i class="fas fa-user-plus"></i> Daftar Sekarang');
+                        
+                        if (xhr.status === 422) {
+                            // Validation errors
+                            const errors = xhr.responseJSON.errors;
+                            let errorMessages = [];
+                            
+                            for (let field in errors) {
+                                errorMessages.push(errors[field][0]);
+                                
+                                // Highlight field with error
+                                const input = $('[name="' + field + '"]');
+                                if (input.length) {
+                                    input.addClass('is-invalid');
+                                    input.after('<small class="form-error" style="color:#dc3545;display:block;margin-top:0.25rem;">' + errors[field][0] + '</small>');
+                                }
+                            }
+                            
+                            toastr.error(errorMessages.join('<br>'));
+                        } else {
+                            toastr.error(xhr.responseJSON?.message || 'Terjadi kesalahan. Silakan coba lagi.');
+                        }
+                    }
+                });
             });
 
             // Format nomor HP
@@ -1140,7 +1253,142 @@
                     $('#resultBox').removeClass('show success error');
                 }, 300);
             });
+            
+            // Auto-detect location on page load
+            requestLocationLanding();
         });
+        
+        // Location detection for landing page
+        function requestLocationLanding() {
+            const box = document.getElementById('locationBox');
+            const icon = document.getElementById('locationIcon');
+            const text = document.getElementById('locationText');
+            const addressDiv = document.getElementById('locationAddress');
+            const retryDiv = document.getElementById('locationRetry');
+            
+            // Reset to detecting state
+            box.className = 'location-detecting';
+            icon.className = 'fas fa-spinner fa-spin';
+            text.textContent = 'mendeteksi lokasi...';
+            addressDiv.style.display = 'none';
+            retryDiv.style.display = 'none';
+            
+            if (!navigator.geolocation) {
+                handleLocationFallback('browser tidak mendukung gps');
+                return;
+            }
+            
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    // GPS success
+                    document.getElementById('landing_latitude').value = position.coords.latitude;
+                    document.getElementById('landing_longitude').value = position.coords.longitude;
+                    document.getElementById('landing_accuracy').value = position.coords.accuracy;
+                    document.getElementById('landing_location_source').value = 'gps';
+                    
+                    const accuracy = Math.round(position.coords.accuracy);
+                    
+                    box.className = 'location-success';
+                    icon.className = 'fas fa-map-marker-alt';
+                    text.innerHTML = 'lokasi terdeteksi <span style="background:#28a745;color:white;padding:1px 6px;border-radius:3px;font-size:0.7rem;margin-left:4px;">gps</span>';
+                    
+                    // Reverse geocode
+                    reverseGeocodeLanding(position.coords.latitude, position.coords.longitude, function(address) {
+                        if (address) {
+                            addressDiv.innerHTML = '<i class="fas fa-map-pin"></i> ' + address + ' <small style="color:#999;">(±' + accuracy + 'm)</small>';
+                            addressDiv.style.display = 'block';
+                        }
+                    });
+                },
+                function(error) {
+                    let errorMsg = 'gagal mendapatkan lokasi';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg = 'izin lokasi ditolak';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg = 'lokasi tidak tersedia';
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg = 'waktu habis';
+                            break;
+                    }
+                    handleLocationFallback(errorMsg);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        }
+        
+        function handleLocationFallback(errorMsg) {
+            const box = document.getElementById('locationBox');
+            const icon = document.getElementById('locationIcon');
+            const text = document.getElementById('locationText');
+            const addressDiv = document.getElementById('locationAddress');
+            const retryDiv = document.getElementById('locationRetry');
+            const wajibLokasi = {{ ($wajibLokasi ?? false) ? 'true' : 'false' }};
+            
+            document.getElementById('landing_location_source').value = 'ip';
+            
+            if (wajibLokasi) {
+                // Try IP geolocation
+                box.className = 'location-info';
+                icon.className = 'fas fa-globe';
+                text.innerHTML = 'lokasi via ip <span style="background:#17a2b8;color:white;padding:1px 6px;border-radius:3px;font-size:0.7rem;margin-left:4px;">ip</span>';
+                
+                // Fetch IP location with lat/lon
+                fetch('http://ip-api.com/json/?fields=status,lat,lon,city,regionName,country&lang=id')
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.status === 'success') {
+                        // Store IP-based coordinates
+                        if (data.lat && data.lon) {
+                            document.getElementById('landing_latitude').value = data.lat;
+                            document.getElementById('landing_longitude').value = data.lon;
+                            document.getElementById('landing_accuracy').value = 5000; // IP accuracy ~5km
+                        }
+                        
+                        if (data.city) {
+                            addressDiv.innerHTML = '<i class="fas fa-map-pin"></i> ' + [data.city, data.regionName].filter(Boolean).join(', ').toLowerCase();
+                            addressDiv.style.display = 'block';
+                        }
+                    }
+                })
+                .catch(() => {});
+                
+                retryDiv.style.display = 'block';
+            } else {
+                // Show warning but allow to continue
+                box.className = 'location-warning';
+                icon.className = 'fas fa-exclamation-triangle';
+                text.textContent = errorMsg;
+                retryDiv.style.display = 'block';
+            }
+        }
+        
+        function reverseGeocodeLanding(lat, lng, callback) {
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+                headers: { 'Accept-Language': 'id' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data && data.address) {
+                    const addr = data.address;
+                    const parts = [
+                        addr.village || addr.suburb || addr.neighbourhood,
+                        addr.city || addr.town || addr.county,
+                        addr.state
+                    ].filter(Boolean);
+                    callback(parts.join(', ').toLowerCase());
+                } else {
+                    callback(null);
+                }
+            })
+            .catch(() => callback(null));
+        }
     </script>
 </body>
 </html>

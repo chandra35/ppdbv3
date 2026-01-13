@@ -69,7 +69,7 @@ class ForgotPasswordController extends Controller
         }
 
         // Generate new password
-        $newPassword = Str::random(8);
+        $newPassword = $this->generateSecurePassword(8);
 
         // Update user password
         $user->password = Hash::make($newPassword);
@@ -116,5 +116,31 @@ class ForgotPasswordController extends Controller
         $masked = str_repeat('*', $length - 8);
         
         return $start . $masked . $end;
+    }
+    
+    /**
+     * Generate secure password
+     * Format: Huruf kapital + Angka + 1 karakter spesial
+     * Excluded: I, O, Q (mirip angka), 1, 0 (mirip huruf)
+     */
+    protected function generateSecurePassword(int $length = 8): string
+    {
+        $uppercase = 'ABCDEFGHJKLMNPRSTUVWXYZ'; // tanpa I, O, Q
+        $numbers = '23456789'; // tanpa 1, 0
+        $special = '@#$%&*!';
+        
+        $password = '';
+        $password .= $uppercase[random_int(0, strlen($uppercase) - 1)];
+        $password .= $uppercase[random_int(0, strlen($uppercase) - 1)];
+        $password .= $numbers[random_int(0, strlen($numbers) - 1)];
+        $password .= $numbers[random_int(0, strlen($numbers) - 1)];
+        $password .= $special[random_int(0, strlen($special) - 1)];
+        
+        $allChars = $uppercase . $numbers;
+        for ($i = strlen($password); $i < $length; $i++) {
+            $password .= $allChars[random_int(0, strlen($allChars) - 1)];
+        }
+        
+        return str_shuffle($password);
     }
 }

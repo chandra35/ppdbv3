@@ -39,7 +39,9 @@ class SettingsController extends Controller
     {
         $validated = $request->validate([
             'validasi_nisn_aktif' => 'nullable|boolean',
+            'wajib_lokasi_registrasi' => 'nullable|boolean',
             'cegah_pendaftar_ganda' => 'nullable|boolean',
+            'izinkan_dokumen_tambahan' => 'nullable|boolean',
             'dokumen_aktif' => 'nullable|array',
             'nomor_registrasi_prefix' => 'required|string|max:20',
             'nomor_tes_prefix' => 'required|string|max:10',
@@ -48,7 +50,9 @@ class SettingsController extends Controller
 
         // Convert checkbox values
         $validated['validasi_nisn_aktif'] = $request->has('validasi_nisn_aktif');
+        $validated['wajib_lokasi_registrasi'] = $request->has('wajib_lokasi_registrasi');
         $validated['cegah_pendaftar_ganda'] = $request->has('cegah_pendaftar_ganda');
+        $validated['izinkan_dokumen_tambahan'] = $request->has('izinkan_dokumen_tambahan');
 
         $settings = PpdbSettings::first();
         

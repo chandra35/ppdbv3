@@ -74,6 +74,9 @@ Route::middleware(['auth'])->prefix('pendaftar')->name('pendaftar.')->group(func
     // Dashboard
     Route::get('/dashboard', [PendaftarDashboardController::class, 'index'])->name('dashboard');
     
+    // Update Location
+    Route::post('/update-location', [PendaftarDashboardController::class, 'updateLocation'])->name('update-location');
+    
     // Data Pribadi
     Route::get('/data-pribadi', [PendaftarDashboardController::class, 'dataPribadi'])->name('data-pribadi');
     Route::put('/data-pribadi', [PendaftarDashboardController::class, 'updateDataPribadi'])->name('data-pribadi.update');
@@ -92,6 +95,10 @@ Route::middleware(['auth'])->prefix('pendaftar')->name('pendaftar.')->group(func
     Route::get('/dokumen', [PendaftarDashboardController::class, 'dokumen'])->name('dokumen');
     Route::post('/dokumen', [PendaftarDashboardController::class, 'uploadDokumen'])->name('dokumen.upload');
     Route::delete('/dokumen/{id}', [PendaftarDashboardController::class, 'deleteDokumen'])->name('dokumen.delete');
+    
+    // Dokumen Tambahan
+    Route::post('/dokumen-tambahan', [PendaftarDashboardController::class, 'uploadDokumenTambahan'])->name('dokumen-tambahan.upload');
+    Route::delete('/dokumen-tambahan/{id}', [PendaftarDashboardController::class, 'deleteDokumenTambahan'])->name('dokumen-tambahan.delete');
     
     // Pilihan Program (conditional - only if enabled in jalur)
     Route::get('/pilihan-program', [PendaftarDashboardController::class, 'pilihanProgram'])->name('pilihan-program');
