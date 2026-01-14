@@ -147,6 +147,11 @@ class CetakRuangController extends Controller
     {
         $settings = session('cetak_ruang_settings', []);
         
+        // Convert to array if stored as object
+        if (is_object($settings)) {
+            $settings = (array) $settings;
+        }
+        
         if (empty($settings)) {
             return redirect()->route('admin.cetak-ruang.index')
                 ->with('error', 'Silakan lakukan preview terlebih dahulu.');
@@ -156,7 +161,7 @@ class CetakRuangController extends Controller
             ? TahunPelajaran::find($settings['tahun_pelajaran_id'])
             : TahunPelajaran::where('is_active', true)->first();
 
-        $pesertaList = $this->getPesertaList((object)$settings, $tahunAktif);
+        $pesertaList = $this->getPesertaList($settings, $tahunAktif);
         
         $rooms = $this->distributeToRooms(
             $pesertaList, 
@@ -192,6 +197,11 @@ class CetakRuangController extends Controller
     {
         $settings = session('cetak_ruang_settings', []);
         
+        // Convert to array if stored as object
+        if (is_object($settings)) {
+            $settings = (array) $settings;
+        }
+        
         if (empty($settings)) {
             return redirect()->route('admin.cetak-ruang.index')
                 ->with('error', 'Silakan lakukan preview terlebih dahulu.');
@@ -201,7 +211,7 @@ class CetakRuangController extends Controller
             ? TahunPelajaran::find($settings['tahun_pelajaran_id'])
             : TahunPelajaran::where('is_active', true)->first();
 
-        $pesertaList = $this->getPesertaList((object)$settings, $tahunAktif);
+        $pesertaList = $this->getPesertaList($settings, $tahunAktif);
         
         $rooms = $this->distributeToRooms(
             $pesertaList, 
@@ -237,6 +247,11 @@ class CetakRuangController extends Controller
     {
         $settings = session('cetak_ruang_settings', []);
         
+        // Convert to array if stored as object
+        if (is_object($settings)) {
+            $settings = (array) $settings;
+        }
+        
         if (empty($settings)) {
             return redirect()->route('admin.cetak-ruang.index')
                 ->with('error', 'Silakan lakukan preview terlebih dahulu.');
@@ -246,7 +261,7 @@ class CetakRuangController extends Controller
             ? TahunPelajaran::find($settings['tahun_pelajaran_id'])
             : TahunPelajaran::where('is_active', true)->first();
 
-        $pesertaList = $this->getPesertaList((object)$settings, $tahunAktif);
+        $pesertaList = $this->getPesertaList($settings, $tahunAktif);
         
         $rooms = $this->distributeToRooms(
             $pesertaList, 
