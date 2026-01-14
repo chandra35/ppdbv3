@@ -430,6 +430,88 @@ class CalonSiswa extends Model
         return $this->data_diri_completed && $this->data_ortu_completed && $this->data_dokumen_completed;
     }
 
+    /**
+     * Check if data diri is complete based on required fields
+     */
+    public function checkDataDiriComplete(): bool
+    {
+        $requiredFields = [
+            'nama_lengkap',
+            'jenis_kelamin', 
+            'tempat_lahir',
+            'tanggal_lahir',
+            'agama',
+        ];
+
+        foreach ($requiredFields as $field) {
+            if (empty($this->$field)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Check if data ortu is complete
+     */
+    public function checkDataOrtuComplete(): bool
+    {
+        $ortu = $this->ortu;
+        if (!$ortu) {
+            return false;
+        }
+
+        // At least one parent should have name
+        return !empty($ortu->nama_ayah) || !empty($ortu->nama_ibu);
+    }
+
+    /**
+     * Check if dokumen is complete based on required documents
+     */
+    public function checkDataDokumenComplete(): bool
+    {
+        // Count required documents uploaded
+        $requiredDocsUploaded = $this->dokumen()
+            ->where('is_required', true)
+            ->whereNotNull('file_path')
+            ->count();
+
+        // Get total required documents from settings or default to having at least 1
+        return $requiredDocsUploaded >= 1;
+    }
+
+    /**
+     * Sync all completion status based on actual data
+     */
+    public function syncCompletionStatus(): array
+    {
+        $before = [
+            'data_diri_completed' => $this->data_diri_completed,
+            'data_ortu_completed' => $this->data_ortu_completed,
+            'data_dokumen_completed' => $this->data_dokumen_completed,
+        ];
+
+        $this->data_diri_completed = $this->checkDataDiriComplete();
+        $this->data_ortu_completed = $this->checkDataOrtuComplete();
+        $this->data_dokumen_completed = $this->checkDataDokumenComplete();
+        $this->save();
+
+        return [
+            'before' => $before,
+            'after' => [
+                'data_diri_completed' => $this->data_diri_completed,
+                'data_ortu_completed' => $this->data_ortu_completed,
+                'data_dokumen_completed' => $this->data_dokumen_completed,
+            ],
+            'changed' => $before !== [
+                'data_diri_completed' => $this->data_diri_completed,
+                'data_ortu_completed' => $this->data_ortu_completed,
+                'data_dokumen_completed' => $this->data_dokumen_completed,
+            ]
+        ];
+    }
+
     // Helper methods
     public function generateNomorRegistrasi(): string
     {
