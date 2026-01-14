@@ -52,7 +52,7 @@ class ForgotPasswordController extends Controller
         }
 
         // Check if has phone number
-        $phone = $calonSiswa->no_hp_siswa ?? $calonSiswa->calonOrtu?->no_hp_ayah ?? $calonSiswa->calonOrtu?->no_hp_ibu;
+        $phone = $calonSiswa->nomor_hp ?? $calonSiswa->ortu?->hp_ayah ?? $calonSiswa->ortu?->hp_ibu ?? $calonSiswa->ortu?->hp_wali;
         
         if (!$phone) {
             return back()
