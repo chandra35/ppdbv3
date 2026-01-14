@@ -82,7 +82,7 @@ class GelombangPendaftaran extends Model
      */
     public function pendaftar()
     {
-        return $this->hasMany(CalonSiswa::class, 'gelombang_id');
+        return $this->hasMany(CalonSiswa::class, 'gelombang_pendaftaran_id');
     }
 
     /**

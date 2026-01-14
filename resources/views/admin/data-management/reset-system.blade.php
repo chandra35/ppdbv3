@@ -1,13 +1,16 @@
-@extends('layouts.admin')
+@extends('adminlte::page')
 
 @section('title', 'Reset Data Sistem')
 
-@section('page-title', 'Reset Data Sistem')
-
-@section('breadcrumb')
-<li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-<li class="breadcrumb-item active">Reset Sistem</li>
-@endsection
+@section('content_header')
+<div class="d-flex justify-content-between align-items-center">
+    <h1 class="m-0"><i class="fas fa-radiation-alt"></i> Reset Data Sistem</h1>
+    <ol class="breadcrumb m-0 bg-transparent p-0">
+        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Reset Sistem</li>
+    </ol>
+</div>
+@stop
 
 @section('content')
 <div class="row">
@@ -190,9 +193,9 @@
         </div>
     </div>
 </div>
-@endsection
+@stop
 
-@section('scripts')
+@section('js')
 <script>
 $(document).ready(function() {
     let resetToken = null;
@@ -280,4 +283,4 @@ $(document).ready(function() {
     });
 });
 </script>
-@endsection
+@stop
