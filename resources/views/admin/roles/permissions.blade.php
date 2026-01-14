@@ -25,7 +25,9 @@
                 </div>
                 <div class="card-body">
                     <p class="text-muted small">
-                        Scan kode untuk menemukan permission yang digunakan di controller dan view tapi belum terdaftar.
+                        Scan otomatis dari dua sumber:<br>
+                        <span class="badge badge-warning">code</span> Permission yang digunakan di controller/view (hasPermission)<br>
+                        <span class="badge badge-info">route</span> Permission yang disarankan berdasarkan routes admin
                     </p>
                     <button type="button" class="btn btn-primary btn-block" id="btnScan">
                         <i class="fas fa-search"></i> Scan Permissions
@@ -35,9 +37,9 @@
                         <div class="alert alert-info mb-2">
                             <strong id="scanCount">0</strong> permission tidak terdaftar ditemukan
                         </div>
-                        <div id="scanList" class="list-group" style="max-height: 300px; overflow-y: auto;"></div>
+                        <div id="scanList" class="list-group" style="max-height: 400px; overflow-y: auto;"></div>
                         <button type="button" class="btn btn-success btn-block mt-2" id="btnAddAll" style="display: none;">
-                            <i class="fas fa-plus"></i> Tambahkan Semua
+                            <i class="fas fa-plus"></i> Tambahkan Semua yang Dipilih
                         </button>
                     </div>
                 </div>
@@ -335,14 +337,25 @@ $(document).ready(function() {
                 
                 if (response.unregistered.length > 0) {
                     response.unregistered.forEach(function(perm) {
+                        const sourceLabel = perm.source === 'route' 
+                            ? '<span class="badge badge-info badge-sm ml-1">route</span>'
+                            : '<span class="badge badge-warning badge-sm ml-1">code</span>';
                         list.append(`
-                            <label class="list-group-item list-group-item-action">
-                                <input type="checkbox" class="mr-2 scan-checkbox" 
-                                       data-name="${perm.name}" 
-                                       data-display="${perm.display_name}"
-                                       data-group="${perm.group}" checked>
-                                <code>${perm.name}</code>
-                                <small class="text-muted d-block ml-4">${perm.display_name}</small>
+                            <label class="list-group-item list-group-item-action py-2">
+                                <div class="d-flex align-items-start">
+                                    <input type="checkbox" class="mr-2 mt-1 scan-checkbox" 
+                                           data-name="${perm.name}" 
+                                           data-display="${perm.display_name}"
+                                           data-group="${perm.group}" checked>
+                                    <div class="flex-grow-1">
+                                        <div>
+                                            <code>${perm.name}</code>
+                                            ${sourceLabel}
+                                            <span class="badge badge-secondary">${perm.group}</span>
+                                        </div>
+                                        <small class="text-muted">${perm.display_name}</small>
+                                    </div>
+                                </div>
                             </label>
                         `);
                     });

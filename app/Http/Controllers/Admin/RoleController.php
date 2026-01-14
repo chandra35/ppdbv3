@@ -150,11 +150,12 @@ class RoleController extends Controller
     }
 
     /**
-     * Sync permissions - scan code for new permissions
+     * Sync permissions - scan code and routes for new permissions
      */
     public function syncPermissions()
     {
-        $unregistered = CustomPermission::getUnregisteredPermissions();
+        // Get both code-based and route-based suggestions
+        $unregistered = CustomPermission::getAllMissingPermissions();
         
         return response()->json([
             'success' => true,
