@@ -7,7 +7,7 @@
         <h1 class="m-0"><i class="fas fa-key"></i> Kelola Permissions</h1>
         <ol class="breadcrumb m-0 bg-transparent p-0">
             <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="{{ route('admin.ppdb.roles.index') }}">Roles</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('admin.roles.index') }}">Roles</a></li>
             <li class="breadcrumb-item active">Permissions</li>
         </ol>
     </div>
@@ -323,7 +323,7 @@ $(document).ready(function() {
         btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Scanning...');
         
         $.ajax({
-            url: '{{ route("admin.ppdb.roles.permissions.sync") }}',
+            url: '{{ route("admin.roles.permissions.sync") }}',
             method: 'POST',
             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
             success: function(response) {
@@ -382,7 +382,7 @@ $(document).ready(function() {
         btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menambahkan...');
         
         $.ajax({
-            url: '{{ route("admin.ppdb.roles.permissions.bulk-add") }}',
+            url: '{{ route("admin.roles.permissions.bulk-add") }}',
             method: 'POST',
             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
             contentType: 'application/json',
@@ -421,7 +421,7 @@ $(document).ready(function() {
         btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
         
         $.ajax({
-            url: '{{ route("admin.ppdb.roles.permissions.store") }}',
+            url: '{{ route("admin.roles.permissions.store") }}',
             method: 'POST',
             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
             contentType: 'application/json',
@@ -469,7 +469,7 @@ $(document).ready(function() {
         btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
         
         $.ajax({
-            url: '{{ route("admin.ppdb.roles.permissions.update", "__ID__") }}'.replace('__ID__', id),
+            url: '{{ route("admin.roles.permissions.update", "__ID__") }}'.replace('__ID__', id),
             method: 'PUT',
             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
             contentType: 'application/json',
@@ -497,7 +497,7 @@ $(document).ready(function() {
         }
         
         $.ajax({
-            url: '{{ route("admin.ppdb.roles.permissions.destroy", "__ID__") }}'.replace('__ID__', id),
+            url: '{{ route("admin.roles.permissions.destroy", "__ID__") }}'.replace('__ID__', id),
             method: 'DELETE',
             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
             success: function(response) {
