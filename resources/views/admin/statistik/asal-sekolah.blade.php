@@ -104,6 +104,7 @@
                             <th width="50">#</th>
                             <th>Nama Sekolah</th>
                             <th>NPSN</th>
+                            <th>NSM</th>
                             <th class="text-center">Jumlah</th>
                         </tr>
                     </thead>
@@ -133,10 +134,17 @@
                                 <span class="text-muted">-</span>
                                 @endif
                             </td>
+                            <td>
+                                @if($sekolah->nsm_asal_sekolah)
+                                <code class="school-badge text-info">{{ $sekolah->nsm_asal_sekolah }}</code>
+                                @else
+                                <span class="text-muted">-</span>
+                                @endif
+                            </td>
                             <td class="text-center"><strong>{{ $sekolah->total }}</strong></td>
                         </tr>
                         @empty
-                        <tr><td colspan="4" class="text-center text-muted">Tidak ada data</td></tr>
+                        <tr><td colspan="5" class="text-center text-muted">Tidak ada data</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -168,6 +176,7 @@
                     <th width="50">#</th>
                     <th>Nama Sekolah</th>
                     <th>NPSN</th>
+                    <th>NSM</th>
                     <th class="text-center">Jumlah Pendaftar</th>
                     <th class="text-center">% Total</th>
                 </tr>
@@ -189,13 +198,20 @@
                         <span class="text-muted">-</span>
                         @endif
                     </td>
+                    <td>
+                        @if($sekolah->nsm_asal_sekolah)
+                        <code class="school-badge text-info">{{ $sekolah->nsm_asal_sekolah }}</code>
+                        @else
+                        <span class="text-muted">-</span>
+                        @endif
+                    </td>
                     <td class="text-center"><strong>{{ $sekolah->total }}</strong></td>
                     <td class="text-center">
                         {{ $totalPendaftar > 0 ? round(($sekolah->total / $totalPendaftar) * 100, 1) : 0 }}%
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="5" class="text-center text-muted">Tidak ada data</td></tr>
+                <tr><td colspan="6" class="text-center text-muted">Tidak ada data</td></tr>
                 @endforelse
             </tbody>
         </table>

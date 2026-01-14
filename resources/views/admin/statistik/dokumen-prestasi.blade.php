@@ -196,6 +196,7 @@
                     <th width="50">#</th>
                     <th>Nama Pendaftar</th>
                     <th>Asal Sekolah</th>
+                    <th>NPSN/NSM</th>
                     <th class="text-center">Jumlah Dokumen</th>
                     <th class="text-center">Aksi</th>
                 </tr>
@@ -205,7 +206,19 @@
                 <tr>
                     <td>{{ ($detailPrestasi->currentPage() - 1) * $detailPrestasi->perPage() + $i + 1 }}</td>
                     <td>{{ $item->nama_lengkap }}</td>
-                    <td>{{ $item->asal_sekolah ?? '-' }}</td>
+                    <td>{{ $item->nama_sekolah_asal ?? '-' }}</td>
+                    <td>
+                        @if($item->npsn_asal_sekolah)
+                            <code class="text-primary">{{ $item->npsn_asal_sekolah }}</code>
+                        @endif
+                        @if($item->nsm_asal_sekolah)
+                            @if($item->npsn_asal_sekolah) / @endif
+                            <code class="text-info">{{ $item->nsm_asal_sekolah }}</code>
+                        @endif
+                        @if(!$item->npsn_asal_sekolah && !$item->nsm_asal_sekolah)
+                            <span class="text-muted">-</span>
+                        @endif
+                    </td>
                     <td class="text-center">
                         <span class="badge badge-info">{{ $item->dokumen->count() }} dokumen</span>
                     </td>

@@ -287,16 +287,17 @@ class StatistikController extends Controller
             ->when($tahunAktif, function($q) use ($jalurIds) {
                 $q->whereIn('jalur_pendaftaran_id', $jalurIds);
             })
-            ->select('nama_sekolah_asal', 'npsn_asal_sekolah', DB::raw('count(*) as total'))
+            ->select('nama_sekolah_asal', 'npsn_asal_sekolah', 'nsm_asal_sekolah', DB::raw('count(*) as total'))
             ->whereNotNull('nama_sekolah_asal')
-            ->where('nama_sekolah_asal', '!=', '')
+            ->where('nama_sekolah_asal', '!='  , '')
             ->when($search, function($q) use ($search) {
                 $q->where(function($q2) use ($search) {
                     $q2->where('nama_sekolah_asal', 'like', "%{$search}%")
-                       ->orWhere('npsn_asal_sekolah', 'like', "%{$search}%");
+                       ->orWhere('npsn_asal_sekolah', 'like', "%{$search}%")
+                       ->orWhere('nsm_asal_sekolah', 'like', "%{$search}%");
                 });
             })
-            ->groupBy('nama_sekolah_asal', 'npsn_asal_sekolah')
+            ->groupBy('nama_sekolah_asal', 'npsn_asal_sekolah', 'nsm_asal_sekolah')
             ->orderByDesc('total')
             ->paginate(20);
         
@@ -305,10 +306,10 @@ class StatistikController extends Controller
             ->when($tahunAktif, function($q) use ($jalurIds) {
                 $q->whereIn('jalur_pendaftaran_id', $jalurIds);
             })
-            ->select('nama_sekolah_asal', 'npsn_asal_sekolah', DB::raw('count(*) as total'))
+            ->select('nama_sekolah_asal', 'npsn_asal_sekolah', 'nsm_asal_sekolah', DB::raw('count(*) as total'))
             ->whereNotNull('nama_sekolah_asal')
             ->where('nama_sekolah_asal', '!=', '')
-            ->groupBy('nama_sekolah_asal', 'npsn_asal_sekolah')
+            ->groupBy('nama_sekolah_asal', 'npsn_asal_sekolah', 'nsm_asal_sekolah')
             ->orderByDesc('total')
             ->limit(10)
             ->get();
@@ -511,7 +512,7 @@ class StatistikController extends Controller
             ->with(['dokumen' => function($q) use ($dokumenTambahanTypes) {
                 $q->whereIn('jenis_dokumen', array_keys($dokumenTambahanTypes));
             }])
-            ->select('id', 'nama_lengkap', 'asal_sekolah')
+            ->select('id', 'nama_lengkap', 'nama_sekolah_asal', 'npsn_asal_sekolah', 'nsm_asal_sekolah')
             ->paginate(20);
         
         return view('admin.statistik.dokumen-prestasi', compact(
