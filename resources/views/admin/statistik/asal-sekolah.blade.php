@@ -209,10 +209,21 @@
 
 {{-- Pendaftar dari Sekolah Terpilih --}}
 @if($selectedSekolah && $pendaftarSekolah)
+@php
+    $firstPendaftar = $pendaftarSekolah->first();
+    $npsnSekolah = $firstPendaftar?->npsn_asal_sekolah;
+    $nsmSekolah = $firstPendaftar?->nsm_asal_sekolah;
+@endphp
 <div class="card card-primary">
     <div class="card-header">
         <h3 class="card-title"><i class="fas fa-users"></i> Pendaftar dari: {{ $selectedSekolah }}</h3>
         <div class="card-tools">
+            @if($npsnSekolah)
+            <span class="badge badge-info mr-1" title="NPSN">NPSN: {{ $npsnSekolah }}</span>
+            @endif
+            @if($nsmSekolah)
+            <span class="badge badge-secondary mr-1" title="NSM">NSM: {{ $nsmSekolah }}</span>
+            @endif
             <span class="badge badge-light">{{ $pendaftarSekolah->total() }} pendaftar</span>
             <a href="{{ route('admin.statistik.asal-sekolah', ['tahun_pelajaran_id' => $tahunAktif?->id]) }}" class="btn btn-tool">
                 <i class="fas fa-times"></i>
