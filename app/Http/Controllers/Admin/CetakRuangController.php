@@ -8,11 +8,19 @@ use App\Models\TahunPelajaran;
 use App\Models\JalurPendaftaran;
 use App\Models\GelombangPendaftaran;
 use App\Models\SekolahSettings;
+use App\Services\KopSuratService;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class CetakRuangController extends Controller
 {
+    protected $kopSuratService;
+
+    public function __construct(KopSuratService $kopSuratService)
+    {
+        $this->kopSuratService = $kopSuratService;
+    }
+
     /**
      * Display room assignment settings and preview
      */
@@ -170,6 +178,9 @@ class CetakRuangController extends Controller
         );
 
         $sekolah = SekolahSettings::first();
+        
+        // Generate Kop HTML
+        $kopHtml = $this->kopSuratService->renderKopHtml($sekolah, true);
 
         // Filter specific room if requested
         if ($request->ruang) {
@@ -182,7 +193,8 @@ class CetakRuangController extends Controller
             'rooms',
             'sekolah',
             'tahunAktif',
-            'settings'
+            'settings',
+            'kopHtml'
         ));
 
         $pdf->setPaper('A4', 'portrait');
@@ -220,6 +232,9 @@ class CetakRuangController extends Controller
         );
 
         $sekolah = SekolahSettings::first();
+        
+        // Generate Kop HTML
+        $kopHtml = $this->kopSuratService->renderKopHtml($sekolah, true);
 
         // Filter specific room if requested
         if ($request->ruang) {
@@ -232,7 +247,8 @@ class CetakRuangController extends Controller
             'rooms',
             'sekolah',
             'tahunAktif',
-            'settings'
+            'settings',
+            'kopHtml'
         ));
 
         $pdf->setPaper('A4', 'portrait');
