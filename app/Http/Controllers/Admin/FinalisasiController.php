@@ -39,8 +39,17 @@ class FinalisasiController extends Controller
 
         // Build query
         $query = CalonSiswa::with(['jalurPendaftaran', 'gelombangPendaftaran', 'ortu', 'dokumen'])
-            ->where('is_finalisasi', false) // Belum difinalisasi
             ->where('status_verifikasi', '!=', 'rejected'); // Tidak termasuk yang ditolak
+
+        // Filter status finalisasi
+        if ($request->status_finalisasi === 'sudah') {
+            $query->where('is_finalisasi', true);
+        } elseif ($request->status_finalisasi === 'semua') {
+            // Tampilkan semua (tidak ada filter)
+        } else {
+            // Default: tampilkan yang belum difinalisasi
+            $query->where('is_finalisasi', false);
+        }
 
         if ($tahunAktif) {
             $query->where('tahun_pelajaran_id', $tahunAktif->id);
@@ -98,6 +107,9 @@ class FinalisasiController extends Controller
                       ->orWhere('data_ortu_completed', false)
                       ->orWhere('data_dokumen_completed', false);
                 })
+                ->when($tahunAktif, fn($q) => $q->where('tahun_pelajaran_id', $tahunAktif->id))
+                ->count(),
+            'sudah_finalisasi' => CalonSiswa::where('is_finalisasi', true)
                 ->when($tahunAktif, fn($q) => $q->where('tahun_pelajaran_id', $tahunAktif->id))
                 ->count(),
         ];

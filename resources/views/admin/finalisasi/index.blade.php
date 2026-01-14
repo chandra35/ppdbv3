@@ -44,7 +44,7 @@
 @section('content')
 {{-- Statistics --}}
 <div class="row">
-    <div class="col-lg-4 col-md-6">
+    <div class="col-lg-3 col-md-6">
         <div class="info-box bg-warning stat-card">
             <span class="info-box-icon"><i class="fas fa-users"></i></span>
             <div class="info-box-content">
@@ -53,8 +53,8 @@
             </div>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6">
-        <div class="info-box bg-success stat-card">
+    <div class="col-lg-3 col-md-6">
+        <div class="info-box bg-info stat-card">
             <span class="info-box-icon"><i class="fas fa-check-double"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text">Siap Finalisasi</span>
@@ -62,12 +62,21 @@
             </div>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6">
+    <div class="col-lg-3 col-md-6">
         <div class="info-box bg-danger stat-card">
             <span class="info-box-icon"><i class="fas fa-exclamation-triangle"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text">Belum Lengkap</span>
                 <span class="info-box-number">{{ number_format($stats['belum_lengkap']) }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="info-box bg-success stat-card">
+            <span class="info-box-icon"><i class="fas fa-clipboard-check"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">Sudah Finalisasi</span>
+                <span class="info-box-number">{{ number_format($stats['sudah_finalisasi']) }}</span>
             </div>
         </div>
     </div>
@@ -110,21 +119,28 @@
                 </div>
                 <div class="col-md-2">
                     <select name="kelengkapan" class="form-control form-control-sm">
-                        <option value="">-- Semua Status --</option>
+                        <option value="">-- Kelengkapan --</option>
                         <option value="lengkap" {{ request('kelengkapan') == 'lengkap' ? 'selected' : '' }}>Lengkap (100%)</option>
                         <option value="tidak_lengkap" {{ request('kelengkapan') == 'tidak_lengkap' ? 'selected' : '' }}>Belum Lengkap</option>
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <input type="text" name="search" class="form-control form-control-sm" 
-                           placeholder="Cari nama/NISN/No.Reg..." value="{{ request('search') }}">
+                <div class="col-md-2">
+                    <select name="status_finalisasi" class="form-control form-control-sm">
+                        <option value="belum" {{ request('status_finalisasi', 'belum') == 'belum' ? 'selected' : '' }}>Belum Final</option>
+                        <option value="sudah" {{ request('status_finalisasi') == 'sudah' ? 'selected' : '' }}>Sudah Final</option>
+                        <option value="semua" {{ request('status_finalisasi') == 'semua' ? 'selected' : '' }}>Semua Status</option>
+                    </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
+                    <input type="text" name="search" class="form-control form-control-sm" 
+                           placeholder="Cari nama/NISN..." value="{{ request('search') }}">
+                </div>
+                <div class="col-md-2">
                     <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="fas fa-search"></i> Filter
+                        <i class="fas fa-search"></i>
                     </button>
                     <a href="{{ route('admin.finalisasi.index', ['tahun_pelajaran_id' => $tahunAktif?->id]) }}" class="btn btn-secondary btn-sm">
-                        <i class="fas fa-sync"></i> Reset
+                        <i class="fas fa-sync"></i>
                     </a>
                 </div>
             </div>
