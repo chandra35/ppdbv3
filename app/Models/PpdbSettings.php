@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 
 class PpdbSettings extends Model
 {
@@ -81,5 +82,41 @@ class PpdbSettings extends Model
         $tahun = now()->year;
         $counter = str_pad($this->nomor_registrasi_counter, 5, '0', STR_PAD_LEFT);
         return "{$this->nomor_registrasi_prefix}-{$tahun}-{$counter}";
+    }
+
+    /**
+     * Get active PPDB settings (for current active tahun pelajaran)
+     * Uses cache for performance
+     */
+    public static function getActive()
+    {
+        return Cache::remember('ppdb_settings_active', 3600, function () {
+            // Get active tahun pelajaran
+            $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+            
+            if ($tahunAktif) {
+                $settings = self::where('tahun_pelajaran_id', $tahunAktif->id)->first();
+                if ($settings) {
+                    return $settings;
+                }
+            }
+            
+            // Fallback: get latest or create new instance
+            return self::orderBy('created_at', 'desc')->first() ?? new self();
+        });
+    }
+
+    /**
+     * Clear cache when settings are updated
+     */
+    protected static function booted()
+    {
+        static::saved(function () {
+            Cache::forget('ppdb_settings_active');
+        });
+
+        static::deleted(function () {
+            Cache::forget('ppdb_settings_active');
+        });
     }
 }
