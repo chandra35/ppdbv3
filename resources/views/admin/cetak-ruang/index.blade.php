@@ -144,7 +144,29 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-9 d-flex align-items-end">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Tanggal Ujian</label>
+                        <input type="date" name="tanggal_ujian" class="form-control" 
+                               value="{{ $settings['tanggal_ujian'] ?? '' }}">
+                        <small class="text-muted">Kosongkan jika tidak ingin dicetak</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Waktu Ujian</label>
+                        <div class="input-group">
+                            <input type="time" name="waktu_mulai" class="form-control" 
+                                   value="{{ $settings['waktu_mulai'] ?? '' }}" placeholder="Mulai">
+                            <div class="input-group-append input-group-prepend">
+                                <span class="input-group-text">s/d</span>
+                            </div>
+                            <input type="time" name="waktu_selesai" class="form-control" 
+                                   value="{{ $settings['waktu_selesai'] ?? '' }}" placeholder="Selesai">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
                     <div class="form-group mb-0">
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-eye"></i> Preview Pembagian Ruang

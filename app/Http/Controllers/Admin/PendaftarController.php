@@ -14,7 +14,9 @@ use App\Models\ActivityLog;
 use App\Models\User;
 use App\Models\Role;
 use App\Services\KopSuratService;
+use App\Exports\PendaftarExport;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -123,6 +125,26 @@ class PendaftarController extends Controller
             ->get();
 
         return view('admin.pendaftar.index', compact('pendaftars', 'jalurList', 'gelombangList', 'selectedJalurId', 'sortBy', 'sortDir'));
+    }
+
+    /**
+     * Export pendaftar data to Excel
+     */
+    public function export(Request $request)
+    {
+        $type = $request->get('type', 'all'); // 'all' or 'with_nomor_tes'
+        $jalurId = $request->get('jalur_id');
+        $gelombangId = $request->get('gelombang_id');
+        
+        // Get tahun pelajaran aktif for filename
+        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        $tahunLabel = $tahunAktif ? str_replace('/', '-', $tahunAktif->nama) : date('Y');
+        
+        $filename = $type === 'with_nomor_tes' 
+            ? "Peserta_Ujian_PPDB_{$tahunLabel}.xlsx"
+            : "Data_Pendaftar_PPDB_{$tahunLabel}.xlsx";
+        
+        return Excel::download(new PendaftarExport($type, $jalurId, $gelombangId), $filename);
     }
 
     /**

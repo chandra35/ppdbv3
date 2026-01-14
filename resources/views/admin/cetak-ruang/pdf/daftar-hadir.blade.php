@@ -6,7 +6,7 @@
     <style>
         @page {
             size: A4 portrait;
-            margin: 10mm 8mm;
+            margin: 15mm 20mm 15mm 20mm;
         }
         * {
             margin: 0;
@@ -18,6 +18,11 @@
             font-size: 9px;
             line-height: 1.3;
             color: #333;
+            padding: 10px 15px;
+        }
+        .page-content {
+            width: 100%;
+            padding: 0;
         }
         .page-break {
             page-break-after: always;
@@ -42,7 +47,7 @@
         
         /* Kop Surat */
         .kop-wrapper {
-            margin-bottom: 5px;
+            margin-bottom: 20px;
         }
         .kop-wrapper div[style*="border-bottom: 3px double"] {
             border-bottom: 1px solid #000 !important;
@@ -89,21 +94,21 @@
         
         /* Title Banner */
         .title-banner {
-            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
-            color: white;
             text-align: center;
-            padding: 8px 10px;
-            margin-bottom: 10px;
-            border-radius: 4px;
+            padding: 8px 0;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #333;
         }
         .title-banner h2 {
-            font-size: 13px;
-            margin-bottom: 2px;
+            font-size: 14px;
+            margin-bottom: 3px;
             letter-spacing: 1px;
+            color: #333;
+            font-weight: bold;
         }
         .title-banner p {
             font-size: 10px;
-            opacity: 0.9;
+            color: #555;
         }
         
         /* Room Info Box */
@@ -139,15 +144,13 @@
         table.attendance {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             font-size: 8px;
-            margin-left: auto;
-            margin-right: auto;
         }
         table.attendance th {
             background: #f0f0f0;
             color: #333;
-            padding: 6px 3px;
+            padding: 6px 4px;
             font-weight: bold;
             font-size: 8px;
             text-transform: uppercase;
@@ -162,42 +165,43 @@
             background: #f8f9fa;
         }
         table.attendance .col-no { 
-            width: 22px; 
+            width: 25px; 
             text-align: center;
             font-weight: bold;
         }
         table.attendance .col-nomor-tes { 
-            width: 70px; 
+            width: 95px; 
             text-align: center;
             font-family: 'Courier New', monospace;
             font-size: 8px;
             font-weight: bold;
         }
         table.attendance .col-nisn { 
-            width: 65px; 
+            width: 70px; 
             text-align: center;
             font-family: 'Courier New', monospace;
             font-size: 7px;
         }
         table.attendance .col-nama { 
+            width: 150px;
             text-align: left; 
             padding-left: 5px;
             font-size: 8px;
         }
         table.attendance .col-jk { 
-            width: 20px; 
+            width: 22px; 
             text-align: center; 
         }
         table.attendance .col-asal { 
-            width: 100px;
+            width: 110px;
             font-size: 7px;
             padding: 3px 2px;
         }
         table.attendance .col-ttd { 
-            width: 55px; 
+            width: 50px; 
         }
         table.attendance .col-ket { 
-            width: 35px; 
+            width: 30px; 
             text-align: center;
         }
         
@@ -312,7 +316,7 @@
 
         {{-- Title Banner --}}
         <div class="title-banner">
-            <h2>DAFTAR HADIR PESERTA UJIAN</h2>
+            <h2>DAFTAR HADIR CALON SISWA</h2>
             <p>Tahun Pelajaran {{ $tahunAktif?->nama ?? date('Y') }}</p>
         </div>
 
@@ -328,11 +332,23 @@
             </div>
             <div class="room-info-cell" style="width: 27%;">
                 <div class="room-info-label">Tanggal Ujian</div>
-                <div class="room-info-value">........................................</div>
+                <div class="room-info-value">
+                    @if(!empty($settings['tanggal_ujian']))
+                        {{ \Carbon\Carbon::parse($settings['tanggal_ujian'])->translatedFormat('d F Y') }}
+                    @else
+                        ........................................
+                    @endif
+                </div>
             </div>
             <div class="room-info-cell" style="width: 28%;">
                 <div class="room-info-label">Waktu</div>
-                <div class="room-info-value">............. s/d .............</div>
+                <div class="room-info-value">
+                    @if(!empty($settings['waktu_mulai']) && !empty($settings['waktu_selesai']))
+                        {{ $settings['waktu_mulai'] }} s/d {{ $settings['waktu_selesai'] }}
+                    @else
+                        ............. s/d .............
+                    @endif
+                </div>
             </div>
         </div>
 
@@ -398,7 +414,7 @@
 
         {{-- Footer --}}
         <div class="footer-note">
-            Dicetak pada: {{ now()->format('d/m/Y H:i') }} | {{ $room['nama'] }} - Halaman {{ $roomIndex + 1 }} dari {{ count($rooms) }}
+            Dokumen Resmi Dicetak pada: {{ now()->format('d/m/Y H:i') }} | {{ $room['nama'] }} - Halaman {{ $roomIndex + 1 }}
         </div>
     </div>
     @endforeach

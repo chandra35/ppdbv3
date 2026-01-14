@@ -191,6 +191,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     
     // ---- PENDAFTAR (Shared access) ----
     Route::get('/pendaftar', [PendaftarController::class, 'index'])->name('pendaftar.index');
+    Route::get('/pendaftar/export', [PendaftarController::class, 'export'])->name('pendaftar.export');
     Route::get('/pendaftar/map', [PendaftarController::class, 'map'])->name('pendaftar.map');
     Route::get('/pendaftar/create', [PendaftarController::class, 'create'])->name('pendaftar.create');
     Route::post('/pendaftar', [PendaftarController::class, 'store'])->name('pendaftar.store');

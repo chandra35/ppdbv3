@@ -6,7 +6,7 @@
     <style>
         @page {
             size: A4 landscape;
-            margin: 10mm;
+            margin: 15mm 20mm 15mm 20mm;
         }
         * {
             margin: 0;
@@ -15,41 +15,37 @@
         }
         body {
             font-family: Arial, Helvetica, sans-serif;
+            padding: 10px;
         }
         .page-break {
             page-break-after: always;
         }
         .room-label {
             width: 100%;
-            height: 190mm;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            height: 170mm;
             text-align: center;
             border: 4px solid #2c3e50;
             border-radius: 15px;
-            background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+            background: #f8f9fa;
             position: relative;
             overflow: hidden;
+            padding-top: 30px;
         }
-        .room-label::before {
-            content: '';
+        .room-label-top-bar {
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
             height: 15px;
-            background: linear-gradient(90deg, #3498db, #2c3e50, #3498db);
+            background: #2c3e50;
         }
-        .room-label::after {
-            content: '';
+        .room-label-bottom-bar {
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
             height: 15px;
-            background: linear-gradient(90deg, #3498db, #2c3e50, #3498db);
+            background: #2c3e50;
         }
         .school-name {
             font-size: 24px;
@@ -71,20 +67,18 @@
             text-transform: uppercase;
             letter-spacing: 5px;
             margin-bottom: 20px;
-            text-shadow: 3px 3px 6px rgba(0,0,0,0.1);
-        }
-        .room-info {
-            display: flex;
-            justify-content: center;
-            gap: 50px;
-            margin-top: 20px;
         }
         .info-box {
+            display: inline-block;
             background: #3498db;
             color: white;
             padding: 15px 30px;
             border-radius: 10px;
             text-align: center;
+            margin: 0 15px;
+        }
+        .info-box.green {
+            background: #27ae60;
         }
         .info-box .value {
             font-size: 28px;
@@ -92,7 +86,6 @@
         }
         .info-box .label {
             font-size: 12px;
-            opacity: 0.9;
         }
         .nomor-range {
             font-size: 24px;
@@ -102,6 +95,7 @@
             border: 2px solid #3498db;
             border-radius: 50px;
             background: white;
+            display: inline-block;
         }
         .nomor-range span {
             font-weight: bold;
@@ -117,14 +111,12 @@
             border-radius: 5px;
             font-size: 14px;
             font-weight: bold;
-            transform: rotate(15deg);
         }
         .corner-decoration {
             position: absolute;
-            width: 100px;
-            height: 100px;
+            width: 80px;
+            height: 80px;
             border: 3px solid #3498db;
-            opacity: 0.3;
         }
         .corner-tl {
             top: 25px;
@@ -150,12 +142,25 @@
             border-left: none;
             border-top: none;
         }
+        .footer-label {
+            position: absolute;
+            bottom: 22px;
+            left: 0;
+            right: 0;
+            font-size: 9px;
+            color: #888;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
     @foreach($rooms as $roomIndex => $room)
     <div class="{{ !$loop->last ? 'page-break' : '' }}">
         <div class="room-label">
+            {{-- Top/Bottom Bars --}}
+            <div class="room-label-top-bar"></div>
+            <div class="room-label-bottom-bar"></div>
+            
             {{-- Corner Decorations --}}
             <div class="corner-decoration corner-tl"></div>
             <div class="corner-decoration corner-tr"></div>
@@ -179,28 +184,27 @@
             </div>
 
             {{-- Room Info --}}
-            <table style="margin: 0 auto;">
-                <tr>
-                    <td style="padding: 0 20px;">
-                        <div class="info-box">
-                            <div class="value">{{ $room['jumlah'] }}</div>
-                            <div class="label">PESERTA</div>
-                        </div>
-                    </td>
-                    <td style="padding: 0 20px;">
-                        <div class="info-box" style="background: #27ae60;">
-                            <div class="value">{{ $room['nomor'] }}</div>
-                            <div class="label">RUANG KE</div>
-                        </div>
-                    </td>
-                </tr>
-            </table>
+            <div>
+                <div class="info-box">
+                    <div class="value">{{ $room['jumlah'] }}</div>
+                    <div class="label">PESERTA</div>
+                </div>
+                <div class="info-box green">
+                    <div class="value">{{ $room['nomor'] }}</div>
+                    <div class="label">RUANG KE</div>
+                </div>
+            </div>
 
             {{-- Nomor Tes Range --}}
             <div class="nomor-range">
                 Nomor Tes: <span>{{ $room['peserta'][0]->nomor_tes ?? '-' }}</span> 
                 s/d 
                 <span>{{ $room['peserta'][count($room['peserta'])-1]->nomor_tes ?? '-' }}</span>
+            </div>
+
+            {{-- Footer --}}
+            <div class="footer-label">
+                Dokumen Resmi Dicetak pada: {{ now()->format('d/m/Y H:i') }}
             </div>
         </div>
     </div>

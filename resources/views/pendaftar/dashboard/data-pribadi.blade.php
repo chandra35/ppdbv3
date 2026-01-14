@@ -123,6 +123,29 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
+                                <label>Anak Ke</label>
+                                <input type="number" name="anak_ke" class="form-control @error('anak_ke') is-invalid @enderror" 
+                                       value="{{ old('anak_ke', $calonSiswa->anak_ke) }}" min="1" max="20">
+                                @error('anak_ke')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Jumlah Saudara</label>
+                                <input type="number" name="jumlah_saudara" class="form-control @error('jumlah_saudara') is-invalid @enderror" 
+                                       value="{{ old('jumlah_saudara', $calonSiswa->jumlah_saudara) }}" min="0" max="20">
+                                @error('jumlah_saudara')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
                                 <label>No. HP (WhatsApp) <span class="text-danger">*</span></label>
                                 @php
                                     $displayPhone = old('nomor_hp', $calonSiswa->nomor_hp);

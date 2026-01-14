@@ -98,6 +98,24 @@
                     <i class="fas fa-user-plus mr-1"></i> Tambah Pendaftar
                 </a>
                 @endif
+                {{-- Export Data Dropdown --}}
+                <div class="btn-group">
+                    <button type="button" class="btn btn-info btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-file-excel mr-1"></i> Export Excel
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right">
+                        <a class="dropdown-item" href="{{ route('admin.pendaftar.export', ['type' => 'all']) }}">
+                            <i class="fas fa-users mr-2"></i> Semua Pendaftar
+                        </a>
+                        <a class="dropdown-item" href="{{ route('admin.pendaftar.export', ['type' => 'with_nomor_tes']) }}">
+                            <i class="fas fa-id-card mr-2"></i> Peserta Ujian (Dengan Nomor Tes)
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item text-muted" href="#" data-toggle="modal" data-target="#exportFilterModal">
+                            <i class="fas fa-filter mr-2"></i> Export dengan Filter...
+                        </a>
+                    </div>
+                </div>
                 <a href="{{ route('admin.pendaftar.map') }}" class="btn btn-success btn-sm">
                     <i class="fas fa-map-marked-alt mr-1"></i> Peta Pendaftar
                 </a>
@@ -996,6 +1014,83 @@
         
         updateDateTime();
         setInterval(updateDateTime, 1000);
+        
+        // Export Filter Modal - Gelombang filter based on Jalur
+        $('#export_jalur_id').on('change', function() {
+            var jalurId = $(this).val();
+            var gelombangSelect = $('#export_gelombang_id');
+            
+            gelombangSelect.val('');
+            gelombangSelect.find('option').each(function() {
+                var optionJalurId = $(this).data('jalur-id');
+                if (!optionJalurId || optionJalurId == jalurId || !jalurId) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
     });
 </script>
+
+{{-- Export Filter Modal --}}
+<div class="modal fade" id="exportFilterModal" tabindex="-1" role="dialog" aria-labelledby="exportFilterModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="exportFilterModalLabel">
+                    <i class="fas fa-file-excel mr-2"></i>Export Data dengan Filter
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{{ route('admin.pendaftar.export') }}" method="GET">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="export_type"><i class="fas fa-filter mr-1"></i> Tipe Data</label>
+                        <select name="type" id="export_type" class="form-control">
+                            <option value="all">Semua Pendaftar</option>
+                            <option value="with_nomor_tes">Peserta Ujian (Dengan Nomor Tes)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="export_jalur_id"><i class="fas fa-road mr-1"></i> Jalur Pendaftaran</label>
+                        <select name="jalur_id" id="export_jalur_id" class="form-control">
+                            <option value="">-- Semua Jalur --</option>
+                            @foreach($jalurList as $jalur)
+                                <option value="{{ $jalur->id }}">
+                                    {{ $jalur->nama }} ({{ $jalur->tahunPelajaran?->nama ?? '-' }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="export_gelombang_id"><i class="fas fa-wave-square mr-1"></i> Gelombang</label>
+                        <select name="gelombang_id" id="export_gelombang_id" class="form-control">
+                            <option value="">-- Semua Gelombang --</option>
+                            @foreach($gelombangList as $gelombang)
+                                <option value="{{ $gelombang->id }}" data-jalur-id="{{ $gelombang->jalur_id }}">
+                                    {{ $gelombang->nama }} - {{ $gelombang->jalur?->nama ?? '-' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Data yang diekspor mencakup: Data diri, alamat, orang tua, nilai rapor, dan status pendaftaran.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i> Batal
+                    </button>
+                    <button type="submit" class="btn btn-info">
+                        <i class="fas fa-download mr-1"></i> Download Excel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @stop

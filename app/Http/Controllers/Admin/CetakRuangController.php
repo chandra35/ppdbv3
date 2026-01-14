@@ -64,6 +64,9 @@ class CetakRuangController extends Controller
             'jalur_id' => null,
             'gelombang_id' => null,
             'urutan' => 'nomor_tes',
+            'tanggal_ujian' => null,
+            'waktu_mulai' => null,
+            'waktu_selesai' => null,
         ]);
 
         return view('admin.cetak-ruang.index', compact(
@@ -94,7 +97,10 @@ class CetakRuangController extends Controller
             'jalur_id', 
             'gelombang_id',
             'urutan',
-            'tahun_pelajaran_id'
+            'tahun_pelajaran_id',
+            'tanggal_ujian',
+            'waktu_mulai',
+            'waktu_selesai'
         ])]);
 
         $tahunAktif = $request->tahun_pelajaran_id 

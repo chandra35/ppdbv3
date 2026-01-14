@@ -6,7 +6,7 @@
     <style>
         @page {
             size: A4 portrait;
-            margin: 10mm 8mm;
+            margin: 15mm 20mm 15mm 20mm;
         }
         * {
             margin: 0;
@@ -18,6 +18,11 @@
             font-size: 9px;
             line-height: 1.3;
             color: #333;
+            padding: 10px 15px;
+        }
+        .page-content {
+            width: 100%;
+            padding: 0;
         }
         .page-break {
             page-break-after: always;
@@ -42,7 +47,7 @@
         
         /* Kop Surat */
         .kop-wrapper {
-            margin-bottom: 5px;
+            margin-bottom: 20px;
         }
         .kop-wrapper div[style*="border-bottom: 3px double"] {
             border-bottom: 1px solid #000 !important;
@@ -89,31 +94,32 @@
         
         /* Room Banner */
         .room-banner {
-            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
-            color: white;
             text-align: center;
-            padding: 12px 15px;
+            padding: 10px 0;
             margin-bottom: 10px;
-            border-radius: 6px;
+            border: 2px solid #333;
+            border-radius: 4px;
             position: relative;
         }
         .room-banner h2 {
-            font-size: 24px;
+            font-size: 22px;
             margin-bottom: 3px;
             letter-spacing: 2px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            color: #333;
+            font-weight: bold;
         }
         .room-banner p {
             font-size: 11px;
-            opacity: 0.9;
+            color: #555;
         }
         .room-badge {
             position: absolute;
-            top: -5px;
+            top: -8px;
             right: 10px;
-            background: #e74c3c;
-            color: white;
-            padding: 4px 10px;
+            background: #fff;
+            color: #333;
+            padding: 2px 8px;
+            border: 1px solid #333;
             border-radius: 3px;
             font-size: 8px;
             font-weight: bold;
@@ -167,8 +173,6 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 10px;
-            margin-left: auto;
-            margin-right: auto;
         }
         table.peserta th {
             background: #f0f0f0;
@@ -197,7 +201,7 @@
             background: #f0f0f0;
         }
         table.peserta .col-nomor-tes { 
-            width: 80px; 
+            width: 95px; 
             text-align: center;
             font-family: 'Courier New', monospace;
             font-size: 9px;
@@ -205,12 +209,13 @@
             background: #e8f8f5;
         }
         table.peserta .col-nisn { 
-            width: 70px; 
+            width: 75px; 
             text-align: center;
             font-family: 'Courier New', monospace;
             font-size: 8px;
         }
         table.peserta .col-nama { 
+            width: 180px;
             text-align: left; 
             padding-left: 6px;
             font-size: 9px;
@@ -221,42 +226,18 @@
             font-weight: bold;
         }
         table.peserta .col-asal { 
-            width: 120px;
+            width: 130px;
             font-size: 8px;
         }
         
         /* Footer */
-        .footer-info {
-            display: table;
-            width: 100%;
-            margin-top: 10px;
-            padding-top: 8px;
-            border-top: 2px solid #27ae60;
-        }
-        .footer-left {
-            display: table-cell;
-            width: 50%;
-            vertical-align: top;
-        }
-        .footer-right {
-            display: table-cell;
-            width: 50%;
-            text-align: right;
-            vertical-align: top;
-        }
         .footer-note {
-            font-size: 8px;
-            color: #7f8c8d;
-            padding: 3px 0;
-        }
-        .footer-badge {
-            display: inline-block;
-            background: #27ae60;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 3px;
-            font-size: 8px;
-            font-weight: bold;
+            text-align: center;
+            font-size: 7px;
+            color: #6c757d;
+            margin-top: 10px;
+            padding-top: 5px;
+            border-top: 1px dashed #dee2e6;
         }
     </style>
 </head>
@@ -310,7 +291,7 @@
         <div class="room-banner">
             <div class="room-badge">TEMPEL DI RUANG</div>
             <h2>{{ strtoupper($room['nama']) }}</h2>
-            <p>Daftar Peserta Ujian Seleksi PPDB {{ $tahunAktif?->nama ?? date('Y') }}</p>
+            <p>Daftar Peserta Calon Siswa Tahun Pelajaran {{ $tahunAktif?->nama ?? date('Y') }}</p>
         </div>
 
         {{-- Room Stats --}}
@@ -364,15 +345,8 @@
         </table>
 
         {{-- Footer --}}
-        <div class="footer-info">
-            <div class="footer-left">
-                <div class="footer-note">📌 Dokumen ini ditempel di dalam ruang ujian</div>
-                <div class="footer-note">🖨️ Dicetak: {{ now()->format('d/m/Y H:i') }}</div>
-            </div>
-            <div class="footer-right">
-                <span class="footer-badge">{{ $room['nama'] }}</span>
-                <div class="footer-note" style="margin-top: 3px;">Halaman {{ $roomIndex + 1 }} dari {{ count($rooms) }}</div>
-            </div>
+        <div class="footer-note">
+            Dokumen Resmi Dicetak pada: {{ now()->format('d/m/Y H:i') }} | {{ $room['nama'] }} - Halaman {{ $roomIndex + 1 }}
         </div>
     </div>
     @endforeach
