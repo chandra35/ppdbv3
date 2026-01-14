@@ -236,6 +236,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/batch-kartu-tes', [\App\Http\Controllers\Admin\CetakDokumenController::class, 'batchCetakKartuTes'])->name('batch-kartu-tes');
     });
 
+    // ---- CETAK RUANG UJIAN ----
+    Route::prefix('cetak-ruang')->name('cetak-ruang.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\CetakRuangController::class, 'index'])->name('index');
+        Route::post('/preview', [\App\Http\Controllers\Admin\CetakRuangController::class, 'preview'])->name('preview');
+        Route::get('/print/daftar-hadir', [\App\Http\Controllers\Admin\CetakRuangController::class, 'printDaftarHadir'])->name('print.daftar-hadir');
+        Route::get('/print/daftar-peserta', [\App\Http\Controllers\Admin\CetakRuangController::class, 'printDaftarPeserta'])->name('print.daftar-peserta');
+        Route::get('/print/nama-ruang', [\App\Http\Controllers\Admin\CetakRuangController::class, 'printNamaRuang'])->name('print.nama-ruang');
+    });
+
     // ---- STATISTIK PENDAFTAR ----
     Route::prefix('statistik')->name('statistik.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\StatistikController::class, 'index'])->name('index');

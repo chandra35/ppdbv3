@@ -134,6 +134,11 @@ return [
                     'icon' => 'fas fa-fw fa-print',
                 ],
                 [
+                    'text' => 'Cetak Ruang Ujian',
+                    'route' => 'admin.cetak-ruang.index',
+                    'icon' => 'fas fa-fw fa-door-open',
+                ],
+                [
                     'text' => 'Statistik',
                     'route' => 'admin.statistik.index',
                     'icon' => 'fas fa-fw fa-chart-bar',
