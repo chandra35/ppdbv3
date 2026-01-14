@@ -464,6 +464,18 @@
             color: #64748b;
         }
         
+        .forgot-link {
+            font-size: 0.9rem;
+            color: var(--primary);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .forgot-link:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+        
         /* Login Button */
         .btn-login {
             width: 100%;
@@ -790,6 +802,9 @@
                             <input type="checkbox" name="remember" id="remember">
                             <span>Ingat saya</span>
                         </label>
+                        <a href="{{ route('pendaftar.forgot-password') }}" class="forgot-link">
+                            Lupa Password?
+                        </a>
                     </div>
                     
                     <button type="submit" class="btn-login" id="btnLogin">
