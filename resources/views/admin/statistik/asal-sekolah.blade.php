@@ -224,7 +224,8 @@
             <thead>
                 <tr>
                     <th width="50">#</th>
-                    <th>No. Pendaftaran</th>
+                    <th>No. Registrasi</th>
+                    <th>No. Tes</th>
                     <th>Nama Lengkap</th>
                     <th>Jalur</th>
                     <th>Status</th>
@@ -235,7 +236,26 @@
                 @forelse($pendaftarSekolah as $i => $pendaftar)
                 <tr>
                     <td>{{ ($pendaftarSekolah->currentPage() - 1) * $pendaftarSekolah->perPage() + $i + 1 }}</td>
-                    <td><code>{{ $pendaftar->nomor_pendaftaran }}</code></td>
+                    <td>
+                        @if($pendaftar->nomor_registrasi)
+                            <code>{{ $pendaftar->nomor_registrasi }}</code>
+                        @else
+                            <span class="text-muted"><i class="fas fa-clock"></i> Belum ada</span>
+                        @endif
+                    </td>
+                    <td>
+                        @if($pendaftar->nomor_tes)
+                            <code class="text-success">{{ $pendaftar->nomor_tes }}</code>
+                        @elseif(!$pendaftar->is_finalisasi)
+                            <span class="text-muted" title="Pendaftar belum finalisasi">
+                                <i class="fas fa-exclamation-circle"></i> Belum final
+                            </span>
+                        @else
+                            <span class="text-warning" title="Nomor tes belum di-generate">
+                                <i class="fas fa-clock"></i> Belum generate
+                            </span>
+                        @endif
+                    </td>
                     <td>{{ $pendaftar->nama_lengkap }}</td>
                     <td>
                         @if($pendaftar->jalurPendaftaran)
@@ -264,7 +284,7 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="6" class="text-center text-muted">Tidak ada data</td></tr>
+                <tr><td colspan="7" class="text-center text-muted">Tidak ada data</td></tr>
                 @endforelse
             </tbody>
         </table>
