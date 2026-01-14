@@ -5,9 +5,15 @@
 @section('content_header')
     <div class="d-flex justify-content-between align-items-center">
         <h1 class="m-0"><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
-        <ol class="breadcrumb m-0 bg-transparent p-0">
-            <li class="breadcrumb-item active">Dashboard</li>
-        </ol>
+        <div class="d-flex align-items-center">
+            <div class="live-datetime mr-3 text-right d-none d-md-block">
+                <div class="font-weight-bold text-primary" id="live-date" style="font-size: 14px;"></div>
+                <div class="text-muted" id="live-time" style="font-size: 20px; font-weight: 600;"></div>
+            </div>
+            <ol class="breadcrumb m-0 bg-transparent p-0">
+                <li class="breadcrumb-item active">Dashboard</li>
+            </ol>
+        </div>
     </div>
 @stop
 
@@ -351,5 +357,27 @@
         setTimeout(function() {
             $('.alert').fadeOut('slow');
         }, 5000);
+
+        // Live DateTime
+        function updateDateTime() {
+            const now = new Date();
+            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            
+            const dayName = days[now.getDay()];
+            const date = now.getDate();
+            const month = months[now.getMonth()];
+            const year = now.getFullYear();
+            
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            
+            document.getElementById('live-date').innerHTML = '<i class="far fa-calendar-alt mr-1"></i>' + dayName + ', ' + date + ' ' + month + ' ' + year;
+            document.getElementById('live-time').innerHTML = '<i class="far fa-clock mr-1"></i>' + hours + ':' + minutes + ':' + seconds + ' WIB';
+        }
+        
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
     </script>
 @stop

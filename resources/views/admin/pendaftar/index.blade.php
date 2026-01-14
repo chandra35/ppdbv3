@@ -88,6 +88,11 @@
         </div>
         <div class="col-12 col-sm-6">
             <div class="d-flex justify-content-sm-end align-items-center flex-wrap" style="gap: 8px;">
+                {{-- Live DateTime --}}
+                <div class="live-datetime text-right d-none d-md-block mr-2">
+                    <div class="text-primary" id="live-date" style="font-size: 12px;"></div>
+                    <div class="text-dark" id="live-time" style="font-size: 16px; font-weight: 600;"></div>
+                </div>
                 @if(auth()->user()->hasPermission('pendaftar.create'))
                 <a href="{{ route('admin.pendaftar.create') }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-user-plus mr-1"></i> Tambah Pendaftar
@@ -969,6 +974,28 @@
                 }
             });
         }
+        
+        // Live DateTime
+        function updateDateTime() {
+            const now = new Date();
+            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+            
+            const dayName = days[now.getDay()];
+            const date = now.getDate();
+            const month = months[now.getMonth()];
+            const year = now.getFullYear();
+            
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            
+            document.getElementById('live-date').innerHTML = '<i class="far fa-calendar-alt mr-1"></i>' + dayName + ', ' + date + ' ' + month + ' ' + year;
+            document.getElementById('live-time').innerHTML = '<i class="far fa-clock mr-1"></i>' + hours + ':' + minutes + ':' + seconds;
+        }
+        
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
     });
 </script>
 @stop
