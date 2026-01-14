@@ -131,6 +131,19 @@ class FinalisasiController extends Controller
     {
         $pendaftar = CalonSiswa::with(['jalurPendaftaran', 'gelombangPendaftaran', 'ortu', 'dokumen'])->findOrFail($id);
 
+        // Cek apakah sudah difinalisasi
+        if ($pendaftar->is_finalisasi) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pendaftar sudah difinalisasi sebelumnya',
+                'data' => [
+                    'nomor_registrasi' => $pendaftar->nomor_registrasi,
+                    'nomor_tes' => $pendaftar->nomor_tes,
+                    'tanggal_finalisasi' => $pendaftar->tanggal_finalisasi?->format('d/m/Y H:i')
+                ]
+            ], 422);
+        }
+
         // Validasi kelengkapan
         $errors = $this->validateKelengkapan($pendaftar);
         

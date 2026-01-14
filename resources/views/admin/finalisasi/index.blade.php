@@ -175,9 +175,11 @@
                         if($p->data_dokumen_completed) $kelengkapan += 34;
                         $isComplete = $kelengkapan >= 100;
                     @endphp
-                    <tr data-id="{{ $p->id }}" data-complete="{{ $isComplete ? '1' : '0' }}">
+                    <tr data-id="{{ $p->id }}" data-complete="{{ $isComplete && !$p->is_finalisasi ? '1' : '0' }}">
                         <td class="text-center">
-                            @if($isComplete)
+                            @if($p->is_finalisasi)
+                            <i class="fas fa-check-double text-success" title="Sudah difinalisasi"></i>
+                            @elseif($isComplete)
                             <input type="checkbox" class="check-item" value="{{ $p->id }}">
                             @else
                             <i class="fas fa-ban text-muted" title="Data belum lengkap"></i>
@@ -235,7 +237,11 @@
                             <a href="{{ route('admin.pendaftar.show', $p->id) }}" class="btn btn-xs btn-info" title="Detail">
                                 <i class="fas fa-eye"></i>
                             </a>
-                            @if($isComplete)
+                            @if($p->is_finalisasi)
+                            <span class="badge badge-success" title="Sudah difinalisasi">
+                                <i class="fas fa-check-double"></i> Final
+                            </span>
+                            @elseif($isComplete)
                             <button type="button" class="btn btn-xs btn-success btn-finalisasi" 
                                     data-id="{{ $p->id }}" data-nama="{{ $p->nama_lengkap }}" title="Finalisasi">
                                 <i class="fas fa-check"></i> Finalisasi
