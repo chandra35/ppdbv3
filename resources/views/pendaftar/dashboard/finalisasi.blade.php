@@ -308,6 +308,11 @@
                         </div>
                         <div class="flex-grow-1">
                             <h6 class="mb-0">{{ $req['label'] }}</h6>
+                            @if($key === 'verifikasi' && !$req['status'])
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i> Menunggu verifikasi berkas oleh panitia PPDB
+                            </small>
+                            @endif
                         </div>
                         <div>
                             <span class="badge badge-{{ $req['status'] ? 'success' : 'danger' }} px-3 py-2">
@@ -326,7 +331,12 @@
                     <p class="mb-2">Silakan lengkapi terlebih dahulu:</p>
                     <ul class="mb-0">
                         @foreach($requirements['missing'] as $missing)
-                        <li>{{ $missing }}</li>
+                        <li>
+                            {{ $missing }}
+                            @if($missing === 'Data Terverifikasi')
+                            <br><small class="text-muted"><i class="fas fa-clock"></i> Silakan menunggu panitia PPDB memverifikasi berkas Anda</small>
+                            @endif
+                        </li>
                         @endforeach
                     </ul>
                 </div>

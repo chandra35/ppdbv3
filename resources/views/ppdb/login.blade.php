@@ -804,12 +804,10 @@
                             <i class="fas fa-arrow-left"></i>
                             <span>Kembali ke Beranda</span>
                         </a>
-                        @if(Route::has('ppdb.register.step1'))
-                        <a href="{{ route('ppdb.register.step1') }}" class="footer-link register">
+                        <a href="{{ route('pendaftar.landing') }}" class="footer-link register">
                             <i class="fas fa-user-plus"></i>
                             <span>Daftar PPDB</span>
                         </a>
-                        @endif
                     </div>
                 </div>
             </div>

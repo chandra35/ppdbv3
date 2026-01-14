@@ -141,7 +141,7 @@ class StatistikController extends Controller
         
         // Get jalur and gelombang for filter dropdowns
         $jalurList = $tahunAktif ? JalurPendaftaran::where('tahun_pelajaran_id', $tahunAktif->id)->get() : collect();
-        $gelombangList = $tahunAktif ? GelombangPendaftaran::whereHas('jalurPendaftaran', function($q) use ($tahunAktif) {
+        $gelombangList = $tahunAktif ? GelombangPendaftaran::whereHas('jalur', function($q) use ($tahunAktif) {
             $q->where('tahun_pelajaran_id', $tahunAktif->id);
         })->get() : collect();
         

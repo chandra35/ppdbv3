@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>Kartu Tes - {{ $calonSiswa->nomor_tes }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         @page {
             size: A4 portrait;
@@ -15,6 +16,9 @@
             body {
                 background: #fff !important;
                 padding: 0 !important;
+            }
+            .card-wrapper {
+                box-shadow: none !important;
             }
         }
         * {
@@ -301,25 +305,48 @@
     </style>
 </head>
 <body>
-    {{-- Action Buttons (tidak muncul saat print) --}}
+    @if(!isset($isPdf) || !$isPdf)
+    {{-- Action Buttons (hanya muncul di preview, tidak di PDF) --}}
     <div class="action-buttons no-print">
         @if(isset($isAdmin) && $isAdmin)
-            <a href="{{ route('admin.pendaftar.show', $calonSiswa->id) }}" class="btn btn-back">← Kembali</a>
-            <button onclick="window.print()" class="btn btn-print">🖨️ Print Kartu</button>
-            <a href="{{ route('admin.pendaftar.cetak-ujian', $calonSiswa->id) }}" class="btn btn-download">⬇️ Download PDF</a>
+            <a href="{{ route('admin.pendaftar.show', $calonSiswa->id) }}" class="btn btn-back"><i class="fas fa-arrow-left"></i> Kembali</a>
+            <button onclick="window.print()" class="btn btn-print"><i class="fas fa-print"></i> Print Kartu</button>
+            <a href="{{ route('admin.pendaftar.cetak-ujian', $calonSiswa->id) }}" class="btn btn-download"><i class="fas fa-download"></i> Download PDF</a>
         @else
-            <a href="{{ route('pendaftar.dashboard') }}" class="btn btn-back">← Kembali</a>
-            <button onclick="window.print()" class="btn btn-print">🖨️ Print Kartu</button>
-            <a href="{{ route('pendaftar.cetak-kartu-ujian') }}" class="btn btn-download">⬇️ Download PDF</a>
+            <a href="{{ route('pendaftar.dashboard') }}" class="btn btn-back"><i class="fas fa-arrow-left"></i> Kembali</a>
+            <button onclick="window.print()" class="btn btn-print"><i class="fas fa-print"></i> Print Kartu</button>
+            <a href="{{ route('pendaftar.cetak-kartu-ujian') }}" class="btn btn-download"><i class="fas fa-download"></i> Download PDF</a>
         @endif
     </div>
+    @endif
     
     <div class="card-wrapper">
         <div class="card">
             {{-- Watermark Logo --}}
             <div class="watermark">
                 @if($sekolah && $sekolah->logo)
-                    <img src="{{ asset('storage/' . $sekolah->logo) }}" alt="Logo">
+                    @php
+                        // Check if logo is already absolute path or relative path
+                        $logoPath = $sekolah->logo;
+                        if (!file_exists($logoPath)) {
+                            // Try as relative path in storage
+                            $logoPath = storage_path('app/public/' . $sekolah->logo);
+                        }
+                        
+                        $logoBase64 = null;
+                        if (file_exists($logoPath)) {
+                            $logoData = file_get_contents($logoPath);
+                            $logoMime = @mime_content_type($logoPath) ?: 'image/png';
+                            $logoBase64 = 'data:' . $logoMime . ';base64,' . base64_encode($logoData);
+                        }
+                    @endphp
+                    @if(isset($isPdf) && $isPdf && $logoBase64)
+                        <img src="{{ $logoBase64 }}" alt="Logo">
+                    @elseif($logoBase64)
+                        <img src="{{ $logoBase64 }}" alt="Logo">
+                    @else
+                        <img src="{{ asset('storage/' . $sekolah->logo) }}" alt="Logo">
+                    @endif
                 @endif
             </div>
             
@@ -342,9 +369,20 @@
                             <div class="photo-box">
                                 @php
                                     $fotoDokumen = $calonSiswa->dokumen()->where('jenis_dokumen', 'foto')->first();
+                                    $fotoPath = $fotoDokumen ? storage_path('app/public/' . $fotoDokumen->file_path) : null;
                                     $fotoUrl = $fotoDokumen ? asset('storage/' . $fotoDokumen->file_path) : null;
+                                    
+                                    // For PDF, use base64 encoded image
+                                    $fotoBase64 = null;
+                                    if ($fotoPath && file_exists($fotoPath)) {
+                                        $fotoData = file_get_contents($fotoPath);
+                                        $fotoMime = mime_content_type($fotoPath);
+                                        $fotoBase64 = 'data:' . $fotoMime . ';base64,' . base64_encode($fotoData);
+                                    }
                                 @endphp
-                                @if($fotoUrl)
+                                @if(isset($isPdf) && $isPdf && $fotoBase64)
+                                    <img src="{{ $fotoBase64 }}" alt="Foto">
+                                @elseif($fotoUrl && (!isset($isPdf) || !$isPdf))
                                     <img src="{{ $fotoUrl }}" alt="Foto">
                                 @else
                                     <div class="no-photo">Pas Foto</div>
@@ -383,7 +421,7 @@
                             <div class="password-box">
                                 <table cellpadding="0" cellspacing="0">
                                     <tr>
-                                        <td class="password-label">🔑 Password:</td>
+                                        <td class="password-label"><i class="fas fa-key"></i> Password:</td>
                                         <td class="password-value">{{ $password ?? '********' }}</td>
                                     </tr>
                                 </table>
@@ -405,7 +443,9 @@
             </div>
         </div>
         
-        <div class="cut-guide no-print">✂️ Gunting mengikuti tepi kartu</div>
+        @if(!isset($isPdf) || !$isPdf)
+        <div class="cut-guide no-print"><i class="fas fa-cut"></i> Gunting mengikuti tepi kartu</div>
+        @endif
     </div>
 </body>
 </html>

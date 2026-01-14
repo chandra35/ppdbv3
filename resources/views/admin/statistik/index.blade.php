@@ -107,6 +107,26 @@
     </div>
 </div>
 
+{{-- Quick Links - Statistik Detail --}}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="d-flex flex-wrap justify-content-center" style="gap: 10px;">
+            <a href="{{ route('admin.statistik.geografis') }}" class="btn btn-outline-primary">
+                <i class="fas fa-map-marked-alt"></i> Sebaran Geografis
+            </a>
+            <a href="{{ route('admin.statistik.asal-sekolah') }}" class="btn btn-outline-success">
+                <i class="fas fa-school"></i> Asal Sekolah
+            </a>
+            <a href="{{ route('admin.statistik.ekonomi') }}" class="btn btn-outline-info">
+                <i class="fas fa-wallet"></i> Status Ekonomi
+            </a>
+            <a href="{{ route('admin.statistik.dokumen-prestasi') }}" class="btn btn-outline-warning">
+                <i class="fas fa-trophy"></i> Dokumen Prestasi
+            </a>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     {{-- Chart By Jalur --}}
     <div class="col-lg-6">
@@ -215,41 +235,6 @@
     </div>
 </div>
 
-{{-- Quick Links --}}
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-link"></i> Statistik Detail</h3>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3 col-6 mb-2">
-                        <a href="{{ route('admin.statistik.geografis') }}" class="btn btn-outline-primary btn-block">
-                            <i class="fas fa-map-marked-alt"></i> Sebaran Geografis
-                        </a>
-                    </div>
-                    <div class="col-md-3 col-6 mb-2">
-                        <a href="{{ route('admin.statistik.asal-sekolah') }}" class="btn btn-outline-success btn-block">
-                            <i class="fas fa-school"></i> Asal Sekolah
-                        </a>
-                    </div>
-                    <div class="col-md-3 col-6 mb-2">
-                        <a href="{{ route('admin.statistik.ekonomi') }}" class="btn btn-outline-info btn-block">
-                            <i class="fas fa-wallet"></i> Status Ekonomi
-                        </a>
-                    </div>
-                    <div class="col-md-3 col-6 mb-2">
-                        <a href="{{ route('admin.statistik.dokumen-prestasi') }}" class="btn btn-outline-warning btn-block">
-                            <i class="fas fa-trophy"></i> Dokumen Prestasi
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 {{-- Filter & Daftar Pendaftar --}}
 <div class="card">
     <div class="card-header">
@@ -321,7 +306,13 @@
                 @forelse($pendaftarList as $i => $p)
                 <tr>
                     <td>{{ ($pendaftarList->currentPage() - 1) * $pendaftarList->perPage() + $i + 1 }}</td>
-                    <td><code>{{ $p->nomor_pendaftaran }}</code></td>
+                    <td>
+                        @if($p->nomor_pendaftaran)
+                            <code>{{ $p->nomor_pendaftaran }}</code>
+                        @else
+                            <span class="text-muted"><i class="fas fa-clock"></i> Belum generate</span>
+                        @endif
+                    </td>
                     <td>{{ $p->nama_lengkap }}</td>
                     <td>
                         @if($p->jalurPendaftaran)

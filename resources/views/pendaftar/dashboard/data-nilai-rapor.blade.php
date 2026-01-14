@@ -214,6 +214,25 @@
         gap: 8px;
         flex-wrap: wrap;
     }
+    
+    /* Camera Styles for Rapor */
+    .camera-container-rapor {
+        position: relative;
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+    .camera-container-rapor video {
+        width: 100%;
+        border-radius: 8px;
+        border: 2px solid #667eea;
+    }
+    .camera-preview-result-rapor {
+        max-width: 100%;
+        max-height: 250px;
+        border-radius: 8px;
+        border: 2px solid #28a745;
+    }
 </style>
 @endsection
 
@@ -348,8 +367,7 @@
                                             @else
                                                 @if(!$calonSiswa->is_finalisasi)
                                                 <div class="upload-btn-wrapper">
-                                                    <input type="file" id="rapor_file_{{ $semester }}" accept=".pdf,.jpg,.jpeg,.png" onchange="uploadRapor({{ $semester }})" style="display: none;">
-                                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="$('#rapor_file_{{ $semester }}').click()">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="openUploadRaporModal({{ $semester }})">
                                                         <i class="fas fa-upload"></i> Upload
                                                     </button>
                                                 </div>
@@ -471,8 +489,7 @@
                                 @else
                                     @if(!$calonSiswa->is_finalisasi)
                                     <div class="upload-btn-wrapper">
-                                        <input type="file" id="mobile_rapor_file_{{ $semester }}" accept=".pdf,.jpg,.jpeg,.png" onchange="uploadRapor({{ $semester }}, 'mobile')" style="display: none;">
-                                        <button type="button" class="btn btn-block btn-outline-primary" onclick="$('#mobile_rapor_file_{{ $semester }}').click()">
+                                        <button type="button" class="btn btn-block btn-outline-primary" onclick="openUploadRaporModal({{ $semester }})">
                                             <i class="fas fa-upload mr-1"></i> Upload Rapor
                                         </button>
                                     </div>
@@ -560,6 +577,93 @@
                     <i class="fas fa-info-circle mr-1"></i>
                     Nilai akhir = (Rata-rata Rapor × 30%) + (Nilai CBT × 40%) + (Nilai Wawancara × 30%)
                 </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Modal Upload Rapor dengan Kamera --}}
+<div class="modal fade" id="uploadRaporModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-upload mr-2"></i>
+                    Upload Rapor <span id="raporSemesterLabel">Semester 1</span>
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="currentSemester" value="">
+                
+                {{-- Source Selection --}}
+                <div class="form-group">
+                    <label class="font-weight-bold">Sumber File</label>
+                    <div class="d-flex">
+                        <div class="custom-control custom-radio mr-4">
+                            <input type="radio" id="raporSourceFile" name="raporUploadSource" class="custom-control-input" value="file" checked>
+                            <label class="custom-control-label" for="raporSourceFile">
+                                <i class="fas fa-file-upload mr-1"></i> Pilih File
+                            </label>
+                        </div>
+                        <div class="custom-control custom-radio">
+                            <input type="radio" id="raporSourceCamera" name="raporUploadSource" class="custom-control-input" value="camera">
+                            <label class="custom-control-label" for="raporSourceCamera">
+                                <i class="fas fa-camera mr-1"></i> Kamera
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                {{-- File Input Section --}}
+                <div id="raporFileSection">
+                    <div class="form-group">
+                        <label>Pilih File Rapor</label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="raporFileInput" accept=".pdf,.jpg,.jpeg,.png">
+                            <label class="custom-file-label" for="raporFileInput">Pilih file...</label>
+                        </div>
+                        <small class="text-muted">Format: PDF, JPG, JPEG, PNG. Maks: 5MB</small>
+                    </div>
+                    <div id="raporFilePreview" class="text-center" style="display: none;">
+                        <img id="raporPreviewImage" src="" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+                    </div>
+                </div>
+                
+                {{-- Camera Section --}}
+                <div id="raporCameraSection" style="display: none;">
+                    <div class="camera-container-rapor mb-3">
+                        <video id="raporCameraVideo" autoplay playsinline></video>
+                        <canvas id="raporCameraCanvas" style="display: none;"></canvas>
+                    </div>
+                    <div class="text-center mb-3" id="raporCameraControls" style="display: none;">
+                        <button type="button" class="btn btn-primary btn-lg" id="btnCaptureRapor">
+                            <i class="fas fa-camera"></i> Ambil Foto
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-lg" id="btnRetakeRapor" style="display: none;">
+                            <i class="fas fa-redo"></i> Ulangi
+                        </button>
+                    </div>
+                    <div class="text-center" id="raporCameraStartBtn">
+                        <button type="button" class="btn btn-primary" id="btnStartRaporCamera">
+                            <i class="fas fa-video"></i> Mulai Kamera
+                        </button>
+                    </div>
+                    <div id="raporCapturedPreview" class="text-center mt-3" style="display: none;">
+                        <p class="text-success mb-2"><i class="fas fa-check-circle"></i> Foto berhasil diambil</p>
+                        <img id="raporCapturedImage" src="" class="camera-preview-result-rapor">
+                    </div>
+                </div>
+                
+                <input type="hidden" id="raporCameraCaptured" value="">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="btnUploadRapor" disabled>
+                    <i class="fas fa-upload mr-1"></i> Upload
+                </button>
             </div>
         </div>
     </div>
@@ -791,8 +895,7 @@ function deleteRapor(semester) {
 function resetUploadSection(semester) {
     const uploadHtml = `
         <div class="upload-btn-wrapper">
-            <input type="file" id="rapor_file_${semester}" accept=".pdf,.jpg,.jpeg,.png" onchange="uploadRapor(${semester})" style="display: none;">
-            <button type="button" class="btn btn-sm btn-outline-primary" onclick="$('#rapor_file_${semester}').click()">
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="openUploadRaporModal(${semester})">
                 <i class="fas fa-upload"></i> Upload
             </button>
         </div>
@@ -801,13 +904,231 @@ function resetUploadSection(semester) {
     
     const mobileUploadHtml = `
         <div class="upload-btn-wrapper">
-            <input type="file" id="mobile_rapor_file_${semester}" accept=".pdf,.jpg,.jpeg,.png" onchange="uploadRapor(${semester}, 'mobile')" style="display: none;">
-            <button type="button" class="btn btn-block btn-outline-primary" onclick="$('#mobile_rapor_file_${semester}').click()">
+            <button type="button" class="btn btn-block btn-outline-primary" onclick="openUploadRaporModal(${semester})">
                 <i class="fas fa-upload mr-1"></i> Upload Rapor
             </button>
         </div>
     `;
     $(`#mobile_rapor_upload_${semester}`).html(mobileUploadHtml);
 }
+
+// ================================
+// UPLOAD RAPOR MODAL WITH CAMERA
+// ================================
+let raporCameraStream = null;
+
+function openUploadRaporModal(semester) {
+    $('#currentSemester').val(semester);
+    $('#raporSemesterLabel').text('Semester ' + semester);
+    
+    // Reset modal state
+    $('#raporSourceFile').prop('checked', true);
+    $('#raporFileSection').show();
+    $('#raporCameraSection').hide();
+    $('#raporFileInput').val('');
+    $('.custom-file-label').text('Pilih file...');
+    $('#raporFilePreview').hide();
+    $('#raporCameraCaptured').val('');
+    $('#btnUploadRapor').prop('disabled', true);
+    stopRaporCamera();
+    
+    $('#uploadRaporModal').modal('show');
+}
+
+// Toggle file/camera source
+$('input[name="raporUploadSource"]').on('change', function() {
+    const source = $(this).val();
+    if (source === 'file') {
+        $('#raporFileSection').show();
+        $('#raporCameraSection').hide();
+        stopRaporCamera();
+        $('#raporCameraCaptured').val('');
+    } else {
+        $('#raporFileSection').hide();
+        $('#raporCameraSection').show();
+        $('#raporFileInput').val('');
+        $('.custom-file-label').text('Pilih file...');
+        $('#raporFilePreview').hide();
+        $('#btnUploadRapor').prop('disabled', true);
+    }
+});
+
+// File input change
+$('#raporFileInput').on('change', function() {
+    const file = this.files[0];
+    if (file) {
+        if (file.size > 5 * 1024 * 1024) {
+            toastr.error('Ukuran file maksimal 5MB');
+            this.value = '';
+            return;
+        }
+        
+        $('.custom-file-label').text(file.name);
+        $('#btnUploadRapor').prop('disabled', false);
+        
+        // Preview for images
+        if (file.type.match(/image\/(jpg|jpeg|png)/i)) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $('#raporPreviewImage').attr('src', e.target.result);
+                $('#raporFilePreview').show();
+            };
+            reader.readAsDataURL(file);
+        } else {
+            $('#raporFilePreview').hide();
+        }
+    }
+});
+
+// Camera functions
+function stopRaporCamera() {
+    if (raporCameraStream) {
+        raporCameraStream.getTracks().forEach(track => track.stop());
+        raporCameraStream = null;
+    }
+    $('#raporCameraVideo')[0].srcObject = null;
+    $('#raporCameraControls').hide();
+    $('#raporCameraStartBtn').show();
+    $('#raporCapturedPreview').hide();
+    $('#btnCaptureRapor').show();
+    $('#btnRetakeRapor').hide();
+}
+
+$('#btnStartRaporCamera').on('click', async function() {
+    try {
+        const constraints = {
+            video: { 
+                facingMode: 'environment',
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            }
+        };
+        raporCameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+        $('#raporCameraVideo')[0].srcObject = raporCameraStream;
+        $('#raporCameraStartBtn').hide();
+        $('#raporCameraControls').show();
+        $('#btnCaptureRapor').show();
+        $('#btnRetakeRapor').hide();
+    } catch (err) {
+        console.error('Camera error:', err);
+        toastr.error('Gagal mengakses kamera. Pastikan izin kamera diberikan.');
+    }
+});
+
+$('#btnCaptureRapor').on('click', function() {
+    const video = $('#raporCameraVideo')[0];
+    const canvas = $('#raporCameraCanvas')[0];
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    
+    const imageData = canvas.toDataURL('image/jpeg', 0.85);
+    $('#raporCameraCaptured').val(imageData);
+    $('#raporCapturedImage').attr('src', imageData);
+    $('#raporCapturedPreview').show();
+    
+    stopRaporCamera();
+    $('#raporCameraStartBtn').hide();
+    $('#raporCameraControls').show();
+    $('#btnCaptureRapor').hide();
+    $('#btnRetakeRapor').show();
+    
+    $('#btnUploadRapor').prop('disabled', false);
+});
+
+$('#btnRetakeRapor').on('click', function() {
+    $('#raporCameraCaptured').val('');
+    $('#raporCapturedPreview').hide();
+    $('#btnUploadRapor').prop('disabled', true);
+    $('#raporCameraStartBtn').show();
+    $('#raporCameraControls').hide();
+});
+
+// Upload button click
+$('#btnUploadRapor').on('click', function() {
+    const semester = $('#currentSemester').val();
+    const source = $('input[name="raporUploadSource"]:checked').val();
+    
+    const formData = new FormData();
+    formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+    
+    if (source === 'file') {
+        const file = $('#raporFileInput')[0].files[0];
+        if (!file) {
+            toastr.error('Pilih file terlebih dahulu');
+            return;
+        }
+        formData.append('file', file);
+    } else {
+        const capturedImage = $('#raporCameraCaptured').val();
+        if (!capturedImage) {
+            toastr.error('Ambil foto terlebih dahulu');
+            return;
+        }
+        formData.append('camera_captured', capturedImage);
+    }
+    
+    const btn = $(this);
+    btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Uploading...');
+    
+    $.ajax({
+        url: `{{ url('pendaftar/nilai-rapor/upload-rapor') }}/${semester}`,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            if (response.success) {
+                toastr.success(response.message);
+                $('#uploadRaporModal').modal('hide');
+                
+                // Refresh the upload section
+                const fileHtml = `
+                    <div class="uploaded-file">
+                        <a href="${response.dokumen.file_url}" target="_blank" class="btn btn-sm btn-outline-success mb-1">
+                            <i class="fas fa-file-pdf"></i> ${response.dokumen.nama_file.substring(0, 15)}...
+                        </a>
+                        <span class="badge badge-warning">Pending</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteRapor(${semester})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                $(`#rapor_upload_${semester}`).html(fileHtml);
+                
+                const mobileFileHtml = `
+                    <div class="uploaded-file-mobile d-flex align-items-center justify-content-between">
+                        <a href="${response.dokumen.file_url}" target="_blank" class="btn btn-sm btn-outline-success">
+                            <i class="fas fa-file-pdf"></i> Lihat File
+                        </a>
+                        <span class="badge badge-warning">Pending</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteRapor(${semester})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                $(`#mobile_rapor_upload_${semester}`).html(mobileFileHtml);
+            } else {
+                toastr.error(response.message);
+            }
+        },
+        error: function(xhr) {
+            let errorMessage = 'Terjadi kesalahan saat upload file';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMessage = xhr.responseJSON.message;
+            }
+            toastr.error(errorMessage);
+        },
+        complete: function() {
+            btn.prop('disabled', false).html('<i class="fas fa-upload mr-1"></i> Upload');
+        }
+    });
+});
+
+// Stop camera when modal closes
+$('#uploadRaporModal').on('hidden.bs.modal', function() {
+    stopRaporCamera();
+});
 </script>
 @endsection

@@ -284,8 +284,11 @@ class PendaftarController extends Controller
                 'name' => $request->nama_lengkap,
                 'email' => $request->email ?? $request->nisn . '@ppdb.local',
                 'password' => $hashedPassword,
-                'plain_password' => $password, // Simpan sementara untuk dicetak
             ]);
+            
+            // Store encrypted password for printing kartu ujian
+            $user->readable_password = $password;
+            $user->save();
 
             // Assign pendaftar role
             $pendaftarRole = Role::where('name', 'pendaftar')->first();
@@ -1068,10 +1071,9 @@ class PendaftarController extends Controller
         // Generate random password
         $newPassword = $this->generateSecurePassword(8);
         
-        $pendaftar->user->update([
-            'password' => Hash::make($newPassword),
-            'plain_password' => $newPassword, // Store plain password temporarily for admin to see
-        ]);
+        $pendaftar->user->password = Hash::make($newPassword);
+        $pendaftar->user->readable_password = $newPassword;
+        $pendaftar->user->save();
         
         ActivityLog::log('update', "Reset password pendaftar: {$pendaftar->nama_lengkap}");
         
@@ -1105,7 +1107,7 @@ class PendaftarController extends Controller
         
         return response()->json([
             'success' => true,
-            'password' => $pendaftar->user->plain_password ?? 'Password tidak tersedia (gunakan reset password)',
+            'password' => $pendaftar->user->readable_password ?? 'Password tidak tersedia (gunakan reset password)',
             'email' => $pendaftar->user->email
         ]);
     }
@@ -1292,11 +1294,12 @@ class PendaftarController extends Controller
             'logo' => $sekolahSettings->logo ?? null,
         ];
         
-        $password = $calonSiswa->user->plain_password ?? '********';
+        $password = $calonSiswa->user->readable_password ?? '********';
         $isAdmin = true;
         
         // Return HTML view for preview (not PDF)
-        return view('pendaftar.pdf.kartu-ujian', compact('calonSiswa', 'sekolah', 'password', 'isAdmin'));
+        return view('pendaftar.pdf.kartu-ujian', compact('calonSiswa', 'sekolah', 'password', 'isAdmin'))
+            ->with('isPdf', false);
     }
 
     /**
@@ -1334,9 +1337,11 @@ class PendaftarController extends Controller
             'logo' => $this->getSchoolLogo(),
         ];
         
-        $password = $calonSiswa->user->plain_password ?? '********';
+        $password = $calonSiswa->user->readable_password ?? '********';
         
-        $pdf = Pdf::loadView('pendaftar.pdf.kartu-ujian', compact('calonSiswa', 'sekolah', 'password', 'kopHtml'))
+        $isPdf = true;
+        
+        $pdf = Pdf::loadView('pendaftar.pdf.kartu-ujian', compact('calonSiswa', 'sekolah', 'password', 'kopHtml', 'isPdf'))
             ->setPaper([0, 0, 298, 421], 'landscape');
         
         $filename = 'kartu-ujian-' . preg_replace('/[\/\\\:*?"<>|]/', '-', $calonSiswa->nomor_tes ?? $calonSiswa->nomor_registrasi) . '.pdf';

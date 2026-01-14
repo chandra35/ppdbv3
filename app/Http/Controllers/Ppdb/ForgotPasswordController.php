@@ -73,7 +73,7 @@ class ForgotPasswordController extends Controller
 
         // Update user password
         $user->password = Hash::make($newPassword);
-        $user->plain_password = $newPassword; // Store plain for reference
+        $user->readable_password = $newPassword; // Store encrypted for reference
         $user->save();
 
         // Get settings for message
@@ -83,7 +83,7 @@ class ForgotPasswordController extends Controller
         $result = $waService->sendPasswordResetNotification([
             'phone' => $phone,
             'nama_siswa' => $calonSiswa->nama_lengkap,
-            'nama_sekolah' => $settings->nama_sekolah ?? config('app.name'),
+            'nama_sekolah' => \App\Models\SekolahSettings::getNamaSekolah(),
             'username' => $user->username,
             'password' => $newPassword,
             'url_login' => route('pendaftar.login'),

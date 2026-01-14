@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Dashboard') - PPDB {{ config('app.name') }}</title>
+    <title>@yield('title', 'Dashboard') - PPDB {{ \App\Models\SekolahSettings::getNamaSekolah() }}</title>
 
     <!-- Google Font: Source Sans Pro -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
@@ -89,10 +89,21 @@
 
         <!-- Sidebar -->
         <div class="sidebar">
+            @php
+                $calonSiswaProfile = Auth::user()->calonSiswa;
+                $fotoProfileAlt = $calonSiswaProfile ? $calonSiswaProfile->dokumen()->where('jenis_dokumen', 'foto')->first() : null;
+                $fotoProfileAltUrl = $fotoProfileAlt ? asset('storage/' . $fotoProfileAlt->file_path) : null;
+            @endphp
             <!-- Sidebar user panel -->
             <div class="user-panel mt-3 pb-3 mb-3 d-flex">
                 <div class="image">
-                    <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=007bff&color=fff" class="img-circle elevation-2" alt="User Image">
+                    @if($fotoProfileAltUrl)
+                        <img src="{{ $fotoProfileAltUrl }}" class="img-circle elevation-2" alt="User Image"
+                             style="width: 34px; height: 34px; object-fit: cover;"
+                             onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=007bff&color=fff'">
+                    @else
+                        <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=007bff&color=fff" class="img-circle elevation-2" alt="User Image">
+                    @endif
                 </div>
                 <div class="info">
                     <a href="{{ route('pendaftar.profile') }}" class="d-block">{{ Str::limit(Auth::user()->name, 20) }}</a>
@@ -225,7 +236,7 @@
 
     <!-- Footer -->
     <footer class="main-footer">
-        <strong>Copyright &copy; {{ date('Y') }} <a href="#">{{ config('app.name') }}</a>.</strong>
+        <strong>Copyright &copy; {{ date('Y') }} <a href="#">{{ \App\Models\SekolahSettings::getNamaSekolah() }}</a>.</strong>
         All rights reserved.
         <div class="float-right d-none d-sm-inline-block">
             <b>PPDB</b> v1.0
@@ -277,7 +288,7 @@
     $sekolahSettings = \App\Models\SekolahSettings::first();
     $fotoDokumen = $calonSiswa->dokumen()->where('jenis_dokumen', 'foto')->first();
     $fotoUrl = $fotoDokumen ? asset('storage/' . $fotoDokumen->file_path) : null;
-    $password = $calonSiswa->user->plain_password ?? '********';
+    $password = $calonSiswa->user->readable_password ?? '********';
 @endphp
 <div class="modal fade" id="kartuUjianModal" tabindex="-1" role="dialog" aria-labelledby="kartuUjianModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 450px;">

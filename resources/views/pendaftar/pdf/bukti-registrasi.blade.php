@@ -370,7 +370,7 @@
                     </tr>
                     <tr>
                         <td>Pekerjaan Ayah</td>
-                        <td>{{ ucwords($calonSiswa->ortu->pekerjaan_ayah ?? '-') }}</td>
+                        <td>{{ \App\Models\CalonOrtu::PEKERJAAN[$calonSiswa->ortu->pekerjaan_ayah ?? ''] ?? ucwords(str_replace('_', ' ', $calonSiswa->ortu->pekerjaan_ayah ?? '-')) }}</td>
                     </tr>
                     <tr>
                         <td>No. HP Ayah</td>
@@ -382,7 +382,7 @@
                     </tr>
                     <tr>
                         <td>Pekerjaan Ibu</td>
-                        <td>{{ ucwords($calonSiswa->ortu->pekerjaan_ibu ?? '-') }}</td>
+                        <td>{{ \App\Models\CalonOrtu::PEKERJAAN[$calonSiswa->ortu->pekerjaan_ibu ?? ''] ?? ucwords(str_replace('_', ' ', $calonSiswa->ortu->pekerjaan_ibu ?? '-')) }}</td>
                     </tr>
                     <tr>
                         <td>No. HP Ibu</td>

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>PPDB Online - {{ config('app.name') }}</title>
+    <title>PPDB Online - {{ \App\Models\SekolahSettings::getNamaSekolah() }}</title>
     
     <!-- Google Font -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
@@ -624,7 +624,7 @@
     <nav class="navbar">
         <a href="{{ url('/') }}" class="navbar-brand">
             <i class="fas fa-graduation-cap"></i>
-            PPDB {{ config('app.name') }}
+            PPDB {{ \App\Models\SekolahSettings::getNamaSekolah() }}
         </a>
         <div class="navbar-nav">
             <a href="{{ route('pendaftar.login') }}" class="nav-link btn-outline">
@@ -902,7 +902,7 @@
 
     <!-- Footer -->
     <footer class="footer">
-        <p>&copy; {{ date('Y') }} PPDB {{ config('app.name') }}. All rights reserved.</p>
+        <p>&copy; {{ date('Y') }} PPDB {{ \App\Models\SekolahSettings::getNamaSekolah() }}. All rights reserved.</p>
     </footer>
 
     <!-- Scripts -->

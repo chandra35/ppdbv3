@@ -186,7 +186,7 @@ class WhatsAppService
     {
         $response = Http::withHeaders([
             'Authorization' => $this->settings->api_key,
-        ])->post($this->settings->api_url, [
+        ])->withoutVerifying()->post($this->settings->api_url, [
             'target' => $phone,
             'message' => $message,
         ]);
@@ -331,7 +331,7 @@ class WhatsAppService
     {
         $response = Http::withHeaders([
             'Authorization' => $this->settings->api_key,
-        ])->post('https://api.fonnte.com/validate', [
+        ])->withoutVerifying()->post('https://api.fonnte.com/validate', [
             'target' => $this->settings->sender_number,
         ]);
 

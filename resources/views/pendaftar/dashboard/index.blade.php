@@ -270,10 +270,20 @@
     <!-- Sidebar Info -->
     <div class="col-lg-4">
         <!-- Profile Card -->
+        @php
+            $fotoProfileDashboard = $calonSiswa->dokumen()->where('jenis_dokumen', 'foto')->first();
+            $fotoProfileDashboardUrl = $fotoProfileDashboard ? asset('storage/' . $fotoProfileDashboard->file_path) : null;
+        @endphp
         <div class="card">
             <div class="card-body text-center">
-                <img src="https://ui-avatars.com/api/?name={{ urlencode($calonSiswa->nama_lengkap) }}&size=150&background=667eea&color=fff" 
-                     class="rounded-circle mb-3" style="width: 100px; height: 100px;">
+                @if($fotoProfileDashboardUrl)
+                    <img src="{{ $fotoProfileDashboardUrl }}" 
+                         class="rounded-circle mb-3" style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #667eea;"
+                         onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($calonSiswa->nama_lengkap) }}&size=150&background=667eea&color=fff'">
+                @else
+                    <img src="https://ui-avatars.com/api/?name={{ urlencode($calonSiswa->nama_lengkap) }}&size=150&background=667eea&color=fff" 
+                         class="rounded-circle mb-3" style="width: 100px; height: 100px;">
+                @endif
                 <h5 class="mb-1">{{ $calonSiswa->nama_lengkap }}</h5>
                 <p class="text-muted mb-2">NISN: {{ $calonSiswa->nisn }}</p>
                 @if($calonSiswa->nisn_valid)

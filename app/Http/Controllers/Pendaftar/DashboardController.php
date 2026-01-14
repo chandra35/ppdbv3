@@ -101,7 +101,7 @@ class DashboardController extends Controller
             'kecamatan_id_siswa' => 'required|exists:indonesia_districts,code',
             'kelurahan_id_siswa' => 'required|exists:indonesia_villages,code',
             'kodepos_siswa' => 'nullable|string|max:10',
-            'nomor_hp' => 'required|string|regex:/^(0|62|\+62)[0-9]{9,13}$/|max:20',
+            'nomor_hp' => ['required', 'string', 'max:20', 'regex:#^(0|62|\+62)[0-9]{9,13}$#'],
             'email' => 'nullable|email|max:255',
             'nama_sekolah_asal' => 'nullable|string|max:255',
         ], [
@@ -702,16 +702,6 @@ class DashboardController extends Controller
             return response()->json(['success' => false, 'message' => 'Semester tidak valid'], 400);
         }
 
-        // Validate file
-        $request->validate([
-            'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120', // Max 5MB
-        ], [
-            'file.required' => 'File rapor harus diupload',
-            'file.mimes' => 'Format file harus PDF, JPG, JPEG, atau PNG',
-            'file.max' => 'Ukuran file maksimal 5MB',
-        ]);
-
-        $file = $request->file('file');
         $jenisDokumen = 'rapor_sem_' . $semester;
         
         // Delete existing file if any
@@ -721,26 +711,76 @@ class DashboardController extends Controller
             $existingDokumen->delete();
         }
 
-        // Generate filename
-        $extension = $file->getClientOriginalExtension();
-        $filename = 'rapor_sem' . $semester . '_' . $calonSiswa->nisn . '_' . time() . '.' . $extension;
-        
-        // Store file
-        $path = $file->storeAs('dokumen_pendaftar/' . $calonSiswa->id, $filename, 'public');
+        // Check if upload from camera
+        if ($request->filled('camera_captured')) {
+            $imageData = $request->input('camera_captured');
+            
+            // Validate base64 image
+            if (!preg_match('/^data:image\/(jpeg|jpg|png);base64,/', $imageData)) {
+                return response()->json(['success' => false, 'message' => 'Format gambar tidak valid'], 400);
+            }
+            
+            // Decode base64 image
+            $imageData = preg_replace('/^data:image\/\w+;base64,/', '', $imageData);
+            $imageData = base64_decode($imageData);
+            
+            if ($imageData === false) {
+                return response()->json(['success' => false, 'message' => 'Gagal memproses gambar'], 400);
+            }
+            
+            // Generate filename
+            $filename = 'rapor_sem' . $semester . '_' . $calonSiswa->nisn . '_' . time() . '.jpg';
+            $path = 'dokumen_pendaftar/' . $calonSiswa->id . '/' . $filename;
+            
+            // Store file
+            Storage::disk('public')->put($path, $imageData);
+            
+            // Create dokumen record
+            $dokumen = CalonDokumen::create([
+                'calon_siswa_id' => $calonSiswa->id,
+                'jenis_dokumen' => $jenisDokumen,
+                'nama_dokumen' => CalonDokumen::JENIS_DOKUMEN[$jenisDokumen] ?? 'Rapor Semester ' . $semester,
+                'nama_file' => 'rapor_semester_' . $semester . '_camera.jpg',
+                'file_path' => $path,
+                'file_size' => strlen($imageData),
+                'mime_type' => 'image/jpeg',
+                'storage_disk' => 'public',
+                'is_required' => false,
+                'status_verifikasi' => 'pending',
+            ]);
+        } else {
+            // Validate file upload
+            $request->validate([
+                'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120', // Max 5MB
+            ], [
+                'file.required' => 'File rapor harus diupload',
+                'file.mimes' => 'Format file harus PDF, JPG, JPEG, atau PNG',
+                'file.max' => 'Ukuran file maksimal 5MB',
+            ]);
 
-        // Create dokumen record
-        $dokumen = CalonDokumen::create([
-            'calon_siswa_id' => $calonSiswa->id,
-            'jenis_dokumen' => $jenisDokumen,
-            'nama_dokumen' => CalonDokumen::JENIS_DOKUMEN[$jenisDokumen],
-            'nama_file' => $file->getClientOriginalName(),
-            'file_path' => $path,
-            'file_size' => $file->getSize(),
-            'mime_type' => $file->getMimeType(),
-            'storage_disk' => 'public',
-            'is_required' => false,
-            'status_verifikasi' => 'pending',
-        ]);
+            $file = $request->file('file');
+
+            // Generate filename
+            $extension = $file->getClientOriginalExtension();
+            $filename = 'rapor_sem' . $semester . '_' . $calonSiswa->nisn . '_' . time() . '.' . $extension;
+            
+            // Store file
+            $path = $file->storeAs('dokumen_pendaftar/' . $calonSiswa->id, $filename, 'public');
+
+            // Create dokumen record
+            $dokumen = CalonDokumen::create([
+                'calon_siswa_id' => $calonSiswa->id,
+                'jenis_dokumen' => $jenisDokumen,
+                'nama_dokumen' => CalonDokumen::JENIS_DOKUMEN[$jenisDokumen] ?? 'Rapor Semester ' . $semester,
+                'nama_file' => $file->getClientOriginalName(),
+                'file_path' => $path,
+                'file_size' => $file->getSize(),
+                'mime_type' => $file->getMimeType(),
+                'storage_disk' => 'public',
+                'is_required' => false,
+                'status_verifikasi' => 'pending',
+            ]);
+        }
 
         return response()->json([
             'success' => true,
@@ -917,10 +957,11 @@ class DashboardController extends Controller
             'logo' => $sekolahSettings->logo ?? null,
         ];
         
-        $password = $user->plain_password ?? '********';
+        $password = $user->readable_password ?? '********';
         
         // Return HTML view for preview (not PDF)
-        return view('pendaftar.pdf.kartu-ujian', compact('calonSiswa', 'sekolah', 'password'));
+        return view('pendaftar.pdf.kartu-ujian', compact('calonSiswa', 'sekolah', 'password'))
+            ->with('isPdf', false);
     }
 
     /**
@@ -955,9 +996,11 @@ class DashboardController extends Controller
             'logo' => $this->getSchoolLogo(),
         ];
         
-        $password = $user->plain_password ?? '********';
+        $password = $user->readable_password ?? '********';
         
-        $pdf = Pdf::loadView('pendaftar.pdf.kartu-ujian', compact('calonSiswa', 'sekolah', 'password', 'kopHtml'))
+        $isPdf = true;
+        
+        $pdf = Pdf::loadView('pendaftar.pdf.kartu-ujian', compact('calonSiswa', 'sekolah', 'password', 'kopHtml', 'isPdf'))
             ->setPaper([0, 0, 298, 421], 'landscape');
         
         $filename = 'kartu-ujian-' . preg_replace('/[\/\\\:*?"<>|]/', '-', $calonSiswa->nomor_tes) . '.pdf';
@@ -1451,10 +1494,6 @@ class DashboardController extends Controller
             'nilai_rapor' => [
                 'status' => $progress['nilai_rapor'] >= 100,
                 'label' => 'Nilai Rapor Lengkap'
-            ],
-            'verifikasi' => [
-                'status' => $calonSiswa->status_verifikasi === 'verified',
-                'label' => 'Data Terverifikasi'
             ]
         ];
 
@@ -1465,6 +1504,12 @@ class DashboardController extends Controller
                 'label' => 'Pilihan Program Dipilih'
             ];
         }
+
+        // Add verifikasi check after pilihan program
+        $requirements['verifikasi'] = [
+            'status' => $calonSiswa->status_verifikasi === 'verified',
+            'label' => 'Data Terverifikasi'
+        ];
 
         // Determine if can finalize
         $canFinalize = true;

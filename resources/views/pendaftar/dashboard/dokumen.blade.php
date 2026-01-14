@@ -12,14 +12,15 @@
 <style>
     .doc-card {
         border: 2px dashed #ddd;
-        border-radius: 10px;
-        padding: 1.5rem;
+        border-radius: 12px;
+        padding: 0;
         text-align: center;
         transition: all 0.3s ease;
         cursor: pointer;
         height: 100%;
         position: relative;
-        min-height: 200px;
+        overflow: hidden;
+        background: #fff;
     }
     
     .doc-card:hover {
@@ -32,89 +33,54 @@
     .doc-card.uploaded {
         border-color: #48bb78;
         border-style: solid;
-        background: #f0fff4;
+        background: #fff;
     }
     
-    /* Status-based styling */
-    .doc-card.status-revision {
-        border-color: #f59e0b !important;
-        border-width: 3px !important;
-        border-style: solid !important;
-        background: #fffbeb !important;
-        animation: pulse-warning 2s ease-in-out infinite;
-    }
-    
-    @keyframes pulse-warning {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
-        50% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
-    }
-    
-    .doc-card.status-pending {
-        border-color: #3b82f6;
-        background: #eff6ff;
-    }
-    
-    .doc-card.status-valid {
-        border-color: #10b981;
-        background: #ecfdf5;
-    }
-    
-    .doc-card .thumbnail-preview {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 100px;
+    /* Thumbnail Container - lebih compact */
+    .doc-card .thumbnail-container {
+        width: 100%;
+        height: 120px;
         overflow: hidden;
-        border-radius: 8px 8px 0 0;
         background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
-    .doc-card .thumbnail-preview img {
+    .doc-card .thumbnail-container img {
         width: 100%;
         height: 100%;
         object-fit: cover;
     }
     
-    .doc-card.uploaded.has-thumbnail {
-        padding-top: 110px;
-    }
-    
-    .doc-card .icon {
+    .doc-card .thumbnail-container .no-preview {
         font-size: 2.5rem;
         color: #999;
-        margin-bottom: 0.75rem;
     }
     
-    .doc-card.uploaded .icon {
+    .doc-card.uploaded .thumbnail-container .no-preview {
         color: #48bb78;
     }
     
-    .doc-card.status-revision .icon {
-        color: #f59e0b;
-        animation: shake 0.5s ease-in-out infinite;
+    /* Card Content */
+    .doc-card .card-content {
+        padding: 0.75rem;
     }
     
-    @keyframes shake {
-        0%, 100% { transform: rotate(0deg); }
-        25% { transform: rotate(-5deg); }
-        75% { transform: rotate(5deg); }
-    }
-    
-    .doc-card h5 {
-        margin-bottom: 0.75rem;
-        font-size: 1rem;
+    .doc-card h6 {
+        margin: 0 0 0.5rem 0;
+        font-size: 0.85rem;
         font-weight: 600;
         color: #1f2937;
+        line-height: 1.3;
     }
     
     .doc-card .status {
-        font-size: 0.875rem;
+        font-size: 0.7rem;
         font-weight: 600;
-        padding: 0.375rem 0.75rem;
-        border-radius: 6px;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
         display: inline-block;
-        margin-top: 0.5rem;
     }
     
     .doc-card .status.pending {
@@ -130,66 +96,94 @@
     .doc-card .status.revision {
         background: #fef3c7;
         color: #92400e;
-        border: 2px solid #f59e0b;
-        animation: blink 1.5s ease-in-out infinite;
+        border: 1px solid #f59e0b;
     }
     
-    @keyframes blink {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.7; }
+    /* Status-based styling */
+    .doc-card.status-revision {
+        border-color: #f59e0b !important;
+        border-width: 2px !important;
+        border-style: solid !important;
+        animation: pulse-warning 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse-warning {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+        50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+    }
+    
+    .doc-card.status-pending {
+        border-color: #3b82f6;
+    }
+    
+    .doc-card.status-valid {
+        border-color: #10b981;
     }
     
     .doc-card .catatan-revisi {
-        margin-top: 0.75rem;
-        padding: 0.75rem;
-        background: #fff;
-        border-left: 4px solid #f59e0b;
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        background: #fffbeb;
+        border-left: 3px solid #f59e0b;
         text-align: left;
-        font-size: 0.813rem;
+        font-size: 0.7rem;
         border-radius: 4px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
     
     .doc-card .catatan-revisi strong {
         color: #92400e;
         display: block;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.2rem;
     }
     
     .doc-card .catatan-revisi p {
         margin: 0;
         color: #78350f;
-        line-height: 1.5;
+        line-height: 1.4;
     }
     
     .preview-img {
         max-width: 100%;
-        max-height: 250px;
+        max-height: 200px;
         object-fit: contain;
         border-radius: 8px;
-        margin-top: 1rem;
+        margin-top: 0.5rem;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     
-    .btn-delete-doc {
-        position: absolute;
-        top: 10px;
-        right: 10px;
+    /* Camera Styles */
+    .camera-container {
+        position: relative;
+        width: 100%;
+        max-width: 320px;
+        margin: 0 auto;
+    }
+    
+    .camera-container video {
+        width: 100%;
+        border-radius: 8px;
+        border: 2px solid #667eea;
+    }
+    
+    .camera-container canvas {
+        display: none;
+    }
+    
+    .camera-preview-result {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 8px;
+        border: 2px solid #28a745;
     }
     
     /* Responsive adjustments */
     @media (max-width: 768px) {
-        .doc-card {
-            min-height: 180px;
-            padding: 1.25rem;
+        .doc-card .thumbnail-container {
+            height: 100px;
         }
         
-        .doc-card .icon {
-            font-size: 2rem;
-        }
-        
-        .doc-card h5 {
-            font-size: 0.938rem;
+        .doc-card h6 {
+            font-size: 0.8rem;
         }
     }
     
@@ -244,8 +238,8 @@
                                 $statusClass = 'status-' . $doc->status_verifikasi;
                             }
                         @endphp
-                        <div class="col-lg-3 col-md-4 col-sm-6 col-12 mb-4">
-                            <div class="doc-card {{ $isUploaded ? 'uploaded' : '' }} {{ $isImage ? 'has-thumbnail' : '' }} {{ $statusClass }}" 
+                        <div class="col-lg-3 col-md-4 col-sm-6 col-6 mb-3">
+                            <div class="doc-card {{ $isUploaded ? 'uploaded' : '' }} {{ $statusClass }}" 
                                  {{ !$calonSiswa->is_finalisasi ? 'data-toggle=modal' : '' }}
                                  {{ !$calonSiswa->is_finalisasi ? 'data-target=#uploadModal' : '' }}
                                  data-doc-type="{{ $key }}"
@@ -256,47 +250,56 @@
                                  data-doc-name="{{ $doc->nama_file }}"
                                  @endif
                                  style="{{ $calonSiswa->is_finalisasi ? 'cursor: default;' : '' }}">
-                                @if($isUploaded && $isImage)
-                                    <div class="thumbnail-preview">
+                                
+                                {{-- Thumbnail Container --}}
+                                <div class="thumbnail-container">
+                                    @if($isUploaded && $isImage)
                                         <img src="{{ asset('storage/' . $doc->file_path) }}" alt="{{ $label }}">
-                                    </div>
-                                @endif
-                                <div class="icon">
-                                    @if($isUploaded)
-                                        @if($doc->status_verifikasi === 'revision')
-                                            <i class="fas fa-exclamation-triangle"></i>
-                                        @elseif($doc->status_verifikasi === 'valid')
-                                            <i class="fas fa-check-circle"></i>
-                                        @else
-                                            <i class="fas fa-file-check"></i>
-                                        @endif
                                     @else
-                                        <i class="fas fa-cloud-upload-alt"></i>
-                                    @endif
-                                </div>
-                                <h5>{{ $label }}</h5>
-                                @if($isUploaded)
-                                    <span class="status {{ $doc->status_verifikasi }}">
-                                        @if($doc->status_verifikasi === 'pending')
-                                            <i class="fas fa-clock"></i> Menunggu Verifikasi
-                                        @elseif($doc->status_verifikasi === 'valid')
-                                            <i class="fas fa-check-circle"></i> Terverifikasi
-                                        @elseif($doc->status_verifikasi === 'revision')
-                                            <i class="fas fa-exclamation-circle"></i> Perlu Revisi
-                                        @else
-                                            <i class="fas fa-clock"></i> {{ ucfirst($doc->status_verifikasi) }}
-                                        @endif
-                                    </span>
-                                    
-                                    @if($doc->status_verifikasi === 'revision' && $doc->catatan_revisi)
-                                        <div class="catatan-revisi">
-                                            <strong><i class="fas fa-info-circle"></i> Catatan Admin:</strong>
-                                            <p>{{ $doc->catatan_revisi }}</p>
+                                        <div class="no-preview">
+                                            @if($isUploaded)
+                                                @if($doc->status_verifikasi === 'revision')
+                                                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                                                @elseif($doc->status_verifikasi === 'valid')
+                                                    <i class="fas fa-check-circle text-success"></i>
+                                                @else
+                                                    <i class="fas fa-file-alt text-info"></i>
+                                                @endif
+                                            @else
+                                                <i class="fas fa-cloud-upload-alt"></i>
+                                            @endif
                                         </div>
                                     @endif
-                                @else
-                                    <span class="text-muted"><i class="fas fa-upload"></i> Belum diupload</span>
-                                @endif
+                                </div>
+                                
+                                {{-- Card Content --}}
+                                <div class="card-content">
+                                    <h6>{{ $label }}</h6>
+                                    @if($isUploaded)
+                                        <span class="status {{ $doc->status_verifikasi }}">
+                                            @if($doc->status_verifikasi === 'pending')
+                                                <i class="fas fa-clock"></i> Menunggu
+                                            @elseif($doc->status_verifikasi === 'valid')
+                                                <i class="fas fa-check"></i> Valid
+                                            @elseif($doc->status_verifikasi === 'revision')
+                                                <i class="fas fa-redo"></i> Revisi
+                                            @else
+                                                {{ ucfirst($doc->status_verifikasi) }}
+                                            @endif
+                                        </span>
+                                        
+                                        @if($doc->status_verifikasi === 'revision' && $doc->catatan_revisi)
+                                            <div class="catatan-revisi">
+                                                <strong><i class="fas fa-info-circle"></i> Catatan:</strong>
+                                                <p>{{ Str::limit($doc->catatan_revisi, 60) }}</p>
+                                            </div>
+                                        @endif
+                                    @else
+                                        <span class="text-muted" style="font-size: 0.75rem;">
+                                            <i class="fas fa-upload"></i> Belum upload
+                                        </span>
+                                    @endif
+                                </div>
                             </div>
                         </div>
                     @endforeach
@@ -613,14 +616,14 @@
 
 <!-- Upload Modal -->
 <div class="modal fade" id="uploadModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title">
                     <i class="fas fa-upload mr-2"></i>
                     <span id="modalDocLabel">Upload Dokumen</span>
                 </h5>
-                <button type="button" class="close" data-dismiss="modal">
+                <button type="button" class="close text-white" data-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
@@ -646,7 +649,7 @@
                     </div>
                     @if(!$calonSiswa->is_finalisasi)
                     <hr>
-                    <p class="text-center text-muted mb-3">Atau upload file baru untuk mengganti</p>
+                    <p class="text-center text-muted mb-2">Upload file baru untuk mengganti</p>
                     @endif
                 </div>
 
@@ -655,15 +658,63 @@
                 <form id="uploadForm" enctype="multipart/form-data">
                     <input type="hidden" name="jenis_dokumen" id="jenisDoc">
                     <input type="hidden" name="doc_id" id="docId">
+                    <input type="hidden" id="camera_captured_main" name="camera_captured">
                     
+                    {{-- Source Selection --}}
                     <div class="form-group">
-                        <label>Pilih File</label>
-                        <div class="custom-file">
-                            <input type="file" class="custom-file-input" id="fileInput" name="file" 
-                                   accept=".pdf,.jpg,.jpeg,.png">
-                            <label class="custom-file-label" for="fileInput">Pilih file...</label>
+                        <label class="font-weight-bold">Sumber Dokumen</label>
+                        <div class="d-flex">
+                            <div class="custom-control custom-radio mr-4">
+                                <input type="radio" id="sourceFile" name="uploadSource" class="custom-control-input" value="file" checked>
+                                <label class="custom-control-label" for="sourceFile">
+                                    <i class="fas fa-file-upload mr-1"></i> Pilih File
+                                </label>
+                            </div>
+                            <div class="custom-control custom-radio">
+                                <input type="radio" id="sourceCamera" name="uploadSource" class="custom-control-input" value="camera">
+                                <label class="custom-control-label" for="sourceCamera">
+                                    <i class="fas fa-camera mr-1"></i> Kamera
+                                </label>
+                            </div>
                         </div>
-                        <small class="text-muted">Format: PDF, JPG, JPEG, PNG. Maks: 2MB</small>
+                    </div>
+                    
+                    {{-- File Input Section --}}
+                    <div id="fileInputSection">
+                        <div class="form-group">
+                            <label>Pilih File</label>
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="fileInput" name="file" 
+                                       accept=".pdf,.jpg,.jpeg,.png">
+                                <label class="custom-file-label" for="fileInput">Pilih file...</label>
+                            </div>
+                            <small class="text-muted">Format: PDF, JPG, JPEG, PNG. Maks: 2MB</small>
+                        </div>
+                    </div>
+                    
+                    {{-- Camera Section --}}
+                    <div id="cameraSection" style="display: none;">
+                        <div class="camera-container mb-3">
+                            <video id="cameraVideoMain" autoplay playsinline style="width: 100%; border-radius: 8px; border: 2px solid #667eea;"></video>
+                            <canvas id="cameraCanvasMain" style="display: none;"></canvas>
+                        </div>
+                        <div class="text-center mb-3" id="cameraControlsMain" style="display: none;">
+                            <button type="button" class="btn btn-primary btn-lg" id="btnCaptureMain">
+                                <i class="fas fa-camera"></i> Ambil Foto
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-lg" id="btnRetakeMain" style="display: none;">
+                                <i class="fas fa-redo"></i> Ulangi
+                            </button>
+                        </div>
+                        <div class="text-center" id="cameraStartBtnMain">
+                            <button type="button" class="btn btn-primary" id="btnStartCameraMain">
+                                <i class="fas fa-video"></i> Mulai Kamera
+                            </button>
+                        </div>
+                        <div id="cameraCapturedPreview" class="text-center mt-3" style="display: none;">
+                            <p class="text-success mb-2"><i class="fas fa-check-circle"></i> Foto berhasil diambil</p>
+                            <img id="capturedImageMain" src="" class="camera-preview-result">
+                        </div>
                     </div>
 
                     <div id="uploadPreview" class="text-center" style="display: none;">
@@ -694,6 +745,91 @@
 $(document).ready(function() {
     let currentDocType = '';
     let currentDocId = '';
+    let cameraStreamMain = null;
+
+    // Toggle upload source (file/camera) for main modal
+    $('input[name="uploadSource"]').on('change', function() {
+        const source = $(this).val();
+        if (source === 'file') {
+            $('#fileInputSection').show();
+            $('#cameraSection').hide();
+            stopCameraMain();
+            $('#camera_captured_main').val('');
+        } else {
+            $('#fileInputSection').hide();
+            $('#cameraSection').show();
+            $('#fileInput').val('');
+            $('.custom-file-label').text('Pilih file...');
+            $('#uploadPreview').hide();
+            $('#uploadBtn').prop('disabled', true);
+        }
+    });
+    
+    // Camera functions for main modal
+    function stopCameraMain() {
+        if (cameraStreamMain) {
+            cameraStreamMain.getTracks().forEach(track => track.stop());
+            cameraStreamMain = null;
+        }
+        $('#cameraVideoMain')[0].srcObject = null;
+        $('#cameraControlsMain').hide();
+        $('#cameraStartBtnMain').show();
+        $('#cameraCapturedPreview').hide();
+        $('#btnCaptureMain').show();
+        $('#btnRetakeMain').hide();
+    }
+    
+    $('#btnStartCameraMain').on('click', async function() {
+        try {
+            const constraints = {
+                video: { 
+                    facingMode: 'environment',
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
+            };
+            cameraStreamMain = await navigator.mediaDevices.getUserMedia(constraints);
+            $('#cameraVideoMain')[0].srcObject = cameraStreamMain;
+            $('#cameraStartBtnMain').hide();
+            $('#cameraControlsMain').show();
+            $('#btnCaptureMain').show();
+            $('#btnRetakeMain').hide();
+        } catch (err) {
+            console.error('Camera error:', err);
+            toastr.error('Gagal mengakses kamera. Pastikan izin kamera diberikan.');
+        }
+    });
+    
+    $('#btnCaptureMain').on('click', function() {
+        const video = $('#cameraVideoMain')[0];
+        const canvas = $('#cameraCanvasMain')[0];
+        
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        
+        const imageData = canvas.toDataURL('image/jpeg', 0.85);
+        $('#camera_captured_main').val(imageData);
+        $('#capturedImageMain').attr('src', imageData);
+        $('#cameraCapturedPreview').show();
+        
+        // Stop video preview
+        stopCameraMain();
+        $('#cameraStartBtnMain').hide();
+        $('#cameraControlsMain').show();
+        $('#btnCaptureMain').hide();
+        $('#btnRetakeMain').show();
+        
+        $('#uploadBtn').prop('disabled', false);
+    });
+    
+    $('#btnRetakeMain').on('click', function() {
+        $('#camera_captured_main').val('');
+        $('#cameraCapturedPreview').hide();
+        $('#uploadBtn').prop('disabled', true);
+        $('#cameraStartBtnMain').show();
+        $('#cameraControlsMain').hide();
+    });
 
     // Open modal
     $('#uploadModal').on('show.bs.modal', function(e) {
@@ -710,6 +846,13 @@ $(document).ready(function() {
         $('.custom-file-label').text('Pilih file...');
         $('#uploadPreview').hide();
         $('#uploadBtn').prop('disabled', true);
+        
+        // Reset to file source
+        $('#sourceFile').prop('checked', true);
+        $('#fileInputSection').show();
+        $('#cameraSection').hide();
+        stopCameraMain();
+        $('#camera_captured_main').val('');
         
         // Show existing doc if uploaded
         if (currentDocId) {
@@ -730,6 +873,11 @@ $(document).ready(function() {
         } else {
             $('#existingDoc').hide();
         }
+    });
+    
+    // Stop camera when modal closes
+    $('#uploadModal').on('hidden.bs.modal', function() {
+        stopCameraMain();
     });
 
     // File input change

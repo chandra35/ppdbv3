@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Crypt;
 
 class User extends Authenticatable
 {
@@ -22,13 +23,14 @@ class User extends Authenticatable
         'password',
         'photo',
         'phone',
-        'plain_password',
+        'encrypted_password',
         'last_activity',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+        'encrypted_password', // Hide from JSON/arrays
     ];
 
     protected function casts(): array
@@ -37,6 +39,33 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Get the decrypted readable password
+     * This is used for displaying password in kartu ujian
+     */
+    public function getReadablePasswordAttribute(): ?string
+    {
+        if (empty($this->encrypted_password)) {
+            return null;
+        }
+
+        try {
+            return Crypt::decryptString($this->encrypted_password);
+        } catch (\Exception $e) {
+            // If decryption fails, return the value as-is (might be old plain password)
+            return $this->encrypted_password;
+        }
+    }
+
+    /**
+     * Set password with encryption
+     * Use: $user->readable_password = 'password123';
+     */
+    public function setReadablePasswordAttribute(string $value): void
+    {
+        $this->attributes['encrypted_password'] = Crypt::encryptString($value);
     }
 
     // Relations

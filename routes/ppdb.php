@@ -221,6 +221,21 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/pendaftar/dokumen/{id}/cancel', [PendaftarController::class, 'cancelVerifikasi'])->name('pendaftar.dokumen.cancel');
     Route::post('/pendaftar/dokumen/{id}/cancel-revisi', [PendaftarController::class, 'cancelRevisi'])->name('pendaftar.dokumen.cancel-revisi');
 
+    // ---- FINALISASI PENDAFTAR ----
+    Route::prefix('finalisasi')->name('finalisasi.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\FinalisasiController::class, 'index'])->name('index');
+        Route::post('/{id}/finalisasi', [\App\Http\Controllers\Admin\FinalisasiController::class, 'finalisasi'])->name('finalisasi');
+        Route::post('/batch', [\App\Http\Controllers\Admin\FinalisasiController::class, 'batchFinalisasi'])->name('batch');
+        Route::get('/{id}/cek-kelengkapan', [\App\Http\Controllers\Admin\FinalisasiController::class, 'cekKelengkapan'])->name('cek-kelengkapan');
+    });
+
+    // ---- CETAK DOKUMEN ----
+    Route::prefix('cetak-dokumen')->name('cetak-dokumen.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\CetakDokumenController::class, 'index'])->name('index');
+        Route::post('/batch-registrasi', [\App\Http\Controllers\Admin\CetakDokumenController::class, 'batchCetakRegistrasi'])->name('batch-registrasi');
+        Route::post('/batch-kartu-tes', [\App\Http\Controllers\Admin\CetakDokumenController::class, 'batchCetakKartuTes'])->name('batch-kartu-tes');
+    });
+
     // ---- STATISTIK PENDAFTAR ----
     Route::prefix('statistik')->name('statistik.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\StatistikController::class, 'index'])->name('index');
@@ -406,6 +421,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
             Route::delete('/force-delete/{id}', [\App\Http\Controllers\Admin\DataManagementController::class, 'forceDelete'])->name('force.delete');
             Route::delete('/force-delete-bulk', [\App\Http\Controllers\Admin\DataManagementController::class, 'forceDeleteBulk'])->name('force.delete.bulk');
             Route::post('/bulk-delete-gelombang', [\App\Http\Controllers\Admin\DataManagementController::class, 'bulkDeleteByGelombang'])->name('bulk.delete.gelombang');
+        });
+        
+        // ---- SYSTEM RESET (Production Deployment) ----
+        Route::prefix('reset-system')->name('reset-system.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\SystemResetController::class, 'index'])->name('index');
+            Route::post('/verify', [\App\Http\Controllers\Admin\SystemResetController::class, 'verifyPassword'])->name('verify');
+            Route::post('/all', [\App\Http\Controllers\Admin\SystemResetController::class, 'resetAllPendaftar'])->name('all');
+            Route::post('/by-gelombang', [\App\Http\Controllers\Admin\SystemResetController::class, 'resetByGelombang'])->name('by-gelombang');
+            Route::post('/clean-files', [\App\Http\Controllers\Admin\SystemResetController::class, 'cleanOrphanedFiles'])->name('clean-files');
         });
     }); // End of can:admin middleware group
 }); // End of admin routes group

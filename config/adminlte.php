@@ -124,6 +124,16 @@ return [
                     'icon' => 'fas fa-fw fa-list',
                 ],
                 [
+                    'text' => 'Finalisasi',
+                    'route' => 'admin.finalisasi.index',
+                    'icon' => 'fas fa-fw fa-clipboard-check',
+                ],
+                [
+                    'text' => 'Cetak Dokumen',
+                    'route' => 'admin.cetak-dokumen.index',
+                    'icon' => 'fas fa-fw fa-print',
+                ],
+                [
                     'text' => 'Statistik',
                     'route' => 'admin.statistik.index',
                     'icon' => 'fas fa-fw fa-chart-bar',
@@ -184,6 +194,11 @@ return [
                     'text' => 'Data Terhapus',
                     'route' => 'admin.data.deleted',
                     'icon' => 'fas fa-fw fa-trash-restore text-danger',
+                ],
+                [
+                    'text' => 'Reset Sistem',
+                    'route' => 'admin.reset-system.index',
+                    'icon' => 'fas fa-fw fa-radiation text-danger',
                 ],
             ],
         ],

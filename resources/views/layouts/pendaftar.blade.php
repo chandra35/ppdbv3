@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Dashboard') - PPDB {{ config('app.name') }}</title>
+    <title>@yield('title', 'Dashboard') - PPDB {{ \App\Models\SekolahSettings::getNamaSekolah() }}</title>
 
     <!-- Google Font: Source Sans Pro -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
@@ -192,7 +192,7 @@
             <li class="nav-item d-none d-sm-inline-block">
                 <span class="nav-link">
                     <i class="fas fa-graduation-cap text-primary mr-1"></i>
-                    PPDB {{ config('app.name') }}
+                    PPDB {{ \App\Models\SekolahSettings::getNamaSekolah() }}
                 </span>
             </li>
         </ul>
@@ -232,11 +232,23 @@
 
         <!-- Sidebar -->
         <div class="sidebar">
+            @php
+                $calonSiswaForPhoto = \App\Models\CalonSiswa::where('user_id', auth()->id())->first();
+                $fotoProfile = $calonSiswaForPhoto ? $calonSiswaForPhoto->dokumen()->where('jenis_dokumen', 'foto')->first() : null;
+                $fotoProfileUrl = $fotoProfile ? asset('storage/' . $fotoProfile->file_path) : null;
+            @endphp
             <!-- Sidebar user panel -->
             <div class="user-panel mt-3 pb-3 mb-3 d-flex">
                 <div class="image">
-                    <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=667eea&color=fff" 
-                         class="img-circle elevation-2" alt="User Image">
+                    @if($fotoProfileUrl)
+                        <img src="{{ $fotoProfileUrl }}" 
+                             class="img-circle elevation-2" alt="User Image"
+                             style="width: 34px; height: 34px; object-fit: cover;"
+                             onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=667eea&color=fff'">
+                    @else
+                        <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=667eea&color=fff" 
+                             class="img-circle elevation-2" alt="User Image">
+                    @endif
                 </div>
                 <div class="info">
                     <a href="#" class="d-block">{{ Auth::user()->name }}</a>
@@ -246,6 +258,9 @@
 
             <!-- Sidebar Menu -->
             <nav class="mt-2">
+                @php
+                    $calonSiswaForMenu = \App\Models\CalonSiswa::where('user_id', auth()->id())->with('jalurPendaftaran')->first();
+                @endphp
                 <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                     <li class="nav-header">MENU UTAMA</li>
                     
@@ -261,34 +276,50 @@
                     <li class="nav-item">
                         <a href="{{ route('pendaftar.data-pribadi') }}" class="nav-link {{ request()->routeIs('pendaftar.data-pribadi') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-user"></i>
-                            <p>Data Pribadi</p>
+                            <p>
+                                Data Pribadi
+                                @if($calonSiswaForMenu && $calonSiswaForMenu->data_diri_completed)
+                                    <span class="badge badge-success right"><i class="fas fa-check"></i></span>
+                                @endif
+                            </p>
                         </a>
                     </li>
                     
                     <li class="nav-item">
                         <a href="{{ route('pendaftar.data-ortu') }}" class="nav-link {{ request()->routeIs('pendaftar.data-ortu') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-users"></i>
-                            <p>Data Orang Tua</p>
+                            <p>
+                                Data Orang Tua
+                                @if($calonSiswaForMenu && $calonSiswaForMenu->data_ortu_completed)
+                                    <span class="badge badge-success right"><i class="fas fa-check"></i></span>
+                                @endif
+                            </p>
                         </a>
                     </li>
                     
                     <li class="nav-item">
                         <a href="{{ route('pendaftar.nilai-rapor') }}" class="nav-link {{ request()->routeIs('pendaftar.nilai-rapor') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-graduation-cap"></i>
-                            <p>Nilai Rapor</p>
+                            <p>
+                                Nilai Rapor
+                                @if($calonSiswaForMenu && $calonSiswaForMenu->nilai_rapor_completed)
+                                    <span class="badge badge-success right"><i class="fas fa-check"></i></span>
+                                @endif
+                            </p>
                         </a>
                     </li>
                     
                     <li class="nav-item">
                         <a href="{{ route('pendaftar.dokumen') }}" class="nav-link {{ request()->routeIs('pendaftar.dokumen') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-file-upload"></i>
-                            <p>Upload Dokumen</p>
+                            <p>
+                                Upload Dokumen
+                                @if($calonSiswaForMenu && $calonSiswaForMenu->data_dokumen_completed)
+                                    <span class="badge badge-success right"><i class="fas fa-check"></i></span>
+                                @endif
+                            </p>
                         </a>
                     </li>
-                    
-                    @php
-                        $calonSiswaForMenu = \App\Models\CalonSiswa::where('user_id', auth()->id())->with('jalurPendaftaran')->first();
-                    @endphp
                     
                     @if($calonSiswaForMenu && $calonSiswaForMenu->jalurPendaftaran && $calonSiswaForMenu->jalurPendaftaran->pilihan_program_aktif)
                     <li class="nav-item">
@@ -339,7 +370,7 @@
                         </a>
                     </li>
                     
-                    @if($calonSiswa && $calonSiswa->is_finalisasi)
+                    @if($calonSiswaForMenu && $calonSiswaForMenu->is_finalisasi)
                     <li class="nav-item">
                         <a href="{{ route('pendaftar.cetak-bukti-registrasi.preview') }}" target="_blank" class="nav-link">
                             <i class="nav-icon fas fa-file-pdf"></i>
@@ -392,7 +423,7 @@
     <!-- /.content-wrapper -->
 
     <footer class="main-footer">
-        <strong>&copy; {{ date('Y') }} PPDB {{ config('app.name') }}.</strong>
+        <strong>&copy; {{ date('Y') }} PPDB {{ \App\Models\SekolahSettings::getNamaSekolah() }}.</strong>
         All rights reserved.
         <div class="float-right d-none d-sm-inline-block">
             <b>Version</b> 1.0.0
@@ -455,7 +486,7 @@
     $sekolahSettings = \App\Models\SekolahSettings::first();
     $fotoDokumen = $calonSiswa->dokumen()->where('jenis_dokumen', 'foto')->first();
     $fotoUrl = $fotoDokumen ? asset('storage/' . $fotoDokumen->file_path) : null;
-    $password = $calonSiswa->user->plain_password ?? '********';
+    $password = $calonSiswa->user->readable_password ?? '********';
 @endphp
 <div class="modal fade" id="kartuUjianModal" tabindex="-1" role="dialog" aria-labelledby="kartuUjianModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 450px;">

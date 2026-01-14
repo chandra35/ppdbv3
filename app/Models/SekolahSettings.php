@@ -209,4 +209,14 @@ class SekolahSettings extends Model
 
         return $settings;
     }
+
+    /**
+     * Get nama sekolah (static helper)
+     * Digunakan di seluruh aplikasi untuk konsistensi
+     */
+    public static function getNamaSekolah(): string
+    {
+        $settings = self::first();
+        return $settings?->nama_sekolah ?? config('app.name', 'Sekolah');
+    }
 }

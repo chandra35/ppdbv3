@@ -791,11 +791,11 @@ dl.row dt {
                                     </tr>
                                     <tr>
                                         <td class="p-1 text-muted">Pekerjaan</td>
-                                        <td class="p-1">{{ optional($pendaftar->ortu)->pekerjaan_ayah ?? '-' }}</td>
+                                        <td class="p-1">{{ \App\Models\CalonOrtu::PEKERJAAN[optional($pendaftar->ortu)->pekerjaan_ayah] ?? optional($pendaftar->ortu)->pekerjaan_ayah ?? '-' }}</td>
                                     </tr>
                                     <tr>
                                         <td class="p-1 text-muted">Pendidikan</td>
-                                        <td class="p-1">{{ optional($pendaftar->ortu)->pendidikan_ayah ?? '-' }}</td>
+                                        <td class="p-1">{{ \App\Models\CalonOrtu::PENDIDIKAN[optional($pendaftar->ortu)->pendidikan_ayah] ?? optional($pendaftar->ortu)->pendidikan_ayah ?? '-' }}</td>
                                     </tr>
                                     <tr>
                                         <td class="p-1 text-muted">No. HP</td>
@@ -826,11 +826,11 @@ dl.row dt {
                                     </tr>
                                     <tr>
                                         <td class="p-1 text-muted">Pekerjaan</td>
-                                        <td class="p-1">{{ optional($pendaftar->ortu)->pekerjaan_ibu ?? '-' }}</td>
+                                        <td class="p-1">{{ \App\Models\CalonOrtu::PEKERJAAN[optional($pendaftar->ortu)->pekerjaan_ibu] ?? optional($pendaftar->ortu)->pekerjaan_ibu ?? '-' }}</td>
                                     </tr>
                                     <tr>
                                         <td class="p-1 text-muted">Pendidikan</td>
-                                        <td class="p-1">{{ optional($pendaftar->ortu)->pendidikan_ibu ?? '-' }}</td>
+                                        <td class="p-1">{{ \App\Models\CalonOrtu::PENDIDIKAN[optional($pendaftar->ortu)->pendidikan_ibu] ?? optional($pendaftar->ortu)->pendidikan_ibu ?? '-' }}</td>
                                     </tr>
                                     <tr>
                                         <td class="p-1 text-muted">No. HP</td>
@@ -1649,7 +1649,7 @@ dl.row dt {
                             $sekolahSettings = \App\Models\SekolahSettings::first();
                             $fotoDokumen = $pendaftar->dokumen()->where('jenis_dokumen', 'foto')->first();
                             $fotoUrl = $fotoDokumen ? asset('storage/' . $fotoDokumen->file_path) : null;
-                            $password = $pendaftar->user->plain_password ?? '********';
+                            $password = $pendaftar->user->readable_password ?? '********';
                         @endphp
                         <div class="card" style="width: 340px; height: 220px; margin: 0 auto; background: #fff; border: 1px solid #999; border-radius: 8px; overflow: hidden; position: relative;">
                             {{-- Watermark --}}

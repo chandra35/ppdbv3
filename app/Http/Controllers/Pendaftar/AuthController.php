@@ -506,7 +506,7 @@ class AuthController extends Controller
                     'username' => $request->nisn,
                     'password' => $password,
                     'url_login' => route('pendaftar.login'),
-                    'nama_sekolah' => config('app.name'),
+                    'nama_sekolah' => \App\Models\SekolahSettings::getNamaSekolah(),
                     'tahun_pelajaran' => $tahunAktif?->nama ?? date('Y'),
                 ]);
                 $waSent = $waResult['success'];
