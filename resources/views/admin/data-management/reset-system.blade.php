@@ -111,8 +111,10 @@
                         <label>Pilih Gelombang</label>
                         <select name="gelombang_id" class="form-control" required>
                             <option value="">-- Pilih Gelombang --</option>
-                            @foreach(\App\Models\GelombangPendaftaran::withCount('pendaftar')->get() as $gel)
-                            <option value="{{ $gel->id }}">{{ $gel->nama }} ({{ $gel->pendaftar_count }} pendaftar)</option>
+                            @foreach(\App\Models\GelombangPendaftaran::with('jalur.tahunPelajaran')->withCount('pendaftar')->get() as $gel)
+                            <option value="{{ $gel->id }}">
+                                [{{ $gel->jalur->tahunPelajaran->nama ?? '-' }}] {{ $gel->jalur->nama ?? '' }} - {{ $gel->nama }} ({{ $gel->pendaftar_count }} pendaftar)
+                            </option>
                             @endforeach
                         </select>
                     </div>
