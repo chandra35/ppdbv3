@@ -286,6 +286,11 @@
                                 <label>Kabupaten/Kota <span class="text-danger">*</span></label>
                                 <select name="kabupaten_id" id="kabupaten_ortu" class="form-control select2" required>
                                     <option value="">-- Pilih Kabupaten/Kota --</option>
+                                    @foreach($cities as $city)
+                                        <option value="{{ $city->code }}" {{ old('kabupaten_id', $ortu->kabupaten_id) == $city->code ? 'selected' : '' }}>
+                                            {{ $city->name }}
+                                        </option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>
@@ -297,6 +302,11 @@
                                 <label>Kecamatan <span class="text-danger">*</span></label>
                                 <select name="kecamatan_id" id="kecamatan_ortu" class="form-control select2" required>
                                     <option value="">-- Pilih Kecamatan --</option>
+                                    @foreach($districts as $district)
+                                        <option value="{{ $district->code }}" {{ old('kecamatan_id', $ortu->kecamatan_id) == $district->code ? 'selected' : '' }}>
+                                            {{ $district->name }}
+                                        </option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>
@@ -305,6 +315,11 @@
                                 <label>Kelurahan/Desa <span class="text-danger">*</span></label>
                                 <select name="kelurahan_id" id="kelurahan_ortu" class="form-control select2" required>
                                     <option value="">-- Pilih Kelurahan/Desa --</option>
+                                    @foreach($villages as $village)
+                                        <option value="{{ $village->code }}" {{ old('kelurahan_id', $ortu->kelurahan_id) == $village->code ? 'selected' : '' }}>
+                                            {{ $village->name }}
+                                        </option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>

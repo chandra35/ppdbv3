@@ -57,8 +57,26 @@ class DashboardController extends Controller
         $calonSiswa = CalonSiswa::where('user_id', $user->id)->first();
 
         $provinces = \Laravolt\Indonesia\Models\Province::orderBy('name')->get();
+        
+        // Pre-load existing location data for cascade dropdowns
+        $cities = collect();
+        $districts = collect();
+        $villages = collect();
+        
+        if ($calonSiswa->provinsi_id_siswa) {
+            $cities = \Laravolt\Indonesia\Models\City::where('province_code', $calonSiswa->provinsi_id_siswa)
+                ->orderBy('name')->get();
+        }
+        if ($calonSiswa->kabupaten_id_siswa) {
+            $districts = \Laravolt\Indonesia\Models\District::where('city_code', $calonSiswa->kabupaten_id_siswa)
+                ->orderBy('name')->get();
+        }
+        if ($calonSiswa->kecamatan_id_siswa) {
+            $villages = \Laravolt\Indonesia\Models\Village::where('district_code', $calonSiswa->kecamatan_id_siswa)
+                ->orderBy('name')->get();
+        }
 
-        return view('pendaftar.dashboard.data-pribadi', compact('calonSiswa', 'provinces'));
+        return view('pendaftar.dashboard.data-pribadi', compact('calonSiswa', 'provinces', 'cities', 'districts', 'villages'));
     }
 
     /**
@@ -195,8 +213,26 @@ class DashboardController extends Controller
         $ortu = $calonSiswa->ortu ?? new CalonOrtu();
 
         $provinces = \Laravolt\Indonesia\Models\Province::orderBy('name')->get();
+        
+        // Pre-load existing location data for cascade dropdowns
+        $cities = collect();
+        $districts = collect();
+        $villages = collect();
+        
+        if ($ortu->provinsi_id) {
+            $cities = \Laravolt\Indonesia\Models\City::where('province_code', $ortu->provinsi_id)
+                ->orderBy('name')->get();
+        }
+        if ($ortu->kabupaten_id) {
+            $districts = \Laravolt\Indonesia\Models\District::where('city_code', $ortu->kabupaten_id)
+                ->orderBy('name')->get();
+        }
+        if ($ortu->kecamatan_id) {
+            $villages = \Laravolt\Indonesia\Models\Village::where('district_code', $ortu->kecamatan_id)
+                ->orderBy('name')->get();
+        }
 
-        return view('pendaftar.dashboard.data-ortu', compact('calonSiswa', 'ortu', 'provinces'));
+        return view('pendaftar.dashboard.data-ortu', compact('calonSiswa', 'ortu', 'provinces', 'cities', 'districts', 'villages'));
     }
 
     /**
