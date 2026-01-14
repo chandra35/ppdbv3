@@ -6,7 +6,6 @@
 
 @section('breadcrumb')
 <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-<li class="breadcrumb-item"><a href="{{ route('admin.data.index') }}">Manajemen Data</a></li>
 <li class="breadcrumb-item active">Reset Sistem</li>
 @endsection
 
