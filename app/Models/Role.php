@@ -60,9 +60,9 @@ class Role extends Model
     }
 
     /**
-     * Get available permissions grouped by category
+     * Get hardcoded permissions (system default)
      */
-    public static function getAvailablePermissions(): array
+    public static function getHardcodedPermissions(): array
     {
         return [
             'pendaftar' => [
@@ -124,5 +124,25 @@ class Role extends Model
                 'public.kontak' => 'Lihat Kontak',
             ],
         ];
+    }
+
+    /**
+     * Get available permissions grouped by category (hardcoded + custom)
+     */
+    public static function getAvailablePermissions(): array
+    {
+        $hardcoded = self::getHardcodedPermissions();
+        $custom = CustomPermission::getGrouped();
+        
+        // Merge custom permissions into hardcoded (custom permissions are appended to groups)
+        foreach ($custom as $group => $permissions) {
+            if (isset($hardcoded[$group])) {
+                $hardcoded[$group] = array_merge($hardcoded[$group], $permissions);
+            } else {
+                $hardcoded[$group] = $permissions;
+            }
+        }
+        
+        return $hardcoded;
     }
 }

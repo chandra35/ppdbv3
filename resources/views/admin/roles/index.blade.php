@@ -39,6 +39,9 @@
         <div class="card-header">
             <h3 class="card-title">Daftar Role</h3>
             <div class="card-tools">
+                <a href="{{ route('admin.ppdb.roles.permissions') }}" class="btn btn-info btn-sm mr-2">
+                    <i class="fas fa-key"></i> Kelola Permissions
+                </a>
                 <a href="{{ route('admin.roles.create') }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus"></i> Tambah Role
                 </a>

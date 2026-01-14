@@ -359,6 +359,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         // ---- ROLE & PERMISSION ----
         Route::resource('roles', RoleController::class);
         Route::post('/roles/{role}/permissions', [RoleController::class, 'updatePermissions'])->name('roles.permissions.update');
+        
+        // Permission Management
+        Route::get('/roles-permissions', [RoleController::class, 'permissions'])->name('roles.permissions');
+        Route::post('/roles-permissions/sync', [RoleController::class, 'syncPermissions'])->name('roles.permissions.sync');
+        Route::post('/roles-permissions/store', [RoleController::class, 'storePermission'])->name('roles.permissions.store');
+        Route::put('/roles-permissions/{permission}', [RoleController::class, 'updatePermission'])->name('roles.permissions.update-single');
+        Route::delete('/roles-permissions/{permission}', [RoleController::class, 'destroyPermission'])->name('roles.permissions.destroy');
+        Route::post('/roles-permissions/bulk-add', [RoleController::class, 'bulkAddPermissions'])->name('roles.permissions.bulk-add');
 
         // ---- GTK MANAGEMENT ----
         Route::prefix('gtk')->name('gtk.')->group(function () {
