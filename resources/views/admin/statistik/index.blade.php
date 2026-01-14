@@ -294,7 +294,8 @@
             <thead>
                 <tr>
                     <th width="50">#</th>
-                    <th>No. Pendaftaran</th>
+                    <th>No. Registrasi</th>
+                    <th>No. Tes</th>
                     <th>Nama Lengkap</th>
                     <th>Jalur</th>
                     <th>Gelombang</th>
@@ -307,10 +308,23 @@
                 <tr>
                     <td>{{ ($pendaftarList->currentPage() - 1) * $pendaftarList->perPage() + $i + 1 }}</td>
                     <td>
-                        @if($p->nomor_pendaftaran)
-                            <code>{{ $p->nomor_pendaftaran }}</code>
+                        @if($p->nomor_registrasi)
+                            <code>{{ $p->nomor_registrasi }}</code>
                         @else
-                            <span class="text-muted"><i class="fas fa-clock"></i> Belum generate</span>
+                            <span class="text-muted"><i class="fas fa-clock"></i> Belum ada</span>
+                        @endif
+                    </td>
+                    <td>
+                        @if($p->nomor_tes)
+                            <code class="text-success">{{ $p->nomor_tes }}</code>
+                        @elseif(!$p->is_finalisasi)
+                            <span class="text-muted" title="Pendaftar belum finalisasi">
+                                <i class="fas fa-exclamation-circle"></i> Belum final
+                            </span>
+                        @else
+                            <span class="text-warning" title="Nomor tes belum di-generate">
+                                <i class="fas fa-clock"></i> Belum generate
+                            </span>
                         @endif
                     </td>
                     <td>{{ $p->nama_lengkap }}</td>
@@ -342,7 +356,7 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="7" class="text-center text-muted">
+                <tr><td colspan="8" class="text-center text-muted">
                     @if($filterType)
                     Tidak ada pendaftar dengan kriteria tersebut
                     @else
