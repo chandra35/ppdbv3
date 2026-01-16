@@ -197,6 +197,7 @@
         </div>
 
         {{-- Nomor Tes Card --}}
+        @if($calonSiswa->nomor_tes)
         <div class="card shadow-sm mb-4">
             <div class="card-body text-center py-4">
                 <h5 class="text-muted mb-2">Nomor Tes Anda</h5>
@@ -206,6 +207,20 @@
                 </p>
             </div>
         </div>
+        @else
+        <div class="card shadow-sm mb-4 border-warning">
+            <div class="card-body text-center py-4">
+                <h5 class="text-muted mb-2">Nomor Tes</h5>
+                <div class="text-warning mb-2">
+                    <i class="fas fa-clock fa-3x"></i>
+                </div>
+                <h4 class="text-warning mb-2">Menunggu Verifikasi Dokumen</h4>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-info-circle mr-1"></i>Nomor tes akan diberikan setelah dokumen Anda diverifikasi oleh admin
+                </p>
+            </div>
+        </div>
+        @endif
 
         {{-- Status Cards --}}
         <div class="row">
@@ -264,9 +279,15 @@
             <a href="{{ route('pendaftar.cetak-bukti-registrasi.preview') }}" target="_blank" class="btn btn-info btn-lg mb-2">
                 <i class="fas fa-file-pdf mr-2"></i>Cetak Bukti Registrasi
             </a>
+            @if($calonSiswa->nomor_tes)
             <button type="button" class="btn btn-success btn-lg mb-2" data-toggle="modal" data-target="#kartuUjianModal">
                 <i class="fas fa-id-card mr-2"></i>Cetak Kartu Ujian
             </button>
+            @else
+            <button type="button" class="btn btn-secondary btn-lg mb-2" disabled title="Menunggu verifikasi dokumen">
+                <i class="fas fa-id-card mr-2"></i>Kartu Ujian <small>(Pending)</small>
+            </button>
+            @endif
         </div>
 
         @else
@@ -286,8 +307,9 @@
             </h5>
             <ul class="mb-0 pl-4">
                 <li><strong>Semua data akan dikunci</strong> dan tidak dapat diubah</li>
-                <li>Anda akan mendapatkan <strong>Nomor Tes</strong> untuk ujian</li>
-                <li>Data masuk ke proses seleksi</li>
+                <li>Dokumen akan diverifikasi oleh admin</li>
+                <li><strong>Nomor Tes</strong> akan diberikan setelah semua dokumen diverifikasi</li>
+                <li>Anda akan menerima notifikasi WhatsApp saat nomor tes sudah tersedia</li>
                 <li>Tidak dapat membatalkan finalisasi</li>
             </ul>
         </div>

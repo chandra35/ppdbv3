@@ -1502,48 +1502,72 @@ class DashboardController extends Controller
             ], 422);
         }
 
-        // Check if already has nomor_tes (re-finalisasi after cancel)
-        $nomorTes = $calonSiswa->nomor_tes;
-        
-        if (!$nomorTes) {
-            // Generate nomor tes using settings (only if doesn't have one yet)
-            $settings = \App\Models\PpdbSettings::first();
-            $tahun = $calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y');
-            $jalurCode = strtoupper(substr($calonSiswa->jalurPendaftaran->nama ?? 'REG', 0, 3));
-            
-            // Get and update counter for this jalur
-            $counters = $settings->nomor_tes_counter ?? [];
-            $jalurKey = (string) $calonSiswa->jalur_pendaftaran_id;
-            $counter = ($counters[$jalurKey] ?? 0) + 1;
-            
-            // Update counter atomically
-            $counters[$jalurKey] = $counter;
-            $settings->update(['nomor_tes_counter' => $counters]);
-            
-            // Generate nomor using format template
-            $format = $settings->nomor_tes_format ?? '{PREFIX}-{TAHUN}-{JALUR}-{NOMOR}';
-            $nomor = str_pad($counter, $settings->nomor_tes_digit ?? 4, '0', STR_PAD_LEFT);
-            
-            $nomorTes = str_replace(
-                ['{PREFIX}', '{TAHUN}', '{JALUR}', '{NOMOR}'],
-                [$settings->nomor_tes_prefix ?? 'NTS', $tahun, $jalurCode, $nomor],
-                $format
-            );
-        }
+        // PERUBAHAN ALUR:
+        // 1. Finalisasi tidak lagi generate nomor_tes
+        // 2. Nomor tes akan diberikan setelah admin memverifikasi semua dokumen
+        // 3. Status berubah ke pending_verification
 
-        // Update finalisasi data
+        // Update finalisasi data tanpa nomor_tes
         $calonSiswa->update([
             'is_finalisasi' => true,
             'tanggal_finalisasi' => now(),
-            'nomor_tes' => $nomorTes,
+            'status_verifikasi' => $calonSiswa->status_verifikasi === 'verified' ? 'verified' : 'pending_verification',
             'status_admisi' => 'pending'
         ]);
 
+        // Jika pendaftar sudah punya status verified (semua dokumen valid), generate nomor tes
+        if ($calonSiswa->fresh()->allDokumenValid() && !$calonSiswa->nomor_tes) {
+            $calonSiswa = $this->generateNomorTes($calonSiswa);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Finalisasi berhasil! Semua dokumen telah diverifikasi. Nomor Tes Anda: ' . $calonSiswa->nomor_tes,
+                'nomor_tes' => $calonSiswa->nomor_tes
+            ]);
+        }
+
         return response()->json([
             'success' => true,
-            'message' => 'Finalisasi berhasil! Nomor Tes Anda: ' . $nomorTes,
-            'nomor_tes' => $nomorTes
+            'message' => 'Finalisasi berhasil! Data Anda akan diverifikasi oleh admin. Nomor tes akan dikirim setelah dokumen diverifikasi.',
+            'nomor_tes' => null
         ]);
+    }
+
+    /**
+     * Generate Nomor Tes untuk calon siswa
+     */
+    public function generateNomorTes(CalonSiswa $calonSiswa): CalonSiswa
+    {
+        if ($calonSiswa->nomor_tes) {
+            return $calonSiswa;
+        }
+
+        $settings = \App\Models\PpdbSettings::first();
+        $tahun = $calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y');
+        $jalurCode = strtoupper(substr($calonSiswa->jalurPendaftaran->nama ?? 'REG', 0, 3));
+        
+        // Get and update counter for this jalur
+        $counters = $settings->nomor_tes_counter ?? [];
+        $jalurKey = (string) $calonSiswa->jalur_pendaftaran_id;
+        $counter = ($counters[$jalurKey] ?? 0) + 1;
+        
+        // Update counter atomically
+        $counters[$jalurKey] = $counter;
+        $settings->update(['nomor_tes_counter' => $counters]);
+        
+        // Generate nomor using format template
+        $format = $settings->nomor_tes_format ?? '{PREFIX}-{TAHUN}-{JALUR}-{NOMOR}';
+        $nomor = str_pad($counter, $settings->nomor_tes_digit ?? 4, '0', STR_PAD_LEFT);
+        
+        $nomorTes = str_replace(
+            ['{PREFIX}', '{TAHUN}', '{JALUR}', '{NOMOR}'],
+            [$settings->nomor_tes_prefix ?? 'NTS', $tahun, $jalurCode, $nomor],
+            $format
+        );
+
+        $calonSiswa->update(['nomor_tes' => $nomorTes]);
+        
+        return $calonSiswa->fresh();
     }
 
     /**
@@ -1578,11 +1602,9 @@ class DashboardController extends Controller
             ];
         }
 
-        // Add verifikasi check after pilihan program
-        $requirements['verifikasi'] = [
-            'status' => $calonSiswa->status_verifikasi === 'verified',
-            'label' => 'Data Terverifikasi'
-        ];
+        // Verifikasi tidak lagi menjadi syarat finalisasi
+        // Pendaftar bisa finalisasi sebelum verifikasi dokumen
+        // Nomor tes akan diberikan setelah admin memverifikasi semua dokumen
 
         // Determine if can finalize
         $canFinalize = true;

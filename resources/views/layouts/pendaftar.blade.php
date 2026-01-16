@@ -378,12 +378,21 @@
                         </a>
                     </li>
                     
+                    @if($calonSiswaForMenu->nomor_tes)
                     <li class="nav-item">
                         <a href="#" class="nav-link" data-toggle="modal" data-target="#kartuUjianModal">
                             <i class="nav-icon fas fa-id-card"></i>
                             <p>Cetak Kartu Ujian</p>
                         </a>
                     </li>
+                    @else
+                    <li class="nav-item">
+                        <a href="javascript:void(0)" class="nav-link text-muted" title="Menunggu verifikasi dokumen">
+                            <i class="nav-icon fas fa-id-card"></i>
+                            <p>Kartu Ujian <span class="badge badge-warning ml-1" style="font-size: 0.6rem;">Pending</span></p>
+                        </a>
+                    </li>
+                    @endif
                     @endif
                 </ul>
             </nav>

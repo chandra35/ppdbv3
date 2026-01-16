@@ -250,6 +250,7 @@
                         </a>
                     </div>
                     
+                    @if($calonSiswa->nomor_tes)
                     <div class="col-md-4 col-6 mb-3">
                         <a href="#" class="text-decoration-none" data-toggle="modal" data-target="#kartuUjianModal">
                             <div class="card quick-action-card h-100 text-center p-3">
@@ -261,6 +262,17 @@
                             </div>
                         </a>
                     </div>
+                    @else
+                    <div class="col-md-4 col-6 mb-3">
+                        <div class="card quick-action-card h-100 text-center p-3" style="opacity: 0.6;">
+                            <div class="icon text-secondary">
+                                <i class="fas fa-id-card"></i>
+                            </div>
+                            <h6 class="mt-2 mb-0">Kartu Ujian</h6>
+                            <small class="text-warning"><i class="fas fa-clock"></i> Menunggu Verifikasi</small>
+                        </div>
+                    </div>
+                    @endif
                     @endif
                 </div>
             </div>

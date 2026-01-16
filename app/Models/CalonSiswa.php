@@ -354,6 +354,7 @@ class CalonSiswa extends Model
 
     /**
      * Auto-update status verifikasi berdasarkan kelengkapan dokumen
+     * Jika semua dokumen valid dan pendaftar sudah finalisasi, generate nomor tes
      */
     public function autoUpdateStatusVerifikasi(): void
     {
@@ -364,16 +365,96 @@ class CalonSiswa extends Model
                 'verified_at' => now(),
                 'verified_by' => auth()->id() ?? $this->verified_by,
             ]);
+
+            // Jika sudah finalisasi dan belum punya nomor tes, generate nomor tes
+            if ($this->is_finalisasi && !$this->nomor_tes) {
+                $this->generateNomorTesAfterVerification();
+            }
         } else {
             // Ada dokumen yang belum valid -> set pending
             // Kecuali jika statusnya sudah approved/rejected, jangan ubah
-            if (in_array($this->status_verifikasi, ['pending', 'verified'])) {
+            if (in_array($this->status_verifikasi, ['pending', 'verified', 'pending_verification'])) {
                 $this->update([
-                    'status_verifikasi' => 'pending',
+                    'status_verifikasi' => 'pending_verification',
                     'verified_at' => null,
                     'verified_by' => null,
                 ]);
             }
+        }
+    }
+
+    /**
+     * Generate nomor tes setelah verifikasi dokumen lengkap
+     * dan kirim notifikasi WA ke pendaftar
+     */
+    protected function generateNomorTesAfterVerification(): void
+    {
+        $settings = \App\Models\PpdbSettings::first();
+        $tahun = $this->tahunPelajaran->tahun_mulai ?? date('Y');
+        $jalurCode = strtoupper(substr($this->jalurPendaftaran->nama ?? 'REG', 0, 3));
+        
+        // Get and update counter for this jalur
+        $counters = $settings->nomor_tes_counter ?? [];
+        $jalurKey = (string) $this->jalur_pendaftaran_id;
+        $counter = ($counters[$jalurKey] ?? 0) + 1;
+        
+        // Update counter atomically
+        $counters[$jalurKey] = $counter;
+        $settings->update(['nomor_tes_counter' => $counters]);
+        
+        // Generate nomor using format template
+        $format = $settings->nomor_tes_format ?? '{PREFIX}-{TAHUN}-{JALUR}-{NOMOR}';
+        $nomor = str_pad($counter, $settings->nomor_tes_digit ?? 4, '0', STR_PAD_LEFT);
+        
+        $nomorTes = str_replace(
+            ['{PREFIX}', '{TAHUN}', '{JALUR}', '{NOMOR}'],
+            [$settings->nomor_tes_prefix ?? 'NTS', $tahun, $jalurCode, $nomor],
+            $format
+        );
+
+        $this->update(['nomor_tes' => $nomorTes]);
+
+        // Kirim notifikasi WA ke pendaftar
+        $this->sendVerificationNotification($nomorTes);
+    }
+
+    /**
+     * Kirim notifikasi WhatsApp setelah verifikasi dokumen lengkap
+     */
+    protected function sendVerificationNotification(string $nomorTes): void
+    {
+        try {
+            $waService = app(\App\Services\WhatsappService::class);
+            $settings = \App\Models\PpdbSettings::first();
+            
+            // Ambil nomor HP dari data ortu atau siswa
+            $phone = $this->no_hp ?? $this->ortu?->no_hp_ayah ?? $this->ortu?->no_hp_ibu ?? null;
+            
+            if (!$phone) {
+                \Log::warning("Cannot send verification notification: No phone number for calon_siswa {$this->id}");
+                return;
+            }
+
+            // Format pesan
+            $message = "🎉 *DOKUMEN TERVERIFIKASI*\n\n";
+            $message .= "Assalamu'alaikum Wr. Wb.\n\n";
+            $message .= "Dokumen pendaftaran PPDB atas nama *{$this->nama_lengkap}* telah diverifikasi lengkap.\n\n";
+            $message .= "📋 *Detail Pendaftaran:*\n";
+            $message .= "• No. Registrasi: {$this->nomor_registrasi}\n";
+            $message .= "• NISN: {$this->nisn}\n";
+            $message .= "• Jalur: {$this->jalurPendaftaran->nama}\n\n";
+            $message .= "🎫 *NOMOR TES ANDA:*\n";
+            $message .= "*{$nomorTes}*\n\n";
+            $message .= "Simpan nomor tes ini untuk keperluan ujian seleksi.\n";
+            $message .= "Silahkan login ke akun pendaftar untuk mencetak Kartu Ujian.\n\n";
+            $message .= "Terima kasih.\n";
+            $message .= $settings->nama_sekolah ?? 'Panitia PPDB';
+
+            $waService->sendMessage($phone, $message);
+            
+            \Log::info("Verification notification sent to {$phone} for calon_siswa {$this->id} with nomor_tes {$nomorTes}");
+        } catch (\Exception $e) {
+            \Log::error("Failed to send verification notification: " . $e->getMessage());
         }
     }
 
