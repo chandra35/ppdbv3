@@ -8,8 +8,12 @@ use App\Models\TahunPelajaran;
 use App\Models\JalurPendaftaran;
 use App\Models\GelombangPendaftaran;
 use App\Models\SekolahSettings;
+use App\Models\SesiUjian;
+use App\Models\RuangUjian;
+use App\Models\PesertaRuang;
 use App\Services\KopSuratService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class CetakRuangController extends Controller
@@ -140,7 +144,10 @@ class CetakRuangController extends Controller
             'jalur_id', 
             'gelombang_id',
             'urutan',
-            'tahun_pelajaran_id'
+            'tahun_pelajaran_id',
+            'tanggal_ujian',
+            'waktu_mulai',
+            'waktu_selesai'
         ]);
 
         return view('admin.cetak-ruang.index', compact(
@@ -159,6 +166,9 @@ class CetakRuangController extends Controller
      */
     public function printDaftarHadir(Request $request)
     {
+        // Increase memory limit for PDF generation
+        ini_set('memory_limit', '512M');
+        
         $settings = session('cetak_ruang_settings', []);
         
         // Convert to array if stored as object
@@ -182,6 +192,9 @@ class CetakRuangController extends Controller
             $settings['peserta_per_ruang'], 
             $settings['prefix_ruang']
         );
+        
+        // Free memory from pesertaList as it's no longer needed
+        unset($pesertaList);
 
         $sekolah = SekolahSettings::first();
         
@@ -213,6 +226,9 @@ class CetakRuangController extends Controller
      */
     public function printDaftarPeserta(Request $request)
     {
+        // Increase memory limit for PDF generation
+        ini_set('memory_limit', '512M');
+        
         $settings = session('cetak_ruang_settings', []);
         
         // Convert to array if stored as object
@@ -236,6 +252,9 @@ class CetakRuangController extends Controller
             $settings['peserta_per_ruang'], 
             $settings['prefix_ruang']
         );
+        
+        // Free memory
+        unset($pesertaList);
 
         $sekolah = SekolahSettings::first();
         
@@ -267,6 +286,9 @@ class CetakRuangController extends Controller
      */
     public function printNamaRuang(Request $request)
     {
+        // Increase memory limit for PDF generation
+        ini_set('memory_limit', '512M');
+        
         $settings = session('cetak_ruang_settings', []);
         
         // Convert to array if stored as object
@@ -290,6 +312,9 @@ class CetakRuangController extends Controller
             $settings['peserta_per_ruang'], 
             $settings['prefix_ruang']
         );
+        
+        // Free memory
+        unset($pesertaList);
 
         $sekolah = SekolahSettings::first();
 
@@ -317,7 +342,17 @@ class CetakRuangController extends Controller
      */
     private function getPesertaList($request, $tahunAktif)
     {
-        $query = CalonSiswa::with(['jalurPendaftaran', 'gelombangPendaftaran'])
+        // Only select needed columns to reduce memory usage
+        $query = CalonSiswa::select([
+                'id',
+                'nomor_tes',
+                'nisn',
+                'nama_lengkap',
+                'jenis_kelamin',
+                'nama_sekolah_asal',
+                'jalur_pendaftaran_id',
+                'gelombang_pendaftaran_id'
+            ])
             ->where('is_finalisasi', true)
             ->whereNotNull('nomor_tes')
             ->where('nomor_tes', '!=', '');
@@ -382,5 +417,99 @@ class CetakRuangController extends Controller
         }
 
         return $rooms;
+    }
+
+    /**
+     * Save and lock room distribution as Sesi Ujian
+     */
+    public function saveAndLock(Request $request)
+    {
+        $request->validate([
+            'nama_sesi' => 'required|string|max:100',
+            'tanggal_ujian' => 'required|date',
+            'waktu_mulai' => 'required',
+            'waktu_selesai' => 'required',
+            'peserta_per_ruang' => 'required|integer|min:1|max:100',
+            'prefix_ruang' => 'required|string|max:50',
+            'urutan' => 'required|in:nomor_tes,nama,tanggal_finalisasi',
+        ]);
+
+        $tahunAktif = $request->tahun_pelajaran_id 
+            ? TahunPelajaran::find($request->tahun_pelajaran_id)
+            : TahunPelajaran::where('is_active', true)->first();
+
+        if (!$tahunAktif) {
+            return back()->with('error', 'Tahun pelajaran tidak ditemukan.');
+        }
+
+        // Get peserta list
+        $pesertaList = $this->getPesertaList($request, $tahunAktif);
+
+        if ($pesertaList->isEmpty()) {
+            return back()->with('error', 'Tidak ada peserta yang memenuhi kriteria.');
+        }
+
+        // Distribute to rooms
+        $rooms = $this->distributeToRooms(
+            $pesertaList, 
+            $request->peserta_per_ruang, 
+            $request->prefix_ruang
+        );
+
+        try {
+            DB::beginTransaction();
+
+            // Create Sesi Ujian
+            $sesiUjian = SesiUjian::create([
+                'tahun_pelajaran_id' => $tahunAktif->id,
+                'jalur_pendaftaran_id' => $request->jalur_id ?: null,
+                'gelombang_pendaftaran_id' => $request->gelombang_id ?: null,
+                'nama' => $request->nama_sesi,
+                'tanggal' => $request->tanggal_ujian,
+                'waktu_mulai' => $request->waktu_mulai,
+                'waktu_selesai' => $request->waktu_selesai,
+                'peserta_per_ruang' => $request->peserta_per_ruang,
+                'prefix_ruang' => $request->prefix_ruang,
+                'urutan_peserta' => $request->urutan,
+                'status' => SesiUjian::STATUS_LOCKED,
+                'created_by' => auth()->id(),
+                'locked_by' => auth()->id(),
+                'locked_at' => now(),
+            ]);
+
+            // Create Ruang Ujian and Peserta Ruang
+            foreach ($rooms as $room) {
+                $ruangUjian = RuangUjian::create([
+                    'sesi_ujian_id' => $sesiUjian->id,
+                    'nomor_ruang' => $room['nomor'],
+                    'nama_ruang' => $room['nama'],
+                    'kapasitas' => $request->peserta_per_ruang,
+                    'jumlah_peserta' => $room['jumlah'],
+                ]);
+
+                // Create peserta ruang
+                foreach ($room['peserta'] as $index => $peserta) {
+                    PesertaRuang::create([
+                        'sesi_ujian_id' => $sesiUjian->id,
+                        'ruang_ujian_id' => $ruangUjian->id,
+                        'calon_siswa_id' => $peserta->id,
+                        'nomor_urut' => $index + 1,
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            // Clear session settings
+            session()->forget('cetak_ruang_settings');
+
+            return redirect()
+                ->route('admin.sesi-ujian.show', $sesiUjian->id)
+                ->with('success', 'Distribusi ruangan berhasil disimpan dan dikunci. Silakan assign penguji ke ruangan.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal menyimpan distribusi: ' . $e->getMessage());
+        }
     }
 }

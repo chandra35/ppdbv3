@@ -660,6 +660,9 @@ class DashboardController extends Controller
                 'ips' => $nilai->ips ?? null,
                 'rata_rata' => $nilai->rata_rata ?? null,
                 'dokumen' => $raporDokumen,
+                'dokumen_path' => $nilai->dokumen_path ?? ($raporDokumen ? $raporDokumen->file_path : null),
+                'status_validasi' => $nilai->status_validasi ?? 'pending',
+                'catatan_validasi' => $nilai->catatan_validasi ?? null,
             ];
         }
 
@@ -822,6 +825,21 @@ class DashboardController extends Controller
             ]);
         }
 
+        // Update nilai_rapor table with dokumen_path
+        $nilaiRapor = \App\Models\NilaiRapor::where('calon_siswa_id', $calonSiswa->id)
+            ->where('semester', $semester)
+            ->first();
+        
+        if ($nilaiRapor) {
+            $nilaiRapor->update([
+                'dokumen_path' => $dokumen->file_path,
+                'status_validasi' => 'pending', // Reset validation when new document uploaded
+                'catatan_validasi' => null,
+                'validated_by' => null,
+                'validated_at' => null,
+            ]);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'File rapor semester ' . $semester . ' berhasil diupload',
@@ -862,6 +880,21 @@ class DashboardController extends Controller
         // Delete file
         Storage::disk('public')->delete($dokumen->file_path);
         $dokumen->delete();
+
+        // Clear dokumen_path in nilai_rapor table
+        $nilaiRapor = \App\Models\NilaiRapor::where('calon_siswa_id', $calonSiswa->id)
+            ->where('semester', $semester)
+            ->first();
+        
+        if ($nilaiRapor) {
+            $nilaiRapor->update([
+                'dokumen_path' => null,
+                'status_validasi' => 'pending',
+                'catatan_validasi' => null,
+                'validated_by' => null,
+                'validated_at' => null,
+            ]);
+        }
 
         return response()->json([
             'success' => true,

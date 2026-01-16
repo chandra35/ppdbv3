@@ -67,7 +67,7 @@ class ActivityLogController extends Controller
 
         ActivityLog::log('delete', "Menghapus {$count} activity log");
 
-        return redirect()->route('admin.ppdb.logs.index')
+        return redirect()->route('admin.logs.index')
             ->with('success', "Berhasil menghapus {$count} activity log");
     }
 }

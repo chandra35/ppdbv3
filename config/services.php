@@ -35,4 +35,20 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | EMIS API Configuration
+    |--------------------------------------------------------------------------
+    |
+    | API EMIS Kemenag untuk validasi data NISN siswa.
+    | SSL verification bisa diatur via .env untuk mengatasi masalah
+    | certificate di berbagai environment.
+    |
+    */
+    'emis' => [
+        'api_url' => env('EMIS_API_URL', 'https://api-emis.kemenag.go.id/v1'),
+        'bearer_token' => env('EMIS_BEARER_TOKEN'),
+        'ssl_verify' => env('EMIS_SSL_VERIFY', false), // Set true di production jika tidak ada masalah SSL
+    ],
+
 ];

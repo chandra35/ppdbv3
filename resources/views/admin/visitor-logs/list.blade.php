@@ -104,17 +104,27 @@
                                     </small>
                                 </td>
                                 <td>
-                                    @if($visitor->address)
+                                    @if($visitor->location_source === 'gps')
+                                        {{-- GPS Location - More accurate --}}
                                         <small>
-                                            <i class="fas fa-map-marker-alt mr-1 text-danger"></i>
-                                            {{ Str::limit($visitor->address, 35) }}
-                                            @if($visitor->city)
-                                                <br><span class="text-muted">{{ $visitor->city }}</span>
+                                            <span class="badge badge-success badge-sm mb-1" title="Lokasi GPS (presisi tinggi)">
+                                                <i class="fas fa-satellite"></i> GPS
+                                            </span>
+                                            @if($visitor->address)
+                                                <br><i class="fas fa-map-marker-alt mr-1 text-success"></i>
+                                                {{ Str::limit($visitor->address, 35) }}
+                                            @elseif($visitor->city || $visitor->region)
+                                                <br><i class="fas fa-map-marker-alt mr-1 text-success"></i>
+                                                {{ $visitor->location_string }}
                                             @endif
                                         </small>
                                     @elseif($visitor->city || $visitor->country)
+                                        {{-- IP-based Location - Less accurate --}}
                                         <small>
-                                            <i class="fas fa-map-marker-alt mr-1 text-danger"></i>
+                                            <span class="badge badge-secondary badge-sm mb-1" title="Lokasi berdasarkan IP (estimasi)">
+                                                <i class="fas fa-globe"></i> IP
+                                            </span>
+                                            <br><i class="fas fa-map-marker-alt mr-1 text-danger"></i>
                                             {{ $visitor->location_string }}
                                         </small>
                                     @else

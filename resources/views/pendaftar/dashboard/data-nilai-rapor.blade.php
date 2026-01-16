@@ -355,11 +355,16 @@
                                                     <a href="{{ asset('storage/' . $nilai['dokumen']->file_path) }}" target="_blank" class="btn btn-sm btn-outline-success mb-1" title="Lihat File">
                                                         <i class="fas fa-file-pdf"></i> {{ Str::limit($nilai['dokumen']->nama_file, 15) }}
                                                     </a>
-                                                    <span class="badge badge-{{ $nilai['dokumen']->status_verifikasi == 'valid' ? 'success' : ($nilai['dokumen']->status_verifikasi == 'invalid' ? 'danger' : 'warning') }}">
-                                                        {{ ucfirst($nilai['dokumen']->status_verifikasi) }}
+                                                    <br>
+                                                    <span class="badge badge-{{ $nilai['status_validasi'] == 'valid' ? 'success' : ($nilai['status_validasi'] == 'invalid' ? 'danger' : 'warning') }}">
+                                                        <i class="fas fa-{{ $nilai['status_validasi'] == 'valid' ? 'check' : ($nilai['status_validasi'] == 'invalid' ? 'times' : 'clock') }}"></i>
+                                                        {{ ucfirst($nilai['status_validasi']) }}
                                                     </span>
+                                                    @if($nilai['status_validasi'] == 'invalid' && $nilai['catatan_validasi'])
+                                                        <br><small class="text-danger">{{ $nilai['catatan_validasi'] }}</small>
+                                                    @endif
                                                     @if(!$calonSiswa->is_finalisasi)
-                                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteRapor({{ $semester }})" title="Hapus">
+                                                    <button type="button" class="btn btn-sm btn-outline-danger mt-1" onclick="deleteRapor({{ $semester }})" title="Hapus">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                     @endif
@@ -473,18 +478,26 @@
                             <label><i class="fas fa-file-pdf mr-1"></i> File Rapor</label>
                             <div class="mobile-rapor-upload" id="mobile_rapor_upload_{{ $semester }}">
                                 @if($nilai['dokumen'])
-                                    <div class="uploaded-file-mobile d-flex align-items-center justify-content-between">
-                                        <a href="{{ asset('storage/' . $nilai['dokumen']->file_path) }}" target="_blank" class="btn btn-sm btn-outline-success">
-                                            <i class="fas fa-file-pdf"></i> Lihat File
-                                        </a>
-                                        <span class="badge badge-{{ $nilai['dokumen']->status_verifikasi == 'valid' ? 'success' : ($nilai['dokumen']->status_verifikasi == 'invalid' ? 'danger' : 'warning') }}">
-                                            {{ ucfirst($nilai['dokumen']->status_verifikasi) }}
-                                        </span>
-                                        @if(!$calonSiswa->is_finalisasi)
-                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteRapor({{ $semester }})">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                        @endif
+                                    <div class="uploaded-file-mobile">
+                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                            <a href="{{ asset('storage/' . $nilai['dokumen']->file_path) }}" target="_blank" class="btn btn-sm btn-outline-success">
+                                                <i class="fas fa-file-pdf"></i> Lihat File
+                                            </a>
+                                            @if(!$calonSiswa->is_finalisasi)
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteRapor({{ $semester }})">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            @endif
+                                        </div>
+                                        <div>
+                                            <span class="badge badge-{{ $nilai['status_validasi'] == 'valid' ? 'success' : ($nilai['status_validasi'] == 'invalid' ? 'danger' : 'warning') }}">
+                                                <i class="fas fa-{{ $nilai['status_validasi'] == 'valid' ? 'check' : ($nilai['status_validasi'] == 'invalid' ? 'times' : 'clock') }}"></i>
+                                                {{ ucfirst($nilai['status_validasi']) }}
+                                            </span>
+                                            @if($nilai['status_validasi'] == 'invalid' && $nilai['catatan_validasi'])
+                                                <br><small class="text-danger">{{ $nilai['catatan_validasi'] }}</small>
+                                            @endif
+                                        </div>
                                     </div>
                                 @else
                                     @if(!$calonSiswa->is_finalisasi)

@@ -876,6 +876,8 @@ dl.row dt {
                                         <th class="text-center">IPA</th>
                                         <th class="text-center">IPS</th>
                                         <th class="text-center">Rata-Rata</th>
+                                        <th class="text-center" style="width: 120px;">Dokumen</th>
+                                        <th class="text-center" style="width: 180px;">Validasi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -911,6 +913,78 @@ dl.row dt {
                                                 <span class="badge {{ $nilai->rata_rata >= 75 ? 'badge-success' : ($nilai->rata_rata >= 60 ? 'badge-warning' : 'badge-danger') }}" style="font-size: 11px;">
                                                     {{ number_format($nilai->rata_rata, 2) }}
                                                 </span>
+                                            </td>
+                                            <td class="text-center">
+                                                @if($nilai->dokumen_path)
+                                                    @php
+                                                        $raporExtension = strtolower(pathinfo($nilai->dokumen_path, PATHINFO_EXTENSION));
+                                                        $isRaporImage = in_array($raporExtension, ['jpg', 'jpeg', 'png', 'gif']);
+                                                    @endphp
+                                                    <a href="javascript:void(0);"
+                                                       class="btn btn-xs btn-info dokumen-link"
+                                                       data-url="{{ asset('storage/' . $nilai->dokumen_path) }}"
+                                                       data-title="Rapor Semester {{ $nilai->semester }}"
+                                                       data-dokumen-id="rapor-{{ $nilai->id }}"
+                                                       data-dokumen-status="{{ $nilai->status_validasi }}"
+                                                       data-jenis-dokumen="rapor_sem_{{ $nilai->semester }}"
+                                                       data-type="{{ $isRaporImage ? 'image' : 'pdf' }}"
+                                                       data-nilai-matematika="{{ $nilai->matematika }}"
+                                                       data-nilai-ipa="{{ $nilai->ipa }}"
+                                                       data-nilai-ips="{{ $nilai->ips }}"
+                                                       data-nilai-rata="{{ number_format($nilai->rata_rata, 2) }}"
+                                                       title="Lihat Dokumen">
+                                                        <i class="fas fa-{{ $isRaporImage ? 'image' : 'file-pdf' }}"></i> Lihat
+                                                    </a>
+                                                @else
+                                                    <span class="text-muted"><i class="fas fa-minus-circle"></i> Belum ada</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-center" id="rapor-validasi-{{ $nilai->id }}">
+                                                @if($nilai->dokumen_path)
+                                                    @if($nilai->status_validasi === 'pending')
+                                                        <div class="btn-group btn-group-sm">
+                                                            <button type="button" class="btn btn-success btn-xs btn-validasi-rapor" 
+                                                                    data-id="{{ $nilai->id }}" data-status="valid" title="Validasi">
+                                                                <i class="fas fa-check"></i> Valid
+                                                            </button>
+                                                            <button type="button" class="btn btn-danger btn-xs btn-validasi-rapor" 
+                                                                    data-id="{{ $nilai->id }}" data-status="invalid" title="Tolak">
+                                                                <i class="fas fa-times"></i> Tolak
+                                                            </button>
+                                                        </div>
+                                                    @elseif($nilai->status_validasi === 'valid')
+                                                        <span class="badge badge-success mb-1"><i class="fas fa-check-circle"></i> Valid</span>
+                                                        <div class="btn-group btn-group-sm">
+                                                            <button type="button" class="btn btn-warning btn-xs btn-validasi-rapor" 
+                                                                    data-id="{{ $nilai->id }}" data-status="pending" title="Batal Verifikasi">
+                                                                <i class="fas fa-undo"></i> Batal
+                                                            </button>
+                                                            <button type="button" class="btn btn-danger btn-xs btn-validasi-rapor" 
+                                                                    data-id="{{ $nilai->id }}" data-status="invalid" title="Tolak">
+                                                                <i class="fas fa-times"></i> Tolak
+                                                            </button>
+                                                        </div>
+                                                        <br><small class="text-muted">{{ $nilai->validated_at ? $nilai->validated_at->format('d/m H:i') : '' }}</small>
+                                                    @else
+                                                        <span class="badge badge-danger mb-1"><i class="fas fa-times-circle"></i> Ditolak</span>
+                                                        <div class="btn-group btn-group-sm">
+                                                            <button type="button" class="btn btn-success btn-xs btn-validasi-rapor" 
+                                                                    data-id="{{ $nilai->id }}" data-status="valid" title="Validasi">
+                                                                <i class="fas fa-check"></i> Valid
+                                                            </button>
+                                                            <button type="button" class="btn btn-warning btn-xs btn-validasi-rapor" 
+                                                                    data-id="{{ $nilai->id }}" data-status="pending" title="Batal Tolak">
+                                                                <i class="fas fa-undo"></i> Batal
+                                                            </button>
+                                                        </div>
+                                                        @if($nilai->catatan_validasi)
+                                                            <br><small class="text-danger" title="{{ $nilai->catatan_validasi }}"><i class="fas fa-comment"></i> {{ Str::limit($nilai->catatan_validasi, 20) }}</small>
+                                                        @endif
+                                                        <br><small class="text-muted">{{ $nilai->validated_at ? $nilai->validated_at->format('d/m H:i') : '' }}</small>
+                                                    @endif
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
                                             </td>
                                         </tr>
                                     @endforeach
@@ -1581,8 +1655,17 @@ dl.row dt {
                         <span>&times;</span>
                     </button>
                 </div>
-                <div class="modal-body text-center">
-                    <div id="dokumenContent"></div>
+                <div class="modal-body p-0">
+                    <div class="d-flex">
+                        <!-- Left side: Nilai Info (for rapor documents) -->
+                        <div id="dokumenNilaiInfo" class="bg-light border-right d-none" style="width: 200px; min-height: 400px;">
+                            <!-- Nilai data will be injected here -->
+                        </div>
+                        <!-- Right side: Document Content -->
+                        <div class="flex-grow-1 text-center p-3">
+                            <div id="dokumenContent"></div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer d-flex justify-content-between">
                     <div>
@@ -2053,6 +2136,7 @@ $(document).ready(function() {
     let currentDokumenId = null;
     let currentDokumenStatus = null;
     let currentJenisDokumen = null;
+    let currentNilaiData = null;
     let currentScale = 1;
     
     // Gallery data
@@ -2064,14 +2148,26 @@ $(document).ready(function() {
         dokumenGallery = [];
         $('.dokumen-link').each(function() {
             const type = $(this).data('type'); // 'image' or 'pdf'
-            dokumenGallery.push({
+            const item = {
                 url: $(this).data('url'),
                 title: $(this).data('title'),
                 dokumenId: $(this).data('dokumen-id'),
                 status: $(this).data('dokumen-status'),
                 jenisDokumen: $(this).data('jenis-dokumen'),
                 type: type
-            });
+            };
+            
+            // Add nilai data for rapor documents
+            if ($(this).data('nilai-matematika') !== undefined) {
+                item.nilaiData = {
+                    matematika: $(this).data('nilai-matematika'),
+                    ipa: $(this).data('nilai-ipa'),
+                    ips: $(this).data('nilai-ips'),
+                    rata: $(this).data('nilai-rata')
+                };
+            }
+            
+            dokumenGallery.push(item);
         });
         console.log('Gallery built:', dokumenGallery.length, 'items');
     }
@@ -2094,6 +2190,7 @@ $(document).ready(function() {
         currentDokumenId = item.dokumenId;
         currentDokumenStatus = item.status;
         currentJenisDokumen = item.jenisDokumen;
+        currentNilaiData = item.nilaiData || null;
         currentScale = 1;
         
         // Set title
@@ -2199,7 +2296,93 @@ $(document).ready(function() {
     
     function updateApprovalButtons() {
         const container = $('#dokumenApprovalButtons');
+        const nilaiContainer = $('#dokumenNilaiInfo');
         container.empty();
+        nilaiContainer.empty().addClass('d-none');
+        
+        // Check if this is a rapor document
+        if (currentDokumenId && currentDokumenId.toString().startsWith('rapor-')) {
+            const raporId = currentDokumenId.replace('rapor-', '');
+            
+            // Display nilai data on left panel if available
+            if (currentNilaiData) {
+                nilaiContainer.removeClass('d-none').html(`
+                    <div class="p-3 d-flex flex-column justify-content-center h-100">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-calculator fa-2x text-primary mb-2"></i>
+                            <h6 class="mb-0"><strong>Data Nilai Rapor</strong></h6>
+                        </div>
+                        <div class="text-center">
+                            <div class="mb-3 p-2 bg-white rounded shadow-sm">
+                                <div class="h4 mb-0 text-primary font-weight-bold">${currentNilaiData.matematika}</div>
+                                <small class="text-muted">Matematika</small>
+                            </div>
+                            <div class="mb-3 p-2 bg-white rounded shadow-sm">
+                                <div class="h4 mb-0 text-success font-weight-bold">${currentNilaiData.ipa}</div>
+                                <small class="text-muted">IPA</small>
+                            </div>
+                            <div class="mb-3 p-2 bg-white rounded shadow-sm">
+                                <div class="h4 mb-0 text-info font-weight-bold">${currentNilaiData.ips}</div>
+                                <small class="text-muted">IPS</small>
+                            </div>
+                            <div class="p-2 bg-warning rounded shadow-sm">
+                                <div class="h4 mb-0 text-dark font-weight-bold">${currentNilaiData.rata}</div>
+                                <small class="text-dark">Rata-Rata</small>
+                            </div>
+                        </div>
+                    </div>
+                `);
+            }
+            
+            // Buttons based on status
+            if (currentDokumenStatus === 'pending') {
+                const validBtn = $('<button>')
+                    .addClass('btn btn-success btn-sm')
+                    .html('<i class="fas fa-check"></i> Valid')
+                    .on('click', function() { validasiRaporFromModal(raporId, 'valid'); });
+                
+                const invalidBtn = $('<button>')
+                    .addClass('btn btn-danger btn-sm ml-2')
+                    .html('<i class="fas fa-times"></i> Tolak')
+                    .on('click', function() { validasiRaporFromModal(raporId, 'invalid'); });
+                
+                container.append(validBtn).append(' ').append(invalidBtn);
+            } else if (currentDokumenStatus === 'valid') {
+                const statusBadge = $('<span>')
+                    .addClass('badge badge-success mr-2')
+                    .html('<i class="fas fa-check-circle"></i> Valid');
+                
+                const batalBtn = $('<button>')
+                    .addClass('btn btn-warning btn-sm')
+                    .html('<i class="fas fa-undo"></i> Batal')
+                    .on('click', function() { validasiRaporFromModal(raporId, 'pending'); });
+                
+                const tolakBtn = $('<button>')
+                    .addClass('btn btn-danger btn-sm ml-2')
+                    .html('<i class="fas fa-times"></i> Tolak')
+                    .on('click', function() { validasiRaporFromModal(raporId, 'invalid'); });
+                
+                container.append(statusBadge).append(' ').append(batalBtn).append(' ').append(tolakBtn);
+            } else if (currentDokumenStatus === 'invalid') {
+                const statusBadge = $('<span>')
+                    .addClass('badge badge-danger mr-2')
+                    .html('<i class="fas fa-times-circle"></i> Ditolak');
+                
+                const validBtn = $('<button>')
+                    .addClass('btn btn-success btn-sm')
+                    .html('<i class="fas fa-check"></i> Valid')
+                    .on('click', function() { validasiRaporFromModal(raporId, 'valid'); });
+                
+                const batalBtn = $('<button>')
+                    .addClass('btn btn-warning btn-sm ml-2')
+                    .html('<i class="fas fa-undo"></i> Batal')
+                    .on('click', function() { validasiRaporFromModal(raporId, 'pending'); });
+                
+                container.append(statusBadge).append(' ').append(validBtn).append(' ').append(batalBtn);
+            }
+            
+            return;
+        }
         
         // Skip untuk dokumen tambahan (opsional) - tidak punya ID
         if (!currentDokumenId) {
@@ -2239,6 +2422,107 @@ $(document).ready(function() {
         } else if (currentDokumenStatus === 'revision') {
             container.html('<span class="badge badge-info"><i class="fas fa-clock"></i> Menunggu Revisi dari Pendaftar</span>');
         }
+    }
+    
+    // Validasi Rapor from Modal
+    window.validasiRaporFromModal = function(raporId, status) {
+        let title, text, icon, confirmBtnColor, confirmBtnText;
+        
+        if (status === 'invalid') {
+            // Tolak dokumen
+            Swal.fire({
+                title: 'Tolak Dokumen Rapor?',
+                html: `<div class="form-group text-left">
+                    <label>Catatan penolakan (opsional):</label>
+                    <textarea id="catatanValidasiModal" class="form-control" rows="3" placeholder="Masukkan catatan penolakan..."></textarea>
+                   </div>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-times"></i> Ya, Tolak',
+                cancelButtonText: '<i class="fas fa-times"></i> Batal',
+                reverseButtons: true,
+                preConfirm: () => document.getElementById('catatanValidasiModal')?.value
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    doValidasiRapor(raporId, status, result.value);
+                }
+            });
+        } else if (status === 'pending') {
+            // Batal verifikasi
+            Swal.fire({
+                title: 'Batalkan Verifikasi?',
+                text: 'Status dokumen akan dikembalikan ke Pending (belum diverifikasi)',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ffc107',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-undo"></i> Ya, Batalkan',
+                cancelButtonText: '<i class="fas fa-times"></i> Tidak',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    doValidasiRapor(raporId, status, null);
+                }
+            });
+        } else {
+            // Valid dokumen
+            Swal.fire({
+                title: 'Validasi Dokumen Rapor?',
+                text: 'Apakah Anda yakin ingin memvalidasi dokumen rapor ini?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-check"></i> Ya, Valid',
+                cancelButtonText: '<i class="fas fa-times"></i> Batal',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    doValidasiRapor(raporId, status, null);
+                }
+            });
+        }
+    };
+    
+    function doValidasiRapor(raporId, status, catatan) {
+        $.ajax({
+            url: `/admin/pendaftar/rapor/${raporId}/validasi`,
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                status: status,
+                catatan: catatan
+            },
+            success: function(response) {
+                if (response.success) {
+                    showToast('success', response.message);
+                    currentDokumenStatus = status;
+                    updateApprovalButtons();
+                    
+                    // Update cell content in table using returned HTML or reload
+                    const validasiCell = $(`#rapor-validasi-${raporId}`);
+                    if (validasiCell.length && response.html) {
+                        validasiCell.html(response.html);
+                    } else {
+                        // Fallback: reload page if we can't update cell
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                    
+                    // Update dokumen-link data attribute for gallery
+                    $(`.dokumen-link[data-dokumen-id="rapor-${raporId}"]`).data('dokumen-status', status);
+                    
+                    // Rebuild gallery to update status
+                    buildGallery();
+                } else {
+                    showToast('error', response.message || 'Gagal memvalidasi dokumen');
+                }
+            },
+            error: function(xhr) {
+                showToast('error', 'Terjadi kesalahan saat memvalidasi dokumen');
+            }
+        });
     }
     
     // Approval functions
@@ -2929,5 +3213,100 @@ function printKartuUjian() {
     printWindow.focus();
     setTimeout(function() { printWindow.print(); }, 250);
 }
+
+// Validasi Dokumen Rapor
+$(document).on('click', '.btn-validasi-rapor', function() {
+    const btn = $(this);
+    const nilaiId = btn.data('id');
+    const status = btn.data('status');
+    const statusText = status === 'valid' ? 'memvalidasi' : 'menolak';
+    const statusLabel = status === 'valid' ? 'Valid' : 'Invalid';
+    
+    Swal.fire({
+        title: `${statusLabel} Dokumen Rapor?`,
+        html: status === 'invalid' 
+            ? `<div class="form-group text-left">
+                <label>Catatan penolakan (opsional):</label>
+                <textarea id="catatanValidasi" class="form-control" rows="3" placeholder="Masukkan catatan penolakan..."></textarea>
+               </div>`
+            : `<p>Apakah Anda yakin ingin ${statusText} dokumen rapor ini?</p>`,
+        icon: status === 'valid' ? 'question' : 'warning',
+        showCancelButton: true,
+        confirmButtonColor: status === 'valid' ? '#28a745' : '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: `<i class="fas fa-${status === 'valid' ? 'check' : 'times'}"></i> Ya, ${statusLabel}`,
+        cancelButtonText: '<i class="fas fa-times"></i> Batal',
+        reverseButtons: true,
+        preConfirm: () => {
+            return status === 'invalid' ? document.getElementById('catatanValidasi')?.value : null;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: `/admin/pendaftar/rapor/${nilaiId}/validasi`,
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    status: status,
+                    catatan: result.value || null
+                },
+                beforeSend: function() {
+                    btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+                },
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: response.message,
+                            showConfirmButton: false,
+                            timer: 2000
+                        });
+                        
+                        // Update button styles
+                        const row = btn.closest('tr');
+                        const btnGroup = row.find('.btn-validasi-rapor');
+                        
+                        btnGroup.each(function() {
+                            const thisBtn = $(this);
+                            const btnStatus = thisBtn.data('status');
+                            
+                            thisBtn.removeClass('btn-success btn-danger btn-outline-success btn-outline-danger');
+                            
+                            if (btnStatus === status) {
+                                thisBtn.addClass(status === 'valid' ? 'btn-success' : 'btn-danger');
+                            } else {
+                                thisBtn.addClass(btnStatus === 'valid' ? 'btn-outline-success' : 'btn-outline-danger');
+                            }
+                            
+                            thisBtn.prop('disabled', false).html(`<i class="fas fa-${btnStatus === 'valid' ? 'check' : 'times'}"></i>`);
+                        });
+                        
+                        // Add timestamp
+                        const now = new Date();
+                        const timeStr = now.toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit'}) + ' ' + 
+                                       now.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'});
+                        
+                        // Update or add timestamp
+                        let timeEl = row.find('td:last small.text-muted');
+                        if (timeEl.length === 0) {
+                            row.find('td:last').append('<br><small class="text-muted">' + timeStr + '</small>');
+                        } else {
+                            timeEl.text(timeStr);
+                        }
+                    } else {
+                        Swal.fire('Gagal!', response.message, 'error');
+                        btn.prop('disabled', false).html(`<i class="fas fa-${status === 'valid' ? 'check' : 'times'}"></i>`);
+                    }
+                },
+                error: function(xhr) {
+                    Swal.fire('Error!', 'Terjadi kesalahan saat memvalidasi dokumen.', 'error');
+                    btn.prop('disabled', false).html(`<i class="fas fa-${status === 'valid' ? 'check' : 'times'}"></i>`);
+                }
+            });
+        }
+    });
+});
 </script>
 @stop

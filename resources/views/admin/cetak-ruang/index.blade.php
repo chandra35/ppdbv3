@@ -185,6 +185,9 @@
         <h3 class="card-title"><i class="fas fa-print"></i> Preview Pembagian Ruang & Cetak</h3>
         <div class="card-tools">
             <div class="btn-group">
+                <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#saveAndLockModal">
+                    <i class="fas fa-lock"></i> Simpan & Kunci Distribusi
+                </button>
                 <a href="{{ route('admin.cetak-ruang.print.daftar-hadir') }}" target="_blank" class="btn btn-info btn-sm">
                     <i class="fas fa-clipboard-list"></i> Cetak Daftar Hadir (Semua)
                 </a>
@@ -289,6 +292,109 @@
         </div>
     </div>
 </div>
+
+{{-- Modal Save and Lock --}}
+@if(isset($rooms) && count($rooms) > 0)
+<div class="modal fade" id="saveAndLockModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary">
+                <h5 class="modal-title text-white">
+                    <i class="fas fa-lock mr-2"></i>Konfirmasi Simpan & Kunci
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form action="{{ route('admin.cetak-ruang.save-and-lock') }}" method="POST">
+                @csrf
+                <input type="hidden" name="tahun_pelajaran_id" value="{{ $tahunAktif?->id }}">
+                <input type="hidden" name="jalur_id" value="{{ $settings['jalur_id'] ?? '' }}">
+                <input type="hidden" name="gelombang_id" value="{{ $settings['gelombang_id'] ?? '' }}">
+                <input type="hidden" name="peserta_per_ruang" value="{{ $settings['peserta_per_ruang'] ?? 20 }}">
+                <input type="hidden" name="prefix_ruang" value="{{ $settings['prefix_ruang'] ?? 'Ruang' }}">
+                <input type="hidden" name="urutan" value="{{ $settings['urutan'] ?? 'nomor_tes' }}">
+                <input type="hidden" name="tanggal_ujian" value="{{ $settings['tanggal_ujian'] ?? '' }}">
+                <input type="hidden" name="waktu_mulai" value="{{ $settings['waktu_mulai'] ?? '' }}">
+                <input type="hidden" name="waktu_selesai" value="{{ $settings['waktu_selesai'] ?? '' }}">
+                
+                <div class="modal-body">
+                    <div class="alert alert-warning mb-3">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        <strong>Perhatian!</strong> Setelah distribusi dikunci:
+                        <ul class="mb-0 mt-2">
+                            <li>Distribusi ruang akan disimpan secara permanen</li>
+                            <li>Data dapat digunakan untuk fitur Penilaian Seleksi</li>
+                            <li>Penguji dapat ditugaskan ke setiap ruangan</li>
+                        </ul>
+                    </div>
+
+                    <div class="form-group">
+                        <label><strong>Nama Sesi Ujian</strong> <span class="text-danger">*</span></label>
+                        <input type="text" name="nama_sesi" class="form-control" 
+                               value="Sesi Ujian {{ ($settings['jalur_id'] ?? null) ? ($jalurList->where('id', $settings['jalur_id'])->first()?->nama ?? '') : 'Semua Jalur' }} - {{ ($settings['tanggal_ujian'] ?? null) ? \Carbon\Carbon::parse($settings['tanggal_ujian'])->format('d M Y') : date('d M Y') }}" 
+                               required>
+                        <small class="text-muted">Nama untuk mengidentifikasi sesi ujian ini</small>
+                    </div>
+
+                    <h6 class="mt-3"><i class="fas fa-info-circle mr-2"></i>Ringkasan Distribusi:</h6>
+                    <table class="table table-sm table-bordered mb-0">
+                        <tr>
+                            <td width="40%">Total Ruangan</td>
+                            <td><strong>{{ count($rooms) }} ruang</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Total Peserta</td>
+                            <td><strong>{{ $totalPeserta }} orang</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Kapasitas per Ruang</td>
+                            <td><strong>{{ $settings['peserta_per_ruang'] ?? 20 }} orang</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Tanggal Ujian</td>
+                            <td>
+                                @if(!empty($settings['tanggal_ujian']))
+                                    <strong>{{ \Carbon\Carbon::parse($settings['tanggal_ujian'])->format('d F Y') }}</strong>
+                                @else
+                                    <span class="text-muted">Belum diatur</span>
+                                @endif
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Waktu Ujian</td>
+                            <td>
+                                @if(!empty($settings['waktu_mulai']) && !empty($settings['waktu_selesai']))
+                                    <strong>{{ $settings['waktu_mulai'] }} - {{ $settings['waktu_selesai'] }}</strong>
+                                @elseif(!empty($settings['waktu_mulai']))
+                                    <strong>{{ $settings['waktu_mulai'] }}</strong>
+                                @else
+                                    <span class="text-muted">Belum diatur</span>
+                                @endif
+                            </td>
+                        </tr>
+                    </table>
+                    
+                    @if(empty($settings['tanggal_ujian']))
+                    <div class="alert alert-info mt-3 mb-0">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        <small>Tanggal & waktu ujian bisa diatur nanti di halaman Detail Sesi Ujian.</small>
+                    </div>
+                    @endif
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i>Batal
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-lock mr-1"></i>Ya, Simpan & Kunci
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 @stop
 
 @section('js')

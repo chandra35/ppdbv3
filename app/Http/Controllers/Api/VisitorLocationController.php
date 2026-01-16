@@ -78,6 +78,14 @@ class VisitorLocationController extends Controller
 
     /**
      * Reverse geocode coordinates to get detailed address
+     * 
+     * Note: Nominatim returns different field names for different countries.
+     * For Indonesia:
+     * - village = Kelurahan/Desa
+     * - city_district = Kecamatan
+     * - city/town/municipality = Kota/Kabupaten
+     * - county = sometimes used for Kabupaten
+     * - state = Provinsi
      */
     protected function reverseGeocode(float $lat, float $lng): array
     {
@@ -98,15 +106,22 @@ class VisitorLocationController extends Controller
             if ($response->successful()) {
                 $data = $response->json();
                 $address = $data['address'] ?? [];
+                $countryCode = strtoupper($address['country_code'] ?? '');
 
+                // Indonesian specific mapping
+                if ($countryCode === 'ID') {
+                    return $this->parseIndonesianAddress($data, $address);
+                }
+
+                // Default/international mapping
                 return [
                     'address' => $data['display_name'] ?? null,
                     'subdistrict' => $address['village'] ?? $address['suburb'] ?? $address['neighbourhood'] ?? null,
-                    'district' => $address['subdistrict'] ?? $address['district'] ?? $address['city_district'] ?? null,
-                    'city' => $address['city'] ?? $address['town'] ?? $address['municipality'] ?? $address['county'] ?? null,
-                    'region' => $address['state'] ?? $address['province'] ?? null,
+                    'district' => $address['city_district'] ?? $address['district'] ?? $address['subdistrict'] ?? null,
+                    'city' => $address['city'] ?? $address['town'] ?? $address['municipality'] ?? null,
+                    'region' => $address['state'] ?? $address['province'] ?? $address['county'] ?? null,
                     'country' => $address['country'] ?? null,
-                    'country_code' => strtoupper($address['country_code'] ?? ''),
+                    'country_code' => $countryCode,
                     'postal_code' => $address['postcode'] ?? null,
                 ];
             }
@@ -115,5 +130,77 @@ class VisitorLocationController extends Controller
         }
 
         return [];
+    }
+
+    /**
+     * Parse Indonesian address from Nominatim response
+     * Indonesia uses: Kelurahan/Desa -> Kecamatan -> Kota/Kabupaten -> Provinsi
+     */
+    protected function parseIndonesianAddress(array $data, array $address): array
+    {
+        // Kelurahan/Desa (village level)
+        $kelurahan = $address['village'] ?? $address['suburb'] ?? $address['neighbourhood'] ?? null;
+        
+        // Kecamatan (subdistrict level) - Nominatim often puts this in city_district
+        $kecamatan = $address['city_district'] ?? $address['subdistrict'] ?? null;
+        
+        // Kota/Kabupaten (city/regency level)
+        // Priority: city > town > municipality
+        $kotaKab = $address['city'] ?? $address['town'] ?? $address['municipality'] ?? null;
+        
+        // If no city found, use county (which is usually Kabupaten name in Indonesia)
+        // County in Indonesia context is typically a regency/kabupaten name like "Lampung Timur"
+        if (!$kotaKab && isset($address['county'])) {
+            $kotaKab = $address['county'];
+        }
+        
+        // Provinsi (state/province level)
+        $provinsi = $address['state'] ?? $address['province'] ?? null;
+        
+        // If we still don't have a city, try to extract from display_name
+        if (!$kotaKab && isset($data['display_name'])) {
+            $kotaKab = $this->extractCityFromDisplayName($data['display_name'], $provinsi);
+        }
+
+        return [
+            'address' => $data['display_name'] ?? null,
+            'subdistrict' => $kelurahan,
+            'district' => $kecamatan,
+            'city' => $kotaKab,
+            'region' => $provinsi,
+            'country' => $address['country'] ?? 'Indonesia',
+            'country_code' => 'ID',
+            'postal_code' => $address['postcode'] ?? null,
+        ];
+    }
+
+    /**
+     * Try to extract city/kabupaten name from display_name
+     * Display name format: "Detail, Kelurahan, Kecamatan, Kota/Kab, Provinsi, Country"
+     */
+    protected function extractCityFromDisplayName(?string $displayName, ?string $provinsi): ?string
+    {
+        if (!$displayName) return null;
+        
+        $parts = array_map('trim', explode(',', $displayName));
+        
+        // Look for parts containing "Kabupaten" or "Kota"
+        foreach ($parts as $part) {
+            $lower = strtolower($part);
+            if (str_contains($lower, 'kabupaten') || 
+                (str_contains($lower, 'kota') && !str_contains($lower, 'kecamatan'))) {
+                return $part;
+            }
+        }
+        
+        // If provinsi is known, the city is usually right before it
+        if ($provinsi) {
+            $provinsiIndex = array_search($provinsi, $parts);
+            if ($provinsiIndex !== false && $provinsiIndex > 0) {
+                return $parts[$provinsiIndex - 1];
+            }
+        }
+        
+        return null;
     }
 }

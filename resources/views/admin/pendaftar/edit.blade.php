@@ -31,16 +31,174 @@
         margin-bottom: 15px;
         padding-bottom: 8px;
         border-bottom: 2px solid #e9ecef;
+        color: #495057;
+    }
+    /* Widget header customization */
+    .widget-user-2 .widget-user-header {
+        padding: 15px 20px;
+    }
+    .widget-user-2 .widget-user-username {
+        font-size: 1.3rem;
+        margin-bottom: 5px;
+    }
+    .widget-user-2 .widget-user-image img,
+    .widget-user-2 .widget-user-image div {
+        float: none;
+        margin: 0 auto;
+    }
+    /* Card header with tools */
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .card-header .card-title {
+        margin-bottom: 0;
+    }
+    /* Sticky action buttons on scroll */
+    .action-sticky {
+        position: sticky;
+        bottom: 0;
+        z-index: 100;
+        background: #fff;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    }
+    /* Form group improvements */
+    .form-group label {
+        font-weight: 500;
+        color: #495057;
+        margin-bottom: 5px;
+    }
+    /* Readonly field style */
+    input[readonly], input[disabled] {
+        background-color: #f4f6f9 !important;
+        cursor: not-allowed;
     }
 </style>
 @stop
 
 @section('content_header')
-    <h1>Edit Data Pendaftar</h1>
+<div class="row align-items-center">
+    <div class="col-md-6">
+        <h1 class="m-0">
+            <i class="fas fa-user-edit mr-2"></i>Edit Data Pendaftar
+        </h1>
+    </div>
+    <div class="col-md-6 text-right">
+        <a href="{{ route('admin.pendaftar.show', $pendaftar->id) }}" class="btn btn-info">
+            <i class="fas fa-eye mr-1"></i>Lihat Detail
+        </a>
+        <a href="{{ route('admin.pendaftar.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left mr-1"></i>Kembali
+        </a>
+    </div>
+</div>
 @stop
 
 @section('content')
 <div class="container-fluid">
+    
+    {{-- Info Card Header --}}
+    <div class="card card-widget widget-user-2 shadow-sm mb-3">
+        <div class="widget-user-header bg-gradient-primary">
+            <div class="row">
+                <div class="col-md-1 text-center">
+                    <div class="widget-user-image">
+                        @if($pendaftar->foto)
+                            <img class="img-circle elevation-2" src="{{ Storage::url($pendaftar->foto) }}" alt="Foto" style="width: 65px; height: 65px; object-fit: cover;">
+                        @else
+                            <div class="img-circle elevation-2 bg-white d-flex align-items-center justify-content-center" style="width: 65px; height: 65px;">
+                                <i class="fas fa-user fa-2x text-gray"></i>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <h3 class="widget-user-username mb-0">{{ $pendaftar->nama_lengkap }}</h3>
+                    <h6 class="widget-user-desc">
+                        <span class="badge badge-light mr-2">NISN: {{ $pendaftar->nisn }}</span>
+                        @if($pendaftar->nomor_registrasi)
+                            <span class="badge badge-warning">No. Reg: {{ $pendaftar->nomor_registrasi }}</span>
+                        @endif
+                    </h6>
+                </div>
+                <div class="col-md-6 text-right">
+                    <div class="mb-2">
+                        @php
+                            $statusColors = [
+                                'draft' => 'secondary',
+                                'submitted' => 'info', 
+                                'verified' => 'primary',
+                                'accepted' => 'success',
+                                'rejected' => 'danger',
+                            ];
+                            $statusLabels = [
+                                'draft' => 'Draft',
+                                'submitted' => 'Menunggu Verifikasi',
+                                'verified' => 'Terverifikasi',
+                                'accepted' => 'Diterima',
+                                'rejected' => 'Ditolak',
+                            ];
+                            $status = $pendaftar->status_verifikasi ?? 'draft';
+                        @endphp
+                        <span class="badge badge-lg badge-{{ $statusColors[$status] ?? 'secondary' }}" style="font-size: 0.9rem; padding: 8px 15px;">
+                            <i class="fas fa-{{ $status == 'accepted' ? 'check-circle' : ($status == 'rejected' ? 'times-circle' : 'clock') }} mr-1"></i>
+                            {{ $statusLabels[$status] ?? ucfirst($status) }}
+                        </span>
+                    </div>
+                    <small class="text-white-50">
+                        <i class="fas fa-calendar-alt mr-1"></i>Terdaftar: {{ $pendaftar->created_at->format('d M Y H:i') }}
+                        @if($pendaftar->updated_at != $pendaftar->created_at)
+                            | <i class="fas fa-edit mr-1"></i>Diupdate: {{ $pendaftar->updated_at->format('d M Y H:i') }}
+                        @endif
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer p-0">
+            <ul class="nav nav-pills flex-column flex-md-row">
+                <li class="nav-item">
+                    <span class="nav-link">
+                        <i class="fas fa-road mr-2"></i><strong>Jalur:</strong> {{ $pendaftar->jalurPendaftaran->nama ?? '-' }}
+                    </span>
+                </li>
+                <li class="nav-item">
+                    <span class="nav-link">
+                        <i class="fas fa-layer-group mr-2"></i><strong>Gelombang:</strong> {{ $pendaftar->gelombangPendaftaran->nama ?? '-' }}
+                    </span>
+                </li>
+                @if($pendaftar->nomor_tes)
+                <li class="nav-item">
+                    <span class="nav-link">
+                        <i class="fas fa-id-badge mr-2"></i><strong>No. Tes:</strong> <span class="text-primary font-weight-bold">{{ $pendaftar->nomor_tes }}</span>
+                    </span>
+                </li>
+                @endif
+                @if($pendaftar->finalized_at)
+                <li class="nav-item">
+                    <span class="nav-link text-success">
+                        <i class="fas fa-check-circle mr-2"></i><strong>Finalisasi:</strong> {{ \Carbon\Carbon::parse($pendaftar->finalized_at)->format('d M Y H:i') }}
+                    </span>
+                </li>
+                @endif
+            </ul>
+        </div>
+    </div>
+
+    {{-- Alert Messages --}}
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show">
+            <button type="button" class="close" data-dismiss="alert">&times;</button>
+            <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show">
+            <button type="button" class="close" data-dismiss="alert">&times;</button>
+            <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
+        </div>
+    @endif
+
     <form action="{{ route('admin.pendaftar.update', $pendaftar->id) }}" method="POST" id="formEditPendaftar">
         @csrf
         @method('PUT')
@@ -48,7 +206,12 @@
         <!-- Data Pribadi -->
         <div class="card card-primary card-outline">
             <div class="card-header">
-                <h3 class="card-title">Data Pribadi</h3>
+                <h3 class="card-title"><i class="fas fa-user mr-2"></i>Data Pribadi</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
             </div>
             <div class="card-body">
                 <div class="row">
@@ -192,7 +355,12 @@
         <!-- Alamat Lengkap -->
         <div class="card card-success card-outline">
             <div class="card-header">
-                <h3 class="card-title">Alamat Lengkap</h3>
+                <h3 class="card-title"><i class="fas fa-map-marker-alt mr-2"></i>Alamat Lengkap</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
             </div>
             <div class="card-body">
                 <div class="row">
@@ -319,7 +487,12 @@
         <!-- Data Orang Tua -->
         <div class="card card-info card-outline">
             <div class="card-header">
-                <h3 class="card-title">Data Orang Tua</h3>
+                <h3 class="card-title"><i class="fas fa-users mr-2"></i>Data Orang Tua</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
             </div>
             <div class="card-body">
                 <div class="row">
@@ -592,32 +765,64 @@
         <!-- Data Asal Sekolah -->
         <div class="card card-secondary card-outline">
             <div class="card-header">
-                <h3 class="card-title">Data Asal Sekolah</h3>
+                <h3 class="card-title"><i class="fas fa-school mr-2"></i>Data Asal Sekolah</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
             </div>
             <div class="card-body">
+                @php
+                    $npsnKosong = empty($pendaftar->npsn_asal_sekolah);
+                @endphp
+                
+                @if($npsnKosong)
+                <div class="alert alert-warning mb-3">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    <strong>Perhatian:</strong> NPSN asal sekolah belum diisi. Silakan masukkan NPSN dan klik "Sync NPSN" untuk mengambil data sekolah dari Kemdikdasmen.
+                </div>
+                @endif
+                
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="form-group">
                             <label for="npsn_asal_sekolah">NPSN Sekolah</label>
-                            <input type="text" name="npsn_asal_sekolah" id="npsn_asal_sekolah" 
-                                class="form-control @error('npsn_asal_sekolah') is-invalid @enderror" 
-                                value="{{ old('npsn_asal_sekolah', $pendaftar->npsn_asal_sekolah) }}"
-                                maxlength="8"
-                                placeholder="8 digit"
-                                readonly>
+                            <div class="input-group">
+                                <input type="text" name="npsn_asal_sekolah" id="npsn_asal_sekolah" 
+                                    class="form-control @error('npsn_asal_sekolah') is-invalid @enderror" 
+                                    value="{{ old('npsn_asal_sekolah', $pendaftar->npsn_asal_sekolah) }}"
+                                    maxlength="8"
+                                    placeholder="8 digit NPSN"
+                                    pattern="[0-9]{8}"
+                                    inputmode="numeric"
+                                    {{ !$npsnKosong ? 'readonly' : '' }}>
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-info" id="btnSyncNpsn" title="Sync data dari Kemdikdasmen">
+                                        <i class="fas fa-sync-alt mr-1"></i>Sync NPSN
+                                    </button>
+                                </div>
+                            </div>
                             @error('npsn_asal_sekolah')
-                                <span class="invalid-feedback">{{ $message }}</span>
+                                <span class="invalid-feedback d-block">{{ $message }}</span>
                             @enderror
-                            <small class="form-text text-muted">Data dari API EMIS/Kemdikbud saat registrasi</small>
+                            <small class="form-text text-muted">
+                                @if($npsnKosong)
+                                    Masukkan 8 digit NPSN kemudian klik Sync untuk mengambil nama sekolah
+                                @else
+                                    <i class="fas fa-check-circle text-success"></i> Data dari registrasi. Klik Sync untuk update.
+                                @endif
+                            </small>
                         </div>
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="col-md-8">
                         <div class="form-group">
                             <label for="nama_sekolah_asal">Nama Sekolah</label>
                             <input type="text" name="nama_sekolah_asal" id="nama_sekolah_asal" 
                                 class="form-control @error('nama_sekolah_asal') is-invalid @enderror" 
                                 value="{{ old('nama_sekolah_asal', $pendaftar->nama_sekolah_asal) }}"
+                                placeholder="Akan terisi otomatis setelah Sync NPSN"
                                 readonly>
                             @error('nama_sekolah_asal')
                                 <span class="invalid-feedback">{{ $message }}</span>
@@ -625,18 +830,58 @@
                         </div>
                     </div>
                 </div>
+                
+                {{-- Info tambahan sekolah (akan diisi oleh JS) --}}
+                <div id="infoSekolahTambahan" class="row" style="{{ $pendaftar->alamat_sekolah_asal || $pendaftar->status_sekolah_asal ? '' : 'display: none;' }}">
+                    <div class="col-12">
+                        <div class="callout callout-info">
+                            <h5><i class="fas fa-info-circle mr-2"></i>Informasi Sekolah dari Kemdikdasmen</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Alamat:</strong> <span id="info_alamat">{{ $pendaftar->alamat_sekolah_asal ?? '-' }}</span></p>
+                                    <p class="mb-1"><strong>Kelurahan:</strong> <span id="info_kelurahan">{{ $pendaftar->kelurahan_sekolah_asal ?? '-' }}</span></p>
+                                    <p class="mb-1"><strong>Kecamatan:</strong> <span id="info_kecamatan">{{ $pendaftar->kecamatan_sekolah_asal ?? '-' }}</span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Kabupaten:</strong> <span id="info_kabupaten">{{ $pendaftar->kabupaten_sekolah_asal ?? '-' }}</span></p>
+                                    <p class="mb-1"><strong>Provinsi:</strong> <span id="info_provinsi">{{ $pendaftar->provinsi_sekolah_asal ?? '-' }}</span></p>
+                                    <p class="mb-1"><strong>Status:</strong> <span id="info_status">{{ $pendaftar->status_sekolah_asal ?? '-' }}</span> | <strong>Bentuk:</strong> <span id="info_bentuk">{{ $pendaftar->bentuk_sekolah_asal ?? '-' }}</span> | <strong>Akreditasi:</strong> <span id="info_akreditasi">{{ $pendaftar->akreditasi_sekolah_asal ?? '-' }}</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {{-- Hidden fields untuk menyimpan data sekolah --}}
+                <input type="hidden" name="alamat_sekolah_asal" id="alamat_sekolah_asal" value="{{ old('alamat_sekolah_asal', $pendaftar->alamat_sekolah_asal) }}">
+                <input type="hidden" name="kelurahan_sekolah_asal" id="kelurahan_sekolah_asal" value="{{ old('kelurahan_sekolah_asal', $pendaftar->kelurahan_sekolah_asal) }}">
+                <input type="hidden" name="kecamatan_sekolah_asal" id="kecamatan_sekolah_asal" value="{{ old('kecamatan_sekolah_asal', $pendaftar->kecamatan_sekolah_asal) }}">
+                <input type="hidden" name="kabupaten_sekolah_asal" id="kabupaten_sekolah_asal" value="{{ old('kabupaten_sekolah_asal', $pendaftar->kabupaten_sekolah_asal) }}">
+                <input type="hidden" name="provinsi_sekolah_asal" id="provinsi_sekolah_asal" value="{{ old('provinsi_sekolah_asal', $pendaftar->provinsi_sekolah_asal) }}">
+                <input type="hidden" name="status_sekolah_asal" id="status_sekolah_asal" value="{{ old('status_sekolah_asal', $pendaftar->status_sekolah_asal) }}">
+                <input type="hidden" name="bentuk_sekolah_asal" id="bentuk_sekolah_asal" value="{{ old('bentuk_sekolah_asal', $pendaftar->bentuk_sekolah_asal) }}">
+                <input type="hidden" name="akreditasi_sekolah_asal" id="akreditasi_sekolah_asal" value="{{ old('akreditasi_sekolah_asal', $pendaftar->akreditasi_sekolah_asal) }}">
             </div>
         </div>
 
         <!-- Action Buttons -->
-        <div class="card">
+        <div class="card card-outline">
             <div class="card-body">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Simpan Perubahan
-                </button>
-                <a href="{{ route('admin.pendaftar.index') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Kembali
-                </a>
+                <div class="row">
+                    <div class="col-md-6">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save mr-2"></i>Simpan Perubahan
+                        </button>
+                        <a href="{{ route('admin.pendaftar.show', $pendaftar->id) }}" class="btn btn-info btn-lg ml-2">
+                            <i class="fas fa-eye mr-2"></i>Lihat Detail
+                        </a>
+                    </div>
+                    <div class="col-md-6 text-right">
+                        <a href="{{ route('admin.pendaftar.index') }}" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-arrow-left mr-2"></i>Kembali ke Daftar
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </form>
@@ -927,6 +1172,111 @@ $(document).ready(function() {
                 this.submit();
             }
         });
+    });
+
+    // ============================================
+    // SYNC NPSN dari Kemdikdasmen
+    // ============================================
+    $('#btnSyncNpsn').on('click', function() {
+        const npsn = $('#npsn_asal_sekolah').val().trim();
+        
+        // Validate NPSN format
+        if (!npsn) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'NPSN Kosong',
+                text: 'Silakan masukkan NPSN terlebih dahulu.',
+            });
+            return;
+        }
+        
+        if (!/^\d{8}$/.test(npsn)) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Format NPSN Salah',
+                text: 'NPSN harus 8 digit angka.',
+            });
+            return;
+        }
+        
+        const $btn = $(this);
+        const originalHtml = $btn.html();
+        
+        // Show loading state
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Loading...');
+        
+        $.ajax({
+            url: '{{ route("admin.pendaftar.sync-npsn") }}',
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                npsn: npsn
+            },
+            success: function(response) {
+                if (response.success && response.data) {
+                    const data = response.data;
+                    
+                    // Fill nama sekolah
+                    $('#nama_sekolah_asal').val(data.nama_sekolah || '');
+                    
+                    // Fill hidden fields untuk disimpan ke database
+                    $('#alamat_sekolah_asal').val(data.alamat || '');
+                    $('#kelurahan_sekolah_asal').val(data.kelurahan || '');
+                    $('#kecamatan_sekolah_asal').val(data.kecamatan || '');
+                    $('#kabupaten_sekolah_asal').val(data.kabupaten || '');
+                    $('#provinsi_sekolah_asal').val(data.provinsi || '');
+                    $('#status_sekolah_asal').val(data.status || '');
+                    $('#bentuk_sekolah_asal').val(data.bentuk_pendidikan || '');
+                    $('#akreditasi_sekolah_asal').val(data.akreditasi || '');
+                    
+                    // Show info tambahan di UI
+                    $('#info_alamat').text(data.alamat || '-');
+                    $('#info_kelurahan').text(data.kelurahan || '-');
+                    $('#info_kecamatan').text(data.kecamatan || '-');
+                    $('#info_kabupaten').text(data.kabupaten || '-');
+                    $('#info_provinsi').text(data.provinsi || '-');
+                    $('#info_status').text(data.status || '-');
+                    $('#info_bentuk').text(data.bentuk_pendidikan || '-');
+                    $('#info_akreditasi').text(data.akreditasi || '-');
+                    $('#infoSekolahTambahan').slideDown();
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Data Sekolah Ditemukan',
+                        html: `<strong>${data.nama_sekolah}</strong><br><small class="text-muted">${data.alamat || ''}, ${data.kabupaten || ''}</small><br><span class="badge badge-info">${data.status || ''}</span> <span class="badge badge-success">Akreditasi: ${data.akreditasi || '-'}</span>`,
+                        timer: 4000,
+                        showConfirmButton: true
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'NPSN Tidak Ditemukan',
+                        text: response.message || 'Data sekolah tidak ditemukan di database Kemdikdasmen.',
+                    });
+                    $('#infoSekolahTambahan').slideUp();
+                }
+            },
+            error: function(xhr) {
+                let errorMsg = 'Terjadi kesalahan saat mengambil data.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal Sync NPSN',
+                    text: errorMsg,
+                });
+                $('#infoSekolahTambahan').slideUp();
+            },
+            complete: function() {
+                $btn.prop('disabled', false).html(originalHtml);
+            }
+        });
+    });
+    
+    // Allow NPSN input only numbers
+    $('#npsn_asal_sekolah').on('input', function() {
+        this.value = this.value.replace(/\D/g, '').slice(0, 8);
     });
 });
 </script>

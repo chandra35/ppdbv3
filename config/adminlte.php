@@ -150,6 +150,33 @@ return [
                 ],
             ],
         ],
+        [
+            'text' => 'Seleksi',
+            'icon' => 'fas fa-fw fa-clipboard-list',
+            'can' => 'admin',
+            'submenu' => [
+                [
+                    'text' => 'Sesi Ujian',
+                    'route' => 'admin.sesi-ujian.index',
+                    'icon' => 'fas fa-fw fa-calendar-check',
+                ],
+                [
+                    'text' => 'Nilai Seleksi',
+                    'route' => 'admin.nilai-seleksi.index',
+                    'icon' => 'fas fa-fw fa-chart-bar',
+                ],
+                [
+                    'text' => 'Bobot Nilai',
+                    'route' => 'admin.nilai-seleksi.bobot',
+                    'icon' => 'fas fa-fw fa-balance-scale',
+                ],
+                [
+                    'text' => 'Rekap Nilai',
+                    'route' => 'admin.nilai-seleksi.rekap',
+                    'icon' => 'fas fa-fw fa-file-excel',
+                ],
+            ],
+        ],
 
         [
             'header' => 'SETTINGS',

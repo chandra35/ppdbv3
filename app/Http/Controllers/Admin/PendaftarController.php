@@ -882,6 +882,108 @@ class PendaftarController extends Controller
     }
     
     /**
+     * Validasi dokumen rapor per semester
+     */
+    public function validasiRapor(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:valid,invalid,pending',
+            'catatan' => 'nullable|string|max:500',
+        ]);
+
+        $nilaiRapor = \App\Models\NilaiRapor::findOrFail($id);
+        
+        $updateData = [
+            'status_validasi' => $request->status,
+            'catatan_validasi' => $request->status === 'pending' ? null : $request->catatan,
+        ];
+        
+        // Only update validated_by and validated_at if not pending
+        if ($request->status !== 'pending') {
+            $updateData['validated_by'] = auth()->id();
+            $updateData['validated_at'] = now();
+        } else {
+            $updateData['validated_by'] = null;
+            $updateData['validated_at'] = null;
+        }
+        
+        $nilaiRapor->update($updateData);
+        $nilaiRapor->refresh();
+
+        if ($request->ajax()) {
+            // Generate HTML for table cell
+            $html = $this->generateRaporValidasiCellHtml($nilaiRapor);
+            
+            $statusMessages = [
+                'valid' => 'divalidasi',
+                'invalid' => 'ditolak',
+                'pending' => 'dikembalikan ke pending',
+            ];
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Dokumen rapor semester ' . $nilaiRapor->semester . ' berhasil ' . $statusMessages[$request->status] . '.',
+                'status' => $request->status,
+                'html' => $html,
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Dokumen rapor berhasil divalidasi.');
+    }
+    
+    /**
+     * Generate HTML for rapor validation cell
+     */
+    private function generateRaporValidasiCellHtml($nilai)
+    {
+        $html = '';
+        
+        if ($nilai->status_validasi === 'pending') {
+            $html = '<div class="btn-group btn-group-sm">
+                <button type="button" class="btn btn-success btn-xs btn-validasi-rapor" 
+                        data-id="' . $nilai->id . '" data-status="valid" title="Validasi">
+                    <i class="fas fa-check"></i> Valid
+                </button>
+                <button type="button" class="btn btn-danger btn-xs btn-validasi-rapor" 
+                        data-id="' . $nilai->id . '" data-status="invalid" title="Tolak">
+                    <i class="fas fa-times"></i> Tolak
+                </button>
+            </div>';
+        } elseif ($nilai->status_validasi === 'valid') {
+            $html = '<span class="badge badge-success mb-1"><i class="fas fa-check-circle"></i> Valid</span>
+                <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-warning btn-xs btn-validasi-rapor" 
+                            data-id="' . $nilai->id . '" data-status="pending" title="Batal Verifikasi">
+                        <i class="fas fa-undo"></i> Batal
+                    </button>
+                    <button type="button" class="btn btn-danger btn-xs btn-validasi-rapor" 
+                            data-id="' . $nilai->id . '" data-status="invalid" title="Tolak">
+                        <i class="fas fa-times"></i> Tolak
+                    </button>
+                </div>
+                <br><small class="text-muted">' . ($nilai->validated_at ? $nilai->validated_at->format('d/m H:i') : '') . '</small>';
+        } else {
+            $catatanHtml = $nilai->catatan_validasi 
+                ? '<br><small class="text-danger" title="' . e($nilai->catatan_validasi) . '"><i class="fas fa-comment"></i> ' . \Str::limit($nilai->catatan_validasi, 20) . '</small>' 
+                : '';
+            $html = '<span class="badge badge-danger mb-1"><i class="fas fa-times-circle"></i> Ditolak</span>
+                <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-success btn-xs btn-validasi-rapor" 
+                            data-id="' . $nilai->id . '" data-status="valid" title="Validasi">
+                        <i class="fas fa-check"></i> Valid
+                    </button>
+                    <button type="button" class="btn btn-warning btn-xs btn-validasi-rapor" 
+                            data-id="' . $nilai->id . '" data-status="pending" title="Batal Tolak">
+                        <i class="fas fa-undo"></i> Batal
+                    </button>
+                </div>' . $catatanHtml . '
+                <br><small class="text-muted">' . ($nilai->validated_at ? $nilai->validated_at->format('d/m H:i') : '') . '</small>';
+        }
+        
+        return $html;
+    }
+    
+    /**
      * Edit pendaftar lengkap
      */
     public function edit($id)
@@ -962,6 +1064,14 @@ class PendaftarController extends Controller
             // Data Asal Sekolah
             'nama_sekolah_asal' => 'nullable|string|max:255',
             'npsn_asal_sekolah' => 'nullable|string|max:20',
+            'alamat_sekolah_asal' => 'nullable|string|max:500',
+            'kelurahan_sekolah_asal' => 'nullable|string|max:100',
+            'kecamatan_sekolah_asal' => 'nullable|string|max:100',
+            'kabupaten_sekolah_asal' => 'nullable|string|max:100',
+            'provinsi_sekolah_asal' => 'nullable|string|max:100',
+            'status_sekolah_asal' => 'nullable|in:NEGERI,SWASTA',
+            'bentuk_sekolah_asal' => 'nullable|string|max:50',
+            'akreditasi_sekolah_asal' => 'nullable|string|max:1',
         ], [
             'nik.digits' => 'NIK harus 16 digit angka.',
             'nik_ayah.digits' => 'NIK Ayah harus 16 digit angka.',
@@ -1022,6 +1132,14 @@ class PendaftarController extends Controller
             'nomor_hp' => $validated['nomor_hp'],
             'nama_sekolah_asal' => $validated['nama_sekolah_asal'] ?? null,
             'npsn_asal_sekolah' => $validated['npsn_asal_sekolah'] ?? null,
+            'alamat_sekolah_asal' => $validated['alamat_sekolah_asal'] ?? null,
+            'kelurahan_sekolah_asal' => $validated['kelurahan_sekolah_asal'] ?? null,
+            'kecamatan_sekolah_asal' => $validated['kecamatan_sekolah_asal'] ?? null,
+            'kabupaten_sekolah_asal' => $validated['kabupaten_sekolah_asal'] ?? null,
+            'provinsi_sekolah_asal' => $validated['provinsi_sekolah_asal'] ?? null,
+            'status_sekolah_asal' => $validated['status_sekolah_asal'] ?? null,
+            'bentuk_sekolah_asal' => $validated['bentuk_sekolah_asal'] ?? null,
+            'akreditasi_sekolah_asal' => $validated['akreditasi_sekolah_asal'] ?? null,
         ]);
         
         // Update atau create data orang tua
@@ -1632,5 +1750,42 @@ class PendaftarController extends Controller
         }
         
         return $phone;
+    }
+
+    /**
+     * Sync NPSN data from Kemdikdasmen
+     */
+    public function syncNpsn(Request $request)
+    {
+        $request->validate([
+            'npsn' => 'required|digits:8',
+        ]);
+
+        $npsn = $request->npsn;
+        
+        try {
+            $npsnService = new \App\Services\NpsnService();
+            $result = $npsnService->cekNpsn($npsn);
+
+            if ($result['success'] && $result['data']) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Data sekolah ditemukan',
+                    'data' => $result['data']
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'] ?? 'NPSN tidak ditemukan'
+            ], 404);
+
+        } catch (\Exception $e) {
+            \Log::error('syncNpsn error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil data: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

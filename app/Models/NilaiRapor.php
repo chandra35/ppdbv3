@@ -19,6 +19,11 @@ class NilaiRapor extends Model
         'ipa',
         'ips',
         'rata_rata',
+        'dokumen_path',
+        'status_validasi',
+        'catatan_validasi',
+        'validated_by',
+        'validated_at',
     ];
 
     protected $casts = [
@@ -27,12 +32,18 @@ class NilaiRapor extends Model
         'ipa' => 'integer',
         'ips' => 'integer',
         'rata_rata' => 'decimal:2',
+        'validated_at' => 'datetime',
     ];
 
     // Relations
     public function calonSiswa(): BelongsTo
     {
         return $this->belongsTo(CalonSiswa::class, 'calon_siswa_id');
+    }
+
+    public function validator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'validated_by');
     }
 
     // Auto-calculate rata-rata before saving
@@ -51,10 +62,42 @@ class NilaiRapor extends Model
         return number_format($this->rata_rata, 2);
     }
 
+    public function getDokumenUrlAttribute(): ?string
+    {
+        if ($this->dokumen_path) {
+            return asset('storage/' . $this->dokumen_path);
+        }
+        return null;
+    }
+
+    public function getStatusValidasiBadgeAttribute(): string
+    {
+        return match($this->status_validasi) {
+            'valid' => '<span class="badge badge-success"><i class="fas fa-check"></i> Valid</span>',
+            'invalid' => '<span class="badge badge-danger"><i class="fas fa-times"></i> Invalid</span>',
+            default => '<span class="badge badge-warning"><i class="fas fa-clock"></i> Pending</span>',
+        };
+    }
+
     // Helper methods
     public function isComplete(): bool
     {
         return !empty($this->matematika) && !empty($this->ipa) && !empty($this->ips);
+    }
+
+    public function hasDokumen(): bool
+    {
+        return !empty($this->dokumen_path);
+    }
+
+    public function isValidated(): bool
+    {
+        return $this->status_validasi !== 'pending';
+    }
+
+    public function isValid(): bool
+    {
+        return $this->status_validasi === 'valid';
     }
 
     // Validation rules

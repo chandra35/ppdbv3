@@ -38,10 +38,9 @@ class CetakDokumenController extends Controller
             })->get() 
             : collect();
 
-        // Build query - hanya yang sudah final
+        // Build query - hanya yang sudah finalisasi
         $query = CalonSiswa::with(['jalurPendaftaran', 'gelombangPendaftaran'])
-            ->where('is_finalisasi', true)
-            ->where('status_verifikasi', 'final');
+            ->where('is_finalisasi', true);
 
         if ($tahunAktif) {
             $query->where('tahun_pelajaran_id', $tahunAktif->id);
@@ -80,7 +79,6 @@ class CetakDokumenController extends Controller
         // Stats
         $stats = [
             'total_final' => CalonSiswa::where('is_finalisasi', true)
-                ->where('status_verifikasi', 'final')
                 ->when($tahunAktif, fn($q) => $q->where('tahun_pelajaran_id', $tahunAktif->id))
                 ->count(),
             'dengan_nomor_tes' => CalonSiswa::where('is_finalisasi', true)

@@ -177,6 +177,7 @@ Route::middleware(['auth'])->prefix('operator')->name('operator.')->group(functi
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard - Accessible by all (admin, operator, verifikator)
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/stats', [AdminDashboardController::class, 'getStats'])->name('dashboard.stats');
 
     // ============================================
     // SHARED ROUTES - Accessible by operator/verifikator
@@ -215,12 +216,18 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Upload Dokumen oleh Verifikator
     Route::post('/pendaftar/{id}/upload-dokumen', [PendaftarController::class, 'uploadDokumen'])->name('pendaftar.upload-dokumen');
     
+    // Sync NPSN dari Kemdikdasmen
+    Route::post('/pendaftar/sync-npsn', [PendaftarController::class, 'syncNpsn'])->name('pendaftar.sync-npsn');
+    
     // Verifikasi Dokumen Pendaftar (Shared access)
     Route::post('/pendaftar/dokumen/{id}/approve', [PendaftarController::class, 'approveDokumen'])->name('pendaftar.dokumen.approve');
     Route::post('/pendaftar/dokumen/{id}/reject', [PendaftarController::class, 'rejectDokumen'])->name('pendaftar.dokumen.reject');
     Route::post('/pendaftar/dokumen/{id}/revisi', [PendaftarController::class, 'revisiDokumen'])->name('pendaftar.dokumen.revisi');
     Route::post('/pendaftar/dokumen/{id}/cancel', [PendaftarController::class, 'cancelVerifikasi'])->name('pendaftar.dokumen.cancel');
     Route::post('/pendaftar/dokumen/{id}/cancel-revisi', [PendaftarController::class, 'cancelRevisi'])->name('pendaftar.dokumen.cancel-revisi');
+    
+    // Validasi Dokumen Rapor
+    Route::post('/pendaftar/rapor/{id}/validasi', [PendaftarController::class, 'validasiRapor'])->name('pendaftar.rapor.validasi');
 
     // ---- FINALISASI PENDAFTAR ----
     Route::prefix('finalisasi')->name('finalisasi.')->group(function () {
@@ -241,9 +248,32 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::prefix('cetak-ruang')->name('cetak-ruang.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\CetakRuangController::class, 'index'])->name('index');
         Route::post('/preview', [\App\Http\Controllers\Admin\CetakRuangController::class, 'preview'])->name('preview');
+        Route::post('/save-and-lock', [\App\Http\Controllers\Admin\CetakRuangController::class, 'saveAndLock'])->name('save-and-lock');
         Route::get('/print/daftar-hadir', [\App\Http\Controllers\Admin\CetakRuangController::class, 'printDaftarHadir'])->name('print.daftar-hadir');
         Route::get('/print/daftar-peserta', [\App\Http\Controllers\Admin\CetakRuangController::class, 'printDaftarPeserta'])->name('print.daftar-peserta');
         Route::get('/print/nama-ruang', [\App\Http\Controllers\Admin\CetakRuangController::class, 'printNamaRuang'])->name('print.nama-ruang');
+    });
+
+    // ---- SESI UJIAN & SELEKSI ----
+    Route::prefix('sesi-ujian')->name('sesi-ujian.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\SesiUjianController::class, 'index'])->name('index');
+        Route::get('/{sesiUjian}', [\App\Http\Controllers\Admin\SesiUjianController::class, 'show'])->name('show');
+        Route::post('/{sesiUjian}/update-status', [\App\Http\Controllers\Admin\SesiUjianController::class, 'updateStatus'])->name('update-status');
+        Route::post('/{sesiUjian}/assign-penguji', [\App\Http\Controllers\Admin\SesiUjianController::class, 'assignPenguji'])->name('assign-penguji');
+        Route::get('/{sesiUjian}/ruangan/{ruangUjian}/penguji', [\App\Http\Controllers\Admin\SesiUjianController::class, 'getPengujiRuangan'])->name('get-penguji');
+        Route::delete('/{sesiUjian}', [\App\Http\Controllers\Admin\SesiUjianController::class, 'destroy'])->name('destroy');
+        Route::get('/{sesiUjian}/print-daftar-hadir', [\App\Http\Controllers\Admin\SesiUjianController::class, 'printDaftarHadir'])->name('print-daftar-hadir');
+    });
+    
+    // ---- NILAI SELEKSI ----
+    Route::prefix('nilai-seleksi')->name('nilai-seleksi.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'index'])->name('index');
+        Route::get('/rekap', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'rekap'])->name('rekap');
+        Route::get('/bobot', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'bobotIndex'])->name('bobot');
+        Route::post('/bobot', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'bobotUpdate'])->name('bobot.update');
+        Route::get('/{sesiUjian}', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'show'])->name('show');
+        Route::post('/{sesiUjian}/verify/{nilaiSeleksi}', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'verify'])->name('verify');
+        Route::post('/{sesiUjian}/bulk-verify', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'bulkVerify'])->name('bulk-verify');
     });
 
     // ---- STATISTIK PENDAFTAR ----
@@ -470,4 +500,17 @@ Route::middleware(['auth', 'admin'])->prefix('admin/ppdb')->name('admin.ppdb.')-
     Route::get('/logs', fn() => redirect()->route('admin.logs.index'))->name('logs.index');
     Route::get('/gtk', fn() => redirect()->route('admin.gtk.index'))->name('gtk.index');
     Route::get('/site-settings', fn() => redirect()->route('admin.settings.halaman.index'))->name('site-settings.index');
+});
+
+// ============================================
+// PENGUJI ROUTES (Portal Penguji Seleksi)
+// ============================================
+Route::middleware(['auth'])->prefix('penguji')->name('penguji.')->group(function () {
+    // Dashboard Penguji
+    Route::get('/', [\App\Http\Controllers\Penguji\DashboardController::class, 'index'])->name('dashboard');
+    
+    // Ruangan & Input Nilai
+    Route::get('/ruangan/{ruangUjian}', [\App\Http\Controllers\Penguji\DashboardController::class, 'ruangan'])->name('ruangan');
+    Route::get('/ruangan/{ruangUjian}/peserta/{pesertaRuang}', [\App\Http\Controllers\Penguji\DashboardController::class, 'inputNilai'])->name('input-nilai');
+    Route::post('/ruangan/{ruangUjian}/peserta/{pesertaRuang}', [\App\Http\Controllers\Penguji\DashboardController::class, 'saveNilai'])->name('save-nilai');
 });

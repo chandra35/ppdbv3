@@ -67,6 +67,14 @@ class CalonSiswa extends Model
         'npsn_asal_sekolah',
         'nsm_asal_sekolah',
         'nama_sekolah_asal',
+        'alamat_sekolah_asal',
+        'kelurahan_sekolah_asal',
+        'kecamatan_sekolah_asal',
+        'kabupaten_sekolah_asal',
+        'provinsi_sekolah_asal',
+        'status_sekolah_asal',
+        'bentuk_sekolah_asal',
+        'akreditasi_sekolah_asal',
         
         // Foto
         'foto_profile',

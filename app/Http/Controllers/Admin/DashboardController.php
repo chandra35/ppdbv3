@@ -22,9 +22,17 @@ class DashboardController extends Controller
         // Statistics for all roles
         $stats = [
             'total_pendaftar' => CalonSiswa::count(),
+            'pendaftar_reguler' => CalonSiswa::where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program')->count(),
+            'pendaftar_asrama' => CalonSiswa::where('pilihan_program', 'Asrama')->count(),
             'pendaftar_baru' => CalonSiswa::where('status_verifikasi', 'pending')->count(),
+            'pendaftar_baru_reguler' => CalonSiswa::where('status_verifikasi', 'pending')->where(function($q) { $q->where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program'); })->count(),
+            'pendaftar_baru_asrama' => CalonSiswa::where('status_verifikasi', 'pending')->where('pilihan_program', 'Asrama')->count(),
             'terverifikasi' => CalonSiswa::where('status_verifikasi', 'verified')->count(),
-            'diterima' => CalonSiswa::where('status_admisi', 'diterima')->count(),
+            'terverifikasi_reguler' => CalonSiswa::where('status_verifikasi', 'verified')->where(function($q) { $q->where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program'); })->count(),
+            'terverifikasi_asrama' => CalonSiswa::where('status_verifikasi', 'verified')->where('pilihan_program', 'Asrama')->count(),
+            'finalisasi' => CalonSiswa::whereNotNull('nomor_tes')->count(),
+            'finalisasi_reguler' => CalonSiswa::whereNotNull('nomor_tes')->where(function($q) { $q->where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program'); })->count(),
+            'finalisasi_asrama' => CalonSiswa::whereNotNull('nomor_tes')->where('pilihan_program', 'Asrama')->count(),
         ];
 
         // Admin-only statistics
@@ -61,5 +69,53 @@ class DashboardController extends Controller
         }
 
         return view('admin.dashboard', compact('stats', 'recentPendaftar', 'recentLogs', 'chartData', 'isAdmin'));
+    }
+
+    /**
+     * Get realtime stats for AJAX refresh
+     */
+    public function getStats()
+    {
+        $user = auth()->user();
+        $isAdmin = $user->isAdmin();
+        
+        $stats = [
+            'total_pendaftar' => CalonSiswa::count(),
+            'pendaftar_reguler' => CalonSiswa::where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program')->count(),
+            'pendaftar_asrama' => CalonSiswa::where('pilihan_program', 'Asrama')->count(),
+            'pendaftar_baru' => CalonSiswa::where('status_verifikasi', 'pending')->count(),
+            'pendaftar_baru_reguler' => CalonSiswa::where('status_verifikasi', 'pending')->where(function($q) { $q->where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program'); })->count(),
+            'pendaftar_baru_asrama' => CalonSiswa::where('status_verifikasi', 'pending')->where('pilihan_program', 'Asrama')->count(),
+            'terverifikasi' => CalonSiswa::where('status_verifikasi', 'verified')->count(),
+            'terverifikasi_reguler' => CalonSiswa::where('status_verifikasi', 'verified')->where(function($q) { $q->where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program'); })->count(),
+            'terverifikasi_asrama' => CalonSiswa::where('status_verifikasi', 'verified')->where('pilihan_program', 'Asrama')->count(),
+            'finalisasi' => CalonSiswa::whereNotNull('nomor_tes')->count(),
+            'finalisasi_reguler' => CalonSiswa::whereNotNull('nomor_tes')->where(function($q) { $q->where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program'); })->count(),
+            'finalisasi_asrama' => CalonSiswa::whereNotNull('nomor_tes')->where('pilihan_program', 'Asrama')->count(),
+        ];
+
+        if ($isAdmin) {
+            $stats['ditolak'] = CalonSiswa::where('status_admisi', 'ditolak')->count();
+            $stats['total_berita'] = Berita::count();
+            $stats['total_verifikator'] = Verifikator::count();
+            $stats['total_user'] = User::count();
+        }
+
+        // Chart data (last 7 days)
+        $chartData = [
+            'labels' => [],
+            'data' => [],
+        ];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = Carbon::now()->subDays($i)->format('Y-m-d');
+            $chartData['labels'][] = Carbon::now()->subDays($i)->format('d M');
+            $chartData['data'][] = CalonSiswa::whereDate('created_at', $date)->count();
+        }
+
+        return response()->json([
+            'stats' => $stats,
+            'chartData' => $chartData,
+            'timestamp' => now()->format('H:i:s'),
+        ]);
     }
 }

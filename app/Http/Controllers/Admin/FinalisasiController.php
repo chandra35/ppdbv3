@@ -176,7 +176,10 @@ class FinalisasiController extends Controller
             // Update status finalisasi
             $pendaftar->is_finalisasi = true;
             $pendaftar->tanggal_finalisasi = now();
-            $pendaftar->status_verifikasi = 'final';
+            // Keep status_verifikasi as 'verified' (don't change to 'final' as it's not a valid enum value)
+            if ($pendaftar->status_verifikasi !== 'verified') {
+                $pendaftar->status_verifikasi = 'verified';
+            }
             $pendaftar->save();
 
             DB::commit();
@@ -248,7 +251,10 @@ class FinalisasiController extends Controller
 
                 $pendaftar->is_finalisasi = true;
                 $pendaftar->tanggal_finalisasi = now();
-                $pendaftar->status_verifikasi = 'final';
+                // Keep status_verifikasi as 'verified' (don't change to 'final' as it's not a valid enum value)
+                if ($pendaftar->status_verifikasi !== 'verified') {
+                    $pendaftar->status_verifikasi = 'verified';
+                }
                 $pendaftar->save();
 
                 DB::commit();

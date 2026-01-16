@@ -302,6 +302,10 @@
             border: 1px solid #feb2b2;
         }
         
+        .result-box.error #resultTitle {
+            color: #c53030;
+        }
+        
         .result-box h4 {
             display: flex;
             align-items: center;
@@ -1022,7 +1026,16 @@
                                 // Manual input allowed
                                 $('#resultBox').addClass('success');
                                 $('#resultTitle').html('<i class="fas fa-info-circle"></i> <span>Input Manual</span>');
-                                $('#resultData').html('<p style="color: #666;">NISN tidak ditemukan di database EMIS. Anda dapat melanjutkan pendaftaran dengan mengisi data secara manual.</p>');
+                                
+                                // Different message based on whether validation is disabled or NISN not found
+                                let manualMessage = '';
+                                if (response.validation_disabled) {
+                                    manualMessage = '<p style="color: #666;">Validasi NISN dinonaktifkan oleh administrator. Silakan isi data secara manual.</p>';
+                                } else {
+                                    manualMessage = '<p style="color: #666;">NISN tidak ditemukan di database EMIS. Anda dapat melanjutkan pendaftaran dengan mengisi data secara manual.</p>';
+                                }
+                                $('#resultData').html(manualMessage);
+                                
                                 sessionStorage.removeItem('emisData');
                                 sessionStorage.setItem('nisnValid', 'false');
                                 // Show register button for manual input
@@ -1032,7 +1045,27 @@
                                 });
                             }
                         } else {
-                            toastr.error(response.message || 'Terjadi kesalahan saat memeriksa NISN');
+                            // Show error in result box
+                            $('#resultBox').addClass('show');
+                            
+                            if (response.nisn_not_found) {
+                                // NISN not found and validation is required
+                                $('#resultBox').removeClass('success').addClass('error');
+                                $('#resultTitle').html('<i class="fas fa-times-circle"></i> <span>NISN Tidak Ditemukan</span>');
+                                $('#resultData').html(`
+                                    <div style="color: #721c24;">
+                                        <p><strong>${response.message}</strong></p>
+                                        <hr style="border-color: #f5c6cb; margin: 10px 0;">
+                                        <small>
+                                            <i class="fas fa-info-circle"></i> 
+                                            Validasi NISN sedang aktif. NISN harus terdaftar di database EMIS untuk dapat melanjutkan pendaftaran.
+                                        </small>
+                                    </div>
+                                `);
+                                $('#daftarBtn').hide();
+                            } else {
+                                toastr.error(response.message || 'Terjadi kesalahan saat memeriksa NISN');
+                            }
                         }
                     },
                     error: function(xhr, status, error) {

@@ -98,6 +98,17 @@ class AuthController extends Controller
             Log::info('AuthController: EMIS result', ['result' => $result]);
 
             if (isset($result['success']) && $result['success']) {
+                // Check if this is a manual_input response (NISN not found)
+                if (isset($result['manual_input']) && $result['manual_input']) {
+                    // NISN not found in EMIS - validation is ENABLED, so reject
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'NISN tidak ditemukan di database EMIS (Kemdikbud/Kemenag). Pastikan NISN yang dimasukkan benar atau hubungi sekolah asal Anda.',
+                        'data' => null,
+                        'nisn_not_found' => true,
+                    ]);
+                }
+                
                 // Transform nested data structure to flat structure for frontend
                 $emisData = $result['data'];
                 $transformedData = null;
@@ -211,21 +222,6 @@ class AuthController extends Controller
                     'warning' => $warningMessage,
                     'encrypted_nisn' => $encryptedNisn,
                 ], 200, ['Content-Type' => 'application/json']);
-            } elseif (isset($result['manual_input']) && $result['manual_input']) {
-                // NISN not found in EMIS, but allow manual registration
-                // Store empty data for manual input
-                session(['emis_data_' . $nisn => null]);
-                
-                // Encrypt NISN for URL security
-                $encryptedNisn = encrypt($nisn);
-                
-                return response()->json([
-                    'success' => true,
-                    'message' => 'NISN tidak ditemukan di database EMIS. Anda dapat melanjutkan dengan input manual.',
-                    'data' => null,
-                    'manual_input' => true,
-                    'encrypted_nisn' => $encryptedNisn,
-                ]);
             } else {
                 // Error from EMIS or unexpected response
                 return response()->json([

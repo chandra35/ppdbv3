@@ -2,6 +2,30 @@
 
 @section('title', 'Dashboard Admin PPDB')
 
+@section('css')
+<style>
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.4; }
+        100% { opacity: 1; }
+    }
+    .stat-updated {
+        animation: highlight 0.5s ease-out;
+    }
+    @keyframes highlight {
+        0% { background-color: #ffc107; color: #000; }
+        100% { background-color: transparent; }
+    }
+    #btn-refresh-now.loading i {
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+</style>
+@stop
+
 @section('content_header')
     <div class="d-flex justify-content-between align-items-center">
         <h1 class="m-0"><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
@@ -46,57 +70,36 @@
         </div>
     </div>
 
-    <!-- Info boxes -->
-    <div class="row">
-        <div class="col-12 col-sm-6 col-md-3">
-            <div class="info-box">
-                <span class="info-box-icon bg-info elevation-1"><i class="fas fa-users"></i></span>
-                <div class="info-box-content">
-                    <span class="info-box-text">Total Pendaftar</span>
-                    <span class="info-box-number">{{ number_format($stats['total_pendaftar']) }}</span>
-                </div>
-            </div>
+    <!-- Auto-refresh indicator -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+            <span class="badge badge-success" id="live-indicator">
+                <i class="fas fa-circle fa-xs mr-1" style="animation: pulse 1s infinite;"></i> LIVE
+            </span>
+            <small class="text-muted ml-2">Auto-refresh setiap <span id="refresh-interval">10</span> detik</small>
         </div>
-        <div class="col-12 col-sm-6 col-md-3">
-            <div class="info-box">
-                <span class="info-box-icon bg-warning elevation-1"><i class="fas fa-user-clock"></i></span>
-                <div class="info-box-content">
-                    <span class="info-box-text">Menunggu Verifikasi</span>
-                    <span class="info-box-number">{{ number_format($stats['pendaftar_baru']) }}</span>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-sm-6 col-md-3">
-            <div class="info-box">
-                <span class="info-box-icon bg-success elevation-1"><i class="fas fa-user-check"></i></span>
-                <div class="info-box-content">
-                    <span class="info-box-text">Terverifikasi</span>
-                    <span class="info-box-number">{{ number_format($stats['terverifikasi']) }}</span>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-sm-6 col-md-3">
-            <div class="info-box">
-                <span class="info-box-icon bg-success elevation-1"><i class="fas fa-user-check"></i></span>
-                <div class="info-box-content">
-                    <span class="info-box-text">Diterima</span>
-                    <span class="info-box-number">{{ number_format($stats['diterima']) }}</span>
-                </div>
-            </div>
+        <div>
+            <small class="text-muted">Update terakhir: <span id="last-update">{{ now()->format('H:i:s') }}</span></small>
+            <button class="btn btn-sm btn-outline-primary ml-2" id="btn-refresh-now" title="Refresh Sekarang">
+                <i class="fas fa-sync-alt"></i>
+            </button>
         </div>
     </div>
 
-    @if($isAdmin)
-    <!-- Second row of info boxes - ADMIN ONLY -->
+    <!-- Main Stats - Small boxes (Big Cards) -->
     <div class="row">
         <div class="col-12 col-sm-6 col-md-3">
-            <div class="small-box bg-danger">
+            <div class="small-box bg-info">
                 <div class="inner">
-                    <h3>{{ $stats['ditolak'] }}</h3>
-                    <p>Ditolak</p>
+                    <h3 data-stat="total_pendaftar">{{ number_format($stats['total_pendaftar']) }}</h3>
+                    <p>Total Pendaftar</p>
+                    <small style="font-size: 12px; opacity: 0.9;">
+                        Reguler = <span data-stat="pendaftar_reguler">{{ number_format($stats['pendaftar_reguler']) }}</span> | 
+                        Asrama = <span data-stat="pendaftar_asrama">{{ number_format($stats['pendaftar_asrama']) }}</span>
+                    </small>
                 </div>
                 <div class="icon">
-                    <i class="fas fa-user-times"></i>
+                    <i class="fas fa-users"></i>
                 </div>
                 <a href="{{ route('admin.pendaftar.index') }}" class="small-box-footer">
                     Lihat Detail <i class="fas fa-arrow-circle-right"></i>
@@ -104,45 +107,98 @@
             </div>
         </div>
         <div class="col-12 col-sm-6 col-md-3">
-            <div class="small-box bg-secondary">
+            <div class="small-box bg-warning">
                 <div class="inner">
-                    <h3>{{ $stats['total_berita'] }}</h3>
-                    <p>Total Berita</p>
+                    <h3 data-stat="pendaftar_baru">{{ number_format($stats['pendaftar_baru']) }}</h3>
+                    <p>Menunggu Verifikasi</p>
+                    <small style="font-size: 12px; opacity: 0.9;">
+                        Reguler = <span data-stat="pendaftar_baru_reguler">{{ number_format($stats['pendaftar_baru_reguler']) }}</span> | 
+                        Asrama = <span data-stat="pendaftar_baru_asrama">{{ number_format($stats['pendaftar_baru_asrama']) }}</span>
+                    </small>
                 </div>
                 <div class="icon">
-                    <i class="fas fa-newspaper"></i>
+                    <i class="fas fa-user-clock"></i>
                 </div>
-                <a href="{{ route('admin.settings.berita.index') }}" class="small-box-footer">
-                    Kelola Berita <i class="fas fa-arrow-circle-right"></i>
+                <a href="{{ route('admin.pendaftar.index') }}?status=pending" class="small-box-footer">
+                    Lihat Detail <i class="fas fa-arrow-circle-right"></i>
                 </a>
             </div>
         </div>
         <div class="col-12 col-sm-6 col-md-3">
-            <div class="small-box bg-teal">
+            <div class="small-box bg-success">
                 <div class="inner">
-                    <h3>{{ $stats['total_verifikator'] }}</h3>
-                    <p>Total Verifikator</p>
+                    <h3 data-stat="terverifikasi">{{ number_format($stats['terverifikasi']) }}</h3>
+                    <p>Terverifikasi</p>
+                    <small style="font-size: 12px; opacity: 0.9;">
+                        Reguler = <span data-stat="terverifikasi_reguler">{{ number_format($stats['terverifikasi_reguler']) }}</span> | 
+                        Asrama = <span data-stat="terverifikasi_asrama">{{ number_format($stats['terverifikasi_asrama']) }}</span>
+                    </small>
                 </div>
                 <div class="icon">
-                    <i class="fas fa-user-shield"></i>
+                    <i class="fas fa-user-check"></i>
                 </div>
-                <a href="{{ route('admin.verifikator.index') }}" class="small-box-footer">
-                    Kelola Verifikator <i class="fas fa-arrow-circle-right"></i>
+                <a href="{{ route('admin.pendaftar.index') }}?status=verified" class="small-box-footer">
+                    Lihat Detail <i class="fas fa-arrow-circle-right"></i>
                 </a>
             </div>
         </div>
         <div class="col-12 col-sm-6 col-md-3">
-            <div class="small-box bg-purple">
+            <div class="small-box bg-primary">
                 <div class="inner">
-                    <h3>{{ $stats['total_user'] }}</h3>
-                    <p>Total User</p>
+                    <h3 data-stat="finalisasi">{{ number_format($stats['finalisasi']) }}</h3>
+                    <p>Finalisasi</p>
+                    <small style="font-size: 12px; opacity: 0.9;">
+                        Reguler = <span data-stat="finalisasi_reguler">{{ number_format($stats['finalisasi_reguler']) }}</span> | 
+                        Asrama = <span data-stat="finalisasi_asrama">{{ number_format($stats['finalisasi_asrama']) }}</span>
+                    </small>
                 </div>
                 <div class="icon">
-                    <i class="fas fa-user-cog"></i>
+                    <i class="fas fa-clipboard-check"></i>
                 </div>
-                <a href="{{ route('admin.users.index') }}" class="small-box-footer">
-                    Kelola User <i class="fas fa-arrow-circle-right"></i>
+                <a href="{{ route('admin.pendaftar.index') }}?finalisasi=1" class="small-box-footer">
+                    Lihat Detail <i class="fas fa-arrow-circle-right"></i>
                 </a>
+            </div>
+        </div>
+    </div>
+
+    @if($isAdmin)
+    <!-- Second row - Admin Only Stats (Smaller info boxes) -->
+    <div class="row">
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="info-box bg-danger">
+                <span class="info-box-icon"><i class="fas fa-user-times"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Ditolak</span>
+                    <span class="info-box-number" data-stat="ditolak">{{ $stats['ditolak'] }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="info-box bg-secondary">
+                <span class="info-box-icon"><i class="fas fa-newspaper"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Total Berita</span>
+                    <span class="info-box-number" data-stat="total_berita">{{ $stats['total_berita'] }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="info-box bg-teal">
+                <span class="info-box-icon"><i class="fas fa-user-shield"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Total Verifikator</span>
+                    <span class="info-box-number" data-stat="total_verifikator">{{ $stats['total_verifikator'] }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="info-box bg-purple">
+                <span class="info-box-icon"><i class="fas fa-user-cog"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Total User</span>
+                    <span class="info-box-number" data-stat="total_user">{{ $stats['total_user'] }}</span>
+                </div>
             </div>
         </div>
     </div>
@@ -379,5 +435,61 @@
         
         updateDateTime();
         setInterval(updateDateTime, 1000);
+
+        // ========================================
+        // AUTO-REFRESH STATS
+        // ========================================
+        const REFRESH_INTERVAL = 10000; // 10 seconds
+        let statsChart = pendaftarChart; // Reference to the chart
+        
+        function formatNumber(num) {
+            return new Intl.NumberFormat('id-ID').format(num);
+        }
+        
+        function refreshStats() {
+            const btn = document.getElementById('btn-refresh-now');
+            btn.classList.add('loading');
+            
+            fetch('{{ route("admin.dashboard.stats") }}')
+                .then(response => response.json())
+                .then(data => {
+                    // Update stats with animation
+                    Object.keys(data.stats).forEach(key => {
+                        const el = document.querySelector(`[data-stat="${key}"]`);
+                        if (el) {
+                            const newValue = formatNumber(data.stats[key]);
+                            if (el.textContent !== newValue) {
+                                el.textContent = newValue;
+                                el.classList.add('stat-updated');
+                                setTimeout(() => el.classList.remove('stat-updated'), 500);
+                            }
+                        }
+                    });
+                    
+                    // Update chart data
+                    if (data.chartData && statsChart) {
+                        statsChart.data.labels = data.chartData.labels;
+                        statsChart.data.datasets[0].data = data.chartData.data;
+                        statsChart.update('none'); // Update without animation for smoother experience
+                    }
+                    
+                    // Update timestamp
+                    document.getElementById('last-update').textContent = data.timestamp;
+                })
+                .catch(error => {
+                    console.error('Failed to refresh stats:', error);
+                })
+                .finally(() => {
+                    btn.classList.remove('loading');
+                });
+        }
+        
+        // Auto-refresh every REFRESH_INTERVAL
+        setInterval(refreshStats, REFRESH_INTERVAL);
+        
+        // Manual refresh button
+        document.getElementById('btn-refresh-now').addEventListener('click', function() {
+            refreshStats();
+        });
     </script>
 @stop

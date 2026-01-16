@@ -41,17 +41,17 @@ class EmisNisnService
             }
 
             // Prepare HTTP client
+            // SSL verification can be configured via .env (EMIS_SSL_VERIFY)
+            // Default: false for local, true for production
+            $sslVerify = config('services.emis.ssl_verify', config('app.env') === 'production');
+            
             $http = Http::timeout($this->timeout)
+                ->withOptions(['verify' => $sslVerify])
                 ->withHeaders([
                     'Accept' => 'application/json',
                     'Content-Type' => 'application/json',
                     'Authorization' => 'Bearer ' . $this->bearerToken,
                 ]);
-
-            // Skip SSL verification untuk development (Windows SSL issue)
-            if (config('app.env') !== 'production') {
-                $http = $http->withOptions(['verify' => false]);
-            }
 
             // Initialize data variables
             $kemdikbudData = null;
