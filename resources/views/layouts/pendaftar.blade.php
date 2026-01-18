@@ -573,11 +573,11 @@
                                         </table>
                                         
                                         {{-- Password --}}
-                                        <div class="password-box" style="border: 1px dashed #999; border-radius: 4px; padding: 5px 8px;">
-                                            <table cellpadding="0" cellspacing="0" style="width: 100%;">
+                                        <div class="password-box" style="border: 1px dashed #999; border-radius: 4px; padding: 5px 8px; display: inline-block;">
+                                            <table cellpadding="0" cellspacing="0">
                                                 <tr>
-                                                    <td class="password-label" style="color: #666; font-size: 9px;">🔑 Password:</td>
-                                                    <td class="password-value" style="color: #c0392b; font-size: 12px; font-weight: bold; letter-spacing: 2px; font-family: Consolas, monospace; text-align: right;">{{ $password }}</td>
+                                                    <td class="password-label" style="color: #666; font-size: 9px; padding-right: 8px;">🔑 Password:</td>
+                                                    <td class="password-value" style="color: #c0392b; font-size: 12px; font-weight: bold; letter-spacing: 2px; font-family: Consolas, monospace;">{{ $password }}</td>
                                                 </tr>
                                             </table>
                                         </div>
@@ -655,10 +655,10 @@ function printKartuUjian() {
     printWindow.document.write('.data-separator { width: 10px; color: #666; }');
     printWindow.document.write('.data-value { font-weight: bold; color: #333; }');
     printWindow.document.write('.nama-value { font-size: 11px; text-transform: uppercase; }');
-    printWindow.document.write('.password-box { border: 1px dashed #999; border-radius: 4px; padding: 5px 8px; }');
-    printWindow.document.write('.password-box table { width: 100%; }');
-    printWindow.document.write('.password-label { color: #666; font-size: 9px; }');
-    printWindow.document.write('.password-value { color: #c0392b; font-size: 12px; font-weight: bold; letter-spacing: 2px; font-family: Consolas, monospace; text-align: right; }');
+    printWindow.document.write('.password-box { border: 1px dashed #999; border-radius: 4px; padding: 5px 8px; display: inline-block; }');
+    printWindow.document.write('.password-box table { width: auto; }');
+    printWindow.document.write('.password-label { color: #666; font-size: 9px; padding-right: 8px; }');
+    printWindow.document.write('.password-value { color: #c0392b; font-size: 12px; font-weight: bold; letter-spacing: 2px; font-family: Consolas, monospace; }');
     printWindow.document.write('.card-footer { position: absolute; bottom: 0; left: 0; right: 0; border-top: 1px solid #ccc; padding: 6px 12px; background: #fff; }');
     printWindow.document.write('.card-footer table { width: 100%; }');
     printWindow.document.write('.card-footer td { color: #666; font-size: 9px; }');

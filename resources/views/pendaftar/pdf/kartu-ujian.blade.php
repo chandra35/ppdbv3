@@ -259,13 +259,15 @@
             border-radius: 4px;
             padding: 5px 8px;
             background: #fff;
+            display: inline-block;
         }
         .password-box table {
-            width: 100%;
+            width: auto;
         }
         .password-label {
             color: #666;
             font-size: 9px;
+            padding-right: 8px;
         }
         .password-value {
             color: #c0392b;
@@ -273,7 +275,6 @@
             font-weight: bold;
             letter-spacing: 2px;
             font-family: Consolas, Monaco, monospace;
-            text-align: right;
         }
         
         /* Footer */
