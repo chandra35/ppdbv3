@@ -48,9 +48,14 @@ class AuthController extends Controller
         
         $tahunAktif = TahunPelajaran::where('is_active', true)->first();
         $jalurPendaftaran = JalurPendaftaran::where('is_active', true)->orderBy('urutan')->get();
+        
+        // Get active gelombang from the active tahun pelajaran only
         $gelombangAktif = GelombangPendaftaran::where('is_active', true)
             ->where('tanggal_buka', '<=', now())
             ->where('tanggal_tutup', '>=', now())
+            ->whereHas('jalur', function ($query) use ($tahunAktif) {
+                $query->where('tahun_pelajaran_id', $tahunAktif?->id);
+            })
             ->first();
         
         // Get location setting
@@ -413,9 +418,14 @@ class AuthController extends Controller
 
             // Get active tahun pelajaran & gelombang
             $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+            
+            // Get active gelombang from the active tahun pelajaran only
             $gelombangAktif = GelombangPendaftaran::where('is_active', true)
                 ->where('tanggal_buka', '<=', now())
                 ->where('tanggal_tutup', '>=', now())
+                ->whereHas('jalur', function ($query) use ($tahunAktif) {
+                    $query->where('tahun_pelajaran_id', $tahunAktif?->id);
+                })
                 ->first();
 
             // Create calon siswa with EMIS data
