@@ -8,6 +8,25 @@ use Illuminate\Http\Request;
 
 class ActivityLogController extends Controller
 {
+    /**
+     * Check permission - admin selalu bisa akses
+     */
+    private function checkPermission(string $permission): void
+    {
+        $user = auth()->user();
+        if (!$user) {
+            abort(403, 'Unauthorized');
+        }
+        
+        if ($user->isAdmin()) {
+            return;
+        }
+        
+        if (!$user->hasPermission($permission)) {
+            abort(403, 'Anda tidak memiliki akses untuk fitur ini.');
+        }
+    }
+
     public function index(Request $request)
     {
         $query = ActivityLog::with('user')->orderBy('created_at', 'desc');

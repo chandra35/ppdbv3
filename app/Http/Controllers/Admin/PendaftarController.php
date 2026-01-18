@@ -33,6 +33,25 @@ class PendaftarController extends Controller
         $this->kopSuratService = $kopSuratService;
     }
 
+    /**
+     * Check permission - admin selalu bisa akses, user lain cek permission
+     */
+    private function checkPermission(string $permission): void
+    {
+        $user = auth()->user();
+        if (!$user) {
+            abort(403, 'Unauthorized');
+        }
+        
+        if ($user->isAdmin()) {
+            return; // Admin selalu punya akses
+        }
+        
+        if (!$user->hasPermission($permission)) {
+            abort(403, 'Anda tidak memiliki akses untuk fitur ini.');
+        }
+    }
+
     public function index(Request $request)
     {
         // Get active tahun pelajaran

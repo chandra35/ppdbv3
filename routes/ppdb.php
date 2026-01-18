@@ -190,47 +190,61 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/profile/photo', [ProfileController::class, 'deletePhoto'])->name('profile.deletePhoto');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.updatePassword');
     
-    // ---- PENDAFTAR (Shared access) ----
-    Route::get('/pendaftar', [PendaftarController::class, 'index'])->name('pendaftar.index');
-    Route::get('/pendaftar/export', [PendaftarController::class, 'export'])->name('pendaftar.export');
-    Route::get('/pendaftar/map', [PendaftarController::class, 'map'])->name('pendaftar.map');
-    Route::get('/pendaftar/create', [PendaftarController::class, 'create'])->name('pendaftar.create');
-    Route::post('/pendaftar', [PendaftarController::class, 'store'])->name('pendaftar.store');
-    Route::get('/pendaftar/{id}', [PendaftarController::class, 'show'])->name('pendaftar.show');
-    Route::get('/pendaftar/{id}/edit', [PendaftarController::class, 'edit'])->name('pendaftar.edit');
-    Route::put('/pendaftar/{id}', [PendaftarController::class, 'update'])->name('pendaftar.update');
-    Route::delete('/pendaftar/{id}', [PendaftarController::class, 'destroy'])->name('pendaftar.destroy');
-    Route::post('/pendaftar/{id}/reset-password', [PendaftarController::class, 'resetPassword'])->name('pendaftar.reset-password');
-    Route::get('/pendaftar/{id}/show-password', [PendaftarController::class, 'showPassword'])->name('pendaftar.show-password');
-    Route::get('/pendaftar/{id}/dokumen-list', [PendaftarController::class, 'getDokumenList'])->name('pendaftar.dokumen-list');
-    Route::post('/pendaftar/{id}/verify', [PendaftarController::class, 'verify'])->name('pendaftar.verify');
-    Route::post('/pendaftar/{id}/reject', [PendaftarController::class, 'reject'])->name('pendaftar.reject');
-    Route::post('/pendaftar/{id}/approve', [PendaftarController::class, 'approve'])->name('pendaftar.approve');
-    Route::post('/pendaftar/{id}/batal-finalisasi', [PendaftarController::class, 'batalFinalisasi'])->name('pendaftar.batal-finalisasi');
+    // ---- PENDAFTAR (View) ----
+    Route::middleware(['permission:pendaftar.view'])->group(function () {
+        Route::get('/pendaftar', [PendaftarController::class, 'index'])->name('pendaftar.index');
+        Route::get('/pendaftar/map', [PendaftarController::class, 'map'])->name('pendaftar.map');
+        Route::get('/pendaftar/{id}', [PendaftarController::class, 'show'])->name('pendaftar.show');
+        Route::get('/pendaftar/{id}/dokumen-list', [PendaftarController::class, 'getDokumenList'])->name('pendaftar.dokumen-list');
+        Route::get('/pendaftar/{id}/show-password', [PendaftarController::class, 'showPassword'])->name('pendaftar.show-password');
+    });
     
-    // Cetak Kartu (Admin/Verifikator)
-    Route::get('/pendaftar/{id}/cetak-registrasi', [PendaftarController::class, 'cetakBuktiRegistrasi'])->name('pendaftar.cetak-registrasi');
-    Route::get('/pendaftar/{id}/cetak-ujian/preview', [PendaftarController::class, 'previewKartuUjian'])->name('pendaftar.cetak-ujian.preview');
-    Route::get('/pendaftar/{id}/cetak-ujian', [PendaftarController::class, 'cetakKartuUjian'])->name('pendaftar.cetak-ujian');
+    // ---- PENDAFTAR (Export) ----
+    Route::get('/pendaftar/export', [PendaftarController::class, 'export'])->middleware('permission:pendaftar.export')->name('pendaftar.export');
     
-    // Upload Dokumen oleh Verifikator
-    Route::post('/pendaftar/{id}/upload-dokumen', [PendaftarController::class, 'uploadDokumen'])->name('pendaftar.upload-dokumen');
+    // ---- PENDAFTAR (Create) ----
+    Route::middleware(['permission:pendaftar.create'])->group(function () {
+        Route::get('/pendaftar/create', [PendaftarController::class, 'create'])->name('pendaftar.create');
+        Route::post('/pendaftar', [PendaftarController::class, 'store'])->name('pendaftar.store');
+    });
+    
+    // ---- PENDAFTAR (Edit) ----
+    Route::middleware(['permission:pendaftar.edit'])->group(function () {
+        Route::get('/pendaftar/{id}/edit', [PendaftarController::class, 'edit'])->name('pendaftar.edit');
+        Route::put('/pendaftar/{id}', [PendaftarController::class, 'update'])->name('pendaftar.update');
+        Route::post('/pendaftar/{id}/reset-password', [PendaftarController::class, 'resetPassword'])->name('pendaftar.reset-password');
+        Route::post('/pendaftar/{id}/upload-dokumen', [PendaftarController::class, 'uploadDokumen'])->name('pendaftar.upload-dokumen');
+    });
+    
+    // ---- PENDAFTAR (Delete) ----
+    Route::delete('/pendaftar/{id}', [PendaftarController::class, 'destroy'])->middleware('permission:pendaftar.delete')->name('pendaftar.destroy');
+    
+    // ---- VERIFIKASI (Verify/Approve/Reject) ----
+    Route::middleware(['permission:verifikasi.verify'])->group(function () {
+        Route::post('/pendaftar/{id}/verify', [PendaftarController::class, 'verify'])->name('pendaftar.verify');
+        Route::post('/pendaftar/{id}/reject', [PendaftarController::class, 'reject'])->name('pendaftar.reject');
+        Route::post('/pendaftar/{id}/approve', [PendaftarController::class, 'approve'])->name('pendaftar.approve');
+        Route::post('/pendaftar/{id}/batal-finalisasi', [PendaftarController::class, 'batalFinalisasi'])->name('pendaftar.batal-finalisasi');
+        Route::post('/pendaftar/dokumen/{id}/approve', [PendaftarController::class, 'approveDokumen'])->name('pendaftar.dokumen.approve');
+        Route::post('/pendaftar/dokumen/{id}/reject', [PendaftarController::class, 'rejectDokumen'])->name('pendaftar.dokumen.reject');
+        Route::post('/pendaftar/dokumen/{id}/revisi', [PendaftarController::class, 'revisiDokumen'])->name('pendaftar.dokumen.revisi');
+        Route::post('/pendaftar/dokumen/{id}/cancel', [PendaftarController::class, 'cancelVerifikasi'])->name('pendaftar.dokumen.cancel');
+        Route::post('/pendaftar/dokumen/{id}/cancel-revisi', [PendaftarController::class, 'cancelRevisi'])->name('pendaftar.dokumen.cancel-revisi');
+        Route::post('/pendaftar/rapor/{id}/validasi', [PendaftarController::class, 'validasiRapor'])->name('pendaftar.rapor.validasi');
+    });
+    
+    // ---- CETAK (Print) ----
+    Route::middleware(['permission:verifikasi.cetak'])->group(function () {
+        Route::get('/pendaftar/{id}/cetak-registrasi', [PendaftarController::class, 'cetakBuktiRegistrasi'])->name('pendaftar.cetak-registrasi');
+        Route::get('/pendaftar/{id}/cetak-ujian/preview', [PendaftarController::class, 'previewKartuUjian'])->name('pendaftar.cetak-ujian.preview');
+        Route::get('/pendaftar/{id}/cetak-ujian', [PendaftarController::class, 'cetakKartuUjian'])->name('pendaftar.cetak-ujian');
+    });
     
     // Sync NPSN dari Kemdikdasmen
     Route::post('/pendaftar/sync-npsn', [PendaftarController::class, 'syncNpsn'])->name('pendaftar.sync-npsn');
-    
-    // Verifikasi Dokumen Pendaftar (Shared access)
-    Route::post('/pendaftar/dokumen/{id}/approve', [PendaftarController::class, 'approveDokumen'])->name('pendaftar.dokumen.approve');
-    Route::post('/pendaftar/dokumen/{id}/reject', [PendaftarController::class, 'rejectDokumen'])->name('pendaftar.dokumen.reject');
-    Route::post('/pendaftar/dokumen/{id}/revisi', [PendaftarController::class, 'revisiDokumen'])->name('pendaftar.dokumen.revisi');
-    Route::post('/pendaftar/dokumen/{id}/cancel', [PendaftarController::class, 'cancelVerifikasi'])->name('pendaftar.dokumen.cancel');
-    Route::post('/pendaftar/dokumen/{id}/cancel-revisi', [PendaftarController::class, 'cancelRevisi'])->name('pendaftar.dokumen.cancel-revisi');
-    
-    // Validasi Dokumen Rapor
-    Route::post('/pendaftar/rapor/{id}/validasi', [PendaftarController::class, 'validasiRapor'])->name('pendaftar.rapor.validasi');
 
     // ---- FINALISASI PENDAFTAR ----
-    Route::prefix('finalisasi')->name('finalisasi.')->group(function () {
+    Route::prefix('finalisasi')->name('finalisasi.')->middleware('permission:verifikasi.finalisasi')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\FinalisasiController::class, 'index'])->name('index');
         Route::post('/{id}/finalisasi', [\App\Http\Controllers\Admin\FinalisasiController::class, 'finalisasi'])->name('finalisasi');
         Route::post('/batch', [\App\Http\Controllers\Admin\FinalisasiController::class, 'batchFinalisasi'])->name('batch');
@@ -238,14 +252,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     });
 
     // ---- CETAK DOKUMEN ----
-    Route::prefix('cetak-dokumen')->name('cetak-dokumen.')->group(function () {
+    Route::prefix('cetak-dokumen')->name('cetak-dokumen.')->middleware('permission:verifikasi.cetak')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\CetakDokumenController::class, 'index'])->name('index');
         Route::post('/batch-registrasi', [\App\Http\Controllers\Admin\CetakDokumenController::class, 'batchCetakRegistrasi'])->name('batch-registrasi');
         Route::post('/batch-kartu-tes', [\App\Http\Controllers\Admin\CetakDokumenController::class, 'batchCetakKartuTes'])->name('batch-kartu-tes');
     });
 
     // ---- CETAK RUANG UJIAN ----
-    Route::prefix('cetak-ruang')->name('cetak-ruang.')->group(function () {
+    Route::prefix('cetak-ruang')->name('cetak-ruang.')->middleware('permission:verifikasi.cetak')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\CetakRuangController::class, 'index'])->name('index');
         Route::post('/preview', [\App\Http\Controllers\Admin\CetakRuangController::class, 'preview'])->name('preview');
         Route::post('/save-and-lock', [\App\Http\Controllers\Admin\CetakRuangController::class, 'saveAndLock'])->name('save-and-lock');
@@ -277,7 +291,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     });
 
     // ---- STATISTIK PENDAFTAR ----
-    Route::prefix('statistik')->name('statistik.')->group(function () {
+    Route::prefix('statistik')->name('statistik.')->middleware('permission:statistik.view')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\StatistikController::class, 'index'])->name('index');
         Route::get('/geografis', [\App\Http\Controllers\Admin\StatistikController::class, 'geografis'])->name('geografis');
         Route::get('/asal-sekolah', [\App\Http\Controllers\Admin\StatistikController::class, 'asalSekolah'])->name('asal-sekolah');

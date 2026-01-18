@@ -101,52 +101,58 @@ return [
 
     'menu' => [
         // ============================================
-        // MENU UNTUK ADMIN
+        // MENU UTAMA (Berdasarkan Permission)
         // ============================================
         [
-            'header' => 'MENU ADMIN',
-            'can' => 'admin',  // Only for admin role
+            'header' => 'MENU UTAMA',
+            'can' => 'admin-panel',  // Admin, Operator, Verifikator
         ],
         [
             'text' => 'Dashboard',
             'route' => 'admin.dashboard',
             'icon' => 'fas fa-fw fa-tachometer-alt',
-            'can' => 'admin',
+            'can' => 'admin-panel',
         ],
         [
             'text' => 'Pendaftar',
             'icon' => 'fas fa-fw fa-users',
-            'can' => 'admin',
+            'can' => 'pendaftar.view',
             'submenu' => [
                 [
                     'text' => 'Semua Pendaftar',
                     'route' => 'admin.pendaftar.index',
                     'icon' => 'fas fa-fw fa-list',
+                    'can' => 'pendaftar.view',
                 ],
                 [
                     'text' => 'Finalisasi',
                     'route' => 'admin.finalisasi.index',
                     'icon' => 'fas fa-fw fa-clipboard-check',
+                    'can' => 'verifikasi.finalisasi',
                 ],
                 [
                     'text' => 'Cetak Dokumen',
                     'route' => 'admin.cetak-dokumen.index',
                     'icon' => 'fas fa-fw fa-print',
+                    'can' => 'verifikasi.cetak',
                 ],
                 [
                     'text' => 'Cetak Ruang Ujian',
                     'route' => 'admin.cetak-ruang.index',
                     'icon' => 'fas fa-fw fa-door-open',
+                    'can' => 'verifikasi.cetak',
                 ],
                 [
                     'text' => 'Statistik',
                     'route' => 'admin.statistik.index',
                     'icon' => 'fas fa-fw fa-chart-bar',
+                    'can' => 'statistik.view',
                 ],
                 [
                     'text' => 'Verifikator',
                     'route' => 'admin.verifikator.index',
                     'icon' => 'fas fa-fw fa-user-shield',
+                    'can' => 'admin',
                 ],
             ],
         ],
@@ -179,166 +185,165 @@ return [
         ],
 
         [
-            'header' => 'SETTINGS',
-            'can' => 'admin',
+            'header' => 'PENGATURAN',
+            'can' => 'settings.view',
         ],
         [
             'text' => 'Settings',
             'icon' => 'fas fa-fw fa-cog',
-            'can' => 'admin',
+            'can' => 'settings.view',
             'submenu' => [
                 [
                     'text' => 'Pengaturan Sekolah',
                     'route' => 'admin.sekolah.index',
                     'icon' => 'fas fa-fw fa-school',
+                    'can' => 'settings.edit',
                 ],
                 [
                     'text' => 'Jalur Pendaftaran',
                     'route' => 'admin.jalur.index',
                     'icon' => 'fas fa-fw fa-route',
+                    'can' => 'settings.edit',
                 ],
                 [
                     'text' => 'Tahun Pelajaran',
                     'route' => 'admin.tahun-pelajaran.index',
                     'icon' => 'fas fa-fw fa-calendar-check',
+                    'can' => 'settings.edit',
                 ],
                 [
                     'text' => 'EMIS Token',
                     'route' => 'admin.update-emis-token.index',
                     'icon' => 'fas fa-fw fa-key',
+                    'can' => 'settings.edit',
                 ],
                 [
                     'text' => 'WhatsApp API',
                     'route' => 'admin.whatsapp.index',
                     'icon' => 'fab fa-fw fa-whatsapp',
+                    'can' => 'settings.edit',
                 ],
                 [
                     'text' => 'Backup & Restore',
                     'route' => 'admin.backup.index',
                     'icon' => 'fas fa-fw fa-database',
+                    'can' => 'admin',
                 ],
                 [
                     'text' => 'Hapus Data Pendaftar',
                     'route' => 'admin.data.delete-list',
                     'icon' => 'fas fa-fw fa-user-minus text-warning',
+                    'can' => 'pendaftar.delete',
                 ],
                 [
                     'text' => 'Data Terhapus',
                     'route' => 'admin.data.deleted',
                     'icon' => 'fas fa-fw fa-trash-restore text-danger',
+                    'can' => 'pendaftar.delete',
                 ],
                 [
                     'text' => 'Reset Sistem',
                     'route' => 'admin.reset-system.index',
                     'icon' => 'fas fa-fw fa-radiation text-danger',
+                    'can' => 'admin',
                 ],
             ],
         ],
         [
             'text' => 'Pengaturan PPDB',
             'icon' => 'fas fa-fw fa-cogs',
-            'can' => 'admin',
+            'can' => 'settings.view',
             'submenu' => [
                 [
                     'text' => 'PPDB Settings',
                     'route' => 'admin.settings.index',
                     'icon' => 'fas fa-fw fa-sliders-h',
+                    'can' => 'settings.edit',
                 ],
                 [
                     'text' => 'Kop Surat',
                     'route' => 'admin.sekolah.kop-builder',
                     'icon' => 'fas fa-fw fa-file-alt',
+                    'can' => 'settings.edit',
                 ],
                 [
                     'text' => 'Halaman',
                     'route' => 'admin.settings.halaman.index',
                     'icon' => 'fas fa-fw fa-file-alt',
+                    'can' => 'settings.edit',
                 ],
                 [
                     'text' => 'Berita',
                     'route' => 'admin.settings.berita.index',
                     'icon' => 'fas fa-fw fa-newspaper',
+                    'can' => 'berita.view',
                 ],
                 [
                     'text' => 'Slider',
                     'route' => 'admin.settings.slider.index',
                     'icon' => 'fas fa-fw fa-images',
+                    'can' => 'slider.view',
                 ],
                 [
                     'text' => 'Jadwal PPDB',
                     'route' => 'admin.settings.jadwal.index',
                     'icon' => 'fas fa-fw fa-calendar-alt',
+                    'can' => 'settings.edit',
                 ],
                 [
                     'text' => 'Alur Pendaftaran',
                     'route' => 'admin.settings.alur-pendaftaran.index',
                     'icon' => 'fas fa-fw fa-list-ol',
+                    'can' => 'settings.edit',
                 ],
             ],
         ],
 
         [
             'header' => 'USER & ROLE',
-            'can' => 'admin',
+            'can' => 'user.view',
         ],
         [
             'text' => 'User & Role',
             'icon' => 'fas fa-fw fa-users-cog',
-            'can' => 'admin',
+            'can' => 'user.view',
             'submenu' => [
                 [
                     'text' => 'User Management',
                     'route' => 'admin.users.index',
                     'icon' => 'fas fa-fw fa-user-cog',
+                    'can' => 'user.view',
                 ],
                 [
                     'text' => 'Role Management',
                     'route' => 'admin.roles.index',
                     'icon' => 'fas fa-fw fa-user-tag',
+                    'can' => 'role.view',
                 ],
                 [
                     'text' => 'GTK (SIMANSA)',
                     'route' => 'admin.gtk.index',
                     'icon' => 'fas fa-fw fa-chalkboard-teacher',
+                    'can' => 'user.view',
                 ],
             ],
         ],
 
         [
             'header' => 'SYSTEM',
-            'can' => 'admin',
+            'can' => 'logs.view',
         ],
         [
             'text' => 'Statistik Pengunjung',
             'route' => 'admin.visitor-logs.index',
             'icon' => 'fas fa-fw fa-chart-line',
-            'can' => 'admin',
+            'can' => 'visitor.view',
         ],
         [
             'text' => 'Activity Log',
             'route' => 'admin.logs.index',
             'icon' => 'fas fa-fw fa-history',
-            'can' => 'admin',
-        ],
-
-        // ============================================
-        // MENU UNTUK OPERATOR/VERIFIKATOR
-        // ============================================
-        [
-            'header' => 'MENU OPERATOR',
-            'can' => 'only-operator-or-verifikator',
-        ],
-        [
-            'text' => 'Dashboard',
-            'route' => 'admin.dashboard',
-            'icon' => 'fas fa-fw fa-tachometer-alt',
-            'can' => 'only-operator-or-verifikator',
-        ],
-        [
-            'text' => 'Data Pendaftar',
-            'route' => 'admin.pendaftar.index',
-            'icon' => 'fas fa-fw fa-users',
-            'can' => 'only-operator-or-verifikator',
+            'can' => 'logs.view',
         ],
 
         ['header' => 'AKUN'],

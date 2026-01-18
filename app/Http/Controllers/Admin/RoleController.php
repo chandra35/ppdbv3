@@ -11,6 +11,25 @@ use Illuminate\Validation\Rule;
 
 class RoleController extends Controller
 {
+    /**
+     * Check permission - admin selalu bisa akses
+     */
+    private function checkPermission(string $permission): void
+    {
+        $user = auth()->user();
+        if (!$user) {
+            abort(403, 'Unauthorized');
+        }
+        
+        if ($user->isAdmin()) {
+            return;
+        }
+        
+        if (!$user->hasPermission($permission)) {
+            abort(403, 'Anda tidak memiliki akses untuk fitur ini.');
+        }
+    }
+
     public function index()
     {
         $roles = Role::withCount('users')->orderBy('name')->get();

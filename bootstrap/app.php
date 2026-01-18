@@ -8,6 +8,7 @@ use App\Http\Middleware\OperatorMiddleware;
 use App\Http\Middleware\PengujiMiddleware;
 use App\Http\Middleware\LogVisitor;
 use App\Http\Middleware\TrackUserActivity;
+use App\Http\Middleware\CheckPermission;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -21,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'operator' => OperatorMiddleware::class,
             'penguji' => PengujiMiddleware::class,
             'log.visitor' => LogVisitor::class,
+            'permission' => CheckPermission::class,
         ]);
         
         // Add LogVisitor and TrackUserActivity middleware to web group
