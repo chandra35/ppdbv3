@@ -16,11 +16,13 @@ class Role extends Model
         'description',
         'permissions',
         'is_system',
+        'can_access_admin',
     ];
 
     protected $casts = [
         'permissions' => 'array',
         'is_system' => 'boolean',
+        'can_access_admin' => 'boolean',
     ];
 
     public function users(): BelongsToMany

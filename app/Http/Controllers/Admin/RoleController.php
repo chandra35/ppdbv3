@@ -50,9 +50,11 @@ class RoleController extends Controller
             'description' => 'nullable|string',
             'permissions' => 'nullable|array',
             'permissions.*' => 'string',
+            'can_access_admin' => 'nullable|boolean',
         ]);
 
         $validated['permissions'] = $validated['permissions'] ?? [];
+        $validated['can_access_admin'] = $request->has('can_access_admin');
 
         $role = Role::create($validated);
 
@@ -92,10 +94,12 @@ class RoleController extends Controller
             'description' => 'nullable|string',
             'permissions' => 'nullable|array',
             'permissions.*' => 'string',
+            'can_access_admin' => 'nullable|boolean',
         ]);
 
         $oldValues = $role->toArray();
         $validated['permissions'] = $validated['permissions'] ?? [];
+        $validated['can_access_admin'] = $request->has('can_access_admin');
 
         $role->update($validated);
 

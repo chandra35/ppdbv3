@@ -24,11 +24,10 @@ class AdminMiddleware
                 ->with('warning', 'Silahkan login terlebih dahulu untuk mengakses halaman admin.');
         }
 
-        // Check if user has admin or operator/verifikator role
+        // Check if user can access admin panel (based on role's can_access_admin flag)
         $user = auth()->user();
         
-        // Allow: admin, super-admin, mas-admin, operator, verifikator
-        if (!$user->isAdmin() && !$user->hasAnyRole(['operator', 'verifikator', 'mas-admin'])) {
+        if (!$user->canAccessAdminPanel()) {
             if ($request->expectsJson()) {
                 return response()->json(['error' => 'Forbidden'], 403);
             }

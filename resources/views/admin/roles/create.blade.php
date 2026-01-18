@@ -57,6 +57,21 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
+
+                        <div class="form-group">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" class="custom-control-input" 
+                                       id="can_access_admin" name="can_access_admin" value="1"
+                                       {{ old('can_access_admin') ? 'checked' : '' }}>
+                                <label class="custom-control-label" for="can_access_admin">
+                                    <strong>Dapat Akses Admin Panel</strong>
+                                </label>
+                            </div>
+                            <small class="text-muted">
+                                Aktifkan jika role ini boleh mengakses halaman admin (/admin).
+                                Role tanpa akses ini akan diarahkan ke halaman pendaftar.
+                            </small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -77,7 +92,7 @@
                                 <input type="checkbox" class="custom-control-input" 
                                        id="perm_{{ $key }}" name="permissions[]" value="{{ $key }}"
                                        {{ in_array($key, old('permissions', [])) ? 'checked' : '' }}>
-                                <label class="custom-control-label" for="perm_{{ $key }}">{{ $label }}</label>
+                                <label class="custom-control-label" for="perm_{{ $key }}">{{ $label }}</label></label>
                             </div>
                             @endforeach
                         </div>

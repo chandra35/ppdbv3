@@ -162,6 +162,27 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user can access admin panel
+     * Berdasarkan kolom can_access_admin di tabel roles
+     */
+    public function canAccessAdminPanel(): bool
+    {
+        // Admin selalu bisa akses
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        // Cek dari role yang dimiliki user
+        foreach ($this->roles as $role) {
+            if ($role->can_access_admin) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Get user profile image URL for AdminLTE
      */
     public function adminlte_image()

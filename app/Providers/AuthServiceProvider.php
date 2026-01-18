@@ -39,17 +39,17 @@ class AuthServiceProvider extends ServiceProvider
 
         // Gate untuk Operator atau Verifikator (keduanya bisa akses menu operator)
         Gate::define('operator-or-verifikator', function (User $user) {
-            return $user->hasAnyRole(['operator', 'verifikator', 'mas-admin']) || $user->isAdmin();
+            return $user->canAccessAdminPanel();
         });
 
         // Gate untuk HANYA Operator atau Verifikator (tanpa admin) - untuk menu display
         Gate::define('only-operator-or-verifikator', function (User $user) {
-            return $user->hasAnyRole(['operator', 'verifikator', 'mas-admin']) && !$user->isAdmin();
+            return $user->canAccessAdminPanel() && !$user->isAdmin();
         });
 
-        // Gate untuk akses admin panel (bukan pendaftar)
+        // Gate untuk akses admin panel (berdasarkan can_access_admin di role)
         Gate::define('admin-panel', function (User $user) {
-            return $user->isAdmin() || $user->hasAnyRole(['operator', 'verifikator', 'mas-admin']);
+            return $user->canAccessAdminPanel();
         });
 
         // Register Gate untuk setiap permission dari database
