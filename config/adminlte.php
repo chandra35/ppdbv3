@@ -233,13 +233,13 @@ return [
                     'text' => 'Hapus Data Pendaftar',
                     'route' => 'admin.data.delete-list',
                     'icon' => 'fas fa-fw fa-user-minus text-warning',
-                    'can' => 'pendaftar.delete',
+                    'can' => 'admin',
                 ],
                 [
                     'text' => 'Data Terhapus',
                     'route' => 'admin.data.deleted',
                     'icon' => 'fas fa-fw fa-trash-restore text-danger',
-                    'can' => 'pendaftar.delete',
+                    'can' => 'admin',
                 ],
                 [
                     'text' => 'Reset Sistem',
