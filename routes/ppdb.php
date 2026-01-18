@@ -300,9 +300,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     });
 
     // ============================================
-    // ADMIN-ONLY ROUTES - Only accessible by admin
+    // SETTINGS ROUTES - dengan permission settings.edit
     // ============================================
-    Route::middleware('can:admin')->group(function () {
+    Route::middleware('permission:settings.edit')->group(function () {
         
         // ---- PENGATURAN SEKOLAH ----
         Route::prefix('sekolah')->name('sekolah.')->group(function () {
@@ -360,32 +360,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
                 Route::post('/update-order', [AlurPendaftaranController::class, 'updateOrder'])->name('update-order');
             });
         });
-    }); // End of can:admin group
-    
-    // ============================================
-    // KONTEN ROUTES - Berita & Slider dengan permission sendiri
-    // ============================================
-    
-    // Berita - dengan permission berita.view
-    Route::prefix('settings')->name('settings.')->group(function () {
-        Route::middleware('permission:berita.view')->group(function () {
-            Route::resource('berita', BeritaController::class)->parameters(['berita' => 'berita']);
-            Route::post('/berita/{berita}/share-facebook', [BeritaController::class, 'shareToFacebook'])->name('berita.share-facebook');
-            Route::post('/berita/{berita}/toggle-featured', [BeritaController::class, 'toggleFeatured'])->name('berita.toggle-featured');
-        });
-
-        // Slider - dengan permission slider.view
-        Route::middleware('permission:slider.view')->group(function () {
-            Route::resource('slider', SliderController::class);
-            Route::post('/slider/{slider}/toggle-status', [SliderController::class, 'toggleStatus'])->name('slider.toggle-status');
-        });
-    });
-    
-    // ============================================
-    // KEMBALI KE ADMIN-ONLY ROUTES
-    // ============================================
-    Route::middleware('can:admin')->group(function () {
-
+        
         // ---- JALUR PENDAFTARAN ----
         Route::prefix('jalur')->name('jalur.')->group(function () {
             // CRUD Jalur
@@ -414,30 +389,46 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
             Route::post('/{jalur}/gelombang/{gelombang}/tutup', [JalurPendaftaranController::class, 'tutupGelombang'])->name('gelombang.tutup');
             Route::post('/{jalur}/gelombang/{gelombang}/selesaikan', [JalurPendaftaranController::class, 'selesaikanGelombang'])->name('gelombang.selesaikan');
         });
-
-        // ---- VERIFIKATOR MANAGEMENT ----
-        Route::prefix('verifikator')->name('verifikator.')->group(function () {
-            Route::get('/', [VerifikatorController::class, 'index'])->name('index');
-            Route::post('/assign', [VerifikatorController::class, 'assign'])->name('assign');
-            Route::put('/{verifikator}/toggle-status', [VerifikatorController::class, 'toggleStatus'])->name('toggle-status');
-            Route::delete('/{verifikator}', [VerifikatorController::class, 'delete'])->name('delete');
+        
+        // ---- EMIS TOKEN MANAGEMENT ----
+        Route::get('/update-emis-token', [EmisTokenController::class, 'index'])->name('update-emis-token.index');
+        Route::post('/update-emis-token', [EmisTokenController::class, 'update'])->name('update-emis-token.update');
+        
+        // ---- WhatsApp API Settings ----
+        Route::get('/whatsapp', [PengaturanWaController::class, 'index'])->name('whatsapp.index');
+        Route::put('/whatsapp', [PengaturanWaController::class, 'update'])->name('whatsapp.update');
+        Route::post('/whatsapp/test-connection', [PengaturanWaController::class, 'testConnection'])->name('whatsapp.test-connection');
+        Route::post('/whatsapp/send-test', [PengaturanWaController::class, 'sendTest'])->name('whatsapp.send-test');
+        Route::get('/whatsapp/reset-templates', [PengaturanWaController::class, 'resetTemplates'])->name('whatsapp.reset-templates');
+    }); // End of permission:settings.edit group
+    
+    // ============================================
+    // KONTEN ROUTES - Berita & Slider dengan permission sendiri
+    // ============================================
+    
+    // Berita - dengan permission berita.view
+    Route::prefix('settings')->name('settings.')->group(function () {
+        Route::middleware('permission:berita.view')->group(function () {
+            Route::resource('berita', BeritaController::class)->parameters(['berita' => 'berita']);
+            Route::post('/berita/{berita}/share-facebook', [BeritaController::class, 'shareToFacebook'])->name('berita.share-facebook');
+            Route::post('/berita/{berita}/toggle-featured', [BeritaController::class, 'toggleFeatured'])->name('berita.toggle-featured');
         });
 
-        // ---- USER MANAGEMENT ----
+        // Slider - dengan permission slider.view
+        Route::middleware('permission:slider.view')->group(function () {
+            Route::resource('slider', SliderController::class);
+            Route::post('/slider/{slider}/toggle-status', [SliderController::class, 'toggleStatus'])->name('slider.toggle-status');
+        });
+    });
+    
+    // ============================================
+    // USER & ROLE MANAGEMENT - dengan permission user/role
+    // ============================================
+    
+    // ---- USER MANAGEMENT ---- (permission: user.view)
+    Route::middleware('permission:user.view')->group(function () {
         Route::resource('users', UserController::class);
-
-        // ---- ROLE & PERMISSION ----
-        Route::resource('roles', RoleController::class);
-        Route::post('/roles/{role}/permissions', [RoleController::class, 'updatePermissions'])->name('roles.permissions.update');
         
-        // Permission Management
-        Route::get('/roles-permissions', [RoleController::class, 'permissions'])->name('roles.permissions');
-        Route::post('/roles-permissions/sync', [RoleController::class, 'syncPermissions'])->name('roles.permissions.sync');
-        Route::post('/roles-permissions/store', [RoleController::class, 'storePermission'])->name('roles.permissions.store');
-        Route::put('/roles-permissions/{permission}', [RoleController::class, 'updatePermission'])->name('roles.permissions.update-single');
-        Route::delete('/roles-permissions/{permission}', [RoleController::class, 'destroyPermission'])->name('roles.permissions.destroy');
-        Route::post('/roles-permissions/bulk-add', [RoleController::class, 'bulkAddPermissions'])->name('roles.permissions.bulk-add');
-
         // ---- GTK MANAGEMENT ----
         Route::prefix('gtk')->name('gtk.')->group(function () {
             Route::get('/', [GtkController::class, 'index'])->name('index');
@@ -453,7 +444,35 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
             Route::delete('/{id}/remove', [GtkController::class, 'removeUser'])->name('remove');
             Route::post('/bulk-register', [GtkController::class, 'bulkRegister'])->name('bulk-register');
         });
-    }); // End can:admin group for User/Role/GTK
+    });
+    
+    // ---- ROLE & PERMISSION ---- (permission: role.view)
+    Route::middleware('permission:role.view')->group(function () {
+        Route::resource('roles', RoleController::class);
+        Route::post('/roles/{role}/permissions', [RoleController::class, 'updatePermissions'])->name('roles.permissions.update');
+        
+        // Permission Management
+        Route::get('/roles-permissions', [RoleController::class, 'permissions'])->name('roles.permissions');
+        Route::post('/roles-permissions/sync', [RoleController::class, 'syncPermissions'])->name('roles.permissions.sync');
+        Route::post('/roles-permissions/store', [RoleController::class, 'storePermission'])->name('roles.permissions.store');
+        Route::put('/roles-permissions/{permission}', [RoleController::class, 'updatePermission'])->name('roles.permissions.update-single');
+        Route::delete('/roles-permissions/{permission}', [RoleController::class, 'destroyPermission'])->name('roles.permissions.destroy');
+        Route::post('/roles-permissions/bulk-add', [RoleController::class, 'bulkAddPermissions'])->name('roles.permissions.bulk-add');
+    });
+    
+    // ============================================
+    // ADMIN-ONLY ROUTES - Verifikator, Backup, Data, Reset (Sensitif)
+    // ============================================
+    Route::middleware('can:admin')->group(function () {
+
+        // ---- VERIFIKATOR MANAGEMENT ----
+        Route::prefix('verifikator')->name('verifikator.')->group(function () {
+            Route::get('/', [VerifikatorController::class, 'index'])->name('index');
+            Route::post('/assign', [VerifikatorController::class, 'assign'])->name('assign');
+            Route::put('/{verifikator}/toggle-status', [VerifikatorController::class, 'toggleStatus'])->name('toggle-status');
+            Route::delete('/{verifikator}', [VerifikatorController::class, 'delete'])->name('delete');
+        });
+    }); // End can:admin group for Verifikator
     
     // ============================================
     // LOGS & VISITOR ROUTES - dengan permission sendiri
@@ -483,20 +502,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         ->name('visitor-logs.clear');
     
     // ============================================
-    // ADMIN-ONLY ROUTES - Settings, Backup, Reset
+    // ADMIN-ONLY ROUTES - Backup, Data, Reset (Sensitif)
     // ============================================
     Route::middleware('can:admin')->group(function () {
-
-        // ---- EMIS TOKEN MANAGEMENT ----
-        Route::get('/update-emis-token', [EmisTokenController::class, 'index'])->name('update-emis-token.index');
-        Route::post('/update-emis-token', [EmisTokenController::class, 'update'])->name('update-emis-token.update');
-        
-        // ---- WhatsApp API Settings ----
-        Route::get('/whatsapp', [PengaturanWaController::class, 'index'])->name('whatsapp.index');
-        Route::put('/whatsapp', [PengaturanWaController::class, 'update'])->name('whatsapp.update');
-        Route::post('/whatsapp/test-connection', [PengaturanWaController::class, 'testConnection'])->name('whatsapp.test-connection');
-        Route::post('/whatsapp/send-test', [PengaturanWaController::class, 'sendTest'])->name('whatsapp.send-test');
-        Route::get('/whatsapp/reset-templates', [PengaturanWaController::class, 'resetTemplates'])->name('whatsapp.reset-templates');
         
         // ---- BACKUP & RESTORE ----
         Route::prefix('backup')->name('backup.')->group(function () {
