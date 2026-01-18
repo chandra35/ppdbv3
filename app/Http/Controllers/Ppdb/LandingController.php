@@ -32,17 +32,28 @@ class LandingController extends Controller
         $sekolahSettings = SekolahSettings::getSettings();
         
         // Get jalur pendaftaran aktif dengan gelombang yang sedang dibuka
+        // Get tahun pelajaran aktif
+        $tahunPelajaranAktif = \App\Models\TahunPelajaran::where('is_active', true)->first();
+        
         $jalurAktif = JalurPendaftaran::active()
+            ->when($tahunPelajaranAktif, function($q) use ($tahunPelajaranAktif) {
+                $q->where('tahun_pelajaran_id', $tahunPelajaranAktif->id);
+            })
             ->with(['gelombang' => function($q) {
                 $q->open()->orderBy('urutan');
             }])
             ->orderBy('urutan')
             ->get();
         
-        // Get gelombang aktif untuk countdown
+        // Get gelombang aktif untuk countdown (dari jalur tahun pelajaran aktif)
         $gelombangAktif = \App\Models\GelombangPendaftaran::with('jalur')
             ->where('is_active', true)
             ->whereIn('status', ['open', 'upcoming'])
+            ->when($tahunPelajaranAktif, function($q) use ($tahunPelajaranAktif) {
+                $q->whereHas('jalur', function($jq) use ($tahunPelajaranAktif) {
+                    $jq->where('tahun_pelajaran_id', $tahunPelajaranAktif->id);
+                });
+            })
             ->orderBy('tanggal_buka', 'asc')
             ->first();
         
@@ -52,12 +63,12 @@ class LandingController extends Controller
         $countdownTarget = null;
         
         if ($gelombangAktif) {
-            // Kombinasi tanggal dan waktu
-            $tanggalBuka = $gelombangAktif->tanggal_buka->format('Y-m-d') . ' ' . ($gelombangAktif->waktu_buka ?? '00:00:00');
-            $tanggalTutup = $gelombangAktif->tanggal_tutup->format('Y-m-d') . ' ' . ($gelombangAktif->waktu_tutup ?? '23:59:59');
+            // Kombinasi tanggal dan waktu (gunakan timezone lokal)
+            $tanggalBuka = $gelombangAktif->tanggal_buka->timezone(config('app.timezone'))->format('Y-m-d') . ' ' . ($gelombangAktif->waktu_buka ?? '00:00:00');
+            $tanggalTutup = $gelombangAktif->tanggal_tutup->timezone(config('app.timezone'))->format('Y-m-d') . ' ' . ($gelombangAktif->waktu_tutup ?? '23:59:59');
             
-            $waktuBuka = \Carbon\Carbon::parse($tanggalBuka);
-            $waktuTutup = \Carbon\Carbon::parse($tanggalTutup);
+            $waktuBuka = \Carbon\Carbon::parse($tanggalBuka, config('app.timezone'));
+            $waktuTutup = \Carbon\Carbon::parse($tanggalTutup, config('app.timezone'));
             
             if ($now->lt($waktuBuka)) {
                 $statusPendaftaran = 'upcoming'; // Belum dibuka
