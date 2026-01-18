@@ -361,6 +361,7 @@ class DashboardController extends Controller
             'surat_pernyataan' => 'Surat Pernyataan Orang Tua',
             'kartu_pkh' => 'Kartu PKH/KIP',
             'surat_kelakuan_baik' => 'Surat Kelakuan Baik',
+            'kartu_pelajar' => 'Kartu Pelajar/NISN',
         ];
 
         // Filter only active documents

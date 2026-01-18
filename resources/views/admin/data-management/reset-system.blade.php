@@ -198,6 +198,7 @@
 @stop
 
 @section('js')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(document).ready(function() {
     let resetToken = null;
@@ -261,28 +262,157 @@ $(document).ready(function() {
         });
     });
 
-    // Confirm reset all
+    // Confirm reset all with SweetAlert
     $('#resetAllForm').submit(function(e) {
+        e.preventDefault();
+        
         const confirmText = $('input[name="confirm_text"]').val();
         if (confirmText !== 'RESET SEMUA DATA') {
-            e.preventDefault();
-            toastr.error('Ketik "RESET SEMUA DATA" dengan benar!');
+            Swal.fire({
+                icon: 'error',
+                title: 'Konfirmasi Salah',
+                text: 'Ketik "RESET SEMUA DATA" dengan benar!',
+                confirmButtonColor: '#dc3545'
+            });
             return false;
         }
 
-        if (!confirm('TERAKHIR KALI!\n\nAnda yakin ingin menghapus SEMUA data pendaftar?\n\nTindakan ini TIDAK DAPAT dibatalkan!')) {
-            e.preventDefault();
-            return false;
-        }
+        const form = this;
+        
+        Swal.fire({
+            icon: 'warning',
+            title: '<span class="text-danger"><i class="fas fa-radiation-alt"></i> PERINGATAN TERAKHIR!</span>',
+            html: `
+                <div class="text-left">
+                    <p class="text-danger font-weight-bold">Anda akan menghapus SEMUA data berikut secara PERMANEN:</p>
+                    <ul class="text-left mb-3">
+                        <li>Semua data calon siswa</li>
+                        <li>Semua akun pendaftar</li>
+                        <li>Semua data orang tua</li>
+                        <li>Semua dokumen upload</li>
+                        <li>Semua data nilai rapor</li>
+                    </ul>
+                    <div class="alert alert-danger py-2">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Tindakan ini TIDAK DAPAT dibatalkan!</strong>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-radiation"></i> YA, RESET SEMUA!',
+            cancelButtonText: '<i class="fas fa-times"></i> Batal',
+            reverseButtons: true,
+            focusCancel: true,
+            customClass: {
+                popup: 'swal-wide'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Show loading
+                Swal.fire({
+                    title: 'Menghapus Data...',
+                    html: '<div class="text-center"><i class="fas fa-spinner fa-spin fa-3x text-danger mb-3"></i><p>Mohon tunggu, sedang menghapus semua data...</p></div>',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        form.submit();
+                    }
+                });
+            }
+        });
     });
 
-    // Confirm reset gelombang
+    // Confirm reset gelombang with SweetAlert
     $('#resetGelombangForm').submit(function(e) {
-        if (!confirm('Anda yakin ingin menghapus semua data dari gelombang ini?')) {
-            e.preventDefault();
+        e.preventDefault();
+        
+        const form = this;
+        const gelombangName = $('#resetGelombangForm select[name="gelombang_id"] option:selected').text();
+        
+        if (!$('select[name="gelombang_id"]').val()) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Pilih Gelombang',
+                text: 'Silakan pilih gelombang yang akan direset!',
+                confirmButtonColor: '#ffc107'
+            });
             return false;
         }
+        
+        Swal.fire({
+            icon: 'warning',
+            title: 'Reset Gelombang?',
+            html: `
+                <p>Anda akan menghapus <strong>semua data pendaftar</strong> dari:</p>
+                <div class="alert alert-warning py-2 mb-3">
+                    <strong>${gelombangName}</strong>
+                </div>
+                <p class="text-danger"><i class="fas fa-exclamation-triangle"></i> Data yang dihapus tidak dapat dikembalikan!</p>
+            `,
+            showCancelButton: true,
+            confirmButtonColor: '#ffc107',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-trash-alt"></i> Ya, Reset!',
+            cancelButtonText: '<i class="fas fa-times"></i> Batal',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Menghapus Data...',
+                    html: '<div class="text-center"><i class="fas fa-spinner fa-spin fa-3x text-warning mb-3"></i><p>Mohon tunggu...</p></div>',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        form.submit();
+                    }
+                });
+            }
+        });
+    });
+
+    // Confirm clean files with SweetAlert
+    $('#cleanFilesForm').submit(function(e) {
+        e.preventDefault();
+        
+        const form = this;
+        
+        Swal.fire({
+            icon: 'question',
+            title: 'Bersihkan File Orphan?',
+            html: `
+                <p>Fitur ini akan menghapus file-file yang tidak memiliki referensi di database.</p>
+                <p class="text-muted small">File yang tersisa dari penghapusan yang tidak sempurna akan dibersihkan.</p>
+            `,
+            showCancelButton: true,
+            confirmButtonColor: '#6c757d',
+            cancelButtonColor: '#007bff',
+            confirmButtonText: '<i class="fas fa-broom"></i> Ya, Bersihkan!',
+            cancelButtonText: '<i class="fas fa-times"></i> Batal',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Membersihkan File...',
+                    html: '<div class="text-center"><i class="fas fa-spinner fa-spin fa-3x text-secondary mb-3"></i><p>Mohon tunggu...</p></div>',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        form.submit();
+                    }
+                });
+            }
+        });
     });
 });
 </script>
+<style>
+.swal-wide {
+    max-width: 500px !important;
+}
+</style>
 @stop

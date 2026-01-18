@@ -234,6 +234,7 @@
                                 'raport' => 'Raport',
                                 'surat_sehat' => 'Surat Keterangan Sehat',
                                 'surat_kelakuan_baik' => 'Surat Kelakuan Baik',
+                                'kartu_pelajar' => 'Kartu Pelajar/NISN',
                             ];
                             $dokumenAktif = old('dokumen_aktif', $settings->dokumen_aktif ?? []);
                         @endphp

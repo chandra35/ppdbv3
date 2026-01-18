@@ -380,6 +380,10 @@ class AuthController extends Controller
                 'password' => Hash::make($password),
             ]);
 
+            // Store readable password for printing on kartu tes
+            $user->readable_password = $password;
+            $user->save();
+
             // Assign pendaftar role
             $user->assignRole('pendaftar');
 
@@ -627,7 +631,7 @@ class AuthController extends Controller
 
     /**
      * Generate random password
-     * Format: Huruf kapital + Angka + 1 karakter spesial
+     * Format: Huruf kapital + Huruf kecil + Angka (tanpa karakter spesial untuk kemudahan input)
      * Excluded: I, O, Q (mirip angka), 1, 0 (mirip huruf)
      */
     protected function generatePassword(int $length = 8): string
@@ -635,15 +639,17 @@ class AuthController extends Controller
         // Karakter yang digunakan (tanpa I, O, Q, 1, 0)
         $uppercase = 'ABCDEFGHJKLMNPRSTUVWXYZ'; // tanpa I, O, Q
         $numbers = '23456789'; // tanpa 1, 0
-        $special = '@#$%&*!';
         
-        // Pastikan minimal ada 1 huruf kapital, 1 angka, dan 1 karakter spesial
+        // Pastikan minimal ada 4 huruf kapital dan 4 angka
         $password = '';
-        $password .= $uppercase[random_int(0, strlen($uppercase) - 1)]; // 1 huruf kapital
-        $password .= $uppercase[random_int(0, strlen($uppercase) - 1)]; // 1 huruf kapital lagi
-        $password .= $numbers[random_int(0, strlen($numbers) - 1)]; // 1 angka
-        $password .= $numbers[random_int(0, strlen($numbers) - 1)]; // 1 angka lagi
-        $password .= $special[random_int(0, strlen($special) - 1)]; // 1 karakter spesial
+        $password .= $uppercase[random_int(0, strlen($uppercase) - 1)];
+        $password .= $uppercase[random_int(0, strlen($uppercase) - 1)];
+        $password .= $uppercase[random_int(0, strlen($uppercase) - 1)];
+        $password .= $uppercase[random_int(0, strlen($uppercase) - 1)];
+        $password .= $numbers[random_int(0, strlen($numbers) - 1)];
+        $password .= $numbers[random_int(0, strlen($numbers) - 1)];
+        $password .= $numbers[random_int(0, strlen($numbers) - 1)];
+        $password .= $numbers[random_int(0, strlen($numbers) - 1)];
         
         // Sisa karakter (campuran huruf kapital dan angka)
         $allChars = $uppercase . $numbers;

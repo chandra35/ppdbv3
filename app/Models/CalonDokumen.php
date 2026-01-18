@@ -60,6 +60,7 @@ class CalonDokumen extends Model
         'surat_keterangan' => 'Surat Keterangan Lainnya',
         'surat_sehat' => 'Surat Keterangan Sehat',
         'surat_kelakuan_baik' => 'Surat Kelakuan Baik',
+        'kartu_pelajar' => 'Kartu Pelajar/NISN',
         // Dokumen Tambahan
         'kip' => 'KIP (Kartu Indonesia Pintar)',
         'pip' => 'PIP (Program Indonesia Pintar)',

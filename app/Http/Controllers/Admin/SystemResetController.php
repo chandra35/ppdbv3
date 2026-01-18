@@ -90,28 +90,32 @@ class SystemResetController extends Controller
                 Storage::disk('public')->delete($path);
             }
 
-            // 2. Delete all nilai rapor files
-            $nilaiRaporPaths = NilaiRapor::pluck('file_path')->filter();
-            foreach ($nilaiRaporPaths as $path) {
+            // 2. Delete all nilai rapor files (only dokumen_path exists in nilai_rapor table)
+            $nilaiRaporDokPaths = NilaiRapor::pluck('dokumen_path')->filter();
+            foreach ($nilaiRaporDokPaths as $path) {
                 Storage::disk('public')->delete($path);
             }
 
-            // 3. Force delete all data (including soft deleted)
+            // 3. Force delete all data using raw queries (more reliable)
             // Disable foreign key checks temporarily
             DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
-            // Delete in correct order
-            CalonDokumen::withTrashed()->forceDelete();
-            NilaiRapor::query()->forceDelete();
-            CalonOrtu::query()->forceDelete();
-            
             // Get all pendaftar user IDs before deleting
-            $userIds = CalonSiswa::withTrashed()->pluck('user_id')->filter();
-            
-            CalonSiswa::withTrashed()->forceDelete();
+            $userIds = CalonSiswa::withTrashed()->pluck('user_id')->filter()->toArray();
+
+            // Delete using DB::table to bypass model events and soft delete
+            // Delete in correct order (child tables first)
+            DB::table('nilai_seleksi')->delete();
+            DB::table('peserta_ruang')->delete();
+            DB::table('calon_dokumen')->delete();
+            DB::table('nilai_rapor')->delete();
+            DB::table('calon_ortus')->delete();
+            DB::table('calon_siswas')->delete();
             
             // Delete pendaftar users
-            User::whereIn('id', $userIds)->forceDelete();
+            if (!empty($userIds)) {
+                DB::table('users')->whereIn('id', $userIds)->delete();
+            }
 
             // Reset auto-increment counters
             DB::table('ppdb_settings')->update([
@@ -141,6 +145,7 @@ class SystemResetController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('Reset system error: ' . $e->getMessage());
             return back()->with('error', 'Gagal reset data: ' . $e->getMessage());
         }
     }
@@ -161,34 +166,54 @@ class SystemResetController extends Controller
 
         try {
             DB::beginTransaction();
+            
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
             $gelombang = \App\Models\GelombangPendaftaran::findOrFail($request->gelombang_id);
-            $pendaftars = CalonSiswa::withTrashed()
+            $pendaftarIds = CalonSiswa::withTrashed()
                 ->where('gelombang_pendaftaran_id', $request->gelombang_id)
-                ->get();
+                ->pluck('id')
+                ->toArray();
+            
+            $userIds = CalonSiswa::withTrashed()
+                ->where('gelombang_pendaftaran_id', $request->gelombang_id)
+                ->pluck('user_id')
+                ->filter()
+                ->toArray();
 
-            $count = 0;
-            foreach ($pendaftars as $pendaftar) {
+            $count = count($pendaftarIds);
+            
+            if (!empty($pendaftarIds)) {
                 // Delete files
-                foreach ($pendaftar->dokumen as $dok) {
-                    Storage::disk('public')->delete($dok->file_path);
+                $dokPaths = CalonDokumen::withTrashed()
+                    ->whereIn('calon_siswa_id', $pendaftarIds)
+                    ->pluck('file_path')
+                    ->filter();
+                foreach ($dokPaths as $path) {
+                    Storage::disk('public')->delete($path);
                 }
-                foreach ($pendaftar->nilaiRapor as $rapor) {
-                    if ($rapor->file_path) {
-                        Storage::disk('public')->delete($rapor->file_path);
-                    }
+                
+                $raporPaths = NilaiRapor::whereIn('calon_siswa_id', $pendaftarIds)
+                    ->pluck('dokumen_path')
+                    ->filter();
+                foreach ($raporPaths as $path) {
+                    Storage::disk('public')->delete($path);
                 }
 
-                // Force delete cascade
-                $userId = $pendaftar->user_id;
-                $pendaftar->forceDelete();
+                // Delete records using raw queries (child tables first)
+                DB::table('nilai_seleksi')->whereIn('calon_siswa_id', $pendaftarIds)->delete();
+                DB::table('peserta_ruang')->whereIn('calon_siswa_id', $pendaftarIds)->delete();
+                DB::table('calon_dokumen')->whereIn('calon_siswa_id', $pendaftarIds)->delete();
+                DB::table('nilai_rapor')->whereIn('calon_siswa_id', $pendaftarIds)->delete();
+                DB::table('calon_ortus')->whereIn('calon_siswa_id', $pendaftarIds)->delete();
+                DB::table('calon_siswas')->whereIn('id', $pendaftarIds)->delete();
                 
-                if ($userId) {
-                    User::where('id', $userId)->forceDelete();
+                if (!empty($userIds)) {
+                    DB::table('users')->whereIn('id', $userIds)->delete();
                 }
-                
-                $count++;
             }
+            
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
 
             ActivityLog::create([
                 'user_id' => auth()->id(),
@@ -208,6 +233,7 @@ class SystemResetController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('Reset gelombang error: ' . $e->getMessage());
             return back()->with('error', 'Gagal reset data: ' . $e->getMessage());
         }
     }

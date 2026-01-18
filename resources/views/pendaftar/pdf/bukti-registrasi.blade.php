@@ -6,7 +6,7 @@
     <style>
         @page {
             size: A4;
-            margin: 8mm 12mm 8mm 8mm;
+            margin: 8mm 15mm 8mm 10mm;
         }
         * {
             margin: 0;
@@ -24,8 +24,8 @@
             width: 100%;
             max-width: 100%;
             overflow: hidden;
-            padding-left: 3mm;
-            padding-right: 4mm;
+            padding-left: 2mm;
+            padding-right: 2mm;
             padding-top: 3mm;
         }
         
@@ -145,23 +145,24 @@
         }
         
         table {
-            width: 99%;
+            width: 100%;
             border-collapse: collapse;
             margin-bottom: 4px;
         }
         table td {
             border: none;
             border-bottom: 1px solid #e0e0e0;
-            padding: 3px 8px;
-            font-size: 9.5pt;
+            padding: 2px 5px;
+            font-size: 9pt;
             line-height: 1.2;
             word-wrap: break-word;
             overflow-wrap: break-word;
         }
         table td:first-child {
-            width: 25%;
+            width: 28%;
             font-weight: 600;
             color: #2c3e50;
+            padding-left: 25px;
         }
         table td:last-child {
             color: #333;
@@ -277,10 +278,6 @@
                     <td>{{ $calonSiswa->nomor_registrasi }}</td>
                 </tr>
                 <tr>
-                    <td>Nomor Tes</td>
-                    <td>{{ $calonSiswa->nomor_tes }}</td>
-                </tr>
-                <tr>
                     <td>Jalur Pendaftaran</td>
                     <td>{{ $calonSiswa->jalurPendaftaran->nama ?? '-' }}</td>
                 </tr>
@@ -345,7 +342,7 @@
                     </tr>
                     <tr>
                         <td>Asal Sekolah</td>
-                        <td>{{ $calonSiswa->asal_sekolah ?? '-' }}</td>
+                        <td>{{ $calonSiswa->nama_sekolah_asal ?? '-' }}</td>
                     </tr>
                     <tr>
                         <td>Alamat</td>
@@ -353,7 +350,7 @@
                     </tr>
                     <tr>
                         <td>No. HP/WA</td>
-                        <td>{{ $calonSiswa->no_hp ?? '-' }}</td>
+                        <td>{{ $calonSiswa->nomor_hp ?? '-' }}</td>
                     </tr>
                 </table>
             </div>
@@ -397,7 +394,7 @@
     <div class="footer">
         <div class="footer-grid">
             <div class="footer-col">
-                <p style="color: #7f8c8d; font-style: italic;">
+                <p style="color: #7f8c8d; font-style: italic; padding-left: 25px;">
                     <strong>Catatan:</strong> Bukti ini merupakan dokumen resmi pendaftaran PPDB. 
                     Harap dibawa saat mengikuti tahapan selanjutnya.
                 </p>

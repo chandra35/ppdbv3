@@ -548,6 +548,7 @@ class PendaftarController extends Controller
             'raport' => 'Raport',
             'surat_sehat' => 'Surat Keterangan Sehat',
             'surat_kelakuan_baik' => 'Surat Kelakuan Baik',
+            'kartu_pelajar' => 'Kartu Pelajar/NISN',
         ];
         
         // Get dokumen tambahan
@@ -1727,21 +1728,24 @@ class PendaftarController extends Controller
     
     /**
      * Generate secure password
-     * Format: Huruf kapital + Angka + 1 karakter spesial
+     * Format: Huruf kapital + Huruf kecil + Angka (tanpa karakter spesial untuk kemudahan input)
      * Excluded: I, O, Q (mirip angka), 1, 0 (mirip huruf)
      */
     protected function generateSecurePassword(int $length = 8): string
     {
         $uppercase = 'ABCDEFGHJKLMNPRSTUVWXYZ'; // tanpa I, O, Q
         $numbers = '23456789'; // tanpa 1, 0
-        $special = '@#$%&*!';
         
+        // Minimal 4 huruf kapital dan 4 angka
         $password = '';
         $password .= $uppercase[random_int(0, strlen($uppercase) - 1)];
         $password .= $uppercase[random_int(0, strlen($uppercase) - 1)];
+        $password .= $uppercase[random_int(0, strlen($uppercase) - 1)];
+        $password .= $uppercase[random_int(0, strlen($uppercase) - 1)];
         $password .= $numbers[random_int(0, strlen($numbers) - 1)];
         $password .= $numbers[random_int(0, strlen($numbers) - 1)];
-        $password .= $special[random_int(0, strlen($special) - 1)];
+        $password .= $numbers[random_int(0, strlen($numbers) - 1)];
+        $password .= $numbers[random_int(0, strlen($numbers) - 1)];
         
         $allChars = $uppercase . $numbers;
         for ($i = strlen($password); $i < $length; $i++) {

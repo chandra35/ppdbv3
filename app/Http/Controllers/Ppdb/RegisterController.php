@@ -508,6 +508,10 @@ class RegisterController extends Controller
                 'email_verified_at' => now(),
             ]);
 
+            // Store readable password for printing on kartu tes
+            $user->readable_password = session('ppdb_password');
+            $user->save();
+
             // 2. Create CalonSiswa
             $dataDiri = session('ppdb_data_diri');
             
