@@ -659,11 +659,6 @@
                             <i class="fas fa-award me-1"></i> Akreditasi {{ $sekolahSettings->akreditasi }}
                         </span>
                         @endif
-                        @if($jalurDenganGelombang->isNotEmpty())
-                        <span class="badge bg-success px-3 py-2">
-                            <i class="fas fa-check-circle me-1"></i> Pendaftaran Dibuka
-                        </span>
-                        @endif
                     </div>
                 </div>
             </div>
