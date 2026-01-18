@@ -330,33 +330,33 @@
                             @endif
                         </td>
                         <td class="text-center">
-                            <div class="btn-group btn-group-sm" role="group">
+                            <div class="action-btns">
                                 <a href="{{ route('admin.gtk.show', $gtk->id) }}" 
-                                   class="btn btn-info" data-toggle="tooltip" title="Detail">
+                                   class="btn btn-action-view" title="Detail">
                                     <i class="fas fa-eye"></i>
                                 </a>
                                 
                                 @if($gtk->source === 'manual')
                                     <a href="{{ route('admin.gtk.edit', $gtk->id) }}" 
-                                       class="btn btn-warning" data-toggle="tooltip" title="Edit">
+                                       class="btn btn-action-edit" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     
-                                    <button type="button" class="btn btn-danger" 
+                                    <button type="button" class="btn btn-action-delete" 
                                             onclick="deleteGtk('{{ $gtk->id }}', '{{ $gtk->nama_lengkap }}')"
-                                            data-toggle="tooltip" title="Hapus">
+                                            title="Hapus">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 @endif
                                 
                                 @if($isRegistered)
-                                    <button type="button" class="btn btn-primary" 
-                                            onclick="editRoles('{{ $gtk->id }}')" data-toggle="tooltip" title="Edit Role">
+                                    <button type="button" class="btn btn-action-primary" 
+                                            onclick="editRoles('{{ $gtk->id }}')" title="Edit Role">
                                         <i class="fas fa-user-cog"></i>
                                     </button>
                                 @else
-                                    <button type="button" class="btn btn-success" 
-                                            onclick="registerGtk('{{ $gtk->id }}')" data-toggle="tooltip" title="Daftarkan">
+                                    <button type="button" class="btn btn-action-success" 
+                                            onclick="registerGtk('{{ $gtk->id }}')" title="Daftarkan">
                                         <i class="fas fa-user-plus"></i>
                                     </button>
                                 @endif
