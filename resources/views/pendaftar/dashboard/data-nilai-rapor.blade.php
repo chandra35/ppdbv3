@@ -352,8 +352,10 @@
                                         <div class="rapor-upload-section" id="rapor_upload_{{ $semester }}">
                                             @if($nilai['dokumen'])
                                                 <div class="uploaded-file">
-                                                    <a href="{{ asset('storage/' . $nilai['dokumen']->file_path) }}" target="_blank" class="btn btn-sm btn-outline-success mb-1" title="Lihat File">
-                                                        <i class="fas fa-file-pdf"></i> {{ Str::limit($nilai['dokumen']->nama_file, 15) }}
+                                                    <a href="javascript:void(0);" 
+                                                       onclick="openPreviewRaporModal({{ $semester }}, '{{ asset('storage/' . $nilai['dokumen']->file_path) }}', '{{ $nilai['status_validasi'] }}', '{{ $nilai['catatan_validasi'] ?? '' }}')"
+                                                       class="btn btn-sm btn-outline-success mb-1" title="Lihat File">
+                                                        <i class="fas fa-eye"></i> {{ Str::limit($nilai['dokumen']->nama_file, 15) }}
                                                     </a>
                                                     <br>
                                                     <span class="badge badge-{{ $nilai['status_validasi'] == 'valid' ? 'success' : ($nilai['status_validasi'] == 'invalid' ? 'danger' : 'warning') }}">
@@ -480,8 +482,10 @@
                                 @if($nilai['dokumen'])
                                     <div class="uploaded-file-mobile">
                                         <div class="d-flex align-items-center justify-content-between mb-2">
-                                            <a href="{{ asset('storage/' . $nilai['dokumen']->file_path) }}" target="_blank" class="btn btn-sm btn-outline-success">
-                                                <i class="fas fa-file-pdf"></i> Lihat File
+                                            <a href="javascript:void(0);" 
+                                               onclick="openPreviewRaporModal({{ $semester }}, '{{ asset('storage/' . $nilai['dokumen']->file_path) }}', '{{ $nilai['status_validasi'] }}', '{{ $nilai['catatan_validasi'] ?? '' }}')"
+                                               class="btn btn-sm btn-outline-success">
+                                                <i class="fas fa-eye"></i> Lihat File
                                             </a>
                                             @if(!$calonSiswa->is_finalisasi)
                                             <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteRapor({{ $semester }})">
@@ -590,6 +594,59 @@
                     <i class="fas fa-info-circle mr-1"></i>
                     Nilai akhir = (Rata-rata Rapor × 30%) + (Nilai CBT × 40%) + (Nilai Wawancara × 30%)
                 </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Modal Preview Dokumen Rapor --}}
+<div class="modal fade" id="previewRaporModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-file-alt mr-2"></i>
+                    <span id="previewRaporTitle">Dokumen Rapor</span>
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-0">
+                {{-- Loading --}}
+                <div id="previewRaporLoading" class="text-center py-5">
+                    <i class="fas fa-spinner fa-spin fa-3x text-primary"></i>
+                    <p class="mt-3 text-muted">Memuat dokumen...</p>
+                </div>
+                
+                {{-- Image Preview --}}
+                <div id="previewRaporImage" style="display: none;" class="text-center p-3">
+                    <img id="raporImagePreview" src="" alt="Dokumen Rapor" 
+                         style="max-width: 100%; max-height: 70vh; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                </div>
+                
+                {{-- PDF Preview --}}
+                <div id="previewRaporPdf" style="display: none;">
+                    <iframe id="raporPdfPreview" src="" style="width: 100%; height: 70vh; border: none;"></iframe>
+                </div>
+                
+                {{-- Error --}}
+                <div id="previewRaporError" style="display: none;" class="text-center py-5">
+                    <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+                    <p class="mt-3 text-muted">Gagal memuat dokumen</p>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <div>
+                    <span class="badge badge-info" id="previewRaporStatus"></span>
+                    <small class="text-muted ml-2" id="previewRaporCatatan"></small>
+                </div>
+                <div>
+                    <a href="#" id="previewRaporDownload" class="btn btn-success" target="_blank">
+                        <i class="fas fa-download mr-1"></i> Download
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                </div>
             </div>
         </div>
     </div>
@@ -830,7 +887,7 @@ function uploadRapor(semester, source = 'desktop') {
                 // Refresh the upload section with new file info
                 const fileHtml = `
                     <div class="uploaded-file">
-                        <a href="${response.dokumen.file_url}" target="_blank" class="btn btn-sm btn-outline-success mb-1" title="Lihat File">
+                        <a href="javascript:void(0)" onclick="openPreviewRaporModal('${response.dokumen.file_url}', 'Rapor Semester ${semester}', 'pending', '')" class="btn btn-sm btn-outline-success mb-1" title="Lihat File">
                             <i class="fas fa-file-pdf"></i> ${response.dokumen.nama_file.substring(0, 15)}...
                         </a>
                         <span class="badge badge-warning">Pending</span>
@@ -843,7 +900,7 @@ function uploadRapor(semester, source = 'desktop') {
                 
                 const mobileFileHtml = `
                     <div class="uploaded-file-mobile d-flex align-items-center justify-content-between">
-                        <a href="${response.dokumen.file_url}" target="_blank" class="btn btn-sm btn-outline-success">
+                        <a href="javascript:void(0)" onclick="openPreviewRaporModal('${response.dokumen.file_url}', 'Rapor Semester ${semester}', 'pending', '')" class="btn btn-sm btn-outline-success">
                             <i class="fas fa-file-pdf"></i> Lihat File
                         </a>
                         <span class="badge badge-warning">Pending</span>
@@ -1142,6 +1199,79 @@ $('#btnUploadRapor').on('click', function() {
 // Stop camera when modal closes
 $('#uploadRaporModal').on('hidden.bs.modal', function() {
     stopRaporCamera();
+});
+
+// Preview Rapor Modal Functions
+function openPreviewRaporModal(semester, fileUrl, status, catatan) {
+    // Reset modal
+    $('#previewRaporLoading').show();
+    $('#previewRaporImage').hide();
+    $('#previewRaporPdf').hide();
+    $('#previewRaporError').hide();
+    
+    // Set title
+    $('#previewRaporTitle').text('Dokumen Rapor Semester ' + semester);
+    
+    // Set status badge
+    let statusBadge = '';
+    if (status === 'valid') {
+        statusBadge = '<i class="fas fa-check-circle"></i> Valid';
+        $('#previewRaporStatus').removeClass().addClass('badge badge-success').html(statusBadge);
+    } else if (status === 'invalid') {
+        statusBadge = '<i class="fas fa-times-circle"></i> Ditolak';
+        $('#previewRaporStatus').removeClass().addClass('badge badge-danger').html(statusBadge);
+    } else {
+        statusBadge = '<i class="fas fa-clock"></i> Menunggu Verifikasi';
+        $('#previewRaporStatus').removeClass().addClass('badge badge-warning').html(statusBadge);
+    }
+    
+    // Set catatan
+    if (catatan && status === 'invalid') {
+        $('#previewRaporCatatan').text('Catatan: ' + catatan).show();
+    } else {
+        $('#previewRaporCatatan').hide();
+    }
+    
+    // Set download link
+    $('#previewRaporDownload').attr('href', fileUrl);
+    
+    // Show modal
+    $('#previewRaporModal').modal('show');
+    
+    // Determine file type
+    const extension = fileUrl.split('.').pop().toLowerCase();
+    const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension);
+    const isPdf = extension === 'pdf';
+    
+    if (isImage) {
+        // Load image
+        const img = new Image();
+        img.onload = function() {
+            $('#raporImagePreview').attr('src', fileUrl);
+            $('#previewRaporLoading').hide();
+            $('#previewRaporImage').show();
+        };
+        img.onerror = function() {
+            $('#previewRaporLoading').hide();
+            $('#previewRaporError').show();
+        };
+        img.src = fileUrl;
+    } else if (isPdf) {
+        // Load PDF
+        $('#raporPdfPreview').attr('src', fileUrl);
+        $('#previewRaporLoading').hide();
+        $('#previewRaporPdf').show();
+    } else {
+        // Unknown format, show error
+        $('#previewRaporLoading').hide();
+        $('#previewRaporError').show();
+    }
+}
+
+// Reset modal on close
+$('#previewRaporModal').on('hidden.bs.modal', function() {
+    $('#raporImagePreview').attr('src', '');
+    $('#raporPdfPreview').attr('src', '');
 });
 </script>
 @endsection

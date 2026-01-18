@@ -377,20 +377,38 @@ class FinalisasiController extends Controller
     }
 
     /**
-     * Generate nomor tes
+     * Generate nomor tes using settings format
      */
     private function generateNomorTes(CalonSiswa $pendaftar): string
     {
-        $tahun = date('Y');
-        $jalurKode = $pendaftar->jalurPendaftaran?->kode ?? 'XX';
-        
-        // Get sequence number for nomor tes
-        $count = CalonSiswa::whereYear('created_at', $tahun)
-            ->whereNotNull('nomor_tes')
-            ->count();
+        // If already has nomor_tes, return it
+        if ($pendaftar->nomor_tes) {
+            return $pendaftar->nomor_tes;
+        }
 
-        $sequence = $count + 1;
+        $settings = \App\Models\PpdbSettings::first();
+        $tahun = $pendaftar->tahunPelajaran->tahun_mulai ?? date('Y');
+        $jalurCode = strtoupper(substr($pendaftar->jalurPendaftaran->nama ?? 'REG', 0, 3));
         
-        return sprintf('%s-%s-%04d', $tahun, $jalurKode, $sequence);
+        // Get and update counter for this jalur
+        $counters = $settings->nomor_tes_counter ?? [];
+        $jalurKey = (string) $pendaftar->jalur_pendaftaran_id;
+        $counter = ($counters[$jalurKey] ?? 0) + 1;
+        
+        // Update counter atomically
+        $counters[$jalurKey] = $counter;
+        $settings->update(['nomor_tes_counter' => $counters]);
+        
+        // Generate nomor using format template
+        $format = $settings->nomor_tes_format ?? '{PREFIX}-{TAHUN}-{JALUR}-{NOMOR}';
+        $nomor = str_pad($counter, $settings->nomor_tes_digit ?? 4, '0', STR_PAD_LEFT);
+        
+        $nomorTes = str_replace(
+            ['{PREFIX}', '{TAHUN}', '{JALUR}', '{NOMOR}'],
+            [$settings->nomor_tes_prefix ?? 'NTS', $tahun, $jalurCode, $nomor],
+            $format
+        );
+
+        return $nomorTes;
     }
 }

@@ -826,6 +826,7 @@ class DashboardController extends Controller
         }
 
         // Update nilai_rapor table with dokumen_path
+        // Jika nilai_rapor belum ada untuk semester ini, buat record baru
         $nilaiRapor = \App\Models\NilaiRapor::where('calon_siswa_id', $calonSiswa->id)
             ->where('semester', $semester)
             ->first();
@@ -837,6 +838,18 @@ class DashboardController extends Controller
                 'catatan_validasi' => null,
                 'validated_by' => null,
                 'validated_at' => null,
+            ]);
+        } else {
+            // Buat record nilai_rapor baru dengan nilai default
+            \App\Models\NilaiRapor::create([
+                'calon_siswa_id' => $calonSiswa->id,
+                'semester' => $semester,
+                'matematika' => 0,
+                'ipa' => 0,
+                'ips' => 0,
+                'rata_rata' => 0,
+                'dokumen_path' => $dokumen->file_path,
+                'status_validasi' => 'pending',
             ]);
         }
 
@@ -1505,13 +1518,14 @@ class DashboardController extends Controller
         // PERUBAHAN ALUR:
         // 1. Finalisasi tidak lagi generate nomor_tes
         // 2. Nomor tes akan diberikan setelah admin memverifikasi semua dokumen
-        // 3. Status berubah ke pending_verification
+        // 3. Status tetap pending sampai dokumen diverifikasi
 
         // Update finalisasi data tanpa nomor_tes
+        // Status verifikasi tetap 'pending' jika belum verified
         $calonSiswa->update([
             'is_finalisasi' => true,
             'tanggal_finalisasi' => now(),
-            'status_verifikasi' => $calonSiswa->status_verifikasi === 'verified' ? 'verified' : 'pending_verification',
+            'status_verifikasi' => $calonSiswa->status_verifikasi === 'verified' ? 'verified' : 'pending',
             'status_admisi' => 'pending'
         ]);
 

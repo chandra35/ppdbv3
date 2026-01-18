@@ -567,16 +567,28 @@ $(document).ready(function() {
             },
             success: function(response) {
                 if (response.success) {
-                    Swal.fire({
-                        title: 'Berhasil!',
-                        html: '<div class="text-center">' +
+                    let contentHtml = '<div class="text-center">' +
                               '<i class="fas fa-check-circle fa-4x text-success mb-3"></i>' +
-                              '<p class="mb-3">' + response.message + '</p>' +
-                              '<div class="alert alert-success">' +
+                              '<p class="mb-3">' + response.message + '</p>';
+                    
+                    // Tampilkan nomor tes hanya jika sudah ada
+                    if (response.nomor_tes) {
+                        contentHtml += '<div class="alert alert-success">' +
                               '<h5 class="mb-2">Nomor Tes Anda:</h5>' +
                               '<h3 class="mb-0" style="color: #10b981; font-weight: 700; letter-spacing: 2px;">' + response.nomor_tes + '</h3>' +
-                              '</div>' +
-                              '</div>',
+                              '</div>';
+                    } else {
+                        contentHtml += '<div class="alert alert-info">' +
+                              '<i class="fas fa-info-circle mr-2"></i>' +
+                              'Nomor tes akan dikirim via WhatsApp setelah dokumen diverifikasi.' +
+                              '</div>';
+                    }
+                    
+                    contentHtml += '</div>';
+                    
+                    Swal.fire({
+                        title: 'Berhasil!',
+                        html: contentHtml,
                         icon: 'success',
                         confirmButtonText: '<i class="fas fa-arrow-right mr-2"></i>Lanjutkan',
                         confirmButtonColor: '#10b981',

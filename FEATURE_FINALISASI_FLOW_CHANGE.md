@@ -12,7 +12,7 @@ Alur finalisasi pendaftaran diubah sehingga pendaftar dapat melakukan finalisasi
 - Setelah finalisasi:
   - `is_finalisasi = true`
   - `tanggal_finalisasi = now()`
-  - `status_verifikasi = 'pending_verification'`
+  - `status_verifikasi = 'pending'` (tetap pending sampai dokumen diverifikasi)
   - `status_admisi = 'pending'`
 - **Nomor tes TIDAK langsung diberikan**
 
@@ -39,7 +39,7 @@ Alur finalisasi pendaftaran diubah sehingga pendaftar dapat melakukan finalisasi
 
 #### `storeFinalisasi()`
 - Tidak lagi generate nomor tes saat finalisasi
-- Set status ke `pending_verification`
+- Status verifikasi tetap `pending` sampai dokumen diverifikasi
 - Jika dokumen sudah semua valid, langsung generate nomor tes
 
 #### `generateNomorTes()` (NEW)
@@ -106,9 +106,9 @@ Terima kasih.
 | Status | Keterangan |
 |--------|------------|
 | `draft` | Data belum lengkap |
-| `pending` | Data lengkap, belum finalisasi |
-| `pending_verification` | Sudah finalisasi, menunggu verifikasi dokumen |
+| `pending` | Data lengkap/sudah finalisasi, menunggu verifikasi dokumen |
 | `verified` | Semua dokumen valid, nomor tes tersedia |
+| `revision` | Ada dokumen yang perlu direvisi |
 | `rejected` | Pendaftaran ditolak |
 
 ## Diagram Alur
@@ -123,7 +123,7 @@ Terima kasih.
 ┌─────────────────────────────┐
 │   Klik Finalisasi           │
 │   is_finalisasi = true      │
-│   status = pending_verification │
+│   status = pending          │
 │   (Belum ada Nomor Tes)     │
 └─────────────┬───────────────┘
               │

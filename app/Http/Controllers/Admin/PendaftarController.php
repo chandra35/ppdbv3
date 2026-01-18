@@ -910,6 +910,25 @@ class PendaftarController extends Controller
         $nilaiRapor->update($updateData);
         $nilaiRapor->refresh();
 
+        // Sync status ke calon_dokumens (jika dokumen rapor ada di tabel dokumen)
+        $jenisDokumen = 'rapor_sem_' . $nilaiRapor->semester;
+        $calonDokumen = CalonDokumen::where('calon_siswa_id', $nilaiRapor->calon_siswa_id)
+            ->where('jenis_dokumen', $jenisDokumen)
+            ->first();
+        
+        if ($calonDokumen) {
+            $dokumenStatus = $request->status === 'valid' ? 'valid' : ($request->status === 'invalid' ? 'invalid' : 'pending');
+            $calonDokumen->update([
+                'status_verifikasi' => $dokumenStatus,
+                'catatan_verifikasi' => $request->catatan,
+                'verified_at' => $request->status !== 'pending' ? now() : null,
+                'verified_by' => $request->status !== 'pending' ? auth()->id() : null,
+            ]);
+        }
+
+        // Auto-update status verifikasi calon siswa (generate nomor tes jika semua dokumen valid)
+        $nilaiRapor->calonSiswa->autoUpdateStatusVerifikasi();
+
         if ($request->ajax()) {
             // Generate HTML for table cell
             $html = $this->generateRaporValidasiCellHtml($nilaiRapor);

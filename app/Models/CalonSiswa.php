@@ -373,9 +373,9 @@ class CalonSiswa extends Model
         } else {
             // Ada dokumen yang belum valid -> set pending
             // Kecuali jika statusnya sudah approved/rejected, jangan ubah
-            if (in_array($this->status_verifikasi, ['pending', 'verified', 'pending_verification'])) {
+            if (in_array($this->status_verifikasi, ['pending', 'verified'])) {
                 $this->update([
-                    'status_verifikasi' => 'pending_verification',
+                    'status_verifikasi' => 'pending',
                     'verified_at' => null,
                     'verified_by' => null,
                 ]);
@@ -424,25 +424,42 @@ class CalonSiswa extends Model
     protected function sendVerificationNotification(string $nomorTes): void
     {
         try {
-            $waService = app(\App\Services\WhatsappService::class);
+            $waService = app(\App\Services\WhatsAppService::class);
             $settings = \App\Models\PpdbSettings::first();
             
-            // Ambil nomor HP dari data ortu atau siswa
-            $phone = $this->no_hp ?? $this->ortu?->no_hp_ayah ?? $this->ortu?->no_hp_ibu ?? null;
+            // Ambil nomor HP dari data siswa, ortu, atau user
+            $phone = $this->nomor_hp 
+                ?? $this->ortu?->hp_ayah 
+                ?? $this->ortu?->hp_ibu 
+                ?? $this->ortu?->hp_wali
+                ?? $this->user?->phone
+                ?? null;
             
             if (!$phone) {
                 \Log::warning("Cannot send verification notification: No phone number for calon_siswa {$this->id}");
                 return;
             }
 
-            // Format pesan
+            // Gunakan method sendVerificationNotification dari WhatsAppService
+            // atau gunakan send() untuk custom message
+            $data = [
+                'phone' => $phone,
+                'nama' => $this->nama_lengkap,
+                'nomor_registrasi' => $this->nomor_registrasi,
+                'nisn' => $this->nisn,
+                'jalur' => $this->jalurPendaftaran->nama ?? '-',
+                'nomor_tes' => $nomorTes,
+                'nama_sekolah' => $settings->nama_sekolah ?? 'Panitia PPDB',
+            ];
+
+            // Format pesan custom jika tidak ada template
             $message = "🎉 *DOKUMEN TERVERIFIKASI*\n\n";
             $message .= "Assalamu'alaikum Wr. Wb.\n\n";
             $message .= "Dokumen pendaftaran PPDB atas nama *{$this->nama_lengkap}* telah diverifikasi lengkap.\n\n";
             $message .= "📋 *Detail Pendaftaran:*\n";
             $message .= "• No. Registrasi: {$this->nomor_registrasi}\n";
             $message .= "• NISN: {$this->nisn}\n";
-            $message .= "• Jalur: {$this->jalurPendaftaran->nama}\n\n";
+            $message .= "• Jalur: " . ($this->jalurPendaftaran->nama ?? '-') . "\n\n";
             $message .= "🎫 *NOMOR TES ANDA:*\n";
             $message .= "*{$nomorTes}*\n\n";
             $message .= "Simpan nomor tes ini untuk keperluan ujian seleksi.\n";
@@ -450,9 +467,13 @@ class CalonSiswa extends Model
             $message .= "Terima kasih.\n";
             $message .= $settings->nama_sekolah ?? 'Panitia PPDB';
 
-            $waService->sendMessage($phone, $message);
+            $result = $waService->send($phone, $message);
             
-            \Log::info("Verification notification sent to {$phone} for calon_siswa {$this->id} with nomor_tes {$nomorTes}");
+            if ($result['success'] ?? false) {
+                \Log::info("Verification notification sent to {$phone} for calon_siswa {$this->id} with nomor_tes {$nomorTes}");
+            } else {
+                \Log::warning("Failed to send verification notification: " . ($result['message'] ?? 'Unknown error'));
+            }
         } catch (\Exception $e) {
             \Log::error("Failed to send verification notification: " . $e->getMessage());
         }
