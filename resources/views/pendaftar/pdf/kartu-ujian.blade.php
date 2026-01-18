@@ -7,18 +7,40 @@
     <style>
         @page {
             size: A4 portrait;
-            margin: 15mm;
+            margin: 5mm 5mm 5mm 5mm;
         }
         @media print {
+            /* Hilangkan header/footer browser */
+            @page {
+                margin: 5mm 5mm 5mm 5mm;
+            }
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #fff !important;
+            }
             .no-print {
                 display: none !important;
             }
-            body {
-                background: #fff !important;
-                padding: 0 !important;
-            }
             .card-wrapper {
                 box-shadow: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                text-align: left !important;
+                max-width: none !important;
+                width: auto !important;
+                border-radius: 0 !important;
+                background: transparent !important;
+            }
+            .card {
+                margin: 0 !important;
+                margin-left: 0 !important;
+                margin-right: auto !important;
+            }
+            .cut-guide {
+                margin-left: 0 !important;
+                margin-right: auto !important;
+                text-align: left !important;
             }
         }
         * {
@@ -414,6 +436,11 @@
                                     <td class="data-label">TTL</td>
                                     <td class="data-separator">:</td>
                                     <td class="data-value">{{ $calonSiswa->tempat_lahir ?? '-' }}, {{ $calonSiswa->tanggal_lahir ? \Carbon\Carbon::parse($calonSiswa->tanggal_lahir)->format('d/m/Y') : '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="data-label">Program</td>
+                                    <td class="data-separator">:</td>
+                                    <td class="data-value">{{ $calonSiswa->pilihan_program ?? '-' }}</td>
                                 </tr>
                             </table>
                             

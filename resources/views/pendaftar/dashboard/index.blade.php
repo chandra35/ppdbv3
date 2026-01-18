@@ -18,10 +18,38 @@
                     </div>
                     <div class="text-right">
                         <span class="status-badge status-{{ $calonSiswa->status_verifikasi }}">
-                            {{ ucfirst($calonSiswa->status_verifikasi) }}
+                            @if($calonSiswa->status_verifikasi === 'verified')
+                                <i class="fas fa-check-circle"></i> Terverifikasi
+                            @elseif($calonSiswa->status_verifikasi === 'pending')
+                                <i class="fas fa-clock"></i> Menunggu Verifikasi
+                            @elseif($calonSiswa->status_verifikasi === 'revision')
+                                <i class="fas fa-exclamation-circle"></i> Perlu Revisi
+                            @else
+                                {{ ucfirst($calonSiswa->status_verifikasi) }}
+                            @endif
                         </span>
                     </div>
                 </div>
+                
+                {{-- Keterangan Status Verifikasi --}}
+                @if($calonSiswa->is_finalisasi)
+                    @if($calonSiswa->status_verifikasi === 'verified' && $calonSiswa->nomor_tes)
+                        <div class="alert alert-success mt-3 mb-0 py-2" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);">
+                            <i class="fas fa-check-circle text-white mr-2"></i>
+                            <span class="text-white"><strong>Sudah Diverifikasi!</strong> Silahkan cetak Kartu Tes untuk mengikuti ujian. <a href="#" data-toggle="modal" data-target="#kartuUjianModal" class="text-white" style="text-decoration: underline; font-weight: bold;">Klik Disini</a></span>
+                        </div>
+                    @elseif($calonSiswa->status_verifikasi === 'pending')
+                        <div class="alert alert-warning mt-3 mb-0 py-2" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);">
+                            <i class="fas fa-hourglass-half text-white mr-2"></i>
+                            <span class="text-white"><strong>Menunggu Verifikasi Berkas Oleh Panitia.</strong> Mohon tunggu 1-3 hari kerja.</span>
+                        </div>
+                    @elseif($calonSiswa->status_verifikasi === 'revision')
+                        <div class="alert alert-danger mt-3 mb-0 py-2" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);">
+                            <i class="fas fa-exclamation-triangle text-white mr-2"></i>
+                            <span class="text-white"><strong>Perlu Revisi!</strong> Silahkan periksa dan perbaiki dokumen yang diminta.</span>
+                        </div>
+                    @endif
+                @endif
             </div>
         </div>
     </div>
@@ -29,7 +57,7 @@
 
 <div class="row">
     <!-- Info Cards -->
-    <div class="col-lg-6 col-6">
+    <div class="col-12">
         <div class="small-box bg-gradient-warning">
             <div class="inner">
                 <h3>{{ $progress['overall'] }}%</h3>
@@ -37,18 +65,6 @@
             </div>
             <div class="icon">
                 <i class="fas fa-tasks"></i>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-lg-6 col-6">
-        <div class="small-box bg-gradient-primary">
-            <div class="inner">
-                <h3>{{ ucfirst($calonSiswa->status_admisi) }}</h3>
-                <p>Status Admisi</p>
-            </div>
-            <div class="icon">
-                <i class="fas fa-user-graduate"></i>
             </div>
         </div>
     </div>
@@ -253,12 +269,12 @@
                     @if($calonSiswa->nomor_tes)
                     <div class="col-md-4 col-6 mb-3">
                         <a href="#" class="text-decoration-none" data-toggle="modal" data-target="#kartuUjianModal">
-                            <div class="card quick-action-card h-100 text-center p-3">
-                                <div class="icon text-danger">
+                            <div class="card quick-action-card h-100 text-center p-3 border-success">
+                                <div class="icon text-success">
                                     <i class="fas fa-id-card"></i>
                                 </div>
                                 <h6 class="mt-2 mb-0">Kartu Ujian</h6>
-                                <small class="text-muted">Preview & Print</small>
+                                <small class="text-success"><i class="fas fa-print"></i> Siap Cetak</small>
                             </div>
                         </a>
                     </div>
