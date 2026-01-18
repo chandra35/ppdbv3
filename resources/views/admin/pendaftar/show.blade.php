@@ -1734,7 +1734,7 @@ dl.row dt {
                             $fotoUrl = $fotoDokumen ? asset('storage/' . $fotoDokumen->file_path) : null;
                             $password = $pendaftar->user->readable_password ?? '********';
                         @endphp
-                        <div class="card" style="width: 340px; height: 220px; margin: 0 auto; background: #fff; border: 1px solid #999; border-radius: 8px; overflow: hidden; position: relative;">
+                        <div class="card" style="width: 400px; height: 250px; margin: 0 auto; background: #fff; border: 1px solid #999; border-radius: 8px; overflow: hidden; position: relative;">
                             {{-- Watermark --}}
                             @if($sekolahSettings && $sekolahSettings->logo)
                             <div class="watermark" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100px; height: 100px; opacity: 0.12;">
@@ -1814,6 +1814,15 @@ dl.row dt {
                                         <td class="footer-right" style="text-align: right; color: #999; font-size: 8px;">{{ \Carbon\Carbon::now()->format('d/m/Y') }}</td>
                                     </tr>
                                 </table>
+                            </div>
+                            
+                            {{-- QR Code --}}
+                            @php
+                                $hash = $pendaftar->getOrGenerateHash();
+                                $verifyUrl = route('verify.bukti', $hash);
+                            @endphp
+                            <div style="position: absolute; bottom: 32px; left: 10px; width: 40px; height: 40px; background: #fff; border: 1px solid #ccc; border-radius: 3px; padding: 2px; z-index: 10;">
+                                {!! QrCode::format('svg')->size(36)->margin(0)->generate($verifyUrl) !!}
                             </div>
                         </div>
                     </div>
@@ -3171,7 +3180,7 @@ function printKartuUjian() {
     printWindow.document.write('<html><head><title>Kartu Tes - {{ $pendaftar->nomor_tes }}</title>');
     printWindow.document.write('<style>');
     printWindow.document.write('body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }');
-    printWindow.document.write('.card { width: 340px; height: 220px; margin: 0 auto; background: #fff; border: 1px solid #999; border-radius: 8px; overflow: hidden; position: relative; }');
+    printWindow.document.write('.card { width: 400px; height: 250px; margin: 0 auto; background: #fff; border: 1px solid #999; border-radius: 8px; overflow: hidden; position: relative; }');
     printWindow.document.write('.watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100px; height: 100px; opacity: 0.12; }');
     printWindow.document.write('.watermark img { width: 100%; height: 100%; object-fit: contain; }');
     printWindow.document.write('.card-header { border-bottom: 1px solid #ccc; padding: 8px 12px; background: #fff; }');

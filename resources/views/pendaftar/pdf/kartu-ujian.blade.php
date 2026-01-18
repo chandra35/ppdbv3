@@ -107,8 +107,8 @@
         
         /* Card */
         .card {
-            width: 340px;
-            height: 220px;
+            width: 400px;
+            height: 250px;
             margin: 0 auto;
             background: #fff;
             border: 1px solid #999;
@@ -315,15 +315,15 @@
         /* QR Code */
         .qr-code-box {
             position: absolute;
-            bottom: 30px;
-            right: 8px;
-            width: 45px;
-            height: 45px;
+            bottom: 32px;
+            left: 10px;
+            width: 40px;
+            height: 40px;
             background: #fff;
-            border: 1px solid #ddd;
+            border: 1px solid #ccc;
             border-radius: 3px;
             padding: 2px;
-            z-index: 2;
+            z-index: 10;
         }
         .qr-code-box svg, .qr-code-box img {
             width: 100%;
@@ -338,7 +338,7 @@
             font-size: 10px;
             border-top: 1px dashed #ccc;
             padding-top: 10px;
-            width: 340px;
+            width: 400px;
             margin-left: auto;
             margin-right: auto;
         }
@@ -480,12 +480,16 @@
             <div class="qr-code-box">
                 @php
                     $hash = $calonSiswa->getOrGenerateHash();
-                    $verifyUrl = route('verification.bukti', $hash);
+                    $verifyUrl = route('verify.bukti', $hash);
                 @endphp
                 @if(isset($isPdf) && $isPdf)
-                    {!! QrCode::format('svg')->size(41)->margin(0)->generate($verifyUrl) !!}
+                    @php
+                        $qrPng = QrCode::format('png')->size(80)->margin(0)->generate($verifyUrl);
+                        $qrBase64 = 'data:image/png;base64,' . base64_encode($qrPng);
+                    @endphp
+                    <img src="{{ $qrBase64 }}" style="width: 100%; height: 100%;" alt="QR">
                 @else
-                    {!! QrCode::format('svg')->size(41)->margin(0)->generate($verifyUrl) !!}
+                    {!! QrCode::format('svg')->size(36)->margin(0)->generate($verifyUrl) !!}
                 @endif
             </div>
 

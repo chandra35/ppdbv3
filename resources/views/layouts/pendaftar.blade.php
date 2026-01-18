@@ -510,7 +510,7 @@
             </div>
             <div class="modal-body text-center" style="background: #f5f5f5; padding: 20px;">
                 <div id="kartuUjianContent">
-                    <div class="card" style="width: 340px; height: 220px; margin: 0 auto; background: #fff; border: 1px solid #999; border-radius: 8px; overflow: hidden; position: relative;">
+                    <div class="card" style="width: 400px; height: 250px; margin: 0 auto; background: #fff; border: 1px solid #999; border-radius: 8px; overflow: hidden; position: relative;">
                         {{-- Watermark --}}
                         @if($sekolahSettings && $sekolahSettings->logo)
                         <div class="watermark" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100px; height: 100px; opacity: 0.12;">
@@ -596,6 +596,15 @@
                                 </tr>
                             </table>
                         </div>
+                        
+                        {{-- QR Code --}}
+                        @php
+                            $hash = $calonSiswa->getOrGenerateHash();
+                            $verifyUrl = route('verify.bukti', $hash);
+                        @endphp
+                        <div style="position: absolute; bottom: 32px; left: 10px; width: 40px; height: 40px; background: #fff; border: 1px solid #ccc; border-radius: 3px; padding: 2px; z-index: 10;">
+                            {!! QrCode::format('svg')->size(36)->margin(0)->generate($verifyUrl) !!}
+                        </div>
                     </div>
                 </div>
                 <p class="text-muted mt-3 mb-0" style="font-size: 12px;">✂️ Gunting mengikuti tepi kartu setelah dicetak</p>
@@ -623,7 +632,7 @@ function printKartuUjian() {
     printWindow.document.write('<html><head><title>Kartu Tes - {{ $calonSiswa->nomor_tes }}</title>');
     printWindow.document.write('<style>');
     printWindow.document.write('body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }');
-    printWindow.document.write('.card { width: 340px; height: 220px; margin: 0 auto; background: #fff; border: 1px solid #999; border-radius: 8px; overflow: hidden; position: relative; }');
+    printWindow.document.write('.card { width: 400px; height: 250px; margin: 0 auto; background: #fff; border: 1px solid #999; border-radius: 8px; overflow: hidden; position: relative; }');
     printWindow.document.write('.watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100px; height: 100px; opacity: 0.12; }');
     printWindow.document.write('.watermark img { width: 100%; height: 100%; object-fit: contain; }');
     printWindow.document.write('.card-header { border-bottom: 1px solid #ccc; padding: 8px 12px; background: #fff; }');
