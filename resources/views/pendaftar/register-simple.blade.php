@@ -309,9 +309,25 @@
             PPDB {{ config('app.name') }}
         </a>
         <div class="navbar-nav">
-            <a href="{{ route('pendaftar.login') }}" class="nav-link">
-                <i class="fas fa-sign-in-alt"></i> Login
-            </a>
+            @auth
+                @if(Auth::user()->isAdmin())
+                    <a href="{{ route('admin.dashboard') }}" class="nav-link">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard Admin
+                    </a>
+                @elseif(Auth::user()->hasAnyRole(['operator', 'verifikator']))
+                    <a href="{{ route('operator.dashboard') }}" class="nav-link">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard Operator
+                    </a>
+                @else
+                    <a href="{{ route('pendaftar.dashboard') }}" class="nav-link">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard Saya
+                    </a>
+                @endif
+            @else
+                <a href="{{ route('pendaftar.login') }}" class="nav-link">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </a>
+            @endauth
         </div>
     </nav>
 

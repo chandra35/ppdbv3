@@ -40,7 +40,9 @@ class LandingController extends Controller
                 $q->where('tahun_pelajaran_id', $tahunPelajaranAktif->id);
             })
             ->with(['gelombang' => function($q) {
-                $q->open()->orderBy('urutan');
+                $q->where('is_active', true)
+                  ->whereIn('status', ['open', 'upcoming'])
+                  ->orderBy('urutan');
             }])
             ->orderBy('urutan')
             ->get();

@@ -34,6 +34,18 @@ class AuthController extends Controller
      */
     public function landing()
     {
+        // Redirect jika sudah login
+        if (auth()->check()) {
+            $user = auth()->user();
+            if ($user->isAdmin()) {
+                return redirect()->route('admin.dashboard');
+            } elseif ($user->hasAnyRole(['operator', 'verifikator'])) {
+                return redirect()->route('operator.dashboard');
+            } else {
+                return redirect()->route('pendaftar.dashboard');
+            }
+        }
+        
         $tahunAktif = TahunPelajaran::where('is_active', true)->first();
         $jalurPendaftaran = JalurPendaftaran::where('is_active', true)->orderBy('urutan')->get();
         $gelombangAktif = GelombangPendaftaran::where('is_active', true)
@@ -267,6 +279,18 @@ class AuthController extends Controller
      */
     public function showRegistrationForm(Request $request)
     {
+        // Redirect jika sudah login
+        if (auth()->check()) {
+            $user = auth()->user();
+            if ($user->isAdmin()) {
+                return redirect()->route('admin.dashboard');
+            } elseif ($user->hasAnyRole(['operator', 'verifikator'])) {
+                return redirect()->route('operator.dashboard');
+            } else {
+                return redirect()->route('pendaftar.dashboard');
+            }
+        }
+        
         // Get encrypted NISN from query parameter
         $encryptedNisn = $request->query('token');
         
@@ -580,6 +604,18 @@ class AuthController extends Controller
      */
     public function showLoginForm()
     {
+        // Redirect jika sudah login
+        if (auth()->check()) {
+            $user = auth()->user();
+            if ($user->isAdmin()) {
+                return redirect()->route('admin.dashboard');
+            } elseif ($user->hasAnyRole(['operator', 'verifikator'])) {
+                return redirect()->route('operator.dashboard');
+            } else {
+                return redirect()->route('pendaftar.dashboard');
+            }
+        }
+        
         return view('pendaftar.login');
     }
 

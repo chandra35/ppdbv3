@@ -471,7 +471,7 @@
                                     @elseif(Auth::user()->hasAnyRole(['operator', 'verifikator']))
                                         <li><a class="dropdown-item" href="{{ route('operator.dashboard') }}"><i class="fas fa-tachometer-alt me-2"></i>Dashboard Operator</a></li>
                                     @else
-                                        <li><a class="dropdown-item" href="{{ route('ppdb.dashboard') }}"><i class="fas fa-tachometer-alt me-2"></i>Dashboard Saya</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('pendaftar.dashboard') }}"><i class="fas fa-tachometer-alt me-2"></i>Dashboard Saya</a></li>
                                     @endif
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
@@ -577,41 +577,72 @@
                     </div>
                     @endif
                     
-                    {{-- Main CTA Cards - Hanya tampil jika pendaftaran dibuka --}}
+                    {{-- Main CTA Cards - Hanya tampil jika pendaftaran dibuka DAN user belum login --}}
                     @if($statusPendaftaran == 'open')
-                    <div class="row justify-content-center g-3 mb-4">
-                        {{-- Card Daftar Baru --}}
-                        <div class="col-sm-6 col-md-5 col-lg-4">
-                            <div class="card bg-white text-dark h-100 border-0 shadow">
-                                <div class="card-body p-4 text-center">
-                                    <div class="rounded-circle bg-primary bg-opacity-10 p-3 d-inline-flex mb-3">
-                                        <i class="fas fa-user-plus fa-2x text-primary"></i>
+                        @auth
+                            {{-- User sudah login - tampilkan tombol ke dashboard --}}
+                            <div class="row justify-content-center g-3 mb-4">
+                                <div class="col-sm-6 col-md-5 col-lg-4">
+                                    <div class="card bg-white text-dark h-100 border-0 shadow">
+                                        <div class="card-body p-4 text-center">
+                                            <div class="rounded-circle bg-success bg-opacity-10 p-3 d-inline-flex mb-3">
+                                                <i class="fas fa-tachometer-alt fa-2x text-success"></i>
+                                            </div>
+                                            <h5 class="fw-bold mb-2">Halo, {{ Auth::user()->name }}!</h5>
+                                            <p class="text-muted small mb-3">Anda sudah login. Klik tombol di bawah untuk masuk ke dashboard.</p>
+                                            @if(Auth::user()->isAdmin())
+                                                <a href="{{ route('admin.dashboard') }}" class="btn btn-success w-100">
+                                                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard Admin
+                                                </a>
+                                            @elseif(Auth::user()->hasAnyRole(['operator', 'verifikator']))
+                                                <a href="{{ route('operator.dashboard') }}" class="btn btn-success w-100">
+                                                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard Operator
+                                                </a>
+                                            @else
+                                                <a href="{{ route('pendaftar.dashboard') }}" class="btn btn-success w-100">
+                                                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard Saya
+                                                </a>
+                                            @endif
+                                        </div>
                                     </div>
-                                    <h5 class="fw-bold mb-2">Pendaftaran Baru</h5>
-                                    <p class="text-muted small mb-3">Belum punya akun? Daftar di sini untuk memulai pendaftaran PPDB</p>
-                                    <a href="{{ route('pendaftar.landing') }}" class="btn btn-primary w-100">
-                                        <i class="fas fa-arrow-right me-2"></i> Daftar Sekarang
-                                    </a>
                                 </div>
                             </div>
-                        </div>
-                        
-                        {{-- Card Login --}}
-                        <div class="col-sm-6 col-md-5 col-lg-4">
-                            <div class="card bg-white bg-opacity-10 text-white h-100 border border-white border-opacity-25">
-                                <div class="card-body p-4 text-center">
-                                    <div class="rounded-circle bg-white bg-opacity-25 p-3 d-inline-flex mb-3">
-                                        <i class="fas fa-sign-in-alt fa-2x"></i>
+                        @else
+                            {{-- User belum login - tampilkan card daftar & login --}}
+                            <div class="row justify-content-center g-3 mb-4">
+                                {{-- Card Daftar Baru --}}
+                                <div class="col-sm-6 col-md-5 col-lg-4">
+                                    <div class="card bg-white text-dark h-100 border-0 shadow">
+                                        <div class="card-body p-4 text-center">
+                                            <div class="rounded-circle bg-primary bg-opacity-10 p-3 d-inline-flex mb-3">
+                                                <i class="fas fa-user-plus fa-2x text-primary"></i>
+                                            </div>
+                                            <h5 class="fw-bold mb-2">Pendaftaran Baru</h5>
+                                            <p class="text-muted small mb-3">Belum punya akun? Daftar di sini untuk memulai pendaftaran PPDB</p>
+                                            <a href="{{ route('pendaftar.landing') }}" class="btn btn-primary w-100">
+                                                <i class="fas fa-arrow-right me-2"></i> Daftar Sekarang
+                                            </a>
+                                        </div>
                                     </div>
-                                    <h5 class="fw-bold mb-2">Sudah Terdaftar?</h5>
-                                    <p class="opacity-75 small mb-3">Login untuk melanjutkan pendaftaran atau cek status</p>
-                                    <a href="{{ route('login') }}" class="btn btn-outline-light w-100">
-                                        <i class="fas fa-sign-in-alt me-2"></i> Login
-                                    </a>
+                                </div>
+                                
+                                {{-- Card Login --}}
+                                <div class="col-sm-6 col-md-5 col-lg-4">
+                                    <div class="card bg-white bg-opacity-10 text-white h-100 border border-white border-opacity-25">
+                                        <div class="card-body p-4 text-center">
+                                            <div class="rounded-circle bg-white bg-opacity-25 p-3 d-inline-flex mb-3">
+                                                <i class="fas fa-sign-in-alt fa-2x"></i>
+                                            </div>
+                                            <h5 class="fw-bold mb-2">Sudah Terdaftar?</h5>
+                                            <p class="opacity-75 small mb-3">Login untuk melanjutkan pendaftaran atau cek status</p>
+                                            <a href="{{ route('login') }}" class="btn btn-outline-light w-100">
+                                                <i class="fas fa-sign-in-alt me-2"></i> Login
+                                            </a>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        @endauth
                     @endif
                     
                     {{-- Info Badge --}}
@@ -695,8 +726,9 @@
                             {{-- Status Pendaftaran (Gelombang hidden, hanya tampilkan status) --}}
                             @if($jalur->gelombang->isNotEmpty())
                                 @php
-                                    $gelombangAktif = $jalur->gelombang->first();
+                                    $gelombangJalur = $jalur->gelombang->first();
                                 @endphp
+                                @if($gelombangJalur->status == 'open')
                                 <div class="mb-3">
                                     <div class="border border-success rounded p-3" style="background: rgba(25, 135, 84, 0.05);">
                                         <div class="d-flex align-items-center mb-2">
@@ -706,14 +738,33 @@
                                         <div class="d-flex justify-content-between align-items-center">
                                             <small class="text-muted">
                                                 <i class="fas fa-calendar me-1"></i> 
-                                                {{ $gelombangAktif->tanggal_buka->format('d M') }} - {{ $gelombangAktif->tanggal_tutup->format('d M Y') }}
+                                                {{ $gelombangJalur->tanggal_buka->timezone(config('app.timezone'))->format('d M') }} - {{ $gelombangJalur->tanggal_tutup->timezone(config('app.timezone'))->format('d M Y') }}
                                             </small>
                                             <span class="badge bg-success rounded-pill">
-                                                <i class="fas fa-clock me-1"></i>{{ $gelombangAktif->sisa_hari }} hari lagi
+                                                <i class="fas fa-clock me-1"></i>{{ $gelombangJalur->sisa_hari }} hari lagi
                                             </span>
                                         </div>
                                     </div>
                                 </div>
+                                @elseif($gelombangJalur->status == 'upcoming')
+                                <div class="mb-3">
+                                    <div class="border border-warning rounded p-3" style="background: rgba(255, 193, 7, 0.05);">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="fas fa-hourglass-half text-warning me-2"></i>
+                                            <span class="fw-semibold text-warning">Segera Dibuka</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">
+                                                <i class="fas fa-calendar me-1"></i> 
+                                                Mulai {{ $gelombangJalur->tanggal_buka->timezone(config('app.timezone'))->format('d M Y') }}
+                                                @if($gelombangJalur->waktu_buka)
+                                                    {{ substr($gelombangJalur->waktu_buka, 0, 5) }} WIB
+                                                @endif
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
                             @else
                             <div class="mb-3">
                                 <div class="alert alert-secondary py-2 px-3 mb-0">

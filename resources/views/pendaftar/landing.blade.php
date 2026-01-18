@@ -631,9 +631,26 @@
             PPDB {{ \App\Models\SekolahSettings::getNamaSekolah() }}
         </a>
         <div class="navbar-nav">
-            <a href="{{ route('pendaftar.login') }}" class="nav-link btn-outline">
-                <i class="fas fa-sign-in-alt"></i> Login
-            </a>
+            @auth
+                {{-- User sudah login --}}
+                @if(Auth::user()->isAdmin())
+                    <a href="{{ route('admin.dashboard') }}" class="nav-link btn-outline">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard Admin
+                    </a>
+                @elseif(Auth::user()->hasAnyRole(['operator', 'verifikator']))
+                    <a href="{{ route('operator.dashboard') }}" class="nav-link btn-outline">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard Operator
+                    </a>
+                @else
+                    <a href="{{ route('pendaftar.dashboard') }}" class="nav-link btn-outline">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard Saya
+                    </a>
+                @endif
+            @else
+                <a href="{{ route('pendaftar.login') }}" class="nav-link btn-outline">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </a>
+            @endauth
         </div>
     </nav>
 
@@ -753,12 +770,32 @@
                     <span>atau</span>
                 </div>
 
-                <p style="text-align: center; color: #666; margin-bottom: 1rem;">
-                    Sudah punya akun?
-                </p>
-                <a href="{{ route('pendaftar.login') }}" class="btn btn-outline-primary btn-block">
-                    <i class="fas fa-sign-in-alt"></i> Login
-                </a>
+                @auth
+                    {{-- User sudah login --}}
+                    <p style="text-align: center; color: #666; margin-bottom: 1rem;">
+                        Anda login sebagai <strong>{{ Auth::user()->name }}</strong>
+                    </p>
+                    @if(Auth::user()->isAdmin())
+                        <a href="{{ route('admin.dashboard') }}" class="btn btn-success btn-block">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard Admin
+                        </a>
+                    @elseif(Auth::user()->hasAnyRole(['operator', 'verifikator']))
+                        <a href="{{ route('operator.dashboard') }}" class="btn btn-success btn-block">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard Operator
+                        </a>
+                    @else
+                        <a href="{{ route('pendaftar.dashboard') }}" class="btn btn-success btn-block">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard Saya
+                        </a>
+                    @endif
+                @else
+                    <p style="text-align: center; color: #666; margin-bottom: 1rem;">
+                        Sudah punya akun?
+                    </p>
+                    <a href="{{ route('pendaftar.login') }}" class="btn btn-outline-primary btn-block">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
+                @endauth
             </div>
 
             <!-- Registration Form Card (Hidden initially) -->

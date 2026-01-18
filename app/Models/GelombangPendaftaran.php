@@ -70,6 +70,54 @@ class GelombangPendaftaran extends Model
     ];
 
     /**
+     * Get computed status berdasarkan tanggal dan waktu
+     * Status dihitung otomatis, bukan dari field database
+     */
+    public function getComputedStatusAttribute(): string
+    {
+        // Jika status draft atau finished, gunakan nilai database
+        if (in_array($this->attributes['status'] ?? '', [self::STATUS_DRAFT, self::STATUS_FINISHED])) {
+            return $this->attributes['status'];
+        }
+        
+        $now = now();
+        $timezone = config('app.timezone', 'Asia/Jakarta');
+        
+        // Kombinasi tanggal dan waktu buka
+        $waktuBuka = Carbon::parse(
+            $this->tanggal_buka->format('Y-m-d') . ' ' . ($this->waktu_buka ?? '00:00:00'),
+            $timezone
+        );
+        
+        // Kombinasi tanggal dan waktu tutup
+        $waktuTutup = Carbon::parse(
+            $this->tanggal_tutup->format('Y-m-d') . ' ' . ($this->waktu_tutup ?? '23:59:59'),
+            $timezone
+        );
+        
+        if ($now->lt($waktuBuka)) {
+            return self::STATUS_UPCOMING;
+        } elseif ($now->between($waktuBuka, $waktuTutup)) {
+            return self::STATUS_OPEN;
+        } else {
+            return self::STATUS_CLOSED;
+        }
+    }
+
+    /**
+     * Override status attribute to use computed status
+     */
+    public function getStatusAttribute($value): string
+    {
+        // Jika is_active false, return nilai asli
+        if (!$this->is_active) {
+            return $value ?? self::STATUS_DRAFT;
+        }
+        
+        return $this->computed_status;
+    }
+
+    /**
      * Relasi ke jalur pendaftaran
      */
     public function jalur()
