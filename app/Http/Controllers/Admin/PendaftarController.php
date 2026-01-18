@@ -312,8 +312,8 @@ class PendaftarController extends Controller
             $gelombang = GelombangPendaftaran::findOrFail($request->gelombang_pendaftaran_id);
             $tahunPelajaran = TahunPelajaran::active()->first();
 
-            // Generate nomor registrasi
-            $nomorRegistrasi = $this->generateNomorRegistrasi($jalur);
+            // Generate nomor registrasi dari gelombang (konsisten dengan registrasi online)
+            $nomorRegistrasi = $gelombang->generateNomorRegistrasi();
             
             // Generate username & password
             $username = $request->nisn;

@@ -625,12 +625,27 @@ class CalonSiswa extends Model
     // Helper methods
     public function generateNomorRegistrasi(): string
     {
-        $tahun = date('Y');
-        $jalur = $this->jalurPendaftaran?->kode ?? 'XX';
-        $gelombang = $this->gelombangPendaftaran?->kode ?? '0';
-        $sequence = self::whereYear('created_at', $tahun)->count() + 1;
+        // Prioritas: gunakan counter dari gelombang, lalu jalur, terakhir settings global
+        if ($this->gelombangPendaftaran) {
+            // Gelombang punya prefix dan counter sendiri
+            return $this->gelombangPendaftaran->generateNomorRegistrasi();
+        }
         
-        return sprintf('%s/%s/%s/%04d', $tahun, $jalur, $gelombang, $sequence);
+        if ($this->jalurPendaftaran) {
+            // Jalur punya prefix dan counter sendiri
+            return $this->jalurPendaftaran->generateNomorRegistrasi();
+        }
+        
+        // Fallback ke settings global
+        $settings = PpdbSettings::getActive();
+        if ($settings && $settings->exists) {
+            return $settings->generateNomorRegistrasi();
+        }
+        
+        // Ultimate fallback
+        $tahun = date('Y');
+        $sequence = self::whereYear('created_at', $tahun)->count() + 1;
+        return sprintf('PPDB-%s-%05d', $tahun, $sequence);
     }
 
     /**

@@ -376,23 +376,11 @@ class FinalisasiController extends Controller
 
     /**
      * Generate nomor registrasi
+     * Menggunakan method dari CalonSiswa untuk konsistensi
      */
     private function generateNomorRegistrasi(CalonSiswa $pendaftar): string
     {
-        $tahun = date('Y');
-        $jalurKode = $pendaftar->jalurPendaftaran?->kode ?? 'XX';
-        $gelombangKode = $pendaftar->gelombangPendaftaran?->kode ?? '0';
-        
-        // Get sequence number for this year, jalur, gelombang
-        $count = CalonSiswa::whereYear('created_at', $tahun)
-            ->where('jalur_pendaftaran_id', $pendaftar->jalur_pendaftaran_id)
-            ->where('gelombang_pendaftaran_id', $pendaftar->gelombang_pendaftaran_id)
-            ->whereNotNull('nomor_registrasi')
-            ->count();
-
-        $sequence = $count + 1;
-        
-        return sprintf('%s/%s/%s/%04d', $tahun, $jalurKode, $gelombangKode, $sequence);
+        return $pendaftar->generateNomorRegistrasi();
     }
 
     /**
