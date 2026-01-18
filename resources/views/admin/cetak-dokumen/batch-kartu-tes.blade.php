@@ -211,8 +211,8 @@
                     @php
                         $hash = $calonSiswa->getOrGenerateHash();
                         $verifyUrl = route('verify.bukti', $hash);
-                        $qrPng = QrCode::format('png')->size(120)->margin(0)->generate($verifyUrl);
-                        $qrBase64 = 'data:image/png;base64,' . base64_encode($qrPng);
+                        $qrSvg = QrCode::format('svg')->size(120)->margin(0)->generate($verifyUrl);
+                        $qrBase64 = 'data:image/svg+xml;base64,' . base64_encode($qrSvg);
                     @endphp
                     <img src="{{ $qrBase64 }}" style="width: 60px; height: 60px;" alt="QR">
                     <div style="font-size: 7pt; color: #999; margin-top: 3px;">Scan untuk verifikasi</div>

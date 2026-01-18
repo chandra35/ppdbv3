@@ -315,14 +315,14 @@
         /* QR Code */
         .qr-code-box {
             position: absolute;
-            bottom: 32px;
-            left: 10px;
-            width: 40px;
-            height: 40px;
+            bottom: 28px;
+            left: 8px;
+            width: 65px;
+            height: 65px;
             background: #fff;
             border: 1px solid #ccc;
             border-radius: 3px;
-            padding: 2px;
+            padding: 3px;
             z-index: 10;
         }
         .qr-code-box svg, .qr-code-box img {
@@ -481,15 +481,13 @@
                 @php
                     $hash = $calonSiswa->getOrGenerateHash();
                     $verifyUrl = route('verify.bukti', $hash);
+                    $qrSvg = QrCode::format('svg')->size(80)->margin(0)->generate($verifyUrl);
+                    $qrBase64 = 'data:image/svg+xml;base64,' . base64_encode($qrSvg);
                 @endphp
                 @if(isset($isPdf) && $isPdf)
-                    @php
-                        $qrPng = QrCode::format('png')->size(80)->margin(0)->generate($verifyUrl);
-                        $qrBase64 = 'data:image/png;base64,' . base64_encode($qrPng);
-                    @endphp
                     <img src="{{ $qrBase64 }}" style="width: 100%; height: 100%;" alt="QR">
                 @else
-                    {!! QrCode::format('svg')->size(36)->margin(0)->generate($verifyUrl) !!}
+                    {!! $qrSvg !!}
                 @endif
             </div>
 

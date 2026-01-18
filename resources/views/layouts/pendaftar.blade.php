@@ -602,8 +602,8 @@
                             $hash = $calonSiswa->getOrGenerateHash();
                             $verifyUrl = route('verify.bukti', $hash);
                         @endphp
-                        <div style="position: absolute; bottom: 32px; left: 10px; width: 40px; height: 40px; background: #fff; border: 1px solid #ccc; border-radius: 3px; padding: 2px; z-index: 10;">
-                            {!! QrCode::format('svg')->size(36)->margin(0)->generate($verifyUrl) !!}
+                        <div style="position: absolute; bottom: 28px; left: 8px; width: 65px; height: 65px; background: #fff; border: 1px solid #ccc; border-radius: 3px; padding: 3px; z-index: 10;">
+                            {!! QrCode::format('svg')->size(60)->margin(0)->generate($verifyUrl) !!}
                         </div>
                     </div>
                 </div>
