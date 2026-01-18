@@ -144,8 +144,8 @@ class LandingController extends Controller
      */
     protected function redirectBasedOnRole($user)
     {
-        // Admin, Operator, Verifikator → semua ke admin.dashboard
-        if ($user->isAdmin() || $user->hasAnyRole(['operator', 'verifikator'])) {
+        // Admin, Operator, Verifikator, mas-admin → semua ke admin.dashboard
+        if ($user->isAdmin() || $user->hasAnyRole(['operator', 'verifikator', 'mas-admin'])) {
             return redirect()->route('admin.dashboard');
         }
         
@@ -237,7 +237,7 @@ class LandingController extends Controller
         $roleName = 'User';
         if ($user->isAdmin()) {
             $roleName = 'Administrator';
-        } elseif ($user->hasAnyRole(['operator', 'verifikator'])) {
+        } elseif ($user->hasAnyRole(['operator', 'verifikator', 'mas-admin'])) {
             $roleName = 'Operator';
         }
 
