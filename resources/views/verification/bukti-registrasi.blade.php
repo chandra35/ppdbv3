@@ -43,10 +43,12 @@
                             <div class="info-label">Nomor Registrasi:</div>
                             <div class="info-value"><strong class="text-danger">{{ $calonSiswa->nomor_registrasi }}</strong></div>
                         </div>
+                        @if($calonSiswa->nomor_tes)
                         <div class="info-row">
                             <div class="info-label">Nomor Tes:</div>
                             <div class="info-value"><strong>{{ $calonSiswa->nomor_tes }}</strong></div>
                         </div>
+                        @endif
                         <div class="info-row">
                             <div class="info-label">Nama Lengkap:</div>
                             <div class="info-value"><strong>{{ strtoupper($calonSiswa->nama_lengkap) }}</strong></div>
