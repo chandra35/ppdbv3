@@ -27,8 +27,8 @@ class AdminMiddleware
         // Check if user has admin or operator/verifikator role
         $user = auth()->user();
         
-        // Allow: admin, operator, verifikator
-        if (!$user->isAdmin() && !$user->hasAnyRole(['operator', 'verifikator'])) {
+        // Allow: admin, super-admin, mas-admin, operator, verifikator
+        if (!$user->isAdmin() && !$user->hasAnyRole(['operator', 'verifikator', 'mas-admin'])) {
             if ($request->expectsJson()) {
                 return response()->json(['error' => 'Forbidden'], 403);
             }

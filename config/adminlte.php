@@ -273,18 +273,6 @@ return [
                     'can' => 'settings.edit',
                 ],
                 [
-                    'text' => 'Berita',
-                    'route' => 'admin.settings.berita.index',
-                    'icon' => 'fas fa-fw fa-newspaper',
-                    'can' => 'berita.view',
-                ],
-                [
-                    'text' => 'Slider',
-                    'route' => 'admin.settings.slider.index',
-                    'icon' => 'fas fa-fw fa-images',
-                    'can' => 'slider.view',
-                ],
-                [
                     'text' => 'Jadwal PPDB',
                     'route' => 'admin.settings.jadwal.index',
                     'icon' => 'fas fa-fw fa-calendar-alt',
@@ -297,6 +285,26 @@ return [
                     'can' => 'settings.edit',
                 ],
             ],
+        ],
+
+        // ============================================
+        // KONTEN (Berita & Slider - permission terpisah)
+        // ============================================
+        [
+            'header' => 'KONTEN',
+            'can' => 'berita.view',
+        ],
+        [
+            'text' => 'Berita',
+            'route' => 'admin.settings.berita.index',
+            'icon' => 'fas fa-fw fa-newspaper',
+            'can' => 'berita.view',
+        ],
+        [
+            'text' => 'Slider',
+            'route' => 'admin.settings.slider.index',
+            'icon' => 'fas fa-fw fa-images',
+            'can' => 'slider.view',
         ],
 
         [

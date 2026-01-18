@@ -152,10 +152,12 @@ class User extends Authenticatable
 
     /**
      * Check if user is admin
+     * Hanya role admin dan super-admin yang dianggap admin penuh
+     * mas-admin dan role lain mengikuti permission yang diset
      */
     public function isAdmin(): bool
     {
-        return $this->hasAnyRole(['admin', 'super-admin', 'mas-admin']) || 
+        return $this->hasAnyRole(['admin', 'super-admin']) || 
                in_array($this->email, ['admin@ppdb.local', 'administrator@ppdb.local']);
     }
 

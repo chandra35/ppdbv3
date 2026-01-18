@@ -347,15 +347,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
             Route::post('/halaman/maps', [SiteSettingsController::class, 'updateMaps'])->name('halaman.update.maps');
             Route::post('/halaman/verify-facebook', [SiteSettingsController::class, 'verifyFacebookToken'])->name('halaman.verify-facebook');
 
-            // Berita
-            Route::resource('berita', BeritaController::class)->parameters(['berita' => 'berita']);
-            Route::post('/berita/{berita}/share-facebook', [BeritaController::class, 'shareToFacebook'])->name('berita.share-facebook');
-            Route::post('/berita/{berita}/toggle-featured', [BeritaController::class, 'toggleFeatured'])->name('berita.toggle-featured');
-
-            // Slider
-            Route::resource('slider', SliderController::class);
-            Route::post('/slider/{slider}/toggle-status', [SliderController::class, 'toggleStatus'])->name('slider.toggle-status');
-
             // Jadwal PPDB
             Route::resource('jadwal', JadwalController::class);
             Route::post('/jadwal/{jadwal}/toggle-status', [JadwalController::class, 'toggleStatus'])->name('jadwal.toggle-status');
@@ -364,11 +355,36 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
             Route::prefix('alur-pendaftaran')->name('alur-pendaftaran.')->group(function () {
                 Route::get('/', [AlurPendaftaranController::class, 'index'])->name('index');
                 Route::post('/', [AlurPendaftaranController::class, 'store'])->name('store');
-            Route::put('/{alurPendaftaran}', [AlurPendaftaranController::class, 'update'])->name('update');
-            Route::delete('/{alurPendaftaran}', [AlurPendaftaranController::class, 'destroy'])->name('destroy');
-            Route::post('/update-order', [AlurPendaftaranController::class, 'updateOrder'])->name('update-order');
+                Route::put('/{alurPendaftaran}', [AlurPendaftaranController::class, 'update'])->name('update');
+                Route::delete('/{alurPendaftaran}', [AlurPendaftaranController::class, 'destroy'])->name('destroy');
+                Route::post('/update-order', [AlurPendaftaranController::class, 'updateOrder'])->name('update-order');
+            });
+        });
+    }); // End of can:admin group
+    
+    // ============================================
+    // KONTEN ROUTES - Berita & Slider dengan permission sendiri
+    // ============================================
+    
+    // Berita - dengan permission berita.view
+    Route::prefix('settings')->name('settings.')->group(function () {
+        Route::middleware('permission:berita.view')->group(function () {
+            Route::resource('berita', BeritaController::class)->parameters(['berita' => 'berita']);
+            Route::post('/berita/{berita}/share-facebook', [BeritaController::class, 'shareToFacebook'])->name('berita.share-facebook');
+            Route::post('/berita/{berita}/toggle-featured', [BeritaController::class, 'toggleFeatured'])->name('berita.toggle-featured');
+        });
+
+        // Slider - dengan permission slider.view
+        Route::middleware('permission:slider.view')->group(function () {
+            Route::resource('slider', SliderController::class);
+            Route::post('/slider/{slider}/toggle-status', [SliderController::class, 'toggleStatus'])->name('slider.toggle-status');
         });
     });
+    
+    // ============================================
+    // KEMBALI KE ADMIN-ONLY ROUTES
+    // ============================================
+    Route::middleware('can:admin')->group(function () {
 
         // ---- JALUR PENDAFTARAN ----
         Route::prefix('jalur')->name('jalur.')->group(function () {
@@ -437,23 +453,39 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
             Route::delete('/{id}/remove', [GtkController::class, 'removeUser'])->name('remove');
             Route::post('/bulk-register', [GtkController::class, 'bulkRegister'])->name('bulk-register');
         });
-
-        // ---- ACTIVITY LOGS ----
+    }); // End can:admin group for User/Role/GTK
+    
+    // ============================================
+    // LOGS & VISITOR ROUTES - dengan permission sendiri
+    // ============================================
+    
+    // ---- ACTIVITY LOGS ---- (permission: logs.view)
+    Route::middleware('permission:logs.view')->group(function () {
         Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
         Route::get('/logs/{id}', [ActivityLogController::class, 'show'])->name('logs.show');
-        Route::delete('/logs/clear', [ActivityLogController::class, 'clear'])->name('logs.clear');
+    });
+    Route::delete('/logs/clear', [ActivityLogController::class, 'clear'])
+        ->middleware('permission:logs.clear')
+        ->name('logs.clear');
 
-        // ---- VISITOR LOGS ----
-        Route::prefix('visitor-logs')->name('visitor-logs.')->group(function () {
-            Route::get('/', [VisitorLogController::class, 'index'])->name('index');
-            Route::get('/list', [VisitorLogController::class, 'list'])->name('list');
-            Route::get('/map', [VisitorLogController::class, 'map'])->name('map');
-            Route::get('/online', [VisitorLogController::class, 'online'])->name('online');
-            Route::get('/online-data', [VisitorLogController::class, 'onlineData'])->name('online-data');
-            Route::post('/mark-offline', [VisitorLogController::class, 'markOffline'])->name('mark-offline');
-            Route::get('/export', [VisitorLogController::class, 'export'])->name('export');
-            Route::delete('/clear', [VisitorLogController::class, 'clear'])->name('clear');
-        });
+    // ---- VISITOR LOGS ---- (permission: visitor.view)
+    Route::prefix('visitor-logs')->name('visitor-logs.')->middleware('permission:visitor.view')->group(function () {
+        Route::get('/', [VisitorLogController::class, 'index'])->name('index');
+        Route::get('/list', [VisitorLogController::class, 'list'])->name('list');
+        Route::get('/map', [VisitorLogController::class, 'map'])->name('map');
+        Route::get('/online', [VisitorLogController::class, 'online'])->name('online');
+        Route::get('/online-data', [VisitorLogController::class, 'onlineData'])->name('online-data');
+        Route::post('/mark-offline', [VisitorLogController::class, 'markOffline'])->name('mark-offline');
+        Route::get('/export', [VisitorLogController::class, 'export'])->name('export');
+    });
+    Route::delete('/visitor-logs/clear', [VisitorLogController::class, 'clear'])
+        ->middleware('permission:visitor.clear')
+        ->name('visitor-logs.clear');
+    
+    // ============================================
+    // ADMIN-ONLY ROUTES - Settings, Backup, Reset
+    // ============================================
+    Route::middleware('can:admin')->group(function () {
 
         // ---- EMIS TOKEN MANAGEMENT ----
         Route::get('/update-emis-token', [EmisTokenController::class, 'index'])->name('update-emis-token.index');
