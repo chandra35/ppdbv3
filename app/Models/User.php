@@ -155,7 +155,7 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        return $this->hasAnyRole(['admin', 'super-admin']) || 
+        return $this->hasAnyRole(['admin', 'super-admin', 'mas-admin']) || 
                in_array($this->email, ['admin@ppdb.local', 'administrator@ppdb.local']);
     }
 
