@@ -197,14 +197,24 @@
 
         {{-- Footer --}}
         <div class="kartu-footer">
-            <div class="catatan">
-                <strong>Catatan Penting:</strong>
-                <ul>
-                    <li>Kartu ini wajib dibawa saat mengikuti tes</li>
-                    <li>Kartu ini tidak boleh diwakilkan</li>
-                    <li>Peserta wajib hadir 30 menit sebelum tes dimulai</li>
-                    <li>Membawa alat tulis (pensil 2B, penghapus, pulpen)</li>
-                </ul>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div class="catatan" style="flex: 1;">
+                    <strong>Catatan Penting:</strong>
+                    <ul>
+                        <li>Kartu ini wajib dibawa saat mengikuti tes</li>
+                        <li>Kartu ini tidak boleh diwakilkan</li>
+                        <li>Peserta wajib hadir 30 menit sebelum tes dimulai</li>
+                        <li>Membawa alat tulis (pensil 2B, penghapus, pulpen)</li>
+                    </ul>
+                </div>
+                <div class="qr-container" style="text-align: center; margin-left: 15px;">
+                    @php
+                        $hash = $calonSiswa->getOrGenerateHash();
+                        $verifyUrl = route('verification.bukti', $hash);
+                    @endphp
+                    {!! QrCode::format('svg')->size(60)->margin(0)->generate($verifyUrl) !!}
+                    <div style="font-size: 7pt; color: #999; margin-top: 3px;">Scan untuk verifikasi</div>
+                </div>
             </div>
         </div>
     </div>

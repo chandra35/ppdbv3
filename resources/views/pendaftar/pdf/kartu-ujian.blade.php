@@ -312,6 +312,24 @@
             font-size: 8px;
         }
         
+        /* QR Code */
+        .qr-code-box {
+            position: absolute;
+            bottom: 30px;
+            right: 8px;
+            width: 45px;
+            height: 45px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            padding: 2px;
+            z-index: 2;
+        }
+        .qr-code-box svg, .qr-code-box img {
+            width: 100%;
+            height: 100%;
+        }
+        
         /* Cut Guide */
         .cut-guide {
             margin-top: 15px;
@@ -456,6 +474,19 @@
                         </td>
                     </tr>
                 </table>
+            </div>
+            
+            {{-- QR Code --}}
+            <div class="qr-code-box">
+                @php
+                    $hash = $calonSiswa->getOrGenerateHash();
+                    $verifyUrl = route('verification.bukti', $hash);
+                @endphp
+                @if(isset($isPdf) && $isPdf)
+                    {!! QrCode::format('svg')->size(41)->margin(0)->generate($verifyUrl) !!}
+                @else
+                    {!! QrCode::format('svg')->size(41)->margin(0)->generate($verifyUrl) !!}
+                @endif
             </div>
 
             {{-- Footer --}}
