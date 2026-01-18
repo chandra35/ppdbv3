@@ -37,36 +37,44 @@ if ($pendaftarLama->isEmpty()) {
 }
 
 echo "Data yang akan diubah:" . PHP_EOL;
-echo str_repeat('-', 80) . PHP_EOL;
-printf("%-40s %-20s %-20s\n", "Nama", "Nomor Lama", "Nomor Baru (preview)");
-echo str_repeat('-', 80) . PHP_EOL;
+echo str_repeat('-', 100) . PHP_EOL;
+printf("%-40s %-25s %-25s\n", "Nama", "Nomor Lama", "Nomor Baru (preview)");
+echo str_repeat('-', 100) . PHP_EOL;
 
-// Preview dulu
+// Group by gelombang untuk preview yang benar
+$groupedByGelombang = $pendaftarLama->groupBy('gelombang_pendaftaran_id');
 $previewData = [];
-foreach ($pendaftarLama as $p) {
-    $gelombang = $p->gelombangPendaftaran;
+
+foreach ($groupedByGelombang as $gelombangId => $pendaftars) {
+    $gelombang = $gelombangId ? GelombangPendaftaran::with('jalur.tahunPelajaran')->find($gelombangId) : null;
+    $counterPreview = $gelombang ? $gelombang->counter_nomor : 0;
     
-    if ($gelombang) {
-        // Preview nomor baru (tanpa increment dulu)
-        $counter = str_pad($gelombang->counter_nomor + 1, 4, '0', STR_PAD_LEFT);
-        $tahun = substr(str_replace('/', '', $gelombang->jalur?->tahunPelajaran?->nama ?? date('Y')), 0, 4);
-        $kodeJalur = $gelombang->jalur ? strtoupper(substr($gelombang->jalur->kode, 0, 3)) : 'REG';
-        $nomorBaru = "{$gelombang->prefix_nomor}-{$kodeJalur}-{$tahun}-{$counter}";
-    } else {
-        $nomorBaru = "PPDB-" . date('Y') . "-XXXXX";
+    foreach ($pendaftars as $p) {
+        if ($gelombang) {
+            $counterPreview++;
+            $counter = str_pad($counterPreview, 4, '0', STR_PAD_LEFT);
+            // Ambil tahun dari nama TP (format: "2026/2027" -> ambil "2026")
+            $tpNama = $gelombang->jalur?->tahunPelajaran?->nama ?? date('Y');
+            $tahun = explode('/', $tpNama)[0];
+            $kodeJalur = $gelombang->jalur ? strtoupper(substr($gelombang->jalur->kode, 0, 3)) : 'REG';
+            $prefix = $gelombang->prefix_nomor ?: 'REG';
+            $nomorBaru = "{$prefix}-{$kodeJalur}-{$tahun}-{$counter}";
+        } else {
+            $nomorBaru = "⚠️ SKIP (no gelombang)";
+        }
+        
+        $previewData[$p->id] = [
+            'pendaftar' => $p,
+            'nomor_lama' => $p->nomor_registrasi,
+            'nomor_baru_preview' => $nomorBaru,
+        ];
+        
+        printf("%-40s %-25s %-25s\n", 
+            substr($p->nama_lengkap, 0, 38), 
+            $p->nomor_registrasi, 
+            $nomorBaru
+        );
     }
-    
-    $previewData[$p->id] = [
-        'pendaftar' => $p,
-        'nomor_lama' => $p->nomor_registrasi,
-        'nomor_baru_preview' => $nomorBaru,
-    ];
-    
-    printf("%-40s %-20s %-20s\n", 
-        substr($p->nama_lengkap, 0, 38), 
-        $p->nomor_registrasi, 
-        $nomorBaru
-    );
 }
 
 echo str_repeat('-', 80) . PHP_EOL . PHP_EOL;

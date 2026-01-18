@@ -270,10 +270,15 @@ class GelombangPendaftaran extends Model
         }
         
         $counter = str_pad($this->counter_nomor, 4, '0', STR_PAD_LEFT);
-        $tahun = substr(str_replace('/', '', $this->jalur->tahunPelajaran?->nama ?? date('Y')), 0, 4);
-        $kodeJalur = $this->jalur ? strtoupper(substr($this->jalur->kode, 0, 3)) : 'REG';
         
-        return "{$this->prefix_nomor}-{$kodeJalur}-{$tahun}-{$counter}";
+        // Ambil tahun dari nama TP (format: "2026/2027" -> ambil "2026")
+        $tpNama = $this->jalur?->tahunPelajaran?->nama ?? date('Y');
+        $tahun = explode('/', $tpNama)[0]; // Ambil tahun pertama
+        
+        $kodeJalur = $this->jalur ? strtoupper(substr($this->jalur->kode, 0, 3)) : 'REG';
+        $prefix = $this->prefix_nomor ?: 'REG';
+        
+        return "{$prefix}-{$kodeJalur}-{$tahun}-{$counter}";
     }
 
     /**
