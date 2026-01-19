@@ -234,7 +234,20 @@
                         @forelse($recentPendaftar as $pendaftar)
                         <li class="item">
                             <div class="product-img">
-                                <img src="{{ asset('vendor/adminlte/dist/img/user2-160x160.jpg') }}" alt="User" class="img-size-50 img-circle">
+                                @php
+                                    // Prioritas foto: 1. Dokumen foto, 2. Foto manual, 3. UI Avatars
+                                    $foto = $pendaftar->dokumen->where('jenis_dokumen', 'foto')->first();
+                                    if($foto && $foto->file_path && file_exists(public_path('storage/' . $foto->file_path))) {
+                                        $avatarUrl = asset('storage/' . $foto->file_path);
+                                    } elseif($pendaftar->foto && file_exists(public_path('storage/' . $pendaftar->foto))) {
+                                        $avatarUrl = asset('storage/' . $pendaftar->foto);
+                                    } else {
+                                        $initials = collect(explode(' ', $pendaftar->nama_lengkap))->take(2)->map(fn($w) => strtoupper(substr($w, 0, 1)))->join('');
+                                        $bgColor = $pendaftar->jenis_kelamin == 'L' ? '3498db' : ($pendaftar->jenis_kelamin == 'P' ? 'e74c3c' : '95a5a6');
+                                        $avatarUrl = 'https://ui-avatars.com/api/?name=' . urlencode($initials) . '&size=50&background=' . $bgColor . '&color=ffffff&bold=true';
+                                    }
+                                @endphp
+                                <img src="{{ $avatarUrl }}" alt="User" class="img-size-50 img-circle">
                             </div>
                             <div class="product-info">
                                 <a href="{{ route('admin.pendaftar.show', $pendaftar->id) }}" class="product-title">

@@ -44,7 +44,8 @@ class DashboardController extends Controller
         }
 
         // Recent registrations
-        $recentPendaftar = CalonSiswa::orderBy('created_at', 'desc')
+        $recentPendaftar = CalonSiswa::with('dokumen')
+            ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
 
