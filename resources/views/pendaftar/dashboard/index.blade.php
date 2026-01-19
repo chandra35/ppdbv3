@@ -88,6 +88,71 @@
     </div>
 </div>
 
+{{-- Compact Checklist Status --}}
+@if(!$kelengkapan['finalisasi'])
+<div class="row">
+    <div class="col-12">
+        <div class="card card-outline {{ $kelengkapan['semua_lengkap'] ? 'card-success' : 'card-warning' }}" style="border-top-width: 3px;">
+            <div class="card-body py-2">
+                <div class="d-flex align-items-center justify-content-between flex-wrap">
+                    <div class="d-flex align-items-center mb-2 mb-md-0">
+                        @if($kelengkapan['semua_lengkap'])
+                            <i class="fas fa-check-circle text-success mr-2" style="font-size: 1.3rem;"></i>
+                            <span class="font-weight-bold text-success">Semua Data Lengkap!</span>
+                            <span class="text-muted ml-2">Silahkan lakukan finalisasi</span>
+                        @else
+                            <i class="fas fa-clipboard-list text-warning mr-2" style="font-size: 1.3rem;"></i>
+                            <span class="font-weight-bold">Lengkapi Data:</span>
+                        @endif
+                    </div>
+                    <div class="d-flex flex-wrap gap-1" style="gap: 0.4rem;">
+                        {{-- Data Pribadi --}}
+                        <a href="{{ route('pendaftar.data-pribadi') }}" class="badge badge-{{ $kelengkapan['data_diri'] ? 'success' : 'secondary' }} px-2 py-1" style="font-size: 0.8rem; text-decoration: none;">
+                            <i class="fas fa-{{ $kelengkapan['data_diri'] ? 'check' : 'times' }} mr-1"></i>Data Pribadi
+                        </a>
+                        
+                        {{-- Data Orang Tua --}}
+                        <a href="{{ route('pendaftar.data-ortu') }}" class="badge badge-{{ $kelengkapan['data_ortu'] ? 'success' : 'secondary' }} px-2 py-1" style="font-size: 0.8rem; text-decoration: none;">
+                            <i class="fas fa-{{ $kelengkapan['data_ortu'] ? 'check' : 'times' }} mr-1"></i>Data Ortu
+                        </a>
+                        
+                        {{-- Dokumen --}}
+                        <a href="{{ route('pendaftar.dokumen') }}" class="badge badge-{{ $kelengkapan['dokumen'] ? 'success' : 'secondary' }} px-2 py-1" style="font-size: 0.8rem; text-decoration: none;">
+                            <i class="fas fa-{{ $kelengkapan['dokumen'] ? 'check' : 'times' }} mr-1"></i>Dokumen ({{ $kelengkapan['dokumen_count'] }}/{{ $kelengkapan['dokumen_total'] }})
+                        </a>
+                        
+                        {{-- Nilai Rapor + File Upload - hijau hanya jika nilai DAN file lengkap --}}
+                        <a href="{{ route('pendaftar.nilai-rapor') }}" class="badge badge-{{ $kelengkapan['rapor_lengkap'] ? 'success' : 'secondary' }} px-2 py-1" style="font-size: 0.8rem; text-decoration: none;" 
+                           title="Nilai: {{ $kelengkapan['nilai_rapor_terisi'] }}/5 semester, File: {{ $kelengkapan['file_rapor_uploaded'] }}/5 uploaded">
+                            <i class="fas fa-{{ $kelengkapan['rapor_lengkap'] ? 'check' : 'times' }} mr-1"></i>Rapor 
+                            <small>({{ $kelengkapan['nilai_rapor_terisi'] }}/5 <i class="fas fa-file-alt"></i> {{ $kelengkapan['file_rapor_uploaded'] }}/5 <i class="fas fa-upload"></i>)</small>
+                        </a>
+                        
+                        {{-- Pilihan Program (jika aktif) --}}
+                        @if($kelengkapan['pilihan_program_aktif'])
+                        <a href="{{ route('pendaftar.pilihan-program') }}" class="badge badge-{{ $kelengkapan['pilihan_program_lengkap'] ? 'success' : 'secondary' }} px-2 py-1" style="font-size: 0.8rem; text-decoration: none;">
+                            <i class="fas fa-{{ $kelengkapan['pilihan_program_lengkap'] ? 'check' : 'times' }} mr-1"></i>Pilihan Program
+                        </a>
+                        @endif
+                        
+                        {{-- Finalisasi --}}
+                        @if($kelengkapan['semua_lengkap'])
+                        <a href="{{ route('pendaftar.finalisasi') }}" class="badge badge-primary px-2 py-1" style="font-size: 0.8rem; text-decoration: none;">
+                            <i class="fas fa-arrow-right mr-1"></i>Finalisasi
+                        </a>
+                        @else
+                        <span class="badge badge-light px-2 py-1" style="font-size: 0.8rem;">
+                            <i class="fas fa-lock mr-1"></i>Finalisasi
+                        </span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 <div class="row">
     <!-- Info Cards -->
     <div class="col-12">

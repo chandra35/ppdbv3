@@ -30,7 +30,7 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         $calonSiswa = CalonSiswa::where('user_id', $user->id)
-            ->with(['jalurPendaftaran', 'gelombangPendaftaran', 'tahunPelajaran', 'ortu', 'dokumen'])
+            ->with(['jalurPendaftaran', 'gelombangPendaftaran', 'tahunPelajaran', 'ortu', 'dokumen', 'nilaiRapor'])
             ->first();
 
         if (!$calonSiswa) {
@@ -50,7 +50,10 @@ class DashboardController extends Controller
             ->whereIn('status_verifikasi', ['revision', 'invalid'])
             ->get();
 
-        return view('pendaftar.dashboard.index', compact('calonSiswa', 'progress', 'wajibLokasi', 'dokumenBermasalah'));
+        // Hitung status kelengkapan untuk info box
+        $kelengkapan = $this->calculateKelengkapanStatus($calonSiswa);
+
+        return view('pendaftar.dashboard.index', compact('calonSiswa', 'progress', 'wajibLokasi', 'dokumenBermasalah', 'kelengkapan'));
     }
 
     /**
@@ -1319,6 +1322,61 @@ class DashboardController extends Controller
             ->count();
             
         return (int) min(100, ($uploadedCount / $requiredCount) * 100);
+    }
+
+    /**
+     * Calculate kelengkapan status for dashboard info box
+     */
+    protected function calculateKelengkapanStatus(CalonSiswa $calonSiswa): array
+    {
+        $settings = PpdbSettings::first();
+        $requiredDokumen = $settings?->dokumen_aktif ?? ['foto', 'kk', 'akta_lahir', 'ktp_ortu', 'ijazah', 'raport'];
+        
+        // Hitung dokumen yang sudah diupload
+        $uploadedDokumen = $calonSiswa->dokumen()
+            ->whereIn('jenis_dokumen', $requiredDokumen)
+            ->count();
+        $totalDokumen = count($requiredDokumen);
+        
+        // Hitung rapor yang sudah diisi nilai dan diupload file
+        $nilaiRaporTerisi = $calonSiswa->nilaiRapor()
+            ->whereNotNull('matematika')
+            ->whereNotNull('ipa')
+            ->whereNotNull('ips')
+            ->count();
+        
+        // Hitung file rapor yang sudah diupload (semester 1-5)
+        $fileRaporUploaded = $calonSiswa->dokumen()
+            ->where('jenis_dokumen', 'like', 'rapor_sem_%')
+            ->count();
+        
+        // Cek pilihan program jika aktif
+        $jalur = $calonSiswa->jalurPendaftaran;
+        $pilihanProgramAktif = $jalur && $jalur->pilihan_program_aktif;
+        $pilihanProgramLengkap = !empty($calonSiswa->pilihan_program);
+        
+        return [
+            'data_diri' => $calonSiswa->data_diri_completed,
+            'data_ortu' => $calonSiswa->data_ortu_completed,
+            'dokumen' => $calonSiswa->data_dokumen_completed,
+            'dokumen_count' => $uploadedDokumen,
+            'dokumen_total' => $totalDokumen,
+            'nilai_rapor' => $calonSiswa->nilai_rapor_completed,
+            'nilai_rapor_terisi' => $nilaiRaporTerisi,
+            'nilai_rapor_total' => 5, // Semester 1-5
+            'file_rapor_uploaded' => $fileRaporUploaded,
+            'pilihan_program_aktif' => $pilihanProgramAktif,
+            'pilihan_program_lengkap' => $pilihanProgramLengkap,
+            'finalisasi' => $calonSiswa->is_finalisasi,
+            // Rapor lengkap = nilai terisi DAN file diupload (5 semester)
+            'rapor_lengkap' => $calonSiswa->nilai_rapor_completed && $fileRaporUploaded >= 5,
+            'semua_lengkap' => $calonSiswa->data_diri_completed 
+                && $calonSiswa->data_ortu_completed 
+                && $calonSiswa->data_dokumen_completed 
+                && $calonSiswa->nilai_rapor_completed
+                && $fileRaporUploaded >= 5
+                && (!$pilihanProgramAktif || $pilihanProgramLengkap),
+        ];
     }
 
     /**
