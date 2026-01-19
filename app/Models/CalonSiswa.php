@@ -462,19 +462,40 @@ class CalonSiswa extends Model
      */
     protected function sendEmailNotification(string $nomorTes): void
     {
-        try {
-            // Ambil email dari user atau data pendaftar
-            $email = $this->user?->email ?? $this->email ?? null;
-            
-            if (!$email) {
-                \Log::warning("Cannot send email notification: No email for calon_siswa {$this->id}");
-                return;
-            }
+        $settings = \App\Models\PpdbSettings::first();
+        $email = $this->user?->email ?? $this->email ?? null;
+        $subject = '🎉 Nomor Tes PPDB - ' . ($settings->nama_sekolah ?? 'MAN 1 Metro');
+        
+        if (!$email) {
+            \Log::warning("Cannot send email notification: No email for calon_siswa {$this->id}");
+            return;
+        }
 
+        try {
             \Mail::to($email)->send(new \App\Mail\NomorTesNotification($this, $nomorTes));
+            
+            // Log email berhasil
+            EmailLog::logSent(
+                toEmail: $email,
+                subject: $subject,
+                type: EmailLog::TYPE_NOMOR_TES,
+                calonSiswaId: $this->id,
+                toName: $this->nama_lengkap,
+                messagePreview: "Nomor Tes: {$nomorTes}"
+            );
             
             \Log::info("Email notification sent to {$email} for calon_siswa {$this->id} with nomor_tes {$nomorTes}");
         } catch (\Exception $e) {
+            // Log email gagal
+            EmailLog::logFailed(
+                toEmail: $email,
+                subject: $subject,
+                type: EmailLog::TYPE_NOMOR_TES,
+                errorMessage: $e->getMessage(),
+                calonSiswaId: $this->id,
+                toName: $this->nama_lengkap
+            );
+            
             \Log::error("Failed to send email notification: " . $e->getMessage());
         }
     }

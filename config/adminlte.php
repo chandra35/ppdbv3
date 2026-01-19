@@ -353,6 +353,12 @@ return [
             'icon' => 'fas fa-fw fa-history',
             'can' => 'logs.view',
         ],
+        [
+            'text' => 'Log Email',
+            'route' => 'admin.email-logs.index',
+            'icon' => 'fas fa-fw fa-envelope',
+            'can' => 'logs.view',
+        ],
 
         ['header' => 'AKUN'],
         [

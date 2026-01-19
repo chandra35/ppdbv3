@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\EmisTokenController;
 use App\Http\Controllers\Admin\PengaturanWaController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\VisitorLogController;
+use App\Http\Controllers\Admin\EmailLogController;
 use App\Http\Controllers\Operator\DashboardController as OperatorDashboardController;
 use App\Http\Controllers\Operator\PendaftarController as OperatorPendaftarController;
 use App\Http\Controllers\Pendaftar\AuthController as PendaftarAuthController;
@@ -500,6 +501,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/visitor-logs/clear', [VisitorLogController::class, 'clear'])
         ->middleware('permission:visitor.clear')
         ->name('visitor-logs.clear');
+
+    // ---- EMAIL LOGS ---- (permission: logs.view)
+    Route::prefix('email-logs')->name('email-logs.')->middleware('permission:logs.view')->group(function () {
+        Route::get('/', [EmailLogController::class, 'index'])->name('index');
+        Route::get('/{emailLog}', [EmailLogController::class, 'show'])->name('show');
+        Route::post('/{emailLog}/retry', [EmailLogController::class, 'retry'])->name('retry');
+        Route::delete('/cleanup', [EmailLogController::class, 'cleanup'])->name('cleanup');
+    });
     
     // ============================================
     // ADMIN-ONLY ROUTES - Backup, Data, Reset (Sensitif)
