@@ -539,11 +539,11 @@ dl.row dt {
                 <div class="box-body box-profile">
                     <div class="text-center">
                         @php
-                            // Prioritas foto: 1. Dokumen pas_foto yang valid, 2. Foto upload manual, 3. Avatar
-                            $pasFoto = $pendaftar->dokumen->where('jenis_dokumen', 'pas_foto')->where('status_verifikasi', 'valid')->first();
+                            // Prioritas foto: 1. Dokumen foto yang sudah diupload, 2. Foto upload manual, 3. Avatar
+                            $pasFoto = $pendaftar->dokumen->where('jenis_dokumen', 'foto')->first();
                             
-                            if($pasFoto && file_exists(public_path('storage/' . $pasFoto->file_path))) {
-                                // Gunakan foto dari dokumen yang sudah disetujui
+                            if($pasFoto && $pasFoto->file_path && file_exists(public_path('storage/' . $pasFoto->file_path))) {
+                                // Gunakan foto dari dokumen yang sudah diupload
                                 $avatarSrc = asset('storage/' . $pasFoto->file_path);
                                 $useInitials = false;
                             } elseif($pendaftar->foto && file_exists(public_path('storage/' . $pendaftar->foto))) {
