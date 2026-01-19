@@ -440,7 +440,7 @@
         // AUTO-REFRESH STATS
         // ========================================
         const REFRESH_INTERVAL = 10000; // 10 seconds
-        let statsChart = pendaftarChart; // Reference to the chart
+        let statsChart = myChart; // Reference to the chart
         
         function formatNumber(num) {
             return new Intl.NumberFormat('id-ID').format(num);
