@@ -47,13 +47,17 @@ class EmailNotificationService
         try {
             Mail::to($email)->send(new RegistrasiNotification($calonSiswa, $username, $password));
 
+            // Preview dengan masking password untuk keamanan
+            $maskedPassword = substr($password, 0, 2) . str_repeat('*', strlen($password) - 4) . substr($password, -2);
+            $messagePreview = "Kredensial Login:\n• Username: {$username}\n• Password: {$maskedPassword}\n\nNo. Registrasi: {$calonSiswa->nomor_registrasi}";
+
             EmailLog::logSent(
                 toEmail: $email,
                 subject: $subject,
                 type: EmailLog::TYPE_REGISTRASI,
                 calonSiswaId: $calonSiswa->id,
                 toName: $calonSiswa->nama_lengkap,
-                messagePreview: "Username: {$username}"
+                messagePreview: $messagePreview
             );
 
             Log::info("Registration email sent to {$email} for calon_siswa {$calonSiswa->id}");
