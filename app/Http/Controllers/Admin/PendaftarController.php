@@ -1583,8 +1583,15 @@ class PendaftarController extends Controller
                 $fileSize = strlen(base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $base64Image)));
                 $mimeType = 'image/jpeg';
             } elseif ($request->hasFile('file')) {
-                // Regular file upload
-                $request->validate(['file' => 'file|mimes:jpg,jpeg,png,pdf|max:5120']);
+                // Regular file upload - pas foto hanya boleh format gambar
+                if ($jenisDokumen === 'foto') {
+                    $request->validate(
+                        ['file' => 'file|mimes:jpg,jpeg,png|max:5120'],
+                        ['file.mimes' => 'Pas foto harus berupa file gambar (JPG, JPEG, PNG). PDF tidak diperbolehkan.']
+                    );
+                } else {
+                    $request->validate(['file' => 'file|mimes:jpg,jpeg,png,pdf|max:5120']);
+                }
                 $file = $request->file('file');
                 $filePath = $file->store("dokumen/{$calonSiswa->id}", 'public');
                 $originalName = $file->getClientOriginalName();

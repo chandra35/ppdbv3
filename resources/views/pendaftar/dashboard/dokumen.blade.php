@@ -9,6 +9,7 @@
 
 @section('css')
 <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
 <style>
     .doc-card {
         border: 2px dashed #ddd;
@@ -191,6 +192,61 @@
     .bg-warning-light {
         background-color: #fffbeb !important;
     }
+    
+    /* Cropper Styles */
+    .cropper-container {
+        max-height: 400px;
+    }
+    
+    #cropperImage {
+        max-width: 100%;
+        display: block;
+    }
+    
+    .crop-preview-container {
+        text-align: center;
+        margin-top: 1rem;
+    }
+    
+    .crop-preview {
+        display: inline-block;
+        border: 2px solid #667eea;
+        border-radius: 4px;
+        overflow: hidden;
+        background: #f8f9fa;
+    }
+    
+    .crop-preview-3x4 {
+        width: 90px;
+        height: 120px;
+    }
+    
+    .crop-controls {
+        margin-top: 1rem;
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .crop-controls .btn {
+        min-width: 40px;
+    }
+    
+    .aspect-ratio-btns {
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+    
+    .aspect-ratio-btns .btn {
+        margin: 0 0.25rem;
+    }
+    
+    .aspect-ratio-btns .btn.active {
+        background-color: #667eea;
+        border-color: #667eea;
+        color: white;
+    }
 </style>
 @endsection
 
@@ -220,6 +276,8 @@
                     <strong>Ketentuan Upload:</strong>
                     <ul class="mb-0 mt-2">
                         <li>Format file: PDF, JPG, JPEG, PNG</li>
+                        <li><strong class="text-danger">Pas Foto wajib format gambar (JPG, JPEG, PNG) - PDF tidak diterima</strong></li>
+                        <li><i class="fas fa-crop-alt text-success"></i> <strong>Pas Foto</strong>: Tersedia fitur crop otomatis untuk menyesuaikan ukuran foto 3x4</li>
                         <li>Ukuran maksimal: 10MB per file</li>
                         <li>Pastikan dokumen jelas dan dapat dibaca</li>
                     </ul>
@@ -660,22 +718,18 @@
                     <input type="hidden" name="doc_id" id="docId">
                     <input type="hidden" id="camera_captured_main" name="camera_captured">
                     
-                    {{-- Source Selection --}}
+                    {{-- Source Selection - Button Group Style --}}
                     <div class="form-group">
-                        <label class="font-weight-bold">Sumber Dokumen</label>
-                        <div class="d-flex">
-                            <div class="custom-control custom-radio mr-4">
-                                <input type="radio" id="sourceFile" name="uploadSource" class="custom-control-input" value="file" checked>
-                                <label class="custom-control-label" for="sourceFile">
-                                    <i class="fas fa-file-upload mr-1"></i> Pilih File
-                                </label>
-                            </div>
-                            <div class="custom-control custom-radio">
-                                <input type="radio" id="sourceCamera" name="uploadSource" class="custom-control-input" value="camera">
-                                <label class="custom-control-label" for="sourceCamera">
-                                    <i class="fas fa-camera mr-1"></i> Kamera
-                                </label>
-                            </div>
+                        <label class="font-weight-bold d-block">Sumber Dokumen</label>
+                        <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                            <label class="btn btn-outline-primary active" id="labelSourceFile">
+                                <input type="radio" name="uploadSource" id="sourceFile" value="file" checked>
+                                <i class="fas fa-file-upload mr-1"></i> Pilih File
+                            </label>
+                            <label class="btn btn-outline-primary" id="labelSourceCamera">
+                                <input type="radio" name="uploadSource" id="sourceCamera" value="camera">
+                                <i class="fas fa-camera mr-1"></i> Kamera
+                            </label>
                         </div>
                     </div>
                     
@@ -738,24 +792,113 @@
         </div>
     </div>
 </div>
+
+<!-- Cropper Modal -->
+<div class="modal fade" id="cropperModal" tabindex="-1" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-crop-alt mr-2"></i>
+                    <span id="cropperModalTitle">Crop Gambar</span>
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Aspect Ratio Buttons -->
+                <div class="aspect-ratio-btns" id="aspectRatioBtns">
+                    <label class="d-block mb-2"><strong>Pilih Rasio:</strong></label>
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-ratio="0.75" data-label="3:4 (Pas Foto)">
+                        <i class="fas fa-portrait"></i> 3:4 Pas Foto
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-ratio="1" data-label="1:1 (Kotak)">
+                        <i class="fas fa-square"></i> 1:1 Kotak
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-ratio="NaN" data-label="Bebas">
+                        <i class="fas fa-expand"></i> Bebas
+                    </button>
+                </div>
+                
+                <!-- Cropper Image Container -->
+                <div style="max-height: 400px; overflow: hidden;">
+                    <img id="cropperImage" src="" alt="Crop Image">
+                </div>
+                
+                <!-- Crop Controls -->
+                <div class="crop-controls">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="cropRotateLeft" title="Putar Kiri">
+                        <i class="fas fa-undo"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="cropRotateRight" title="Putar Kanan">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="cropFlipH" title="Flip Horizontal">
+                        <i class="fas fa-arrows-alt-h"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="cropFlipV" title="Flip Vertical">
+                        <i class="fas fa-arrows-alt-v"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="cropZoomIn" title="Zoom In">
+                        <i class="fas fa-search-plus"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="cropZoomOut" title="Zoom Out">
+                        <i class="fas fa-search-minus"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="cropReset" title="Reset">
+                        <i class="fas fa-sync"></i>
+                    </button>
+                </div>
+                
+                <!-- Preview -->
+                <div class="crop-preview-container" id="cropPreviewContainer">
+                    <label class="d-block mb-2"><strong>Preview Hasil:</strong></label>
+                    <div class="crop-preview crop-preview-3x4" id="cropPreview"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cropCancelBtn">
+                    <i class="fas fa-times mr-1"></i> Batal
+                </button>
+                <button type="button" class="btn btn-success" id="cropApplyBtn">
+                    <i class="fas fa-check mr-1"></i> Terapkan Crop
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('js')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 <script>
 $(document).ready(function() {
     let currentDocType = '';
     let currentDocId = '';
     let cameraStreamMain = null;
+    let cropper = null;
+    let croppedImageData = null;
+    let cropperSource = null; // 'file' or 'camera'
 
     // Toggle upload source (file/camera) for main modal
-    $('input[name="uploadSource"]').on('change', function() {
+    // Use event delegation to ensure it works with btn-group-toggle
+    $(document).on('change', 'input[name="uploadSource"]', function() {
         const source = $(this).val();
+        console.log('Upload source changed to:', source);
+        
+        // Update button active states
+        $('#labelSourceFile').removeClass('active');
+        $('#labelSourceCamera').removeClass('active');
         if (source === 'file') {
+            $('#labelSourceFile').addClass('active');
             $('#fileInputSection').show();
             $('#cameraSection').hide();
             stopCameraMain();
             $('#camera_captured_main').val('');
-        } else {
+            $('#cameraCapturedPreview').hide();
+        } else if (source === 'camera') {
+            $('#labelSourceCamera').addClass('active');
             $('#fileInputSection').hide();
             $('#cameraSection').show();
             $('#fileInput').val('');
@@ -809,18 +952,25 @@ $(document).ready(function() {
         canvas.getContext('2d').drawImage(video, 0, 0);
         
         const imageData = canvas.toDataURL('image/jpeg', 0.85);
-        $('#camera_captured_main').val(imageData);
-        $('#capturedImageMain').attr('src', imageData);
-        $('#cameraCapturedPreview').show();
         
         // Stop video preview
         stopCameraMain();
-        $('#cameraStartBtnMain').hide();
-        $('#cameraControlsMain').show();
-        $('#btnCaptureMain').hide();
-        $('#btnRetakeMain').show();
         
-        $('#uploadBtn').prop('disabled', false);
+        // Untuk pas foto, buka cropper
+        if (currentDocType === 'foto') {
+            cropperSource = 'camera';
+            openCropper(imageData);
+        } else {
+            // Langsung simpan untuk dokumen lain
+            $('#camera_captured_main').val(imageData);
+            $('#capturedImageMain').attr('src', imageData);
+            $('#cameraCapturedPreview').show();
+            $('#cameraStartBtnMain').hide();
+            $('#cameraControlsMain').show();
+            $('#btnCaptureMain').hide();
+            $('#btnRetakeMain').show();
+            $('#uploadBtn').prop('disabled', false);
+        }
     });
     
     $('#btnRetakeMain').on('click', function() {
@@ -841,18 +991,34 @@ $(document).ready(function() {
         $('#jenisDoc').val(currentDocType);
         $('#docId').val(currentDocId);
         
+        // Update file input accept attribute based on document type
+        // Pas foto hanya boleh format gambar (tidak boleh PDF)
+        if (currentDocType === 'foto') {
+            $('#fileInput').attr('accept', '.jpg,.jpeg,.png');
+            // Update help text
+            $('#fileInput').closest('.form-group').find('small').html(
+                '<span class="text-danger"><i class="fas fa-exclamation-circle"></i> Pas Foto wajib format gambar: JPG, JPEG, PNG. <strong>PDF tidak diterima</strong>. Maks: 10MB</span>'
+            );
+        } else {
+            $('#fileInput').attr('accept', '.pdf,.jpg,.jpeg,.png');
+            $('#fileInput').closest('.form-group').find('small').html('Format: PDF, JPG, JPEG, PNG. Maks: 10MB');
+        }
+        
         // Reset form
         $('#uploadForm')[0].reset();
         $('.custom-file-label').text('Pilih file...');
         $('#uploadPreview').hide();
         $('#uploadBtn').prop('disabled', true);
         
-        // Reset to file source
+        // Reset to file source with button group styling
         $('#sourceFile').prop('checked', true);
+        $('#labelSourceFile').addClass('active');
+        $('#labelSourceCamera').removeClass('active');
         $('#fileInputSection').show();
         $('#cameraSection').hide();
         stopCameraMain();
         $('#camera_captured_main').val('');
+        $('#cameraCapturedPreview').hide();
         
         // Show existing doc if uploaded
         if (currentDocId) {
@@ -875,9 +1041,19 @@ $(document).ready(function() {
         }
     });
     
-    // Stop camera when modal closes
+    // Stop camera and reset when modal closes
     $('#uploadModal').on('hidden.bs.modal', function() {
         stopCameraMain();
+        // Reset button group to file source
+        $('#sourceFile').prop('checked', true);
+        $('#labelSourceFile').addClass('active');
+        $('#labelSourceCamera').removeClass('active');
+        $('#fileInputSection').show();
+        $('#cameraSection').hide();
+        $('#camera_captured_main').val('');
+        $('#cameraCapturedPreview').hide();
+        $('#uploadPreview').hide();
+        croppedImageData = null;
     });
 
     // File input change
@@ -888,13 +1064,39 @@ $(document).ready(function() {
             if (file.size > 10 * 1024 * 1024) {
                 toastr.error('Ukuran file maksimal 10MB');
                 this.value = '';
+                $('.custom-file-label').text('Pilih file...');
+                return;
+            }
+            
+            // Validate pas foto must be image (not PDF)
+            if (currentDocType === 'foto') {
+                const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                const allowedExtensions = ['jpg', 'jpeg', 'png'];
+                const fileExtension = file.name.split('.').pop().toLowerCase();
+                
+                if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+                    toastr.error('Pas Foto harus berupa file gambar (JPG, JPEG, PNG). PDF tidak diperbolehkan untuk pas foto.');
+                    this.value = '';
+                    $('.custom-file-label').text('Pilih file...');
+                    $('#uploadBtn').prop('disabled', true);
+                    $('#uploadPreview').hide();
+                    return;
+                }
+                
+                // Untuk pas foto, buka cropper
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    cropperSource = 'file';
+                    openCropper(e.target.result);
+                };
+                reader.readAsDataURL(file);
                 return;
             }
             
             $('.custom-file-label').text(file.name);
             $('#uploadBtn').prop('disabled', false);
             
-            // Show preview for images
+            // Show preview for images (non-foto documents)
             if (file.type.match(/image\/(jpg|jpeg|png)/i)) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -906,6 +1108,167 @@ $(document).ready(function() {
                 $('#uploadPreview').hide();
             }
         }
+    });
+    
+    // ==========================================
+    // CROPPER FUNCTIONS
+    // ==========================================
+    
+    function openCropper(imageData) {
+        $('#cropperImage').attr('src', imageData);
+        $('#cropperModalTitle').text(currentDocType === 'foto' ? 'Crop Pas Foto (3:4)' : 'Crop Gambar');
+        
+        // Set default aspect ratio for pas foto (3:4)
+        const defaultRatio = currentDocType === 'foto' ? 0.75 : NaN;
+        
+        // Highlight active aspect ratio button
+        $('#aspectRatioBtns button').removeClass('active btn-primary').addClass('btn-outline-secondary');
+        if (currentDocType === 'foto') {
+            $('#aspectRatioBtns button[data-ratio="0.75"]').removeClass('btn-outline-secondary').addClass('active btn-primary');
+        }
+        
+        $('#cropperModal').modal('show');
+        
+        // Initialize cropper after modal is shown
+        $('#cropperModal').one('shown.bs.modal', function() {
+            initCropper(defaultRatio);
+        });
+    }
+    
+    function initCropper(aspectRatio) {
+        const image = document.getElementById('cropperImage');
+        
+        // Destroy previous cropper if exists
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+        
+        cropper = new Cropper(image, {
+            aspectRatio: aspectRatio,
+            viewMode: 1,
+            dragMode: 'move',
+            autoCropArea: 0.9,
+            restore: false,
+            guides: true,
+            center: true,
+            highlight: false,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            toggleDragModeOnDblclick: false,
+            preview: '#cropPreview',
+            ready: function() {
+                // Cropper ready
+            }
+        });
+    }
+    
+    // Aspect ratio buttons
+    $('#aspectRatioBtns').on('click', 'button', function() {
+        const ratio = parseFloat($(this).data('ratio'));
+        
+        $('#aspectRatioBtns button').removeClass('active btn-primary').addClass('btn-outline-secondary');
+        $(this).removeClass('btn-outline-secondary').addClass('active btn-primary');
+        
+        if (cropper) {
+            cropper.setAspectRatio(isNaN(ratio) ? NaN : ratio);
+        }
+    });
+    
+    // Crop controls
+    $('#cropRotateLeft').on('click', function() {
+        if (cropper) cropper.rotate(-90);
+    });
+    
+    $('#cropRotateRight').on('click', function() {
+        if (cropper) cropper.rotate(90);
+    });
+    
+    $('#cropFlipH').on('click', function() {
+        if (cropper) {
+            const data = cropper.getData();
+            cropper.scaleX(data.scaleX === -1 ? 1 : -1);
+        }
+    });
+    
+    $('#cropFlipV').on('click', function() {
+        if (cropper) {
+            const data = cropper.getData();
+            cropper.scaleY(data.scaleY === -1 ? 1 : -1);
+        }
+    });
+    
+    $('#cropZoomIn').on('click', function() {
+        if (cropper) cropper.zoom(0.1);
+    });
+    
+    $('#cropZoomOut').on('click', function() {
+        if (cropper) cropper.zoom(-0.1);
+    });
+    
+    $('#cropReset').on('click', function() {
+        if (cropper) cropper.reset();
+    });
+    
+    // Apply crop
+    $('#cropApplyBtn').on('click', function() {
+        if (!cropper) return;
+        
+        // Get cropped canvas with good quality
+        const canvas = cropper.getCroppedCanvas({
+            width: 300,  // Output width for pas foto
+            height: 400, // Output height for pas foto (3:4 ratio)
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high'
+        });
+        
+        croppedImageData = canvas.toDataURL('image/jpeg', 0.9);
+        
+        // Set to form
+        $('#camera_captured_main').val(croppedImageData);
+        
+        // Clear file input since we're using cropped data
+        $('#fileInput').val('');
+        $('.custom-file-label').text('Gambar sudah di-crop');
+        
+        // Show preview
+        $('#capturedImageMain').attr('src', croppedImageData);
+        $('#cameraCapturedPreview').show();
+        $('#newPreviewImage').attr('src', croppedImageData);
+        $('#uploadPreview').show();
+        
+        // Enable upload button
+        $('#uploadBtn').prop('disabled', false);
+        
+        // Hide cropper modal
+        $('#cropperModal').modal('hide');
+        
+        toastr.success('Gambar berhasil di-crop!');
+    });
+    
+    // Cancel crop
+    $('#cropCancelBtn').on('click', function() {
+        $('#cropperModal').modal('hide');
+        
+        // Reset file input
+        $('#fileInput').val('');
+        $('.custom-file-label').text('Pilih file...');
+        $('#uploadBtn').prop('disabled', true);
+        
+        if (cropperSource === 'camera') {
+            // Reset camera state
+            $('#cameraStartBtnMain').show();
+            $('#cameraControlsMain').hide();
+        }
+    });
+    
+    // Cleanup cropper when modal closes
+    $('#cropperModal').on('hidden.bs.modal', function() {
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+        croppedImageData = null;
     });
 
     // Upload button

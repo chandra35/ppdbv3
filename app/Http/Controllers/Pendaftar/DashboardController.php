@@ -414,12 +414,23 @@ class DashboardController extends Controller
             ], 403);
         }
 
-        $request->validate([
-            'jenis_dokumen' => 'required|string',
-            'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-        ]);
-
         $jenisDokumen = $request->jenis_dokumen;
+        
+        // Pas foto hanya boleh format gambar (tidak boleh PDF)
+        if ($jenisDokumen === 'foto') {
+            $request->validate([
+                'jenis_dokumen' => 'required|string',
+                'file' => 'required|file|mimes:jpg,jpeg,png|max:2048',
+            ], [
+                'file.mimes' => 'Pas foto harus berupa file gambar (JPG, JPEG, PNG). PDF tidak diperbolehkan untuk pas foto.',
+            ]);
+        } else {
+            $request->validate([
+                'jenis_dokumen' => 'required|string',
+                'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            ]);
+        }
+
         $file = $request->file('file');
 
         // Store file
