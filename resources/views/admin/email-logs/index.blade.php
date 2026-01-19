@@ -174,6 +174,10 @@
                             @endif
                         </td>
                         <td>
+                            <button type="button" class="btn btn-xs btn-secondary" 
+                                    onclick="showDetail('{{ $log->id }}')" title="Lihat Detail">
+                                <i class="fas fa-eye"></i>
+                            </button>
                             @if($log->calonSiswa)
                                 <a href="{{ route('admin.pendaftar.show', $log->calon_siswa_id) }}" 
                                    class="btn btn-xs btn-info" title="Lihat Pendaftar">
@@ -191,6 +195,26 @@
                             @endif
                         </td>
                     </tr>
+
+                    {{-- Hidden data for modal --}}
+                    <script type="application/json" id="log-data-{{ $log->id }}">
+                        {!! json_encode([
+                            'id' => $log->id,
+                            'to_email' => $log->to_email,
+                            'to_name' => $log->to_name,
+                            'subject' => $log->subject,
+                            'type' => $log->type,
+                            'type_label' => $log->type_label,
+                            'status' => $log->status,
+                            'status_badge' => $log->status_badge,
+                            'error_message' => $log->error_message,
+                            'message_preview' => $log->message_preview,
+                            'created_at' => $log->created_at->format('d/m/Y H:i:s'),
+                            'sent_at' => $log->sent_at?->format('d/m/Y H:i:s'),
+                            'calon_siswa_nama' => $log->calonSiswa?->nama_lengkap,
+                            'calon_siswa_nisn' => $log->calonSiswa?->nisn,
+                        ]) !!}
+                    </script>
                     @empty
                     <tr>
                         <td colspan="7" class="text-center text-muted py-4">
@@ -249,6 +273,89 @@
             </div>
         </div>
     </div>
+
+    {{-- Detail Email Modal --}}
+    <div class="modal fade" id="detailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary">
+                    <h5 class="modal-title text-white">
+                        <i class="fas fa-envelope-open-text"></i> Detail Email
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        {{-- Left Column - Email Info --}}
+                        <div class="col-md-6">
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td width="120"><strong>Status</strong></td>
+                                    <td id="detail-status"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Tipe</strong></td>
+                                    <td><span class="badge badge-info" id="detail-type"></span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Waktu Dibuat</strong></td>
+                                    <td id="detail-created"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Waktu Terkirim</strong></td>
+                                    <td id="detail-sent"></td>
+                                </tr>
+                            </table>
+                        </div>
+                        {{-- Right Column - Recipient Info --}}
+                        <div class="col-md-6">
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td width="120"><strong>Penerima</strong></td>
+                                    <td id="detail-to-name"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Email</strong></td>
+                                    <td id="detail-to-email"></td>
+                                </tr>
+                                <tr id="detail-calon-row" style="display: none;">
+                                    <td><strong>Calon Siswa</strong></td>
+                                    <td id="detail-calon"></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    {{-- Subject --}}
+                    <div class="form-group">
+                        <label><strong><i class="fas fa-heading mr-1"></i> Subject</strong></label>
+                        <div class="bg-light p-2 rounded" id="detail-subject"></div>
+                    </div>
+                    
+                    {{-- Message Preview --}}
+                    <div class="form-group" id="detail-preview-group">
+                        <label><strong><i class="fas fa-file-alt mr-1"></i> Preview Pesan</strong></label>
+                        <div class="bg-light p-3 rounded" id="detail-preview" style="white-space: pre-wrap;"></div>
+                    </div>
+                    
+                    {{-- Error Message (if failed) --}}
+                    <div class="form-group" id="detail-error-group" style="display: none;">
+                        <label><strong><i class="fas fa-exclamation-triangle mr-1 text-danger"></i> Error Message</strong></label>
+                        <div class="alert alert-danger mb-0" id="detail-error"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 @stop
 
 @section('css')
@@ -256,5 +363,62 @@
     .small-box .icon {
         font-size: 50px;
     }
+    #detail-preview {
+        max-height: 200px;
+        overflow-y: auto;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+    }
 </style>
+@stop
+
+@section('js')
+<script>
+function showDetail(logId) {
+    // Get log data from hidden JSON
+    const dataElement = document.getElementById('log-data-' + logId);
+    if (!dataElement) {
+        alert('Data tidak ditemukan');
+        return;
+    }
+    
+    const log = JSON.parse(dataElement.textContent);
+    
+    // Fill modal with data
+    $('#detail-status').html(log.status_badge);
+    $('#detail-type').text(log.type_label);
+    $('#detail-created').text(log.created_at);
+    $('#detail-sent').text(log.sent_at || '-');
+    $('#detail-to-name').text(log.to_name || '-');
+    $('#detail-to-email').text(log.to_email);
+    $('#detail-subject').text(log.subject);
+    
+    // Message preview
+    if (log.message_preview) {
+        $('#detail-preview').text(log.message_preview);
+        $('#detail-preview-group').show();
+    } else {
+        $('#detail-preview-group').hide();
+    }
+    
+    // Error message (for failed emails)
+    if (log.status === 'failed' && log.error_message) {
+        $('#detail-error').text(log.error_message);
+        $('#detail-error-group').show();
+    } else {
+        $('#detail-error-group').hide();
+    }
+    
+    // Calon siswa info
+    if (log.calon_siswa_nama) {
+        $('#detail-calon').text(log.calon_siswa_nama + (log.calon_siswa_nisn ? ' (' + log.calon_siswa_nisn + ')' : ''));
+        $('#detail-calon-row').show();
+    } else {
+        $('#detail-calon-row').hide();
+    }
+    
+    // Show modal
+    $('#detailModal').modal('show');
+}
+</script>
 @stop
