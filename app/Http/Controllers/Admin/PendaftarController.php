@@ -74,7 +74,7 @@ class PendaftarController extends Controller
         // Sorting
         $sortBy = $request->get('sort', 'created_at');
         $sortDir = $request->get('dir', 'desc');
-        $allowedSorts = ['nama_lengkap', 'nisn', 'nomor_registrasi', 'created_at', 'status_verifikasi'];
+        $allowedSorts = ['nama_lengkap', 'nisn', 'nomor_registrasi', 'nomor_tes', 'created_at', 'status_verifikasi'];
         if (!in_array($sortBy, $allowedSorts)) {
             $sortBy = 'created_at';
         }
@@ -95,7 +95,11 @@ class PendaftarController extends Controller
 
         // Filter by status
         if ($request->filled('status')) {
-            $query->where('status_verifikasi', $request->status);
+            if ($request->status === 'has_nomor_tes') {
+                $query->whereNotNull('nomor_tes');
+            } else {
+                $query->where('status_verifikasi', $request->status);
+            }
         }
 
         // Search

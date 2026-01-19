@@ -197,6 +197,7 @@
                             <option value="">Semua</option>
                             <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                             <option value="verified" {{ request('status') == 'verified' ? 'selected' : '' }}>Verified</option>
+                            <option value="has_nomor_tes" {{ request('status') == 'has_nomor_tes' ? 'selected' : '' }}>Dapat No.Tes</option>
                             <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Diterima</option>
                             <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
                         </select>
@@ -241,12 +242,12 @@
                         <th style="width: 50px;">No</th>
                         <th>
                             @php
-                                $isNoRegSort = $sortBy == 'nomor_registrasi';
-                                $noRegDir = $isNoRegSort && $sortDir == 'asc' ? 'desc' : 'asc';
+                                $isNoTesSort = $sortBy == 'nomor_tes';
+                                $noTesDir = $isNoTesSort && $sortDir == 'asc' ? 'desc' : 'asc';
                             @endphp
-                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'nomor_registrasi', 'dir' => $noRegDir]) }}" class="text-dark">
-                                No. Registrasi
-                                @if($isNoRegSort)
+                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'nomor_tes', 'dir' => $noTesDir]) }}" class="text-dark">
+                                No. Tes
+                                @if($isNoTesSort)
                                     <i class="fas fa-sort-{{ $sortDir == 'asc' ? 'up' : 'down' }} text-primary"></i>
                                 @else
                                     <i class="fas fa-sort text-muted"></i>
@@ -321,7 +322,7 @@
                     @forelse($pendaftars as $key => $pendaftar)
                     <tr>
                         <td>{{ $pendaftars->firstItem() + $key }}</td>
-                        <td><code>{{ $pendaftar->nomor_registrasi ?? '-' }}</code></td>
+                        <td><code>{{ $pendaftar->nomor_tes ?? '-' }}</code></td>
                         <td>
                             <a href="{{ route('admin.pendaftar.show', $pendaftar->id) }}" class="text-dark">
                                 <strong>{{ $pendaftar->nama_lengkap }}</strong>
@@ -450,7 +451,7 @@
                                 </a>
                             </div>
                             <div style="font-size: 9px; margin-bottom: 3px;" class="text-muted">
-                                <code style="font-size: 8px; padding: 1px 2px;">{{ $pendaftar->nomor_registrasi ?? '-' }}</code>
+                                <code style="font-size: 8px; padding: 1px 2px;">{{ $pendaftar->nomor_tes ?? '-' }}</code>
                                 @if($pendaftar->nisn)
                                     <span style="margin-left: 2px;">{{ $pendaftar->nisn }}</span>
                                 @endif
