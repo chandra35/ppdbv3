@@ -502,7 +502,7 @@ dl.row dt {
                             <i class="fas fa-print"></i> Cetak Registrasi
                         </a>
                         @endif
-                        @if($pendaftar->is_finalisasi && auth()->user()->hasPermission('pendaftar.cetak-ujian'))
+                        @if($pendaftar->is_finalisasi && $pendaftar->nomor_tes && auth()->user()->hasPermission('pendaftar.cetak-ujian'))
                         <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#kartuUjianModal">
                             <i class="fas fa-id-card"></i> Cetak Kartu Ujian
                         </button>
