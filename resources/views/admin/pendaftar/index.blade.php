@@ -282,6 +282,7 @@
                             </a>
                         </th>
                         <th>Jalur / Gelombang</th>
+                        <th>Pilihan Program</th>
                         <th>Lokasi</th>
                         <th>Dokumen</th>
                         <th>
@@ -335,6 +336,13 @@
                                 @if($pendaftar->gelombangPendaftaran)
                                     <br><small class="text-muted">{{ $pendaftar->gelombangPendaftaran->nama }}</small>
                                 @endif
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($pendaftar->pilihan_program)
+                                <span class="badge badge-info">{{ $pendaftar->pilihan_program }}</span>
                             @else
                                 <span class="text-muted">-</span>
                             @endif
@@ -454,6 +462,9 @@
                                 </span>
                                 @if($pendaftar->gelombangPendaftaran)
                                     <span class="text-muted" style="font-size: 8px; margin-left: 2px;">{{ $pendaftar->gelombangPendaftaran->nama }}</span>
+                                @endif
+                                @if($pendaftar->pilihan_program)
+                                    <span class="badge badge-info" style="font-size: 8px; padding: 1px 3px; margin-left: 2px;">{{ $pendaftar->pilihan_program }}</span>
                                 @endif
                             </div>
                             @endif
