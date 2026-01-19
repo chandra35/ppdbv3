@@ -565,6 +565,75 @@
             transform: scale(1.1);
             box-shadow: 0 8px 30px rgba(37, 211, 102, 0.5);
         }
+        
+        /* Jalur Slider Styles */
+        .jalur-slider-wrapper {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        .jalur-slider {
+            border-radius: 12px;
+        }
+        
+        .jalur-slider-track {
+            transition: transform 0.4s ease;
+        }
+        
+        .jalur-slider-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .jalur-slider-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .jalur-slider-btn.prev { left: -18px; }
+        .jalur-slider-btn.next { right: -18px; }
+        
+        .jalur-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: none;
+            background: #dee2e6;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 0;
+        }
+        
+        .jalur-dot.active {
+            background: var(--primary-color);
+            transform: scale(1.2);
+        }
+        
+        @media (max-width: 768px) {
+            .jalur-slider-btn { display: none; }
+            .jalur-slide { max-width: 100% !important; }
+        }
+        
+        @media (min-width: 769px) and (max-width: 991px) {
+            .jalur-slide { max-width: 50% !important; }
+        }
+        
+        @media (min-width: 992px) {
+            .jalur-slide { max-width: 33.333% !important; }
+        }
     </style>
 </head>
 <body>
@@ -823,6 +892,37 @@
                             </span>
                             @endif
                         </div>
+                        
+                        {{-- Info Jalur Aktif Badge --}}
+                        @if($jalurAktif->count() > 0)
+                        <div class="d-flex flex-wrap justify-content-center gap-2 mt-3">
+                            @foreach($jalurAktif as $jalur)
+                                @php
+                                    $gelombangJalur = $jalur->gelombang->first();
+                                    $isOpen = $gelombangJalur && $gelombangJalur->status == 'open';
+                                    $isUpcoming = $gelombangJalur && $gelombangJalur->status == 'upcoming';
+                                @endphp
+                                <div class="badge px-3 py-2 d-flex align-items-center gap-2" 
+                                     style="background: {{ $isOpen ? 'rgba(25, 135, 84, 0.9)' : ($isUpcoming ? 'rgba(255, 193, 7, 0.9)' : 'rgba(108, 117, 125, 0.7)') }}; color: {{ $isUpcoming ? '#000' : '#fff' }};">
+                                    <i class="{{ $jalur->icon ?? 'fas fa-graduation-cap' }}"></i>
+                                    <span class="fw-semibold">{{ $jalur->nama }}</span>
+                                    @if($gelombangJalur)
+                                        <span class="opacity-75">|</span>
+                                        <small>
+                                            @if($isOpen)
+                                                {{ $gelombangJalur->tanggal_buka->format('d M') }} - {{ $gelombangJalur->tanggal_tutup->format('d M Y') }}
+                                                <span class="badge bg-white text-success ms-1">{{ $gelombangJalur->sisa_hari }} hari lagi</span>
+                                            @elseif($isUpcoming)
+                                                Dibuka {{ $gelombangJalur->tanggal_buka->format('d M Y') }}
+                                            @else
+                                                Ditutup
+                                            @endif
+                                        </small>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -949,139 +1049,117 @@
     </section>
     @endif
 
-    {{-- Jalur Pendaftaran Section --}}
+    {{-- Jalur Pendaftaran Slider Section --}}
     @if($jalurAktif->count() > 0)
-    <section id="jalur-pendaftaran" class="bg-soft">
+    <section id="jalur-pendaftaran" class="py-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
         <div class="container">
-            <h2 class="section-title text-center fw-bold">Jalur Pendaftaran</h2>
-            <p class="section-subtitle text-center">Pilih jalur pendaftaran yang sesuai dengan kriteria Anda</p>
-            
-            <div class="row g-4 justify-content-center">
-                @foreach($jalurAktif as $jalur)
-                <div class="col-md-6 col-lg-4">
-                    <div class="card h-100 border-0 shadow-sm overflow-hidden" style="border-left: 5px solid {{ $jalur->warna ?? '#007bff' }} !important;">
-                        {{-- Card Header --}}
-                        <div class="card-header border-0 py-3" style="background: linear-gradient(135deg, {{ $jalur->warna ?? '#007bff' }}15 0%, {{ $jalur->warna ?? '#007bff' }}05 100%);">
-                            <div class="d-flex align-items-center">
-                                <div class="rounded-circle p-3 me-3 shadow-sm" style="background: white;">
-                                    <i class="{{ $jalur->icon ?? 'fas fa-graduation-cap' }} fa-lg" style="color: {{ $jalur->warna ?? '#007bff' }};"></i>
-                                </div>
-                                <div>
-                                    <h5 class="card-title mb-0 fw-bold">{{ $jalur->nama }}</h5>
-                                    @if($jalur->tahunPelajaran)
-                                    <small class="text-muted"><i class="fas fa-calendar-alt me-1"></i> TA {{ $jalur->tahunPelajaran->nama }}</small>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="card-body">
-                            @if($jalur->deskripsi)
-                            <p class="text-muted small mb-3">{{ Str::limit($jalur->deskripsi, 120) }}</p>
-                            @endif
-                            
-                            {{-- Kuota Progress - Conditional --}}
-                            @if($jalur->tampil_kuota ?? true)
-                            <div class="mb-3 p-3 rounded" style="background: #f8f9fa;">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="small fw-semibold"><i class="fas fa-users me-1"></i> Kuota</span>
-                                    <span class="small">
-                                        <span class="fw-bold" style="color: {{ $jalur->warna ?? '#007bff' }}">{{ $jalur->kuota_tersisa }}</span> 
-                                        <span class="text-muted">/ {{ $jalur->kuota }} tersedia</span>
-                                    </span>
-                                </div>
-                                <div class="progress" style="height: 8px; border-radius: 4px;">
-                                    @php
-                                        $persentase = $jalur->kuota > 0 ? (($jalur->kuota - $jalur->kuota_tersisa) / $jalur->kuota) * 100 : 0;
-                                    @endphp
-                                    <div class="progress-bar" role="progressbar" 
-                                         style="width: {{ $persentase }}%; background: linear-gradient(90deg, {{ $jalur->warna ?? '#007bff' }} 0%, color-mix(in srgb, {{ $jalur->warna ?? '#007bff' }} 70%, white) 100%); border-radius: 4px;"
-                                         aria-valuenow="{{ $persentase }}" aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                                <small class="text-muted mt-1 d-block">{{ number_format($persentase, 0) }}% terisi</small>
-                            </div>
-                            @endif
-                            
-                            {{-- Status Pendaftaran (Gelombang hidden, hanya tampilkan status) --}}
-                            @if($jalur->gelombang->isNotEmpty())
-                                @php
-                                    $gelombangJalur = $jalur->gelombang->first();
-                                @endphp
-                                @if($gelombangJalur->status == 'open')
-                                <div class="mb-3">
-                                    <div class="border border-success rounded p-3" style="background: rgba(25, 135, 84, 0.05);">
-                                        <div class="d-flex align-items-center mb-2">
-                                            <i class="fas fa-door-open text-success me-2"></i>
-                                            <span class="fw-semibold text-success">Pendaftaran Dibuka</span>
+            <div class="jalur-slider-wrapper position-relative">
+                {{-- Slider Container --}}
+                <div class="jalur-slider overflow-hidden">
+                    <div class="jalur-slider-track d-flex transition-transform" id="jalurSliderTrack">
+                        @foreach($jalurAktif as $index => $jalur)
+                            @php
+                                $gelombangJalur = $jalur->gelombang->first();
+                                $isOpen = $gelombangJalur && $gelombangJalur->status == 'open';
+                                $isUpcoming = $gelombangJalur && $gelombangJalur->status == 'upcoming';
+                                $persentase = $jalur->kuota > 0 ? (($jalur->kuota - $jalur->kuota_tersisa) / $jalur->kuota) * 100 : 0;
+                            @endphp
+                            <div class="jalur-slide flex-shrink-0 px-2" style="width: 100%; max-width: 400px;">
+                                <div class="card h-100 border-0 shadow-sm" style="border-left: 4px solid {{ $jalur->warna ?? '#007bff' }} !important; border-radius: 12px;">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex align-items-start justify-content-between mb-3">
+                                            <div class="d-flex align-items-center">
+                                                <div class="rounded-circle p-2 me-2" style="background: {{ $jalur->warna ?? '#007bff' }}15;">
+                                                    <i class="{{ $jalur->icon ?? 'fas fa-graduation-cap' }}" style="color: {{ $jalur->warna ?? '#007bff' }};"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0 fw-bold">{{ $jalur->nama }}</h6>
+                                                    @if($jalur->tahunPelajaran)
+                                                    <small class="text-muted">TA {{ $jalur->tahunPelajaran->nama }}</small>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                            {{-- Status Badge --}}
+                                            @if($isOpen)
+                                                <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Dibuka</span>
+                                            @elseif($isUpcoming)
+                                                <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Segera</span>
+                                            @else
+                                                <span class="badge bg-secondary"><i class="fas fa-times-circle me-1"></i>Tutup</span>
+                                            @endif
                                         </div>
-                                        <div class="d-flex justify-content-between align-items-center">
+                                        
+                                        {{-- Info Row --}}
+                                        <div class="d-flex flex-wrap gap-2 mb-3">
+                                            @if($gelombangJalur)
                                             <small class="text-muted">
-                                                <i class="fas fa-calendar me-1"></i> 
-                                                {{ $gelombangJalur->tanggal_buka->timezone(config('app.timezone'))->format('d M') }} - {{ $gelombangJalur->tanggal_tutup->timezone(config('app.timezone'))->format('d M Y') }}
-                                            </small>
-                                            <span class="badge bg-success rounded-pill">
-                                                <i class="fas fa-clock me-1"></i>{{ $gelombangJalur->sisa_hari }} hari lagi
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                                @elseif($gelombangJalur->status == 'upcoming')
-                                <div class="mb-3">
-                                    <div class="border border-warning rounded p-3" style="background: rgba(255, 193, 7, 0.05);">
-                                        <div class="d-flex align-items-center mb-2">
-                                            <i class="fas fa-hourglass-half text-warning me-2"></i>
-                                            <span class="fw-semibold text-warning">Segera Dibuka</span>
-                                        </div>
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <small class="text-muted">
-                                                <i class="fas fa-calendar me-1"></i> 
-                                                Mulai {{ $gelombangJalur->tanggal_buka->timezone(config('app.timezone'))->format('d M Y') }}
-                                                @if($gelombangJalur->waktu_buka)
-                                                    {{ substr($gelombangJalur->waktu_buka, 0, 5) }} WIB
+                                                <i class="fas fa-calendar me-1"></i>
+                                                @if($isOpen)
+                                                    {{ $gelombangJalur->tanggal_buka->format('d M') }} - {{ $gelombangJalur->tanggal_tutup->format('d M Y') }}
+                                                @elseif($isUpcoming)
+                                                    Mulai {{ $gelombangJalur->tanggal_buka->format('d M Y') }}
+                                                @else
+                                                    -
                                                 @endif
                                             </small>
+                                            @if($isOpen && $gelombangJalur->sisa_hari)
+                                            <span class="badge bg-success-subtle text-success">
+                                                <i class="fas fa-hourglass-half me-1"></i>{{ $gelombangJalur->sisa_hari }} hari lagi
+                                            </span>
+                                            @endif
+                                            @endif
                                         </div>
+                                        
+                                        {{-- Kuota Bar --}}
+                                        @if($jalur->tampil_kuota ?? true)
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <small class="text-muted"><i class="fas fa-users me-1"></i>Kuota</small>
+                                                <small><strong style="color: {{ $jalur->warna ?? '#007bff' }}">{{ $jalur->kuota_tersisa }}</strong>/{{ $jalur->kuota }}</small>
+                                            </div>
+                                            <div class="progress" style="height: 6px; border-radius: 3px;">
+                                                <div class="progress-bar" style="width: {{ $persentase }}%; background: {{ $jalur->warna ?? '#007bff' }};"></div>
+                                            </div>
+                                        </div>
+                                        @endif
+                                        
+                                        {{-- Action Button --}}
+                                        @if($isOpen)
+                                        <a href="{{ route('pendaftar.landing') }}" class="btn btn-sm w-100" style="background: {{ $jalur->warna ?? '#007bff' }}; color: white;">
+                                            <i class="fas fa-arrow-right me-1"></i> Daftar Sekarang
+                                        </a>
+                                        @elseif($isUpcoming)
+                                        <button class="btn btn-sm btn-outline-warning w-100" disabled>
+                                            <i class="fas fa-clock me-1"></i> Segera Dibuka
+                                        </button>
+                                        @else
+                                        <button class="btn btn-sm btn-outline-secondary w-100" disabled>
+                                            <i class="fas fa-times-circle me-1"></i> Tutup
+                                        </button>
+                                        @endif
                                     </div>
                                 </div>
-                                @endif
-                            @else
-                            <div class="mb-3">
-                                <div class="alert alert-secondary py-2 px-3 mb-0">
-                                    <small><i class="fas fa-clock me-1"></i> Pendaftaran belum dibuka</small>
-                                </div>
                             </div>
-                            @endif
-                            
-                            @if($jalur->persyaratan)
-                            <details class="small mb-2">
-                                <summary class="fw-semibold text-primary cursor-pointer">
-                                    <i class="fas fa-list-check me-1"></i> Lihat Persyaratan
-                                </summary>
-                                <div class="mt-2 p-2 bg-light rounded text-muted">
-                                    {!! nl2br(e(Str::limit($jalur->persyaratan, 200))) !!}
-                                </div>
-                            </details>
-                            @endif
-                        </div>
-                        
-                        <div class="card-footer bg-transparent border-0 pt-0 pb-3">
-                            @if($statusPendaftaran == 'open' && $jalur->gelombang->isNotEmpty())
-                            <a href="{{ route('pendaftar.landing') }}" class="btn w-100 py-2" style="background: {{ $jalur->warna ?? '#007bff' }}; color: white;">
-                                <i class="fas fa-arrow-right me-2"></i> Daftar Sekarang
-                            </a>
-                            @elseif($statusPendaftaran == 'upcoming')
-                            <button class="btn btn-outline-warning w-100 py-2" disabled>
-                                <i class="fas fa-clock me-1"></i> Segera Dibuka
-                            </button>
-                            @else
-                            <button class="btn btn-outline-secondary w-100 py-2" disabled>
-                                <i class="fas fa-times-circle me-1"></i> Pendaftaran Ditutup
-                            </button>
-                            @endif
-                        </div>
+                        @endforeach
                     </div>
                 </div>
-                @endforeach
+                
+                {{-- Navigation Arrows (only if more than 1 jalur) --}}
+                @if($jalurAktif->count() > 1)
+                <button class="jalur-slider-btn prev" onclick="moveJalurSlider(-1)">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="jalur-slider-btn next" onclick="moveJalurSlider(1)">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                
+                {{-- Dots --}}
+                <div class="jalur-slider-dots d-flex justify-content-center gap-2 mt-3">
+                    @foreach($jalurAktif as $index => $jalur)
+                    <button class="jalur-dot {{ $index == 0 ? 'active' : '' }}" onclick="goToJalurSlide({{ $index }})"></button>
+                    @endforeach
+                </div>
+                @endif
             </div>
         </div>
     </section>
@@ -1509,6 +1587,51 @@
         updateCountdown();
         setInterval(updateCountdown, 1000);
         @endif
+        
+        // Jalur Slider
+        let jalurCurrentSlide = 0;
+        const jalurSliderTrack = document.getElementById('jalurSliderTrack');
+        const jalurSlides = document.querySelectorAll('.jalur-slide');
+        const jalurDots = document.querySelectorAll('.jalur-dot');
+        const totalJalurSlides = jalurSlides.length;
+        
+        function getJalurSlidesPerView() {
+            if (window.innerWidth >= 992) return Math.min(3, totalJalurSlides);
+            if (window.innerWidth >= 769) return Math.min(2, totalJalurSlides);
+            return 1;
+        }
+        
+        function updateJalurSlider() {
+            if (!jalurSliderTrack) return;
+            const slidesPerView = getJalurSlidesPerView();
+            const maxSlide = Math.max(0, totalJalurSlides - slidesPerView);
+            jalurCurrentSlide = Math.min(jalurCurrentSlide, maxSlide);
+            const slideWidth = 100 / slidesPerView;
+            jalurSliderTrack.style.transform = `translateX(-${jalurCurrentSlide * slideWidth}%)`;
+            
+            // Update dots
+            jalurDots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === jalurCurrentSlide);
+            });
+        }
+        
+        function moveJalurSlider(direction) {
+            const slidesPerView = getJalurSlidesPerView();
+            const maxSlide = Math.max(0, totalJalurSlides - slidesPerView);
+            jalurCurrentSlide = Math.max(0, Math.min(jalurCurrentSlide + direction, maxSlide));
+            updateJalurSlider();
+        }
+        
+        function goToJalurSlide(index) {
+            jalurCurrentSlide = index;
+            updateJalurSlider();
+        }
+        
+        // Initial setup and resize handler
+        if (jalurSliderTrack) {
+            updateJalurSlider();
+            window.addEventListener('resize', updateJalurSlider);
+        }
     </script>
     
     {{-- GPS Permission Component --}}
