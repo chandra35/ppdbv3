@@ -229,6 +229,12 @@ return [
                     'can' => 'settings.edit',
                 ],
                 [
+                    'text' => 'Email Notifikasi',
+                    'route' => 'admin.email.index',
+                    'icon' => 'fas fa-fw fa-envelope',
+                    'can' => 'settings.edit',
+                ],
+                [
                     'text' => 'Backup & Restore',
                     'route' => 'admin.backup.index',
                     'icon' => 'fas fa-fw fa-database',

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CalonSiswa;
 use App\Models\CalonDokumen;
 use App\Models\EmailLog;
+use App\Models\PengaturanEmail;
 use App\Mail\RegistrasiNotification;
 use App\Mail\RevisiDokumenNotification;
 use App\Mail\HasilSeleksiNotification;
@@ -15,10 +16,24 @@ use Illuminate\Support\Facades\Log;
 class EmailNotificationService
 {
     /**
+     * Cek apakah email notifikasi enabled untuk tipe tertentu
+     */
+    protected static function isEnabled(string $type): bool
+    {
+        return PengaturanEmail::isEnabled($type);
+    }
+
+    /**
      * Kirim email notifikasi registrasi berhasil
      */
     public static function sendRegistrasi(CalonSiswa $calonSiswa, string $username, string $password): bool
     {
+        // Cek apakah notifikasi registrasi diaktifkan
+        if (!self::isEnabled('registrasi')) {
+            Log::info("Registration email skipped: notification disabled for calon_siswa {$calonSiswa->id}");
+            return false;
+        }
+
         $email = $calonSiswa->user?->email ?? $calonSiswa->email ?? null;
         
         if (!$email) {
@@ -64,6 +79,12 @@ class EmailNotificationService
      */
     public static function sendRevisiDokumen(CalonSiswa $calonSiswa, CalonDokumen $dokumen, string $catatan): bool
     {
+        // Cek apakah notifikasi revisi diaktifkan
+        if (!self::isEnabled('revisi')) {
+            Log::info("Revision email skipped: notification disabled for calon_siswa {$calonSiswa->id}");
+            return false;
+        }
+
         $email = $calonSiswa->user?->email ?? $calonSiswa->email ?? null;
         
         if (!$email) {
@@ -110,6 +131,13 @@ class EmailNotificationService
      */
     public static function sendHasilSeleksi(CalonSiswa $calonSiswa, string $hasil, ?string $keterangan = null): bool
     {
+        // Cek apakah notifikasi hasil seleksi diaktifkan
+        $type = $hasil === 'diterima' ? 'diterima' : 'ditolak';
+        if (!self::isEnabled($type)) {
+            Log::info("Result ({$hasil}) email skipped: notification disabled for calon_siswa {$calonSiswa->id}");
+            return false;
+        }
+
         $email = $calonSiswa->user?->email ?? $calonSiswa->email ?? null;
         
         if (!$email) {
@@ -158,6 +186,12 @@ class EmailNotificationService
      */
     public static function sendNomorTes(CalonSiswa $calonSiswa, string $nomorTes): bool
     {
+        // Cek apakah notifikasi nomor tes diaktifkan
+        if (!self::isEnabled('nomor_tes')) {
+            Log::info("Nomor tes email skipped: notification disabled for calon_siswa {$calonSiswa->id}");
+            return false;
+        }
+
         $email = $calonSiswa->user?->email ?? $calonSiswa->email ?? null;
         
         if (!$email) {

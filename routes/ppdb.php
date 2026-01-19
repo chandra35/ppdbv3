@@ -404,6 +404,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/whatsapp/test-connection', [PengaturanWaController::class, 'testConnection'])->name('whatsapp.test-connection');
         Route::post('/whatsapp/send-test', [PengaturanWaController::class, 'sendTest'])->name('whatsapp.send-test');
         Route::get('/whatsapp/reset-templates', [PengaturanWaController::class, 'resetTemplates'])->name('whatsapp.reset-templates');
+        
+        // ---- Email Notification Settings ----
+        Route::get('/email', [\App\Http\Controllers\Admin\PengaturanEmailController::class, 'index'])->name('email.index');
+        Route::put('/email', [\App\Http\Controllers\Admin\PengaturanEmailController::class, 'update'])->name('email.update');
+        Route::post('/email/send-test', [\App\Http\Controllers\Admin\PengaturanEmailController::class, 'sendTest'])->name('email.send-test');
+        Route::post('/email/reset-templates', [\App\Http\Controllers\Admin\PengaturanEmailController::class, 'resetTemplates'])->name('email.reset-templates');
     }); // End of permission:settings.edit group
     
     // ============================================
