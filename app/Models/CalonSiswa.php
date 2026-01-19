@@ -244,9 +244,11 @@ class CalonSiswa extends Model
 
     /**
      * Check apakah semua dokumen sudah valid
+     * Termasuk dokumen utama (calon_dokumen) dan file rapor (nilai_rapor)
      */
     public function allDokumenValid(): bool
     {
+        // Cek dokumen utama (foto, KK, akta, dll)
         $totalDokumen = $this->dokumen()->count();
         
         // Jika belum ada dokumen, return false
@@ -256,7 +258,26 @@ class CalonSiswa extends Model
         
         $validDokumen = $this->dokumen()->where('status_verifikasi', 'valid')->count();
         
-        return $totalDokumen === $validDokumen;
+        // Jika ada dokumen utama yang belum valid, return false
+        if ($totalDokumen !== $validDokumen) {
+            return false;
+        }
+        
+        // Cek file rapor (jika ada file rapor yang diupload, harus semua valid)
+        $raporWithFile = $this->nilaiRapor()->whereNotNull('dokumen_path')->count();
+        if ($raporWithFile > 0) {
+            $raporValid = $this->nilaiRapor()
+                ->whereNotNull('dokumen_path')
+                ->where('status_validasi', 'valid')
+                ->count();
+            
+            // Jika ada file rapor yang belum valid, return false
+            if ($raporWithFile !== $raporValid) {
+                return false;
+            }
+        }
+        
+        return true;
     }
 
     /**
