@@ -440,13 +440,52 @@ class CalonSiswa extends Model
     }
 
     /**
-     * Kirim notifikasi WhatsApp setelah verifikasi dokumen lengkap
+     * Kirim notifikasi WhatsApp dan Email setelah verifikasi dokumen lengkap
      */
     protected function sendVerificationNotification(string $nomorTes): void
     {
+        $settings = \App\Models\PpdbSettings::first();
+        
+        // =====================
+        // KIRIM EMAIL
+        // =====================
+        $this->sendEmailNotification($nomorTes);
+        
+        // =====================
+        // KIRIM WHATSAPP
+        // =====================
+        $this->sendWhatsAppNotification($nomorTes, $settings);
+    }
+
+    /**
+     * Kirim notifikasi Email
+     */
+    protected function sendEmailNotification(string $nomorTes): void
+    {
+        try {
+            // Ambil email dari user atau data pendaftar
+            $email = $this->user?->email ?? $this->email ?? null;
+            
+            if (!$email) {
+                \Log::warning("Cannot send email notification: No email for calon_siswa {$this->id}");
+                return;
+            }
+
+            \Mail::to($email)->send(new \App\Mail\NomorTesNotification($this, $nomorTes));
+            
+            \Log::info("Email notification sent to {$email} for calon_siswa {$this->id} with nomor_tes {$nomorTes}");
+        } catch (\Exception $e) {
+            \Log::error("Failed to send email notification: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Kirim notifikasi WhatsApp
+     */
+    protected function sendWhatsAppNotification(string $nomorTes, $settings): void
+    {
         try {
             $waService = app(\App\Services\WhatsAppService::class);
-            $settings = \App\Models\PpdbSettings::first();
             
             // Ambil nomor HP dari data siswa, ortu, atau user
             $phone = $this->nomor_hp 
@@ -457,23 +496,11 @@ class CalonSiswa extends Model
                 ?? null;
             
             if (!$phone) {
-                \Log::warning("Cannot send verification notification: No phone number for calon_siswa {$this->id}");
+                \Log::warning("Cannot send WA notification: No phone number for calon_siswa {$this->id}");
                 return;
             }
 
-            // Gunakan method sendVerificationNotification dari WhatsAppService
-            // atau gunakan send() untuk custom message
-            $data = [
-                'phone' => $phone,
-                'nama' => $this->nama_lengkap,
-                'nomor_registrasi' => $this->nomor_registrasi,
-                'nisn' => $this->nisn,
-                'jalur' => $this->jalurPendaftaran->nama ?? '-',
-                'nomor_tes' => $nomorTes,
-                'nama_sekolah' => $settings->nama_sekolah ?? 'Panitia PPDB',
-            ];
-
-            // Format pesan custom jika tidak ada template
+            // Format pesan custom
             $message = "🎉 *DOKUMEN TERVERIFIKASI*\n\n";
             $message .= "Assalamu'alaikum Wr. Wb.\n\n";
             $message .= "Dokumen pendaftaran PPDB atas nama *{$this->nama_lengkap}* telah diverifikasi lengkap.\n\n";
@@ -491,12 +518,12 @@ class CalonSiswa extends Model
             $result = $waService->send($phone, $message);
             
             if ($result['success'] ?? false) {
-                \Log::info("Verification notification sent to {$phone} for calon_siswa {$this->id} with nomor_tes {$nomorTes}");
+                \Log::info("WA notification sent to {$phone} for calon_siswa {$this->id} with nomor_tes {$nomorTes}");
             } else {
-                \Log::warning("Failed to send verification notification: " . ($result['message'] ?? 'Unknown error'));
+                \Log::warning("Failed to send WA notification: " . ($result['message'] ?? 'Unknown error'));
             }
         } catch (\Exception $e) {
-            \Log::error("Failed to send verification notification: " . $e->getMessage());
+            \Log::error("Failed to send WA notification: " . $e->getMessage());
         }
     }
 
