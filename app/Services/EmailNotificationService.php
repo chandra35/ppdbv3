@@ -24,6 +24,29 @@ class EmailNotificationService
     }
 
     /**
+     * Mask password untuk keamanan di log
+     */
+    protected static function maskPassword(string $password): string
+    {
+        if (strlen($password) <= 4) {
+            return str_repeat('*', strlen($password));
+        }
+        return substr($password, 0, 2) . str_repeat('*', strlen($password) - 4) . substr($password, -2);
+    }
+
+    /**
+     * Convert HTML ke plain text untuk preview
+     */
+    protected static function htmlToPlainText(string $html): string
+    {
+        // Remove tags but keep content
+        $text = strip_tags(str_replace(['<br>', '<br/>', '<br />', '</p>', '</li>'], "\n", $html));
+        // Clean up whitespace
+        $text = preg_replace('/\n\s*\n/', "\n\n", $text);
+        return trim($text);
+    }
+
+    /**
      * Kirim email notifikasi registrasi berhasil
      */
     public static function sendRegistrasi(CalonSiswa $calonSiswa, string $username, string $password): bool
@@ -41,15 +64,17 @@ class EmailNotificationService
             return false;
         }
 
-        $settings = \App\Models\PpdbSettings::first();
-        $subject = '✅ Pendaftaran PPDB Berhasil - ' . ($settings->nama_sekolah ?? 'MAN 1 Metro');
-
         try {
-            Mail::to($email)->send(new RegistrasiNotification($calonSiswa, $username, $password));
+            $mailable = new RegistrasiNotification($calonSiswa, $username, $password);
+            Mail::to($email)->send($mailable);
 
-            // Preview dengan masking password untuk keamanan
-            $maskedPassword = substr($password, 0, 2) . str_repeat('*', strlen($password) - 4) . substr($password, -2);
-            $messagePreview = "Kredensial Login:\n• Username: {$username}\n• Password: {$maskedPassword}\n\nNo. Registrasi: {$calonSiswa->nomor_registrasi}";
+            // Get subject from mailable
+            $subject = $mailable->envelope()->subject;
+            
+            // Get rendered body and mask password for security
+            $renderedBody = $mailable->getRenderedBody();
+            $maskedBody = str_replace($password, self::maskPassword($password), $renderedBody);
+            $messagePreview = self::htmlToPlainText($maskedBody);
 
             EmailLog::logSent(
                 toEmail: $email,
@@ -64,6 +89,12 @@ class EmailNotificationService
             return true;
 
         } catch (\Exception $e) {
+            $emailSettings = PengaturanEmail::getSettings();
+            $settings = \App\Models\PpdbSettings::first();
+            $subject = $emailSettings?->subject_registrasi 
+                ?? PengaturanEmail::getDefaultTemplates()['subject_registrasi'];
+            $subject = str_replace('{nama_sekolah}', $settings->nama_sekolah ?? 'MAN 1 Metro', $subject);
+
             EmailLog::logFailed(
                 toEmail: $email,
                 subject: $subject,
@@ -96,12 +127,15 @@ class EmailNotificationService
             return false;
         }
 
-        $settings = \App\Models\PpdbSettings::first();
-        $subject = '⚠️ Permintaan Revisi Dokumen PPDB - ' . ($settings->nama_sekolah ?? 'MAN 1 Metro');
-        $dokumenName = ucwords(str_replace('_', ' ', $dokumen->jenis_dokumen));
-
         try {
-            Mail::to($email)->send(new RevisiDokumenNotification($calonSiswa, $dokumen, $catatan));
+            $mailable = new RevisiDokumenNotification($calonSiswa, $dokumen, $catatan);
+            Mail::to($email)->send($mailable);
+
+            // Get subject from mailable
+            $subject = $mailable->envelope()->subject;
+            
+            // Get rendered body for log
+            $messagePreview = self::htmlToPlainText($mailable->getRenderedBody());
 
             EmailLog::logSent(
                 toEmail: $email,
@@ -109,13 +143,19 @@ class EmailNotificationService
                 type: EmailLog::TYPE_REVISI,
                 calonSiswaId: $calonSiswa->id,
                 toName: $calonSiswa->nama_lengkap,
-                messagePreview: "Dokumen: {$dokumenName}\nCatatan: {$catatan}"
+                messagePreview: $messagePreview
             );
 
             Log::info("Revision email sent to {$email} for dokumen {$dokumen->id}");
             return true;
 
         } catch (\Exception $e) {
+            $emailSettings = PengaturanEmail::getSettings();
+            $settings = \App\Models\PpdbSettings::first();
+            $subject = $emailSettings?->subject_revisi 
+                ?? PengaturanEmail::getDefaultTemplates()['subject_revisi'];
+            $subject = str_replace('{nama_sekolah}', $settings->nama_sekolah ?? 'MAN 1 Metro', $subject);
+
             EmailLog::logFailed(
                 toEmail: $email,
                 subject: $subject,
@@ -149,32 +189,42 @@ class EmailNotificationService
             return false;
         }
 
-        $settings = \App\Models\PpdbSettings::first();
-        $type = $hasil === 'diterima' ? EmailLog::TYPE_DITERIMA : EmailLog::TYPE_DITOLAK;
-        $emoji = $hasil === 'diterima' ? '🎉' : '📋';
-        $status = $hasil === 'diterima' ? 'SELAMAT! Anda Diterima' : 'Pengumuman Hasil Seleksi';
-        $subject = "{$emoji} {$status} - " . ($settings->nama_sekolah ?? 'MAN 1 Metro');
+        $logType = $hasil === 'diterima' ? EmailLog::TYPE_DITERIMA : EmailLog::TYPE_DITOLAK;
 
         try {
-            Mail::to($email)->send(new HasilSeleksiNotification($calonSiswa, $hasil, $keterangan));
+            $mailable = new HasilSeleksiNotification($calonSiswa, $hasil, $keterangan);
+            Mail::to($email)->send($mailable);
+
+            // Get subject from mailable
+            $subject = $mailable->envelope()->subject;
+            
+            // Get rendered body for log
+            $messagePreview = self::htmlToPlainText($mailable->getRenderedBody());
 
             EmailLog::logSent(
                 toEmail: $email,
                 subject: $subject,
-                type: $type,
+                type: $logType,
                 calonSiswaId: $calonSiswa->id,
                 toName: $calonSiswa->nama_lengkap,
-                messagePreview: "Hasil: " . strtoupper($hasil) . ($keterangan ? "\nKeterangan: {$keterangan}" : "")
+                messagePreview: $messagePreview
             );
 
             Log::info("Result email ({$hasil}) sent to {$email} for calon_siswa {$calonSiswa->id}");
             return true;
 
         } catch (\Exception $e) {
+            $emailSettings = PengaturanEmail::getSettings();
+            $settings = \App\Models\PpdbSettings::first();
+            $subjectKey = $hasil === 'diterima' ? 'subject_diterima' : 'subject_ditolak';
+            $subject = $emailSettings?->{$subjectKey} 
+                ?? PengaturanEmail::getDefaultTemplates()[$subjectKey];
+            $subject = str_replace('{nama_sekolah}', $settings->nama_sekolah ?? 'MAN 1 Metro', $subject);
+
             EmailLog::logFailed(
                 toEmail: $email,
                 subject: $subject,
-                type: $type,
+                type: $logType,
                 errorMessage: $e->getMessage(),
                 calonSiswaId: $calonSiswa->id,
                 toName: $calonSiswa->nama_lengkap
@@ -203,11 +253,15 @@ class EmailNotificationService
             return false;
         }
 
-        $settings = \App\Models\PpdbSettings::first();
-        $subject = '🎉 Nomor Tes PPDB - ' . ($settings->nama_sekolah ?? 'MAN 1 Metro');
-
         try {
-            Mail::to($email)->send(new NomorTesNotification($calonSiswa, $nomorTes));
+            $mailable = new NomorTesNotification($calonSiswa, $nomorTes);
+            Mail::to($email)->send($mailable);
+
+            // Get subject from mailable
+            $subject = $mailable->envelope()->subject;
+            
+            // Get rendered body for log
+            $messagePreview = self::htmlToPlainText($mailable->getRenderedBody());
 
             EmailLog::logSent(
                 toEmail: $email,
@@ -215,13 +269,19 @@ class EmailNotificationService
                 type: EmailLog::TYPE_NOMOR_TES,
                 calonSiswaId: $calonSiswa->id,
                 toName: $calonSiswa->nama_lengkap,
-                messagePreview: "Nomor Tes: {$nomorTes}"
+                messagePreview: $messagePreview
             );
 
             Log::info("Nomor tes email sent to {$email} for calon_siswa {$calonSiswa->id}");
             return true;
 
         } catch (\Exception $e) {
+            $emailSettings = PengaturanEmail::getSettings();
+            $settings = \App\Models\PpdbSettings::first();
+            $subject = $emailSettings?->subject_nomor_tes 
+                ?? PengaturanEmail::getDefaultTemplates()['subject_nomor_tes'];
+            $subject = str_replace('{nama_sekolah}', $settings->nama_sekolah ?? 'MAN 1 Metro', $subject);
+
             EmailLog::logFailed(
                 toEmail: $email,
                 subject: $subject,
