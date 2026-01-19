@@ -18,7 +18,32 @@
 @stop
 
 @section('content')
-    <form action="{{ route('admin.users.update', $user) }}" method="POST">
+    {{-- Success Modal --}}
+    <div class="modal fade" id="successModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    <h4 class="text-success">Berhasil!</h4>
+                    <p class="mb-0" id="successMessage">{{ session('success') }}</p>
+                </div>
+                <div class="modal-footer justify-content-center border-0 pt-0">
+                    <button type="button" class="btn btn-success px-4" data-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible">
+            <button type="button" class="close" data-dismiss="alert">&times;</button>
+            <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
+        </div>
+    @endif
+
+    <form action="{{ route('admin.users.update', $user) }}" method="POST" id="editUserForm">
         @csrf
         @method('PUT')
         <div class="row">
@@ -67,6 +92,14 @@
                             </div>
                         </div>
                     </div>
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Update
+                        </button>
+                        <a href="{{ route('admin.users.index') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Batal
+                        </a>
+                    </div>
                 </div>
             </div>
 
@@ -96,20 +129,22 @@
                         <h3 class="card-title">Info</h3>
                     </div>
                     <div class="card-body">
-                        <p><strong>Terdaftar:</strong> {{ $user->created_at->format('d F Y H:i') }}</p>
-                        <p><strong>Update terakhir:</strong> {{ $user->updated_at->format('d F Y H:i') }}</p>
+                        <p class="mb-2"><strong>Terdaftar:</strong><br>{{ $user->created_at->format('d F Y H:i') }}</p>
+                        <p class="mb-0"><strong>Update terakhir:</strong><br>{{ $user->updated_at->format('d F Y H:i') }}</p>
                     </div>
                 </div>
             </div>
         </div>
-
-        <div class="mb-3">
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save"></i> Update
-            </button>
-            <a href="{{ route('admin.users.index') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Batal
-            </a>
-        </div>
     </form>
+@stop
+
+@section('js')
+<script>
+$(function() {
+    // Show success modal if session success exists
+    @if(session('success'))
+        $('#successModal').modal('show');
+    @endif
+});
+</script>
 @stop

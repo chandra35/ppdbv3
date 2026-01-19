@@ -149,8 +149,13 @@ class UserController extends Controller
             ActivityLog::log('update', "Mengupdate user: {$user->name}", $user, $oldValues, $user->fresh()->toArray());
         });
 
-        return redirect()->route('admin.ppdb.users.index')
-            ->with('success', 'User berhasil diupdate');
+        $message = 'User berhasil diupdate';
+        if (!empty($validated['password'])) {
+            $message = 'User dan password berhasil diupdate';
+        }
+
+        return redirect()->route('admin.users.edit', $user)
+            ->with('success', $message);
     }
 
     public function destroy(User $user)
