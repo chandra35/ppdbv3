@@ -689,14 +689,139 @@
                         <h1 class="display-5 fw-bold mb-2">{{ $sekolahSettings->nama_sekolah }}</h1>
                         <p class="lead mb-4 opacity-90">Pendaftaran Peserta Didik Baru (PPDB) Online</p>
                         
-                        {{-- CTA Buttons --}}
-                        <div class="d-flex justify-content-center gap-3 flex-wrap">
-                            <a href="{{ route('pendaftar.landing') }}" class="btn btn-light btn-lg px-4">
-                                <i class="fas fa-user-plus me-2"></i> Daftar Sekarang
-                            </a>
-                            <a href="{{ route('login') }}" class="btn btn-outline-light btn-lg px-4">
-                                <i class="fas fa-sign-in-alt me-2"></i> Login
-                            </a>
+                        @php
+                            $jalurDenganGelombang = $jalurAktif->filter(fn($j) => $j->gelombang->isNotEmpty());
+                        @endphp
+                        
+                        {{-- Status Pendaftaran dengan Countdown - Hidden saat open --}}
+                        @if($gelombangAktif && $statusPendaftaran != 'open')
+                        <div class="countdown-wrapper text-white text-center mb-4">
+                            <div class="countdown-status {{ $statusPendaftaran }}">
+                                @if($statusPendaftaran == 'upcoming')
+                                    <i class="fas fa-hourglass-half"></i>
+                                    <span>Pendaftaran Segera Dibuka</span>
+                                @else
+                                    <i class="fas fa-door-closed"></i>
+                                    <span>Pendaftaran Telah Ditutup</span>
+                                @endif
+                            </div>
+                            
+                            @if($countdownTarget && $statusPendaftaran == 'upcoming')
+                            <p class="mb-3 opacity-90">
+                                <i class="fas fa-clock me-1"></i> Pendaftaran akan dibuka dalam:
+                            </p>
+                            <div id="countdown" class="countdown-timer" data-target="{{ $countdownTarget->format('Y-m-d H:i:s') }}">
+                                <div class="countdown-box">
+                                    <div class="countdown-value" id="days">00</div>
+                                    <div class="countdown-label">Hari</div>
+                                </div>
+                                <span class="countdown-separator d-none d-sm-block">:</span>
+                                <div class="countdown-box">
+                                    <div class="countdown-value" id="hours">00</div>
+                                    <div class="countdown-label">Jam</div>
+                                </div>
+                                <span class="countdown-separator d-none d-sm-block">:</span>
+                                <div class="countdown-box">
+                                    <div class="countdown-value" id="minutes">00</div>
+                                    <div class="countdown-label">Menit</div>
+                                </div>
+                                <span class="countdown-separator d-none d-sm-block">:</span>
+                                <div class="countdown-box">
+                                    <div class="countdown-value" id="seconds">00</div>
+                                    <div class="countdown-label">Detik</div>
+                                </div>
+                            </div>
+                            @endif
+                        </div>
+                        @endif
+                        
+                        {{-- Main CTA Cards --}}
+                        @if($statusPendaftaran == 'open')
+                            @auth
+                                <div class="row justify-content-center g-3 mb-4">
+                                    <div class="col-sm-6 col-md-5 col-lg-4">
+                                        <div class="card bg-white text-dark h-100 border-0 shadow">
+                                            <div class="card-body p-4 text-center">
+                                                <div class="rounded-circle bg-success bg-opacity-10 p-3 d-inline-flex mb-3">
+                                                    <i class="fas fa-tachometer-alt fa-2x text-success"></i>
+                                                </div>
+                                                <h5 class="fw-bold mb-2">Halo, {{ Auth::user()->name }}!</h5>
+                                                <p class="text-muted small mb-3">Klik tombol di bawah untuk masuk ke dashboard.</p>
+                                                @if(Auth::user()->isAdmin())
+                                                    <a href="{{ route('admin.dashboard') }}" class="btn btn-success w-100">
+                                                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard Admin
+                                                    </a>
+                                                @elseif(Auth::user()->hasAnyRole(['operator', 'verifikator']))
+                                                    <a href="{{ route('operator.dashboard') }}" class="btn btn-success w-100">
+                                                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard Operator
+                                                    </a>
+                                                @else
+                                                    <a href="{{ route('pendaftar.dashboard') }}" class="btn btn-success w-100">
+                                                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard Saya
+                                                    </a>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @else
+                                <div class="row justify-content-center g-3 mb-4">
+                                    <div class="col-sm-6 col-md-5 col-lg-4">
+                                        <div class="card bg-white text-dark h-100 border-0 shadow">
+                                            <div class="card-body p-4 text-center">
+                                                <div class="rounded-circle bg-primary bg-opacity-10 p-3 d-inline-flex mb-3">
+                                                    <i class="fas fa-user-plus fa-2x text-primary"></i>
+                                                </div>
+                                                <h5 class="fw-bold mb-2">Pendaftaran Baru</h5>
+                                                <p class="text-muted small mb-3">Belum punya akun? Daftar di sini untuk memulai pendaftaran PPDB</p>
+                                                <a href="{{ route('pendaftar.landing') }}" class="btn btn-primary w-100">
+                                                    <i class="fas fa-arrow-right me-2"></i> Daftar Sekarang
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 col-md-5 col-lg-4">
+                                        <div class="card bg-white bg-opacity-10 text-white h-100 border border-white border-opacity-25">
+                                            <div class="card-body p-4 text-center">
+                                                <div class="rounded-circle bg-white bg-opacity-25 p-3 d-inline-flex mb-3">
+                                                    <i class="fas fa-sign-in-alt fa-2x"></i>
+                                                </div>
+                                                <h5 class="fw-bold mb-2">Sudah Terdaftar?</h5>
+                                                <p class="opacity-75 small mb-3">Login untuk melanjutkan pendaftaran atau cek status</p>
+                                                <a href="{{ route('login') }}" class="btn btn-outline-light w-100">
+                                                    <i class="fas fa-sign-in-alt me-2"></i> Login
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endauth
+                        @else
+                            {{-- Pendaftaran belum/sudah tutup - tombol sederhana --}}
+                            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                                <a href="{{ route('pendaftar.landing') }}" class="btn btn-light btn-lg px-4">
+                                    <i class="fas fa-user-plus me-2"></i> Daftar Sekarang
+                                </a>
+                                <a href="{{ route('login') }}" class="btn btn-outline-light btn-lg px-4">
+                                    <i class="fas fa-sign-in-alt me-2"></i> Login
+                                </a>
+                            </div>
+                        @endif
+                        
+                        {{-- Info Badge --}}
+                        <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">
+                            <span class="badge bg-white text-dark px-3 py-2">
+                                <i class="fas fa-graduation-cap me-1"></i>
+                                {{ \App\Models\SekolahSettings::JENJANG_LIST[$sekolahSettings->jenjang] ?? $sekolahSettings->jenjang }}
+                            </span>
+                            @if($sekolahSettings->npsn)
+                            <span class="badge bg-white bg-opacity-25 px-3 py-2">NPSN: {{ $sekolahSettings->npsn }}</span>
+                            @endif
+                            @if($sekolahSettings->akreditasi)
+                            <span class="badge bg-warning text-dark px-3 py-2">
+                                <i class="fas fa-award me-1"></i> Akreditasi {{ $sekolahSettings->akreditasi }}
+                            </span>
+                            @endif
                         </div>
                     </div>
                 </div>
