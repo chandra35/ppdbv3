@@ -546,6 +546,9 @@ class AuthController extends Controller
                 $waSent = $waResult['success'];
             }
 
+            // Send email notification for registration
+            \App\Services\EmailNotificationService::sendRegistrasi($calonSiswa, $request->nisn, $password);
+
             // Store credentials in session for display
             session(['registration_credentials' => $credentials]);
             session(['wa_sent' => $waSent]);

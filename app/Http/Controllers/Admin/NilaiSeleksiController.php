@@ -8,6 +8,9 @@ use App\Models\RuangUjian;
 use App\Models\NilaiSeleksi;
 use App\Models\BobotNilaiSeleksi;
 use App\Models\TahunPelajaran;
+use App\Models\CalonSiswa;
+use App\Models\ActivityLog;
+use App\Services\EmailNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -217,5 +220,133 @@ class NilaiSeleksiController extends Controller
             'tahunPelajarans',
             'jalurs'
         ));
+    }
+
+    /**
+     * Pengumuman Hasil Seleksi - Form
+     */
+    public function pengumuman()
+    {
+        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        
+        // Get kandidat untuk pengumuman (yang sudah verified dan finalisasi)
+        $kandidat = CalonSiswa::with(['jalurPendaftaran', 'gelombangPendaftaran'])
+            ->where('tahun_pelajaran_id', $tahunAktif?->id)
+            ->where('is_finalisasi', true)
+            ->whereIn('status_verifikasi', ['verified'])
+            ->orderBy('nilai_akhir', 'desc')
+            ->get();
+        
+        // Hitung statistik
+        $stats = [
+            'total' => $kandidat->count(),
+            'pending' => $kandidat->where('status_admisi', 'pending')->count(),
+            'diterima' => $kandidat->where('status_admisi', 'diterima')->count(),
+            'ditolak' => $kandidat->where('status_admisi', 'ditolak')->count(),
+            'cadangan' => $kandidat->where('status_admisi', 'cadangan')->count(),
+        ];
+        
+        $jalurs = \App\Models\JalurPendaftaran::where('tahun_pelajaran_id', $tahunAktif?->id)
+            ->where('is_active', true)
+            ->get();
+
+        return view('admin.nilai-seleksi.pengumuman', compact(
+            'kandidat',
+            'stats',
+            'tahunAktif',
+            'jalurs'
+        ));
+    }
+
+    /**
+     * Update status admisi individual
+     */
+    public function updateAdmisi(Request $request, CalonSiswa $calonSiswa)
+    {
+        $request->validate([
+            'status_admisi' => 'required|in:diterima,ditolak,cadangan,pending',
+            'catatan_admisi' => 'nullable|string|max:500',
+            'kirim_email' => 'nullable|boolean',
+        ]);
+
+        $oldStatus = $calonSiswa->status_admisi;
+        $newStatus = $request->status_admisi;
+
+        $calonSiswa->update([
+            'status_admisi' => $newStatus,
+            'catatan_admisi' => $request->catatan_admisi,
+            'approved_by' => auth()->id(),
+            'approved_at' => now(),
+        ]);
+
+        // Log activity
+        ActivityLog::log(
+            'update_admisi',
+            "Mengubah status admisi pendaftar: {$calonSiswa->nama_lengkap} dari {$oldStatus} menjadi {$newStatus}",
+            $calonSiswa,
+            ['status_admisi' => $oldStatus],
+            ['status_admisi' => $newStatus]
+        );
+
+        // Kirim email jika diminta dan status bukan pending
+        if ($request->kirim_email && in_array($newStatus, ['diterima', 'ditolak'])) {
+            EmailNotificationService::sendHasilSeleksi(
+                $calonSiswa, 
+                $newStatus, 
+                $request->catatan_admisi
+            );
+        }
+
+        return redirect()->back()->with('success', "Status admisi {$calonSiswa->nama_lengkap} berhasil diubah menjadi {$newStatus}.");
+    }
+
+    /**
+     * Bulk update status admisi
+     */
+    public function bulkUpdateAdmisi(Request $request)
+    {
+        $request->validate([
+            'calon_siswa_ids' => 'required|array',
+            'calon_siswa_ids.*' => 'exists:calon_siswas,id',
+            'status_admisi' => 'required|in:diterima,ditolak,cadangan,pending',
+            'catatan_admisi' => 'nullable|string|max:500',
+            'kirim_email' => 'nullable|boolean',
+        ]);
+
+        $count = 0;
+        $emailSent = 0;
+        
+        $calonSiswas = CalonSiswa::whereIn('id', $request->calon_siswa_ids)->get();
+        
+        foreach ($calonSiswas as $calonSiswa) {
+            $oldStatus = $calonSiswa->status_admisi;
+            
+            $calonSiswa->update([
+                'status_admisi' => $request->status_admisi,
+                'catatan_admisi' => $request->catatan_admisi,
+                'approved_by' => auth()->id(),
+                'approved_at' => now(),
+            ]);
+            
+            $count++;
+            
+            // Kirim email jika diminta dan status bukan pending
+            if ($request->kirim_email && in_array($request->status_admisi, ['diterima', 'ditolak'])) {
+                if (EmailNotificationService::sendHasilSeleksi(
+                    $calonSiswa, 
+                    $request->status_admisi, 
+                    $request->catatan_admisi
+                )) {
+                    $emailSent++;
+                }
+            }
+        }
+
+        $message = "{$count} pendaftar berhasil diubah statusnya menjadi {$request->status_admisi}.";
+        if ($emailSent > 0) {
+            $message .= " {$emailSent} email notifikasi terkirim.";
+        }
+
+        return redirect()->back()->with('success', $message);
     }
 }

@@ -286,6 +286,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/rekap', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'rekap'])->name('rekap');
         Route::get('/bobot', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'bobotIndex'])->name('bobot');
         Route::post('/bobot', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'bobotUpdate'])->name('bobot.update');
+        Route::get('/pengumuman', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'pengumuman'])->name('pengumuman');
+        Route::post('/update-admisi/{calonSiswa}', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'updateAdmisi'])->name('update-admisi');
+        Route::post('/bulk-update-admisi', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'bulkUpdateAdmisi'])->name('bulk-update-admisi');
         Route::get('/{sesiUjian}', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'show'])->name('show');
         Route::post('/{sesiUjian}/verify/{nilaiSeleksi}', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'verify'])->name('verify');
         Route::post('/{sesiUjian}/bulk-verify', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'bulkVerify'])->name('bulk-verify');

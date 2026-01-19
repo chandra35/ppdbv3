@@ -810,6 +810,9 @@ class PendaftarController extends Controller
             ]);
         }
 
+        // Kirim notifikasi email revisi dokumen
+        \App\Services\EmailNotificationService::sendRevisiDokumen($calonSiswa, $dokumen, $request->catatan);
+
         $message = 'Permintaan revisi dokumen telah dikirim.';
         if ($finalisasiDibatalkan) {
             $message .= ' Finalisasi pendaftar otomatis dibatalkan agar dapat upload ulang.';

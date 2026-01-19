@@ -181,6 +181,11 @@ return [
                     'route' => 'admin.nilai-seleksi.rekap',
                     'icon' => 'fas fa-fw fa-file-excel',
                 ],
+                [
+                    'text' => 'Pengumuman',
+                    'route' => 'admin.nilai-seleksi.pengumuman',
+                    'icon' => 'fas fa-fw fa-bullhorn',
+                ],
             ],
         ],
 
