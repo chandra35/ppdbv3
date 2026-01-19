@@ -313,6 +313,7 @@
 @stop
 
 @section('css')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.css">
 <style>
 .nav-tabs .nav-link {
     color: #555;
@@ -324,20 +325,59 @@
 .placeholder-badge {
     cursor: pointer;
     margin: 2px;
+    font-size: 12px;
 }
 .placeholder-badge:hover {
     opacity: 0.8;
+    transform: scale(1.05);
 }
-.template-textarea {
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
-    line-height: 1.5;
+.note-editor.note-frame {
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+}
+.note-editor .note-toolbar {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+.note-editor .note-editing-area .note-editable {
+    background-color: #fff;
+    min-height: 250px;
+}
+.note-editor .note-statusbar {
+    background-color: #f8f9fa;
 }
 </style>
 @stop
 
 @section('js')
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.js"></script>
 <script>
+// Summernote configuration
+const summernoteConfig = {
+    height: 300,
+    minHeight: 200,
+    maxHeight: 500,
+    focus: false,
+    placeholder: 'Ketik konten email di sini...',
+    toolbar: [
+        ['style', ['style']],
+        ['font', ['bold', 'italic', 'underline', 'strikethrough', 'clear']],
+        ['fontsize', ['fontsize']],
+        ['color', ['color']],
+        ['para', ['ul', 'ol', 'paragraph']],
+        ['table', ['table']],
+        ['insert', ['link', 'picture', 'hr']],
+        ['view', ['fullscreen', 'codeview', 'help']]
+    ],
+    fontSizes: ['8', '9', '10', '11', '12', '14', '16', '18', '20', '24', '36'],
+    styleTags: ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+    callbacks: {
+        onInit: function() {
+            // Editor initialized
+        }
+    }
+};
+
 function openTestModal(type) {
     $('#test_type').val(type);
     $('#test_email').val('');
@@ -385,19 +425,43 @@ function confirmResetTemplates() {
 }
 
 function insertPlaceholder(type, placeholder) {
-    const textarea = document.getElementById('template_' + type);
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const text = textarea.value;
+    // Insert placeholder at cursor position in Summernote
+    const editor = $('#template_' + type);
     
-    textarea.value = text.substring(0, start) + placeholder + text.substring(end);
-    textarea.focus();
-    textarea.selectionStart = textarea.selectionEnd = start + placeholder.length;
+    // Check if Summernote is initialized
+    if (editor.hasClass('note-editor') || editor.next('.note-editor').length > 0) {
+        editor.summernote('editor.insertText', placeholder);
+    } else {
+        // Fallback for regular textarea
+        const textarea = document.getElementById('template_' + type);
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+        
+        textarea.value = text.substring(0, start) + placeholder + text.substring(end);
+        textarea.focus();
+        textarea.selectionStart = textarea.selectionEnd = start + placeholder.length;
+    }
 }
 
 $(document).ready(function() {
-    // Initialize any tooltips
+    // Initialize Summernote on all template textareas
+    $('.summernote-editor').each(function() {
+        $(this).summernote(summernoteConfig);
+    });
+    
+    // Initialize tooltips
     $('[data-toggle="tooltip"]').tooltip();
+    
+    // Handle tab switching - reinitialize Summernote if needed
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        // Refresh Summernote layout when tab becomes visible
+        $($(e.target).attr('href')).find('.summernote-editor').each(function() {
+            if (!$(this).next('.note-editor').length) {
+                $(this).summernote(summernoteConfig);
+            }
+        });
+    });
 });
 </script>
 @stop

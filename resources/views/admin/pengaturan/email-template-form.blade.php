@@ -24,9 +24,11 @@
 <div class="row">
     <div class="col-md-8">
         <div class="form-group">
-            <label for="template_{{ $type }}">Template Body (HTML)</label>
-            <textarea class="form-control template-textarea" id="template_{{ $type }}" name="template_{{ $type }}" 
-                rows="15" placeholder="Masukkan template HTML...">{{ old('template_' . $type, $settings->{'template_' . $type} ?? $defaultTemplates['template_' . $type] ?? '') }}</textarea>
+            <label for="template_{{ $type }}">
+                <i class="fas fa-file-alt mr-1"></i>Template Body
+                <small class="text-muted">(Visual Editor)</small>
+            </label>
+            <textarea class="form-control summernote-editor" id="template_{{ $type }}" name="template_{{ $type }}">{{ old('template_' . $type, $settings->{'template_' . $type} ?? $defaultTemplates['template_' . $type] ?? '') }}</textarea>
         </div>
     </div>
     <div class="col-md-4">
@@ -82,13 +84,14 @@
             </div>
         </div>
         
-        <div class="card bg-warning mt-3">
+        <div class="card bg-info mt-3">
             <div class="card-body py-2">
-                <small>
+                <small class="text-white">
                     <i class="fas fa-lightbulb mr-1"></i>
-                    <strong>Tips:</strong> Gunakan HTML untuk formatting. Contoh:<br>
-                    <code>&lt;strong&gt;Teks Tebal&lt;/strong&gt;</code><br>
-                    <code>&lt;br&gt;</code> untuk baris baru
+                    <strong>Tips:</strong><br>
+                    • Gunakan toolbar untuk format teks<br>
+                    • Klik <code class="text-warning">&lt;/&gt;</code> untuk lihat HTML<br>
+                    • Klik placeholder di atas untuk sisipkan
                 </small>
             </div>
         </div>
