@@ -133,7 +133,7 @@ class UserController extends Controller
 
         $oldValues = $user->toArray();
 
-        DB::transaction(function () use ($validated, $user) {
+        DB::transaction(function () use ($validated, $user, $oldValues) {
             $userData = [
                 'name' => $validated['name'],
                 'email' => $validated['email'],

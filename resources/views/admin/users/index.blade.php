@@ -21,12 +21,23 @@
 @stop
 
 @section('content')
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible">
-            <button type="button" class="close" data-dismiss="alert">&times;</button>
-            {{ session('success') }}
+    {{-- Success Modal --}}
+    <div class="modal fade" id="successModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    <h4 class="text-success">Berhasil!</h4>
+                    <p class="mb-0" id="successMessage">{{ session('success') }}</p>
+                </div>
+                <div class="modal-footer justify-content-center border-0 pt-0">
+                    <button type="button" class="btn btn-success px-4" data-dismiss="modal">OK</button>
+                </div>
+            </div>
         </div>
-    @endif
+    </div>
 
     @if(session('error'))
         <div class="alert alert-danger alert-dismissible">
@@ -164,6 +175,11 @@
 <script>
     $(function () {
         $('[data-toggle="tooltip"]').tooltip();
+        
+        // Show success modal if session success exists
+        @if(session('success'))
+            $('#successModal').modal('show');
+        @endif
     });
 </script>
 @stop
