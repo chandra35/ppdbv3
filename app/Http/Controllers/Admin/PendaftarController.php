@@ -763,6 +763,7 @@ class PendaftarController extends Controller
 
         $dokumen = CalonDokumen::findOrFail($id);
         $oldStatus = $dokumen->status_verifikasi;
+        $calonSiswa = $dokumen->calonSiswa;
         
         $dokumen->update([
             'status_verifikasi' => 'revision',
@@ -782,17 +783,44 @@ class PendaftarController extends Controller
         ]);
 
         // Auto-update status pendaftar
-        $dokumen->calonSiswa->autoUpdateStatusVerifikasi();
+        $calonSiswa->autoUpdateStatusVerifikasi();
+
+        // Otomatis batalkan finalisasi agar pendaftar bisa upload ulang
+        $finalisasiDibatalkan = false;
+        if ($calonSiswa->is_finalisasi) {
+            $calonSiswa->update([
+                'is_finalisasi' => false,
+                'tanggal_finalisasi' => null,
+            ]);
+            $finalisasiDibatalkan = true;
+
+            // Log activity pembatalan finalisasi
+            ActivityLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'update',
+                'model_type' => 'App\Models\CalonSiswa',
+                'model_id' => $calonSiswa->id,
+                'description' => "Finalisasi otomatis dibatalkan karena ada permintaan revisi dokumen: {$dokumen->jenis_dokumen}",
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent()
+            ]);
+        }
+
+        $message = 'Permintaan revisi dokumen telah dikirim.';
+        if ($finalisasiDibatalkan) {
+            $message .= ' Finalisasi pendaftar otomatis dibatalkan agar dapat upload ulang.';
+        }
 
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Permintaan revisi dokumen telah dikirim.',
-                'status' => 'revision'
+                'message' => $message,
+                'status' => 'revision',
+                'finalisasi_dibatalkan' => $finalisasiDibatalkan
             ]);
         }
 
-        return redirect()->back()->with('info', 'Permintaan revisi dokumen telah dikirim.');
+        return redirect()->back()->with('info', $message);
     }
 
     public function cancelVerifikasi(Request $request, $id)

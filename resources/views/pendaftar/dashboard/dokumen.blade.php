@@ -514,10 +514,15 @@
         <div class="alert alert-warning" style="border-color: #f59e0b; background-color: #fffbeb;">
             <h5 class="alert-heading">
                 <i class="fas fa-exclamation-triangle"></i>
-                Perhatian!
+                Perhatian - Dokumen Perlu Revisi!
             </h5>
             <p class="mb-2">
                 Ada <strong>{{ $uploadedDocs->where('status_verifikasi', 'revision')->count() }}</strong> dokumen yang perlu diperbaiki.
+            </p>
+            <p class="mb-2 small">
+                <i class="fas fa-info-circle mr-1 text-primary"></i>
+                <strong>Info:</strong> Status finalisasi Anda telah otomatis dibatalkan agar Anda dapat mengupload ulang dokumen yang diminta.
+                Setelah dokumen direvisi, silakan lakukan finalisasi kembali.
             </p>
             <hr style="border-color: #fbbf24;">
             <p class="mb-0 small">
