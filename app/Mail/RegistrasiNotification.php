@@ -47,7 +47,7 @@ class RegistrasiNotification extends Mailable
         $placeholders = [
             '{nama_siswa}' => $this->calonSiswa->nama_lengkap,
             '{nama_sekolah}' => $this->settings->nama_sekolah ?? 'MAN 1 Metro',
-            '{tahun_pelajaran}' => \App\Models\TahunPelajaran::getActive()?->nama ?? date('Y'),
+            '{tahun_pelajaran}' => \App\Models\TahunPelajaran::getAktif()?->nama ?? date('Y'),
             '{nomor_registrasi}' => $this->calonSiswa->nomor_registrasi ?? '-',
             '{username}' => $this->username,
             '{password}' => $this->password,
