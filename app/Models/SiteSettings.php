@@ -32,6 +32,7 @@ class SiteSettings extends Model
         'hero_title',
         'hero_subtitle',
         'hero_image',
+        'enable_slider',
         'about_content',
         'about_image',
         'meta_title',

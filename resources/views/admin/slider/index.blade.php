@@ -18,6 +18,34 @@
 @section('content')
     @include('admin.partials.flash-messages')
 
+    {{-- Global Slider Toggle --}}
+    <div class="card card-outline {{ $siteSettings->enable_slider ? 'card-success' : 'card-warning' }} mb-3">
+        <div class="card-body py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1">
+                        <i class="fas fa-toggle-{{ $siteSettings->enable_slider ? 'on text-success' : 'off text-warning' }} mr-2"></i>
+                        Tampilkan Slider di Landing Page
+                    </h5>
+                    <small class="text-muted">
+                        @if($siteSettings->enable_slider)
+                            Slider aktif akan ditampilkan di halaman depan website PPDB
+                        @else
+                            Slider tidak akan ditampilkan meskipun ada slider aktif
+                        @endif
+                    </small>
+                </div>
+                <form action="{{ route('admin.settings.slider.toggle-global') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="btn btn-{{ $siteSettings->enable_slider ? 'success' : 'warning' }} btn-lg">
+                        <i class="fas fa-{{ $siteSettings->enable_slider ? 'eye' : 'eye-slash' }} mr-1"></i>
+                        {{ $siteSettings->enable_slider ? 'AKTIF' : 'NONAKTIF' }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div class="card card-outline card-primary">
         <div class="card-header py-2">
             <h3 class="card-title"><i class="fas fa-list mr-1"></i> Daftar Slider</h3>

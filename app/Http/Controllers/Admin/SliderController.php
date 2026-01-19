@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Slider;
+use App\Models\SiteSettings;
 use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -13,7 +14,8 @@ class SliderController extends Controller
     public function index()
     {
         $sliders = Slider::orderBy('urutan')->get();
-        return view('admin.slider.index', compact('sliders'));
+        $siteSettings = SiteSettings::instance();
+        return view('admin.slider.index', compact('sliders', 'siteSettings'));
     }
 
     public function create()
@@ -111,5 +113,28 @@ class SliderController extends Controller
         ActivityLog::log('update', "Slider {$slider->judul} {$statusText}", $slider);
 
         return redirect()->back()->with('success', "Slider berhasil {$statusText}");
+    }
+
+    /**
+     * Toggle global slider display
+     */
+    public function toggleGlobal()
+    {
+        $settings = SiteSettings::first();
+        
+        if (!$settings) {
+            $settings = SiteSettings::create(['enable_slider' => true]);
+        }
+        
+        $newValue = !$settings->enable_slider;
+        $settings->update(['enable_slider' => $newValue]);
+        
+        // Clear cache
+        SiteSettings::clearCache();
+        
+        $statusText = $newValue ? 'diaktifkan' : 'dinonaktifkan';
+        ActivityLog::log('update', "Tampilan slider di landing page {$statusText}");
+        
+        return redirect()->back()->with('success', "Tampilan slider berhasil {$statusText}");
     }
 }

@@ -96,6 +96,151 @@
             transform: translateY(-3px);
         }
         
+        /* Hero Slider */
+        .hero-slider {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            overflow: hidden;
+            margin-top: 70px;
+        }
+        
+        .hero-slider .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out;
+        }
+        
+        .hero-slider .slide.active {
+            opacity: 1;
+        }
+        
+        .hero-slider .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .hero-slider .slide-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .hero-slider .slide-content {
+            text-align: center;
+            color: #fff;
+            padding: 20px;
+            max-width: 800px;
+        }
+        
+        .hero-slider .slide-content h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .hero-slider .slide-content p {
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+            opacity: 0.9;
+        }
+        
+        .hero-slider .slide-content .btn {
+            background: var(--primary-color);
+            color: #fff;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            border: none;
+        }
+        
+        .hero-slider .slide-content .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+        
+        .slider-controls {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+        
+        .slider-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.5);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .slider-dot.active {
+            background: #fff;
+            transform: scale(1.2);
+        }
+        
+        .slider-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .slider-btn:hover {
+            background: rgba(255,255,255,0.4);
+        }
+        
+        .slider-btn.prev { left: 20px; }
+        .slider-btn.next { right: 20px; }
+        
+        @media (max-width: 768px) {
+            .hero-slider {
+                height: 400px;
+            }
+            .hero-slider .slide-content h2 {
+                font-size: 1.8rem;
+            }
+            .hero-slider .slide-content p {
+                font-size: 1rem;
+            }
+            .slider-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+        }
+        
         /* Countdown Styles */
         .countdown-wrapper {
             background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
@@ -494,15 +639,77 @@
         </div>
     </nav>
 
-    {{-- Hero Section --}}
-    <section id="beranda" class="hero-section d-flex align-items-center text-white" style="padding-top: 80px;">
-        <div class="container hero-content">
+    {{-- Conditional: Slider atau Hero Section --}}
+    @if($siteSettings->enable_slider && $sliders->count() > 0)
+        {{-- Hero Slider --}}
+        <div class="hero-slider">
+            @foreach($sliders as $index => $slider)
+                <div class="slide {{ $index === 0 ? 'active' : '' }}" data-slide="{{ $index }}">
+                    @if($slider->gambar && file_exists(public_path('storage/' . $slider->gambar)))
+                        <img src="{{ asset('storage/' . $slider->gambar) }}" alt="{{ $slider->judul }}">
+                    @else
+                        <div style="width: 100%; height: 100%; background: linear-gradient(135deg, var(--primary-color), color-mix(in srgb, var(--primary-color) 60%, black));"></div>
+                    @endif
+                    <div class="slide-overlay">
+                        <div class="slide-content">
+                            <h2>{{ $slider->judul ?: $sekolahSettings->nama_sekolah }}</h2>
+                            @if($slider->deskripsi)
+                                <p>{{ $slider->deskripsi }}</p>
+                            @else
+                                <p>Pendaftaran Peserta Didik Baru (PPDB) Online</p>
+                            @endif
+                            @if($slider->link)
+                                <a href="{{ $slider->link }}" class="btn">Selengkapnya</a>
+                            @else
+                                <a href="{{ route('pendaftar.landing') }}" class="btn">Daftar Sekarang</a>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+            
+            @if($sliders->count() > 1)
+                <button class="slider-btn prev" onclick="moveSlide(-1)">‹</button>
+                <button class="slider-btn next" onclick="moveSlide(1)">›</button>
+                
+                <div class="slider-controls">
+                    @foreach($sliders as $index => $slider)
+                        <div class="slider-dot {{ $index === 0 ? 'active' : '' }}" onclick="goToSlide({{ $index }})"></div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    @else
+        {{-- Hero Section (tanpa slider) --}}
+        <section id="beranda" class="hero-section d-flex align-items-center text-white" style="padding-top: 80px;">
+            <div class="container hero-content">
+                <div class="row align-items-center">
+                    <div class="col-lg-10 mx-auto text-center">
+                        {{-- School Name --}}
+                        <h1 class="display-5 fw-bold mb-2">{{ $sekolahSettings->nama_sekolah }}</h1>
+                        <p class="lead mb-4 opacity-90">Pendaftaran Peserta Didik Baru (PPDB) Online</p>
+                        
+                        {{-- CTA Buttons --}}
+                        <div class="d-flex justify-content-center gap-3 flex-wrap">
+                            <a href="{{ route('pendaftar.landing') }}" class="btn btn-light btn-lg px-4">
+                                <i class="fas fa-user-plus me-2"></i> Daftar Sekarang
+                            </a>
+                            <a href="{{ route('login') }}" class="btn btn-outline-light btn-lg px-4">
+                                <i class="fas fa-sign-in-alt me-2"></i> Login
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    @endif
+
+    {{-- Status Pendaftaran Section (ditampilkan saat slider aktif) --}}
+    @if($siteSettings->enable_slider && $sliders->count() > 0)
+    <section class="py-5" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 60%, black) 100%);">
+        <div class="container">
             <div class="row align-items-center">
-                <div class="col-lg-10 mx-auto text-center">
-                    {{-- School Name --}}
-                    <h1 class="display-5 fw-bold mb-2">{{ $sekolahSettings->nama_sekolah }}</h1>
-                    <p class="lead mb-4 opacity-90">Pendaftaran Peserta Didik Baru (PPDB) Online</p>
-                    
+                <div class="col-lg-10 mx-auto text-center text-white">
                     @php
                         $jalurDenganGelombang = $jalurAktif->filter(fn($j) => $j->gelombang->isNotEmpty());
                     @endphp
@@ -510,7 +717,6 @@
                     {{-- Status Pendaftaran dengan Countdown - Hidden saat open --}}
                     @if($gelombangAktif && $statusPendaftaran != 'open')
                     <div class="countdown-wrapper text-white text-center mb-4">
-                        {{-- Status Badge --}}
                         <div class="countdown-status {{ $statusPendaftaran }}">
                             @if($statusPendaftaran == 'upcoming')
                                 <i class="fas fa-hourglass-half"></i>
@@ -521,13 +727,10 @@
                             @endif
                         </div>
                         
-                        {{-- Countdown Title - Hanya tampil saat belum dibuka --}}
                         @if($countdownTarget && $statusPendaftaran == 'upcoming')
                         <p class="mb-3 opacity-90">
                             <i class="fas fa-clock me-1"></i> Pendaftaran akan dibuka dalam:
                         </p>
-                        
-                        {{-- Countdown Timer --}}
                         <div id="countdown" class="countdown-timer" data-target="{{ $countdownTarget->format('Y-m-d H:i:s') }}">
                             <div class="countdown-box">
                                 <div class="countdown-value" id="days">00</div>
@@ -550,38 +753,13 @@
                             </div>
                         </div>
                         @endif
-                        
-                        {{-- Info Pendaftaran - Hanya tampil sesuai pengaturan --}}
-                        @if(($gelombangAktif->jalur && $gelombangAktif->jalur->tampil_di_publik) || $gelombangAktif->tampil_nama_gelombang || $gelombangAktif->tampil_kuota)
-                        <div class="countdown-info">
-                            @if($gelombangAktif->jalur && $gelombangAktif->jalur->tampil_di_publik)
-                            <div class="countdown-info-item">
-                                <i class="fas fa-route"></i>
-                                <small>Jalur: <strong>{{ $gelombangAktif->jalur->nama }}</strong></small>
-                            </div>
-                            @endif
-                            @if($gelombangAktif->tampil_nama_gelombang)
-                            <div class="countdown-info-item">
-                                <i class="fas fa-calendar-alt"></i>
-                                <small>Periode: <strong>{{ $gelombangAktif->tanggal_buka->format('d M') }} - {{ $gelombangAktif->tanggal_tutup->format('d M Y') }}</strong></small>
-                            </div>
-                            @endif
-                            @if($gelombangAktif->tampil_kuota && $gelombangAktif->kuota)
-                            <div class="countdown-info-item">
-                                <i class="fas fa-users"></i>
-                                <small>Kuota: <strong>{{ $gelombangAktif->kuota - $gelombangAktif->kuota_terisi }} tersisa</strong></small>
-                            </div>
-                            @endif
-                        </div>
-                        @endif
                     </div>
                     @endif
                     
-                    {{-- Main CTA Cards - Hanya tampil jika pendaftaran dibuka DAN user belum login --}}
+                    {{-- Main CTA Cards --}}
                     @if($statusPendaftaran == 'open')
                         @auth
-                            {{-- User sudah login - tampilkan tombol ke dashboard --}}
-                            <div class="row justify-content-center g-3 mb-4">
+                            <div class="row justify-content-center g-3">
                                 <div class="col-sm-6 col-md-5 col-lg-4">
                                     <div class="card bg-white text-dark h-100 border-0 shadow">
                                         <div class="card-body p-4 text-center">
@@ -589,7 +767,7 @@
                                                 <i class="fas fa-tachometer-alt fa-2x text-success"></i>
                                             </div>
                                             <h5 class="fw-bold mb-2">Halo, {{ Auth::user()->name }}!</h5>
-                                            <p class="text-muted small mb-3">Anda sudah login. Klik tombol di bawah untuk masuk ke dashboard.</p>
+                                            <p class="text-muted small mb-3">Klik tombol di bawah untuk masuk ke dashboard.</p>
                                             @if(Auth::user()->isAdmin())
                                                 <a href="{{ route('admin.dashboard') }}" class="btn btn-success w-100">
                                                     <i class="fas fa-tachometer-alt me-2"></i> Dashboard Admin
@@ -608,9 +786,7 @@
                                 </div>
                             </div>
                         @else
-                            {{-- User belum login - tampilkan card daftar & login --}}
-                            <div class="row justify-content-center g-3 mb-4">
-                                {{-- Card Daftar Baru --}}
+                            <div class="row justify-content-center g-3">
                                 <div class="col-sm-6 col-md-5 col-lg-4">
                                     <div class="card bg-white text-dark h-100 border-0 shadow">
                                         <div class="card-body p-4 text-center">
@@ -618,15 +794,13 @@
                                                 <i class="fas fa-user-plus fa-2x text-primary"></i>
                                             </div>
                                             <h5 class="fw-bold mb-2">Pendaftaran Baru</h5>
-                                            <p class="text-muted small mb-3">Belum punya akun? Daftar di sini untuk memulai pendaftaran PPDB</p>
+                                            <p class="text-muted small mb-3">Daftar di sini untuk memulai pendaftaran PPDB</p>
                                             <a href="{{ route('pendaftar.landing') }}" class="btn btn-primary w-100">
                                                 <i class="fas fa-arrow-right me-2"></i> Daftar Sekarang
                                             </a>
                                         </div>
                                     </div>
                                 </div>
-                                
-                                {{-- Card Login --}}
                                 <div class="col-sm-6 col-md-5 col-lg-4">
                                     <div class="card bg-white bg-opacity-10 text-white h-100 border border-white border-opacity-25">
                                         <div class="card-body p-4 text-center">
@@ -634,7 +808,7 @@
                                                 <i class="fas fa-sign-in-alt fa-2x"></i>
                                             </div>
                                             <h5 class="fw-bold mb-2">Sudah Terdaftar?</h5>
-                                            <p class="opacity-75 small mb-3">Login untuk melanjutkan pendaftaran atau cek status</p>
+                                            <p class="opacity-75 small mb-3">Login untuk melanjutkan pendaftaran</p>
                                             <a href="{{ route('login') }}" class="btn btn-outline-light w-100">
                                                 <i class="fas fa-sign-in-alt me-2"></i> Login
                                             </a>
@@ -644,26 +818,11 @@
                             </div>
                         @endauth
                     @endif
-                    
-                    {{-- Info Badge --}}
-                    <div class="d-flex flex-wrap justify-content-center gap-2">
-                        <span class="badge bg-white text-dark px-3 py-2">
-                            <i class="fas fa-graduation-cap me-1"></i>
-                            {{ \App\Models\SekolahSettings::JENJANG_LIST[$sekolahSettings->jenjang] ?? $sekolahSettings->jenjang }}
-                        </span>
-                        @if($sekolahSettings->npsn)
-                        <span class="badge bg-white bg-opacity-25 px-3 py-2">NPSN: {{ $sekolahSettings->npsn }}</span>
-                        @endif
-                        @if($sekolahSettings->akreditasi)
-                        <span class="badge bg-warning text-dark px-3 py-2">
-                            <i class="fas fa-award me-1"></i> Akreditasi {{ $sekolahSettings->akreditasi }}
-                        </span>
-                        @endif
-                    </div>
                 </div>
             </div>
         </div>
     </section>
+    @endif
 
     {{-- Jalur Pendaftaran Section --}}
     @if($jalurAktif->count() > 0)
@@ -1115,6 +1274,41 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // ====== SLIDER FUNCTIONS ======
+        @if($siteSettings->enable_slider && $sliders->count() > 1)
+        let currentIndex = 0;
+        const slides = document.querySelectorAll('.hero-slider .slide');
+        const dots = document.querySelectorAll('.slider-dot');
+        const totalSlides = slides.length;
+
+        function showSlide(index) {
+            if (index >= totalSlides) currentIndex = 0;
+            if (index < 0) currentIndex = totalSlides - 1;
+            
+            slides.forEach(slide => slide.classList.remove('active'));
+            dots.forEach(dot => dot.classList.remove('active'));
+            
+            if (slides[currentIndex]) slides[currentIndex].classList.add('active');
+            if (dots[currentIndex]) dots[currentIndex].classList.add('active');
+        }
+
+        function moveSlide(direction) {
+            currentIndex += direction;
+            showSlide(currentIndex);
+        }
+
+        function goToSlide(index) {
+            currentIndex = index;
+            showSlide(currentIndex);
+        }
+
+        // Auto slide every 5 seconds
+        setInterval(() => {
+            currentIndex++;
+            showSlide(currentIndex);
+        }, 5000);
+        @endif
+
         // Smooth scroll
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {

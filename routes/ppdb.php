@@ -428,6 +428,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::middleware('permission:slider.view')->group(function () {
             Route::resource('slider', SliderController::class);
             Route::post('/slider/{slider}/toggle-status', [SliderController::class, 'toggleStatus'])->name('slider.toggle-status');
+            Route::post('/slider/toggle-global', [SliderController::class, 'toggleGlobal'])->name('slider.toggle-global');
         });
     });
     
