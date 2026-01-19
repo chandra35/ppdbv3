@@ -271,7 +271,7 @@
                             <li>Nilai yang diinput adalah <strong>nilai akhir semester</strong> yang tertera pada raport.</li>
                             <li>Rentang nilai: <strong>1 sampai 100</strong> (angka bulat, tanpa desimal/koma).</li>
                             <li>Rata-rata per semester akan <strong>dihitung otomatis</strong> dari 3 mata pelajaran.</li>
-                            <li><strong class="text-primary">Upload file rapor</strong> untuk setiap semester (format: PDF, JPG, PNG, max 5MB).</li>
+                            <li><strong class="text-primary">Upload file rapor</strong> untuk setiap semester (format: PDF, JPG, PNG, max 10MB).</li>
                             <li>Pastikan semua nilai sudah diisi dengan benar sebelum menyimpan.</li>
                             <li><strong>Nilai rapor berkontribusi 30%</strong> terhadap penilaian akhir PPDB.</li>
                         </ul>
@@ -695,7 +695,7 @@
                             <input type="file" class="custom-file-input" id="raporFileInput" accept=".pdf,.jpg,.jpeg,.png">
                             <label class="custom-file-label" for="raporFileInput">Pilih file...</label>
                         </div>
-                        <small class="text-muted">Format: PDF, JPG, JPEG, PNG. Maks: 5MB</small>
+                        <small class="text-muted">Format: PDF, JPG, JPEG, PNG. Maks: 10MB</small>
                     </div>
                     <div id="raporFilePreview" class="text-center" style="display: none;">
                         <img id="raporPreviewImage" src="" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
@@ -850,9 +850,9 @@ function uploadRapor(semester, source = 'desktop') {
         return;
     }
     
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-        toastr.error('Ukuran file maksimal 5MB');
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+        toastr.error('Ukuran file maksimal 10MB');
         fileInput.value = '';
         return;
     }
@@ -1027,8 +1027,8 @@ $('input[name="raporUploadSource"]').on('change', function() {
 $('#raporFileInput').on('change', function() {
     const file = this.files[0];
     if (file) {
-        if (file.size > 5 * 1024 * 1024) {
-            toastr.error('Ukuran file maksimal 5MB');
+        if (file.size > 10 * 1024 * 1024) {
+            toastr.error('Ukuran file maksimal 10MB');
             this.value = '';
             return;
         }

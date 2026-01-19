@@ -17,7 +17,7 @@
         </div>
         
         <div style="background: #f0f4ff; padding: 1rem; border-radius: 4px; margin-bottom: 2rem; border-left: 4px solid #667eea;">
-            <p style="margin: 0; color: #333;">Upload dokumen-dokumen yang diperlukan. Format: PDF, JPG, PNG (max 5MB per file)</p>
+            <p style="margin: 0; color: #333;">Upload dokumen-dokumen yang diperlukan. Format: PDF, JPG, PNG (max 10MB per file)</p>
         </div>
 
         <form method="POST" action="{{ route('ppdb.register.step4.store') }}" enctype="multipart/form-data" id="formStep4">
@@ -46,7 +46,7 @@
                         @if($key === 'foto')
                         JPG/PNG, max 2MB
                         @else
-                        PDF/JPG/PNG, max 5MB
+                        PDF/JPG/PNG, max 10MB
                         @endif
                     </small>
                     @error($key) <small style="color: red;">{{ $message }}</small> @enderror
@@ -86,9 +86,9 @@ document.addEventListener('DOMContentLoaded', function() {
         input.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
-                const maxSize = input.name === 'foto' ? 2 * 1024 * 1024 : 5 * 1024 * 1024;
+                const maxSize = input.name === 'foto' ? 2 * 1024 * 1024 : 10 * 1024 * 1024;
                 if (file.size > maxSize) {
-                    alert(`File ${file.name} terlalu besar. Maksimal ${input.name === 'foto' ? '2MB' : '5MB'}`);
+                    alert(`File ${file.name} terlalu besar. Maksimal ${input.name === 'foto' ? '2MB' : '10MB'}`);
                     input.value = '';
                     return;
                 }

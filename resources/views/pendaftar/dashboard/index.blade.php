@@ -50,6 +50,39 @@
                         </div>
                     @endif
                 @endif
+
+                {{-- Detail Dokumen Bermasalah --}}
+                @if(isset($dokumenBermasalah) && $dokumenBermasalah->count() > 0)
+                    <div class="mt-3 p-3" style="background: rgba(220, 53, 69, 0.3); border: 1px solid rgba(255,255,255,0.4); border-radius: 8px;">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-file-exclamation text-white mr-2" style="font-size: 1.2rem;"></i>
+                            <strong class="text-white">{{ $dokumenBermasalah->count() }} Dokumen Perlu Diperbaiki:</strong>
+                        </div>
+                        @foreach($dokumenBermasalah as $dok)
+                            <div class="mb-2 ml-4 p-2" style="background: rgba(255,255,255,0.1); border-radius: 5px;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-white">
+                                        <i class="fas fa-file mr-1"></i>
+                                        {{ ucwords(str_replace('_', ' ', $dok->jenis_dokumen)) }}
+                                    </span>
+                                    @if($dok->status_verifikasi === 'revision')
+                                        <span class="badge" style="background: #ffc107; color: #000;">Perlu Revisi</span>
+                                    @else
+                                        <span class="badge" style="background: #dc3545; color: #fff;">Tidak Valid</span>
+                                    @endif
+                                </div>
+                                @if($dok->catatan_verifikasi)
+                                    <small class="text-white-50 d-block mt-1">
+                                        <i class="fas fa-comment-alt mr-1"></i>{{ $dok->catatan_verifikasi }}
+                                    </small>
+                                @endif
+                            </div>
+                        @endforeach
+                        <a href="{{ route('pendaftar.dokumen') }}" class="btn btn-light btn-sm mt-2">
+                            <i class="fas fa-upload mr-1"></i> Upload Ulang Dokumen
+                        </a>
+                    </div>
+                @endif
             </div>
         </div>
     </div>

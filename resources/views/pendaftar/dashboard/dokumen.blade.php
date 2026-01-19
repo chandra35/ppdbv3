@@ -220,7 +220,7 @@
                     <strong>Ketentuan Upload:</strong>
                     <ul class="mb-0 mt-2">
                         <li>Format file: PDF, JPG, JPEG, PNG</li>
-                        <li>Ukuran maksimal: 2MB per file</li>
+                        <li>Ukuran maksimal: 10MB per file</li>
                         <li>Pastikan dokumen jelas dan dapat dibaca</li>
                     </ul>
                 </div>
@@ -327,7 +327,7 @@
                 <div class="alert alert-info mb-3" style="font-size: 0.9rem;">
                     <i class="fas fa-info-circle mr-1"></i>
                     Upload dokumen pendukung seperti: Sertifikat Prestasi, KIP/PIP, SKTM, Piagam Penghargaan, dll.
-                    <br><small class="text-muted">Format: PDF, JPG, JPEG, PNG. Maksimal 5MB per file.</small>
+                    <br><small class="text-muted">Format: PDF, JPG, JPEG, PNG. Maksimal 10MB per file.</small>
                 </div>
                 
                 @if($uploadedDokumenTambahan->count() > 0)
@@ -539,7 +539,7 @@
                                    accept=".pdf,.jpg,.jpeg,.png">
                             <label class="custom-file-label" for="file_dokumen_tambahan">Pilih file...</label>
                         </div>
-                        <small class="text-muted">Format: PDF, JPG, JPEG, PNG. Maksimal 5MB</small>
+                        <small class="text-muted">Format: PDF, JPG, JPEG, PNG. Maksimal 10MB</small>
                     </div>
                     
                     {{-- Camera Input --}}
@@ -688,7 +688,7 @@
                                        accept=".pdf,.jpg,.jpeg,.png">
                                 <label class="custom-file-label" for="fileInput">Pilih file...</label>
                             </div>
-                            <small class="text-muted">Format: PDF, JPG, JPEG, PNG. Maks: 2MB</small>
+                            <small class="text-muted">Format: PDF, JPG, JPEG, PNG. Maks: 10MB</small>
                         </div>
                     </div>
                     
@@ -885,8 +885,8 @@ $(document).ready(function() {
         const file = this.files[0];
         if (file) {
             // Validate file size
-            if (file.size > 2 * 1024 * 1024) {
-                toastr.error('Ukuran file maksimal 2MB');
+            if (file.size > 10 * 1024 * 1024) {
+                toastr.error('Ukuran file maksimal 10MB');
                 this.value = '';
                 return;
             }
@@ -1077,9 +1077,9 @@ $(document).ready(function() {
     $('#file_dokumen_tambahan').on('change', function() {
         const file = this.files[0];
         if (file) {
-            // Validate size (5MB max)
-            if (file.size > 5 * 1024 * 1024) {
-                toastr.error('Ukuran file maksimal 5MB');
+            // Validate size (10MB max)
+            if (file.size > 10 * 1024 * 1024) {
+                toastr.error('Ukuran file maksimal 10MB');
                 this.value = '';
                 $(this).next('.custom-file-label').text('Pilih file...');
                 return;

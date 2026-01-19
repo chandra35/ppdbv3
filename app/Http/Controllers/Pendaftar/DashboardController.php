@@ -43,9 +43,14 @@ class DashboardController extends Controller
         
         // Get location setting
         $settings = \App\Models\PpdbSettings::first();
-        $wajibLokasi = $settings?->wajib_lokasi_registrasi ?? false;
+        $wajibLokasi = $settings ? ($settings->wajib_lokasi_registrasi ?? false) : false;
 
-        return view('pendaftar.dashboard.index', compact('calonSiswa', 'progress', 'wajibLokasi'));
+        // Get dokumen yang perlu direvisi atau ditolak
+        $dokumenBermasalah = $calonSiswa->dokumen()
+            ->whereIn('status_verifikasi', ['revision', 'invalid'])
+            ->get();
+
+        return view('pendaftar.dashboard.index', compact('calonSiswa', 'progress', 'wajibLokasi', 'dokumenBermasalah'));
     }
 
     /**
@@ -539,13 +544,13 @@ class DashboardController extends Controller
         $request->validate([
             'jenis_dokumen' => 'required|string|in:' . implode(',', array_keys(CalonDokumen::DOKUMEN_TAMBAHAN)),
             'keterangan' => 'nullable|string|max:255',
-            'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120', // Max 5MB
+            'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240', // Max 10MB
         ], [
             'jenis_dokumen.required' => 'Pilih jenis dokumen',
             'jenis_dokumen.in' => 'Jenis dokumen tidak valid',
             'file.required' => 'File harus diupload',
             'file.mimes' => 'Format file harus PDF, JPG, JPEG, atau PNG',
-            'file.max' => 'Ukuran file maksimal 5MB',
+            'file.max' => 'Ukuran file maksimal 10MB',
         ]);
 
         $file = $request->file('file');
@@ -795,11 +800,11 @@ class DashboardController extends Controller
         } else {
             // Validate file upload
             $request->validate([
-                'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120', // Max 5MB
+                'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240', // Max 10MB
             ], [
                 'file.required' => 'File rapor harus diupload',
                 'file.mimes' => 'Format file harus PDF, JPG, JPEG, atau PNG',
-                'file.max' => 'Ukuran file maksimal 5MB',
+                'file.max' => 'Ukuran file maksimal 10MB',
             ]);
 
             $file = $request->file('file');
