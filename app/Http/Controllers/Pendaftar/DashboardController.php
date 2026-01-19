@@ -419,40 +419,80 @@ class DashboardController extends Controller
 
         $jenisDokumen = $request->jenis_dokumen;
         
-        // Pas foto hanya boleh format gambar (tidak boleh PDF)
-        if ($jenisDokumen === 'foto') {
-            $request->validate([
-                'jenis_dokumen' => 'required|string',
-                'file' => 'required|file|mimes:jpg,jpeg,png|max:2048',
-            ], [
-                'file.mimes' => 'Pas foto harus berupa file gambar (JPG, JPEG, PNG). PDF tidak diperbolehkan untuk pas foto.',
-            ]);
+        // Check if upload from camera/cropped image (base64)
+        if ($request->filled('camera_captured')) {
+            $imageData = $request->input('camera_captured');
+            
+            // Validate base64 image
+            if (!preg_match('/^data:image\/(jpeg|jpg|png);base64,/', $imageData)) {
+                return response()->json(['success' => false, 'message' => 'Format gambar tidak valid'], 400);
+            }
+            
+            // Decode base64 image
+            $imageData = preg_replace('/^data:image\/\w+;base64,/', '', $imageData);
+            $imageData = base64_decode($imageData);
+            
+            if ($imageData === false) {
+                return response()->json(['success' => false, 'message' => 'Gagal memproses gambar'], 400);
+            }
+            
+            // Generate filename
+            $filename = $jenisDokumen . '_' . $calonSiswa->nisn . '_' . time() . '.jpg';
+            $path = 'dokumen/' . $calonSiswa->id . '/' . $filename;
+            
+            // Store file
+            Storage::disk('public')->put($path, $imageData);
+            
+            // Save or update document record
+            CalonDokumen::updateOrCreate(
+                [
+                    'calon_siswa_id' => $calonSiswa->id,
+                    'jenis_dokumen' => $jenisDokumen,
+                ],
+                [
+                    'nama_file' => $jenisDokumen . '_cropped.jpg',
+                    'file_path' => $path,
+                    'mime_type' => 'image/jpeg',
+                    'file_size' => strlen($imageData),
+                    'status_verifikasi' => 'pending',
+                ]
+            );
         } else {
-            $request->validate([
-                'jenis_dokumen' => 'required|string',
-                'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-            ]);
+            // Pas foto hanya boleh format gambar (tidak boleh PDF)
+            if ($jenisDokumen === 'foto') {
+                $request->validate([
+                    'jenis_dokumen' => 'required|string',
+                    'file' => 'required|file|mimes:jpg,jpeg,png|max:2048',
+                ], [
+                    'file.mimes' => 'Pas foto harus berupa file gambar (JPG, JPEG, PNG). PDF tidak diperbolehkan untuk pas foto.',
+                ]);
+            } else {
+                $request->validate([
+                    'jenis_dokumen' => 'required|string',
+                    'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+                ]);
+            }
+
+            $file = $request->file('file');
+
+            // Store file
+            $path = $file->store('dokumen/' . $calonSiswa->id, 'public');
+
+            // Save or update document record
+            CalonDokumen::updateOrCreate(
+                [
+                    'calon_siswa_id' => $calonSiswa->id,
+                    'jenis_dokumen' => $jenisDokumen,
+                ],
+                [
+                    'nama_file' => $file->getClientOriginalName(),
+                    'file_path' => $path,
+                    'mime_type' => $file->getMimeType(),
+                    'file_size' => $file->getSize(),
+                    'status_verifikasi' => 'pending',
+                ]
+            );
         }
-
-        $file = $request->file('file');
-
-        // Store file
-        $path = $file->store('dokumen/' . $calonSiswa->id, 'public');
-
-        // Save or update document record
-        CalonDokumen::updateOrCreate(
-            [
-                'calon_siswa_id' => $calonSiswa->id,
-                'jenis_dokumen' => $jenisDokumen,
-            ],
-            [
-                'nama_file' => $file->getClientOriginalName(),
-                'file_path' => $path,
-                'mime_type' => $file->getMimeType(),
-                'file_size' => $file->getSize(),
-                'status_verifikasi' => 'pending',
-            ]
-        );
 
         // Check if all required documents uploaded - get from settings
         $settings = PpdbSettings::first();
