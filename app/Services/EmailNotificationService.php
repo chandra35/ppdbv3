@@ -24,19 +24,6 @@ class EmailNotificationService
     }
 
     /**
-     * Mask password untuk keamanan di log
-     */
-    protected static function maskPassword(string $password): string
-    {
-        if (strlen($password) <= 4) {
-            return str_repeat('*', strlen($password));
-        }
-        return substr($password, 0, 2) . str_repeat('*', strlen($password) - 4) . substr($password, -2);
-    }
-
-
-
-    /**
      * Kirim email notifikasi registrasi berhasil
      */
     public static function sendRegistrasi(CalonSiswa $calonSiswa, string $username, string $password): bool
@@ -61,9 +48,8 @@ class EmailNotificationService
             // Get subject from mailable
             $subject = $mailable->envelope()->subject;
             
-            // Get rendered body and mask password for security (store HTML for exact preview)
+            // Get rendered body (store HTML for exact preview with real password)
             $renderedBody = $mailable->getRenderedBody();
-            $maskedBody = str_replace($password, self::maskPassword($password), $renderedBody);
 
             EmailLog::logSent(
                 toEmail: $email,
@@ -71,7 +57,7 @@ class EmailNotificationService
                 type: EmailLog::TYPE_REGISTRASI,
                 calonSiswaId: $calonSiswa->id,
                 toName: $calonSiswa->nama_lengkap,
-                messagePreview: $maskedBody
+                messagePreview: $renderedBody
             );
 
             Log::info("Registration email sent to {$email} for calon_siswa {$calonSiswa->id}");
