@@ -488,6 +488,9 @@ dl.row dt {
                         <button type="button" class="btn btn-info btn-sm" onclick="showPassword()">
                             <i class="fas fa-eye"></i> Lihat Password
                         </button>
+                        <button type="button" class="btn btn-secondary btn-sm" data-toggle="modal" data-target="#sendEmailModal">
+                            <i class="fas fa-envelope"></i> Kirim Email
+                        </button>
                         @if($pendaftar->is_finalisasi)
                         <button type="button" class="btn btn-danger btn-sm" onclick="batalFinalisasi()">
                             <i class="fas fa-unlock"></i> Batal Finalisasi
@@ -1844,6 +1847,87 @@ dl.row dt {
     </div>
     @endif
 
+    {{-- Modal Kirim Email --}}
+    <div class="modal fade" id="sendEmailModal" tabindex="-1" role="dialog" aria-labelledby="sendEmailModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-secondary">
+                    <h5 class="modal-title text-white" id="sendEmailModalLabel">
+                        <i class="fas fa-envelope mr-2"></i>Kirim Email Notifikasi
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label><strong>Penerima:</strong></label>
+                        <p class="mb-0">
+                            <i class="fas fa-user mr-1"></i> {{ $pendaftar->nama_lengkap }}<br>
+                            <i class="fas fa-envelope mr-1"></i> 
+                            @php
+                                $emailPendaftar = $pendaftar->user?->email ?? $pendaftar->email ?? null;
+                                $emailValid = $emailPendaftar && !str_contains($emailPendaftar, '@ppdb.temp');
+                            @endphp
+                            @if($emailValid)
+                                <span class="text-success">{{ $emailPendaftar }}</span>
+                            @else
+                                <span class="text-danger">Tidak ada email valid</span>
+                            @endif
+                        </p>
+                    </div>
+                    
+                    @if($emailValid)
+                    <div class="form-group">
+                        <label for="emailType"><strong>Jenis Notifikasi:</strong> <span class="text-danger">*</span></label>
+                        <select class="form-control" id="emailType" name="type" required>
+                            <option value="">-- Pilih Jenis Email --</option>
+                            <option value="registrasi">📧 Notifikasi Registrasi (Kredensial Login)</option>
+                            <option value="revisi">⚠️ Notifikasi Revisi Dokumen</option>
+                            @if($pendaftar->nomor_tes)
+                            <option value="nomor_tes">🎫 Notifikasi Nomor Tes</option>
+                            @endif
+                            <option value="diterima">🎉 Notifikasi Diterima</option>
+                            <option value="ditolak">📋 Notifikasi Ditolak</option>
+                        </select>
+                    </div>
+                    
+                    {{-- Field Dokumen (untuk revisi) --}}
+                    <div class="form-group" id="dokumenField" style="display: none;">
+                        <label for="dokumenSelect"><strong>Pilih Dokumen:</strong> <span class="text-danger">*</span></label>
+                        <select class="form-control" id="dokumenSelect" name="dokumen_id">
+                            <option value="">-- Pilih Dokumen --</option>
+                            @foreach($pendaftar->dokumen as $dok)
+                            <option value="{{ $dok->id }}">{{ ucwords(str_replace('_', ' ', $dok->jenis_dokumen)) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    
+                    {{-- Field Catatan --}}
+                    <div class="form-group" id="catatanField" style="display: none;">
+                        <label for="emailCatatan"><strong>Catatan/Keterangan:</strong></label>
+                        <textarea class="form-control" id="emailCatatan" name="catatan" rows="3" placeholder="Masukkan catatan..."></textarea>
+                    </div>
+                    
+                    <div class="alert alert-info mb-0" id="emailInfo" style="display: none;">
+                        <small id="emailInfoText"></small>
+                    </div>
+                    @endif
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Batal
+                    </button>
+                    @if($emailValid)
+                    <button type="button" class="btn btn-primary" id="btnSendEmail" onclick="sendEmailNotification()">
+                        <i class="fas fa-paper-plane"></i> Kirim Email
+                    </button>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- Modal Upload Dokumen dengan Kamera --}}
     @if(auth()->user()->hasPermission('pendaftar.upload-dokumen'))
     <div class="modal fade" id="uploadDokumenModal" tabindex="-1" role="dialog" aria-labelledby="uploadDokumenModalLabel" aria-hidden="true">
@@ -1982,6 +2066,103 @@ dl.row dt {
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+// Email modal type change handler
+$('#emailType').on('change', function() {
+    var type = $(this).val();
+    var dokumenField = $('#dokumenField');
+    var catatanField = $('#catatanField');
+    var emailInfo = $('#emailInfo');
+    var emailInfoText = $('#emailInfoText');
+    
+    // Reset fields
+    dokumenField.hide();
+    catatanField.hide();
+    emailInfo.hide();
+    
+    switch(type) {
+        case 'registrasi':
+            emailInfo.show();
+            emailInfoText.html('<i class="fas fa-info-circle"></i> Email berisi <strong>username</strong> dan <strong>password</strong> untuk login.');
+            break;
+        case 'revisi':
+            dokumenField.show();
+            catatanField.show();
+            emailInfo.show();
+            emailInfoText.html('<i class="fas fa-info-circle"></i> Email permintaan revisi akan dikirim dengan catatan yang Anda tulis.');
+            break;
+        case 'nomor_tes':
+            emailInfo.show();
+            emailInfoText.html('<i class="fas fa-info-circle"></i> Email berisi <strong>Nomor Tes: {{ $pendaftar->nomor_tes }}</strong>');
+            break;
+        case 'diterima':
+            catatanField.show();
+            emailInfo.show();
+            emailInfoText.html('<i class="fas fa-info-circle"></i> Email pemberitahuan bahwa pendaftar <strong>DITERIMA</strong>.');
+            break;
+        case 'ditolak':
+            catatanField.show();
+            emailInfo.show();
+            emailInfoText.html('<i class="fas fa-info-circle"></i> Email pemberitahuan hasil seleksi (tidak diterima).');
+            break;
+    }
+});
+
+// Send email function
+function sendEmailNotification() {
+    var type = $('#emailType').val();
+    if (!type) {
+        Swal.fire('Peringatan', 'Pilih jenis email terlebih dahulu', 'warning');
+        return;
+    }
+    
+    if (type === 'revisi' && !$('#dokumenSelect').val()) {
+        Swal.fire('Peringatan', 'Pilih dokumen untuk revisi', 'warning');
+        return;
+    }
+    
+    var btn = $('#btnSendEmail');
+    btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Mengirim...');
+    
+    $.ajax({
+        url: '{{ route("admin.pendaftar.send-email", $pendaftar->id) }}',
+        method: 'POST',
+        data: {
+            _token: '{{ csrf_token() }}',
+            type: type,
+            dokumen_id: $('#dokumenSelect').val(),
+            catatan: $('#emailCatatan').val()
+        },
+        success: function(response) {
+            $('#sendEmailModal').modal('hide');
+            if (response.success) {
+                Swal.fire({
+                    title: 'Berhasil!',
+                    text: response.message,
+                    icon: 'success',
+                    confirmButtonColor: '#28a745'
+                });
+            } else {
+                Swal.fire('Gagal!', response.message, 'error');
+            }
+        },
+        error: function(xhr) {
+            var message = 'Terjadi kesalahan saat mengirim email.';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                message = xhr.responseJSON.message;
+            }
+            Swal.fire('Error!', message, 'error');
+        },
+        complete: function() {
+            btn.prop('disabled', false).html('<i class="fas fa-paper-plane"></i> Kirim Email');
+            // Reset form
+            $('#emailType').val('');
+            $('#dokumenSelect').val('');
+            $('#emailCatatan').val('');
+            $('#dokumenField, #catatanField, #emailInfo').hide();
+        }
+    });
+}
+
 // Global functions for onclick handlers
 function resetPassword() {
     Swal.fire({

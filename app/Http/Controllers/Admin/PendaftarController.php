@@ -1872,4 +1872,95 @@ class PendaftarController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Kirim email notifikasi manual ke pendaftar
+     */
+    public function sendEmail(Request $request, $id)
+    {
+        $request->validate([
+            'type' => 'required|in:registrasi,revisi,nomor_tes,diterima,ditolak',
+            'dokumen_id' => 'required_if:type,revisi|nullable|exists:calon_dokumens,id',
+            'catatan' => 'nullable|string|max:500',
+        ]);
+
+        $pendaftar = CalonSiswa::with(['user', 'jalurPendaftaran', 'dokumen'])->findOrFail($id);
+        
+        $email = $pendaftar->user?->email ?? $pendaftar->email ?? null;
+        if (!$email || str_contains($email, '@ppdb.temp')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pendaftar tidak memiliki alamat email yang valid'
+            ], 400);
+        }
+
+        $type = $request->type;
+        $result = false;
+
+        try {
+            switch ($type) {
+                case 'registrasi':
+                    $username = $pendaftar->nisn;
+                    $password = $pendaftar->user->readable_password ?? null;
+                    
+                    if (!$password) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Password tidak tersedia. Silakan reset password terlebih dahulu.'
+                        ], 400);
+                    }
+                    
+                    $result = \App\Services\EmailNotificationService::sendRegistrasi($pendaftar, $username, $password);
+                    break;
+
+                case 'revisi':
+                    $dokumen = CalonDokumen::findOrFail($request->dokumen_id);
+                    $catatan = $request->catatan ?? 'Silakan perbaiki dokumen yang diminta.';
+                    $result = \App\Services\EmailNotificationService::sendRevisiDokumen($pendaftar, $dokumen, $catatan);
+                    break;
+
+                case 'nomor_tes':
+                    $nomorTes = $pendaftar->nomor_tes;
+                    if (!$nomorTes) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Pendaftar belum memiliki nomor tes'
+                        ], 400);
+                    }
+                    $result = \App\Services\EmailNotificationService::sendNomorTes($pendaftar, $nomorTes);
+                    break;
+
+                case 'diterima':
+                    $catatan = $request->catatan ?? 'Selamat! Anda diterima.';
+                    $result = \App\Services\EmailNotificationService::sendHasilSeleksi($pendaftar, 'diterima', $catatan);
+                    break;
+
+                case 'ditolak':
+                    $catatan = $request->catatan ?? '';
+                    $result = \App\Services\EmailNotificationService::sendHasilSeleksi($pendaftar, 'ditolak', $catatan);
+                    break;
+            }
+
+            if ($result) {
+                ActivityLog::log('email', "Mengirim email {$type} ke pendaftar: {$pendaftar->nama_lengkap}", $pendaftar);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Email berhasil dikirim ke ' . $email
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Email gagal dikirim. Periksa log email untuk detail.'
+                ], 500);
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('sendEmail error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

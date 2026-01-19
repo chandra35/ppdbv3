@@ -215,6 +215,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::put('/pendaftar/{id}', [PendaftarController::class, 'update'])->name('pendaftar.update');
         Route::post('/pendaftar/{id}/reset-password', [PendaftarController::class, 'resetPassword'])->name('pendaftar.reset-password');
         Route::post('/pendaftar/{id}/upload-dokumen', [PendaftarController::class, 'uploadDokumen'])->name('pendaftar.upload-dokumen');
+        Route::post('/pendaftar/{id}/send-email', [PendaftarController::class, 'sendEmail'])->name('pendaftar.send-email');
     });
     
     // ---- PENDAFTAR (Delete) ----
