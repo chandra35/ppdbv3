@@ -34,17 +34,7 @@ class EmailNotificationService
         return substr($password, 0, 2) . str_repeat('*', strlen($password) - 4) . substr($password, -2);
     }
 
-    /**
-     * Convert HTML ke plain text untuk preview
-     */
-    protected static function htmlToPlainText(string $html): string
-    {
-        // Remove tags but keep content
-        $text = strip_tags(str_replace(['<br>', '<br/>', '<br />', '</p>', '</li>'], "\n", $html));
-        // Clean up whitespace
-        $text = preg_replace('/\n\s*\n/', "\n\n", $text);
-        return trim($text);
-    }
+
 
     /**
      * Kirim email notifikasi registrasi berhasil
@@ -71,10 +61,9 @@ class EmailNotificationService
             // Get subject from mailable
             $subject = $mailable->envelope()->subject;
             
-            // Get rendered body and mask password for security
+            // Get rendered body and mask password for security (store HTML for exact preview)
             $renderedBody = $mailable->getRenderedBody();
             $maskedBody = str_replace($password, self::maskPassword($password), $renderedBody);
-            $messagePreview = self::htmlToPlainText($maskedBody);
 
             EmailLog::logSent(
                 toEmail: $email,
@@ -82,7 +71,7 @@ class EmailNotificationService
                 type: EmailLog::TYPE_REGISTRASI,
                 calonSiswaId: $calonSiswa->id,
                 toName: $calonSiswa->nama_lengkap,
-                messagePreview: $messagePreview
+                messagePreview: $maskedBody
             );
 
             Log::info("Registration email sent to {$email} for calon_siswa {$calonSiswa->id}");
@@ -133,9 +122,6 @@ class EmailNotificationService
 
             // Get subject from mailable
             $subject = $mailable->envelope()->subject;
-            
-            // Get rendered body for log
-            $messagePreview = self::htmlToPlainText($mailable->getRenderedBody());
 
             EmailLog::logSent(
                 toEmail: $email,
@@ -143,7 +129,7 @@ class EmailNotificationService
                 type: EmailLog::TYPE_REVISI,
                 calonSiswaId: $calonSiswa->id,
                 toName: $calonSiswa->nama_lengkap,
-                messagePreview: $messagePreview
+                messagePreview: $mailable->getRenderedBody()
             );
 
             Log::info("Revision email sent to {$email} for dokumen {$dokumen->id}");
@@ -197,9 +183,6 @@ class EmailNotificationService
 
             // Get subject from mailable
             $subject = $mailable->envelope()->subject;
-            
-            // Get rendered body for log
-            $messagePreview = self::htmlToPlainText($mailable->getRenderedBody());
 
             EmailLog::logSent(
                 toEmail: $email,
@@ -207,7 +190,7 @@ class EmailNotificationService
                 type: $logType,
                 calonSiswaId: $calonSiswa->id,
                 toName: $calonSiswa->nama_lengkap,
-                messagePreview: $messagePreview
+                messagePreview: $mailable->getRenderedBody()
             );
 
             Log::info("Result email ({$hasil}) sent to {$email} for calon_siswa {$calonSiswa->id}");
@@ -259,9 +242,6 @@ class EmailNotificationService
 
             // Get subject from mailable
             $subject = $mailable->envelope()->subject;
-            
-            // Get rendered body for log
-            $messagePreview = self::htmlToPlainText($mailable->getRenderedBody());
 
             EmailLog::logSent(
                 toEmail: $email,
@@ -269,7 +249,7 @@ class EmailNotificationService
                 type: EmailLog::TYPE_NOMOR_TES,
                 calonSiswaId: $calonSiswa->id,
                 toName: $calonSiswa->nama_lengkap,
-                messagePreview: $messagePreview
+                messagePreview: $mailable->getRenderedBody()
             );
 
             Log::info("Nomor tes email sent to {$email} for calon_siswa {$calonSiswa->id}");

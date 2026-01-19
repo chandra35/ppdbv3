@@ -338,8 +338,8 @@
                     
                     {{-- Message Preview --}}
                     <div class="form-group" id="detail-preview-group">
-                        <label><strong><i class="fas fa-file-alt mr-1"></i> Preview Pesan</strong></label>
-                        <div class="bg-light p-3 rounded" id="detail-preview" style="white-space: pre-wrap;"></div>
+                        <label><strong><i class="fas fa-file-alt mr-1"></i> Preview Pesan (sama dengan yang dikirim)</strong></label>
+                        <div class="border rounded p-3 bg-white" id="detail-preview" style="max-height: 300px; overflow-y: auto;"></div>
                     </div>
                     
                     {{-- Error Message (if failed) --}}
@@ -364,10 +364,14 @@
         font-size: 50px;
     }
     #detail-preview {
-        max-height: 200px;
+        max-height: 300px;
         overflow-y: auto;
-        font-family: 'Courier New', monospace;
-        font-size: 13px;
+    }
+    #detail-preview p {
+        margin-bottom: 10px;
+    }
+    #detail-preview ul, #detail-preview ol {
+        padding-left: 20px;
     }
 </style>
 @stop
@@ -393,9 +397,9 @@ function showDetail(logId) {
     $('#detail-to-email').text(log.to_email);
     $('#detail-subject').text(log.subject);
     
-    // Message preview
+    // Message preview - render as HTML
     if (log.message_preview) {
-        $('#detail-preview').text(log.message_preview);
+        $('#detail-preview').html(log.message_preview);
         $('#detail-preview-group').show();
     } else {
         $('#detail-preview-group').hide();
