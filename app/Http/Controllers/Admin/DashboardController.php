@@ -27,12 +27,12 @@ class DashboardController extends Controller
             'pendaftar_baru' => CalonSiswa::where('status_verifikasi', 'pending')->count(),
             'pendaftar_baru_reguler' => CalonSiswa::where('status_verifikasi', 'pending')->where(function($q) { $q->where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program'); })->count(),
             'pendaftar_baru_asrama' => CalonSiswa::where('status_verifikasi', 'pending')->where('pilihan_program', 'Asrama')->count(),
-            'terverifikasi' => CalonSiswa::where('status_verifikasi', 'verified')->count(),
-            'terverifikasi_reguler' => CalonSiswa::where('status_verifikasi', 'verified')->where(function($q) { $q->where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program'); })->count(),
-            'terverifikasi_asrama' => CalonSiswa::where('status_verifikasi', 'verified')->where('pilihan_program', 'Asrama')->count(),
-            'finalisasi' => CalonSiswa::whereNotNull('nomor_tes')->count(),
-            'finalisasi_reguler' => CalonSiswa::whereNotNull('nomor_tes')->where(function($q) { $q->where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program'); })->count(),
-            'finalisasi_asrama' => CalonSiswa::whereNotNull('nomor_tes')->where('pilihan_program', 'Asrama')->count(),
+            'terverifikasi' => CalonSiswa::whereNotNull('nomor_tes')->count(),
+            'terverifikasi_reguler' => CalonSiswa::whereNotNull('nomor_tes')->where(function($q) { $q->where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program'); })->count(),
+            'terverifikasi_asrama' => CalonSiswa::whereNotNull('nomor_tes')->where('pilihan_program', 'Asrama')->count(),
+            'finalisasi' => CalonSiswa::where('is_finalisasi', true)->count(),
+            'finalisasi_reguler' => CalonSiswa::where('is_finalisasi', true)->where(function($q) { $q->where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program'); })->count(),
+            'finalisasi_asrama' => CalonSiswa::where('is_finalisasi', true)->where('pilihan_program', 'Asrama')->count(),
         ];
 
         // Admin-only statistics
@@ -87,12 +87,12 @@ class DashboardController extends Controller
             'pendaftar_baru' => CalonSiswa::where('status_verifikasi', 'pending')->count(),
             'pendaftar_baru_reguler' => CalonSiswa::where('status_verifikasi', 'pending')->where(function($q) { $q->where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program'); })->count(),
             'pendaftar_baru_asrama' => CalonSiswa::where('status_verifikasi', 'pending')->where('pilihan_program', 'Asrama')->count(),
-            'terverifikasi' => CalonSiswa::where('status_verifikasi', 'verified')->count(),
-            'terverifikasi_reguler' => CalonSiswa::where('status_verifikasi', 'verified')->where(function($q) { $q->where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program'); })->count(),
-            'terverifikasi_asrama' => CalonSiswa::where('status_verifikasi', 'verified')->where('pilihan_program', 'Asrama')->count(),
-            'finalisasi' => CalonSiswa::whereNotNull('nomor_tes')->count(),
-            'finalisasi_reguler' => CalonSiswa::whereNotNull('nomor_tes')->where(function($q) { $q->where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program'); })->count(),
-            'finalisasi_asrama' => CalonSiswa::whereNotNull('nomor_tes')->where('pilihan_program', 'Asrama')->count(),
+            'terverifikasi' => CalonSiswa::whereNotNull('nomor_tes')->count(),
+            'terverifikasi_reguler' => CalonSiswa::whereNotNull('nomor_tes')->where(function($q) { $q->where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program'); })->count(),
+            'terverifikasi_asrama' => CalonSiswa::whereNotNull('nomor_tes')->where('pilihan_program', 'Asrama')->count(),
+            'finalisasi' => CalonSiswa::where('is_finalisasi', true)->count(),
+            'finalisasi_reguler' => CalonSiswa::where('is_finalisasi', true)->where(function($q) { $q->where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program'); })->count(),
+            'finalisasi_asrama' => CalonSiswa::where('is_finalisasi', true)->where('pilihan_program', 'Asrama')->count(),
         ];
 
         if ($isAdmin) {
