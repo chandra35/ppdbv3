@@ -220,7 +220,22 @@
                         @endif
                     </td>
                     <td class="text-center">
-                        <span class="badge badge-info">{{ $item->dokumen->count() }} dokumen</span>
+                        @php
+                            $dokumenData = $item->dokumen->map(function($d) {
+                                return [
+                                    'jenis' => $d->jenis_dokumen,
+                                    'keterangan' => $d->keterangan,
+                                    'file' => $d->file_path ? Storage::url($d->file_path) : null,
+                                    'status' => $d->status
+                                ];
+                            });
+                        @endphp
+                        <a href="javascript:void(0)" class="badge badge-info btn-show-dokumen" 
+                           data-id="{{ $item->id }}"
+                           data-nama="{{ $item->nama_lengkap }}"
+                           data-dokumen="{{ $dokumenData->toJson() }}">
+                            <i class="fas fa-folder-open mr-1"></i>{{ $item->dokumen->count() }} dokumen
+                        </a>
                     </td>
                     <td class="text-center">
                         <a href="{{ route('admin.pendaftar.show', $item->id) }}" class="btn btn-xs btn-info">
@@ -239,6 +254,69 @@
     @endif
 </div>
 @endif
+
+{{-- Modal Detail Dokumen --}}
+<div class="modal fade" id="modalDokumen" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-folder-open mr-2"></i>Dokumen Prestasi: <span id="modalNamaPendaftar"></span>
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                {{-- Document Viewer --}}
+                <div id="dokumenViewer">
+                    <div class="text-center mb-3">
+                        <span class="badge badge-primary" id="dokumenCounter">1 / 1</span>
+                    </div>
+                    
+                    {{-- Preview Area --}}
+                    <div class="card mb-3">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span id="dokumenJenis" class="font-weight-bold"></span>
+                            <span id="dokumenStatus"></span>
+                        </div>
+                        <div class="card-body text-center" id="dokumenPreview" style="min-height: 300px; background: #f8f9fa;">
+                            {{-- Preview image/pdf here --}}
+                        </div>
+                        <div class="card-footer">
+                            <strong>Keterangan:</strong>
+                            <p id="dokumenKeterangan" class="mb-0 text-muted">-</p>
+                        </div>
+                    </div>
+                </div>
+                
+                {{-- Empty State --}}
+                <div id="dokumenEmpty" class="text-center text-muted py-5" style="display: none;">
+                    <i class="fas fa-folder-open fa-3x mb-3"></i>
+                    <p>Tidak ada dokumen prestasi</p>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <div>
+                    <button type="button" class="btn btn-outline-primary" id="btnPrevDok" onclick="navigateDokumen(-1)">
+                        <i class="fas fa-chevron-left"></i> Sebelumnya
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="btnNextDok" onclick="navigateDokumen(1)">
+                        Selanjutnya <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                <div>
+                    <a href="#" id="btnOpenFile" target="_blank" class="btn btn-primary">
+                        <i class="fas fa-external-link-alt"></i> Buka File
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @stop
 
 @section('js')
@@ -248,8 +326,7 @@
     var labels = byJenisDokumen.map(d => d.label);
     var data = byJenisDokumen.map(d => d.total);
     var colors = ['#ffc107', '#17a2b8', '#28a745', '#dc3545', '#007bff'];
-    var data = [
-        dokumenStats.sertifikat_prestasi,
+    
     // Pie Chart
     new Chart(document.getElementById('dokumenPieChart'), {
         type: 'doughnut',
@@ -287,6 +364,102 @@
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: { y: { beginAtZero: true } }
+        }
+    });
+    
+    // Dokumen viewer dalam modal
+    var currentDokumen = [];
+    var currentDokIndex = 0;
+    
+    var jenisLabels = {
+        'sertifikat_prestasi': 'Sertifikat Prestasi',
+        'piagam_penghargaan': 'Piagam Penghargaan',
+        'sertifikat_tahfidz': 'Sertifikat Tahfidz',
+        'sertifikat_olimpiade': 'Sertifikat Olimpiade',
+        'sertifikat_lainnya': 'Sertifikat Lainnya'
+    };
+    
+    var statusBadge = {
+        'pending': '<span class="badge badge-warning">Pending</span>',
+        'verified': '<span class="badge badge-success">Verified</span>',
+        'rejected': '<span class="badge badge-danger">Ditolak</span>',
+        'revision': '<span class="badge badge-info">Revisi</span>'
+    };
+    
+    function showDokumen(index) {
+        if (!currentDokumen || currentDokumen.length === 0) {
+            $('#dokumenViewer').hide();
+            $('#dokumenEmpty').show();
+            $('#btnPrevDok, #btnNextDok, #btnOpenFile').hide();
+            return;
+        }
+        
+        $('#dokumenViewer').show();
+        $('#dokumenEmpty').hide();
+        
+        if (index < 0) index = 0;
+        if (index >= currentDokumen.length) index = currentDokumen.length - 1;
+        currentDokIndex = index;
+        
+        var dok = currentDokumen[index];
+        var jenisLabel = jenisLabels[dok.jenis] || dok.jenis;
+        var status = statusBadge[dok.status] || '<span class="badge badge-secondary">' + (dok.status || '-') + '</span>';
+        
+        // Update counter
+        $('#dokumenCounter').text((index + 1) + ' / ' + currentDokumen.length);
+        
+        // Update info
+        $('#dokumenJenis').html('<i class="fas fa-file-alt mr-2"></i>' + jenisLabel);
+        $('#dokumenStatus').html(status);
+        $('#dokumenKeterangan').text(dok.keterangan || '-');
+        
+        // Preview area
+        var preview = $('#dokumenPreview');
+        preview.empty();
+        
+        if (dok.file) {
+            var ext = dok.file.split('.').pop().toLowerCase();
+            if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+                preview.html('<img src="' + dok.file + '" class="img-fluid" style="max-height: 400px; cursor: pointer;" onclick="window.open(\'' + dok.file + '\', \'_blank\')">');
+            } else if (ext === 'pdf') {
+                preview.html('<embed src="' + dok.file + '" type="application/pdf" width="100%" height="400px">');
+            } else {
+                preview.html('<div class="py-5"><i class="fas fa-file fa-3x text-muted mb-3"></i><p>File: ' + dok.file.split('/').pop() + '</p></div>');
+            }
+            $('#btnOpenFile').attr('href', dok.file).show();
+        } else {
+            preview.html('<div class="py-5 text-muted"><i class="fas fa-image fa-3x mb-3"></i><p>Tidak ada file</p></div>');
+            $('#btnOpenFile').hide();
+        }
+        
+        // Update navigation buttons
+        $('#btnPrevDok').prop('disabled', index <= 0).toggle(currentDokumen.length > 1);
+        $('#btnNextDok').prop('disabled', index >= currentDokumen.length - 1).toggle(currentDokumen.length > 1);
+    }
+    
+    function navigateDokumen(direction) {
+        showDokumen(currentDokIndex + direction);
+    }
+    
+    // Modal Show Dokumen - klik dari tabel
+    $(document).on('click', '.btn-show-dokumen', function() {
+        var nama = $(this).data('nama');
+        currentDokumen = $(this).data('dokumen') || [];
+        currentDokIndex = 0;
+        
+        $('#modalNamaPendaftar').text(nama);
+        showDokumen(0);
+        $('#modalDokumen').modal('show');
+    });
+    
+    // Keyboard navigation
+    $(document).on('keydown', function(e) {
+        if ($('#modalDokumen').hasClass('show')) {
+            if (e.key === 'ArrowLeft') {
+                navigateDokumen(-1);
+            } else if (e.key === 'ArrowRight') {
+                navigateDokumen(1);
+            }
         }
     });
 </script>
