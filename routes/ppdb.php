@@ -192,6 +192,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.updatePassword');
     
     // ---- PENDAFTAR (View) ----
+    // ---- PENDAFTAR (Export) - harus sebelum route {id} ----
+    Route::get('/pendaftar/export', [PendaftarController::class, 'export'])->middleware('permission:pendaftar.export')->name('pendaftar.export');
+    
     Route::middleware(['permission:pendaftar.view'])->group(function () {
         Route::get('/pendaftar', [PendaftarController::class, 'index'])->name('pendaftar.index');
         Route::get('/pendaftar/map', [PendaftarController::class, 'map'])->name('pendaftar.map');
@@ -199,9 +202,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/pendaftar/{id}/dokumen-list', [PendaftarController::class, 'getDokumenList'])->name('pendaftar.dokumen-list');
         Route::get('/pendaftar/{id}/show-password', [PendaftarController::class, 'showPassword'])->name('pendaftar.show-password');
     });
-    
-    // ---- PENDAFTAR (Export) ----
-    Route::get('/pendaftar/export', [PendaftarController::class, 'export'])->middleware('permission:pendaftar.export')->name('pendaftar.export');
     
     // ---- PENDAFTAR (Create) ----
     Route::middleware(['permission:pendaftar.create'])->group(function () {
