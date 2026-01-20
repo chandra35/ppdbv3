@@ -452,7 +452,7 @@
         // ========================================
         // AUTO-REFRESH STATS
         // ========================================
-        const REFRESH_INTERVAL = 10000; // 10 seconds
+        const REFRESH_INTERVAL = 5000; // 5 seconds
         let statsChart = myChart; // Reference to the chart
         
         function formatNumber(num) {
