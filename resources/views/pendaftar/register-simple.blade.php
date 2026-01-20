@@ -407,23 +407,24 @@
                         @error('nomor_hp')
                             <span class="invalid-feedback">{{ $message }}</span>
                         @enderror
-                        <small class="form-text">
-                            <i class="fas fa-info-circle"></i> Username dan password akan dikirim ke nomor WhatsApp ini
-                        </small>
                     </div>
 
-                    <!-- Email (opsional) -->
+                    <!-- Email (wajib) -->
                     <div class="form-group">
-                        <label class="form-label">Email (Opsional)</label>
+                        <label class="form-label">Email <span class="required">*</span></label>
                         <input type="email" 
                                class="form-control @error('email') is-invalid @enderror" 
                                id="email" 
                                name="email" 
                                value="{{ old('email') }}" 
-                               placeholder="email@example.com">
+                               placeholder="email@example.com"
+                               required>
                         @error('email')
                             <span class="invalid-feedback">{{ $message }}</span>
                         @enderror
+                        <small class="form-text text-danger">
+                            <i class="fas fa-exclamation-triangle"></i> Pastikan email aktif. Kredensial login akan dikirim ke WhatsApp dan Email ini.
+                        </small>
                     </div>
 
                     <!-- Info Box -->
@@ -431,7 +432,7 @@
                         <h5><i class="fas fa-info-circle"></i> Informasi</h5>
                         <ul>
                             <li>Akun akan dibuat otomatis dengan username: <strong>NISN Anda</strong></li>
-                            <li>Password akan digenerate otomatis dan dikirim via WhatsApp</li>
+                            <li>Password akan digenerate otomatis dan dikirim via <strong>WhatsApp & Email</strong></li>
                             <li>Anda dapat mengubah password setelah login</li>
                             <li>Setelah daftar, Anda akan langsung masuk ke dashboard untuk melengkapi data</li>
                         </ul>

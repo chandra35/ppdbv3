@@ -328,20 +328,29 @@
                     @endif
                 </div>
 
-                <!-- WhatsApp Status -->
+                <!-- WhatsApp & Email Status -->
                 @if($waSent)
                     <div class="alert alert-success">
-                        <h5><i class="fas fa-check-circle"></i> WhatsApp Terkirim</h5>
-                        <p class="mb-0">
-                            Kredensial login Anda telah dikirim ke nomor WhatsApp yang Anda daftarkan. 
-                            Silakan cek pesan WhatsApp Anda.
-                        </p>
+                        <h5><i class="fas fa-check-circle"></i> Notifikasi Terkirim</h5>
+                        <p class="mb-2">Kredensial login Anda telah dikirim ke:</p>
+                        <ul class="mb-0">
+                            <li><strong>WhatsApp:</strong> {{ $credentials['nomor_hp'] ?? '-' }}</li>
+                            @if(!empty($credentials['email']) && !str_contains($credentials['email'], '@ppdb.temp'))
+                            <li><strong>Email:</strong> {{ $credentials['email'] }}</li>
+                            @endif
+                        </ul>
+                        <p class="mb-0 mt-2"><small>Silakan cek WhatsApp dan inbox email Anda (termasuk folder spam).</small></p>
                     </div>
                 @else
                     <div class="alert alert-warning">
                         <h5><i class="fas fa-exclamation-triangle"></i> WhatsApp Tidak Terkirim</h5>
+                        <p class="mb-2">
+                            Kredensial login tidak dapat dikirim via WhatsApp.
+                            @if(!empty($credentials['email']) && !str_contains($credentials['email'], '@ppdb.temp'))
+                                <br>Namun, kredensial telah dikirim ke email: <strong>{{ $credentials['email'] }}</strong>
+                            @endif
+                        </p>
                         <p class="mb-0">
-                            Kredensial login tidak dapat dikirim via WhatsApp. 
                             <strong>Harap catat kredensial di atas dengan baik!</strong><br>
                             <small>Anda dapat screenshot halaman ini atau tulis di tempat yang aman.</small>
                         </p>

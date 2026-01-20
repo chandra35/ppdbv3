@@ -905,15 +905,15 @@
                         <label class="form-label">Nomor WhatsApp <span style="color: #e53e3e;">*</span></label>
                         <input type="text" id="reg_nomor_hp" name="nomor_hp" class="form-control" 
                                placeholder="Contoh: 081234567890" required>
-                        <small style="color: #666; display: block; margin-top: 0.5rem;">
-                            <i class="fas fa-info-circle"></i> Username dan password akan dikirim ke nomor WhatsApp ini
-                        </small>
                     </div>
 
-                    <!-- Email (opsional) -->
+                    <!-- Email (wajib) -->
                     <div class="form-group">
-                        <label class="form-label">Email (Opsional)</label>
-                        <input type="email" id="reg_email" name="email" class="form-control" placeholder="email@example.com">
+                        <label class="form-label">Email <span style="color: #e53e3e;">*</span></label>
+                        <input type="email" id="reg_email" name="email" class="form-control" placeholder="email@example.com" required>
+                        <small style="color: #e53e3e; display: block; margin-top: 0.5rem;">
+                            <i class="fas fa-exclamation-triangle"></i> Pastikan email aktif. Kredensial login akan dikirim ke WhatsApp dan Email ini.
+                        </small>
                     </div>
 
                     <!-- Info Box -->
@@ -921,7 +921,7 @@
                         <p><strong><i class="fas fa-info-circle"></i> Informasi:</strong></p>
                         <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem; font-size: 0.875rem;">
                             <li>Akun akan dibuat otomatis dengan username: <strong>NISN Anda</strong></li>
-                            <li>Password akan digenerate otomatis dan dikirim via WhatsApp</li>
+                            <li>Password akan digenerate otomatis dan dikirim via <strong>WhatsApp & Email</strong></li>
                             <li>Anda dapat mengubah password setelah login</li>
                             <li>Setelah daftar, Anda akan langsung masuk ke dashboard</li>
                         </ul>

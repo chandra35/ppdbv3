@@ -361,11 +361,13 @@ class AuthController extends Controller
             'nisn' => 'required|string|size:10|unique:calon_siswas,nisn',
             'nama_lengkap' => 'required|string|max:100',
             'nomor_hp' => 'required|string|min:10|max:15',
-            'email' => 'nullable|email|unique:users,email|unique:calon_siswas,email',
+            'email' => 'required|email|unique:users,email|unique:calon_siswas,email',
             'emis_data' => 'required|json',
             'encrypted_token' => 'required',
         ], [
             'nisn.unique' => 'NISN sudah terdaftar',
+            'email.required' => 'Email wajib diisi',
+            'email.email' => 'Format email tidak valid',
             'email.unique' => 'Email sudah digunakan',
             'nomor_hp.required' => 'Nomor WhatsApp wajib diisi',
         ]);
