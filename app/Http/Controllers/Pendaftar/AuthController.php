@@ -557,6 +557,9 @@ class AuthController extends Controller
 
             // Auto login user
             Auth::login($user);
+            
+            // Set session flag untuk menampilkan modal informasi
+            session(['show_info_modal' => true]);
 
             Log::info('New registration', [
                 'nisn' => $request->nisn,
@@ -664,6 +667,9 @@ class AuthController extends Controller
         }
 
         Auth::login($user, $request->has('remember'));
+        
+        // Set session flag untuk menampilkan modal informasi
+        session(['show_info_modal' => true]);
 
         return redirect()->intended(route('pendaftar.dashboard'));
     }
@@ -677,7 +683,7 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('pendaftar.landing');
+        return redirect()->route('ppdb.landing');
     }
 
     /**

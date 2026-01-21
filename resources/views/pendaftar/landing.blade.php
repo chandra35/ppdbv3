@@ -647,7 +647,7 @@
                     </a>
                 @endif
             @else
-                <a href="{{ route('pendaftar.login') }}" class="nav-link btn-outline">
+                <a href="{{ route('login') }}" class="nav-link btn-outline">
                     <i class="fas fa-sign-in-alt"></i> Login
                 </a>
             @endauth
@@ -792,7 +792,7 @@
                     <p style="text-align: center; color: #666; margin-bottom: 1rem;">
                         Sudah punya akun?
                     </p>
-                    <a href="{{ route('pendaftar.login') }}" class="btn btn-outline-primary btn-block">
+                    <a href="{{ route('login') }}" class="btn btn-outline-primary btn-block">
                         <i class="fas fa-sign-in-alt"></i> Login
                     </a>
                 @endauth
@@ -996,7 +996,7 @@
                         if (response.already_registered) {
                             toastr.warning(response.message || 'NISN sudah terdaftar.');
                             setTimeout(function() {
-                                window.location.href = '{{ route("pendaftar.login") }}';
+                                window.location.href = '{{ route("login") }}';
                             }, 2000);
                             return;
                         }

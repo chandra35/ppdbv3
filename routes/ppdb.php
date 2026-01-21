@@ -364,6 +364,17 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
                 Route::delete('/{alurPendaftaran}', [AlurPendaftaranController::class, 'destroy'])->name('destroy');
                 Route::post('/update-order', [AlurPendaftaranController::class, 'updateOrder'])->name('update-order');
             });
+
+            // Informasi Pendaftar (Modal Info)
+            Route::prefix('informasi-pendaftar')->name('informasi-pendaftar.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\InformasiPendaftarController::class, 'index'])->name('index');
+                Route::post('/', [\App\Http\Controllers\Admin\InformasiPendaftarController::class, 'store'])->name('store');
+                Route::put('/{id}', [\App\Http\Controllers\Admin\InformasiPendaftarController::class, 'update'])->name('update');
+                Route::delete('/{id}', [\App\Http\Controllers\Admin\InformasiPendaftarController::class, 'destroy'])->name('destroy');
+                Route::post('/{id}/toggle-active', [\App\Http\Controllers\Admin\InformasiPendaftarController::class, 'toggleActive'])->name('toggle-active');
+                Route::post('/{id}/toggle-modal', [\App\Http\Controllers\Admin\InformasiPendaftarController::class, 'toggleModal'])->name('toggle-modal');
+                Route::post('/update-order', [\App\Http\Controllers\Admin\InformasiPendaftarController::class, 'updateOrder'])->name('update-order');
+            });
         });
         
         // ---- JALUR PENDAFTARAN ----

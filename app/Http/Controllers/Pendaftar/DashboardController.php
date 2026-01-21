@@ -8,6 +8,7 @@ use App\Models\CalonOrtu;
 use App\Models\CalonDokumen;
 use App\Models\NilaiRapor;
 use App\Models\PpdbSettings;
+use App\Models\InformasiPendaftar;
 use App\Services\KopSuratService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -53,7 +54,14 @@ class DashboardController extends Controller
         // Hitung status kelengkapan untuk info box
         $kelengkapan = $this->calculateKelengkapanStatus($calonSiswa);
 
-        return view('pendaftar.dashboard.index', compact('calonSiswa', 'progress', 'wajibLokasi', 'dokumenBermasalah', 'kelengkapan'));
+        // Check if should show info modal (only after login)
+        $showInfoModal = session()->pull('show_info_modal', false);
+        $infoList = [];
+        if ($showInfoModal) {
+            $infoList = InformasiPendaftar::getModalInfo();
+        }
+
+        return view('pendaftar.dashboard.index', compact('calonSiswa', 'progress', 'wajibLokasi', 'dokumenBermasalah', 'kelengkapan', 'showInfoModal', 'infoList'));
     }
 
     /**

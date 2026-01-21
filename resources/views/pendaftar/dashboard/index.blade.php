@@ -619,4 +619,44 @@ function resetLocationCard(message) {
 </script>
 @endpush
 @endif
+
+{{-- Modal Informasi Pendaftar (muncul setelah login) --}}
+@if($showInfoModal && count($infoList) > 0)
+<div class="modal fade" id="modalInfoPendaftar" tabindex="-1" data-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="fas fa-bullhorn mr-2"></i> Informasi Penting</h5>
+            </div>
+            <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                @foreach($infoList as $index => $info)
+                    <div class="info-item {{ $index > 0 ? 'mt-4 pt-4 border-top' : '' }}">
+                        <h5 class="text-primary mb-3">
+                            <i class="fas fa-info-circle mr-2"></i>{{ $info->judul }}
+                        </h5>
+                        <div class="info-content pl-4">
+                            {!! nl2br(e($info->isi)) !!}
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary btn-block" data-dismiss="modal">
+                    <i class="fas fa-check mr-2"></i> Saya Mengerti
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+@endsection
+
+@section('js')
+@if($showInfoModal && count($infoList) > 0)
+<script>
+    $(function() {
+        $('#modalInfoPendaftar').modal('show');
+    });
+</script>
+@endif
 @endsection

@@ -236,6 +236,11 @@ class LandingController extends Controller
         // Login user
         Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
+        
+        // Set session flag untuk menampilkan modal informasi (untuk pendaftar)
+        if ($user->hasRole('pendaftar')) {
+            session(['show_info_modal' => true]);
+        }
 
         // Log activity
         try {

@@ -295,6 +295,12 @@ return [
                     'icon' => 'fas fa-fw fa-list-ol',
                     'can' => 'settings.edit',
                 ],
+                [
+                    'text' => 'Informasi Pendaftar',
+                    'route' => 'admin.settings.informasi-pendaftar.index',
+                    'icon' => 'fas fa-fw fa-bullhorn',
+                    'can' => 'settings.edit',
+                ],
             ],
         ],
 
