@@ -124,12 +124,9 @@ class PendaftarController extends Controller
                     break;
                     
                 case 'hanya_mendaftar':
-                    // Hanya mendaftar: belum punya nomor tes dan (belum ada nilai rapor ATAU belum upload foto)
+                    // Hanya mendaftar: hanya register saja tanpa upload file apapun
                     $query->whereNull('nomor_tes')
-                        ->where(function($q) {
-                            $q->whereDoesntHave('nilaiRapor')
-                              ->orWhereDoesntHave('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); });
-                        });
+                        ->whereDoesntHave('dokumen');
                     break;
             }
         }

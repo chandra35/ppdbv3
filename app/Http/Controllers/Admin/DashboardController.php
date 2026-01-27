@@ -52,30 +52,22 @@ class DashboardController extends Controller
         $siapVerifikasiAsrama = CalonSiswa::where('pilihan_program', 'Asrama')->where($siapVerifikasiQuery)->count();
         $siapVerifikasiBelumMemilih = CalonSiswa::whereNull('pilihan_program')->where($siapVerifikasiQuery)->count();
         
-        // Hanya Mendaftar - hanya register tanpa mengisi nilai atau upload foto
+        // Hanya Mendaftar - hanya register saja tanpa upload file apapun
         $hanyaMendaftar = CalonSiswa::whereNull('nomor_tes')
-            ->where(function($q) {
-                $q->whereDoesntHave('nilaiRapor')
-                  ->orWhereDoesntHave('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); });
-            })->count();
+            ->whereDoesntHave('dokumen')
+            ->count();
         $hanyaMendaftarReguler = CalonSiswa::where('pilihan_program', 'Reguler')
             ->whereNull('nomor_tes')
-            ->where(function($q) {
-                $q->whereDoesntHave('nilaiRapor')
-                  ->orWhereDoesntHave('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); });
-            })->count();
+            ->whereDoesntHave('dokumen')
+            ->count();
         $hanyaMendaftarAsrama = CalonSiswa::where('pilihan_program', 'Asrama')
             ->whereNull('nomor_tes')
-            ->where(function($q) {
-                $q->whereDoesntHave('nilaiRapor')
-                  ->orWhereDoesntHave('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); });
-            })->count();
+            ->whereDoesntHave('dokumen')
+            ->count();
         $hanyaMendaftarBelumMemilih = CalonSiswa::whereNull('pilihan_program')
             ->whereNull('nomor_tes')
-            ->where(function($q) {
-                $q->whereDoesntHave('nilaiRapor')
-                  ->orWhereDoesntHave('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); });
-            })->count();
+            ->whereDoesntHave('dokumen')
+            ->count();
         
         $stats = [
             'total_pendaftar' => $totalPendaftar,
@@ -181,30 +173,22 @@ class DashboardController extends Controller
         $siapVerifikasiAsrama = CalonSiswa::where('pilihan_program', 'Asrama')->where($siapVerifikasiQuery)->count();
         $siapVerifikasiBelumMemilih = CalonSiswa::whereNull('pilihan_program')->where($siapVerifikasiQuery)->count();
         
-        // Hanya Mendaftar
+        // Hanya Mendaftar - hanya register saja tanpa upload file apapun
         $hanyaMendaftar = CalonSiswa::whereNull('nomor_tes')
-            ->where(function($q) {
-                $q->whereDoesntHave('nilaiRapor')
-                  ->orWhereDoesntHave('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); });
-            })->count();
+            ->whereDoesntHave('dokumen')
+            ->count();
         $hanyaMendaftarReguler = CalonSiswa::where('pilihan_program', 'Reguler')
             ->whereNull('nomor_tes')
-            ->where(function($q) {
-                $q->whereDoesntHave('nilaiRapor')
-                  ->orWhereDoesntHave('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); });
-            })->count();
+            ->whereDoesntHave('dokumen')
+            ->count();
         $hanyaMendaftarAsrama = CalonSiswa::where('pilihan_program', 'Asrama')
             ->whereNull('nomor_tes')
-            ->where(function($q) {
-                $q->whereDoesntHave('nilaiRapor')
-                  ->orWhereDoesntHave('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); });
-            })->count();
+            ->whereDoesntHave('dokumen')
+            ->count();
         $hanyaMendaftarBelumMemilih = CalonSiswa::whereNull('pilihan_program')
             ->whereNull('nomor_tes')
-            ->where(function($q) {
-                $q->whereDoesntHave('nilaiRapor')
-                  ->orWhereDoesntHave('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); });
-            })->count();
+            ->whereDoesntHave('dokumen')
+            ->count();
         
         $stats = [
             'total_pendaftar' => $totalPendaftar,
