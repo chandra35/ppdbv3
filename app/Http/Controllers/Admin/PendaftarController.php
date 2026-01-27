@@ -106,13 +106,8 @@ class PendaftarController extends Controller
         if ($request->filled('filter')) {
             switch ($request->filter) {
                 case 'belum_lengkap':
-                    // Belum lengkap: belum punya nomor tes dan data belum lengkap
-                    $query->whereNull('nomor_tes')
-                        ->where(function($q) {
-                            $q->where('data_diri_completed', false)
-                              ->orWhere('data_ortu_completed', false)
-                              ->orWhere('data_dokumen_completed', false);
-                        });
+                    // Belum lengkap: semua yang belum punya nomor tes (Total - Mendapatkan No.Tes)
+                    $query->whereNull('nomor_tes');
                     break;
                     
                 case 'siap_verifikasi':

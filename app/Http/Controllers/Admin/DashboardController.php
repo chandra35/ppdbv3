@@ -28,34 +28,11 @@ class DashboardController extends Controller
         $mendapatkanNomorTesAsrama = CalonSiswa::whereNotNull('nomor_tes')->where('pilihan_program', 'Asrama')->count();
         $mendapatkanNomorTesBelumMemilih = CalonSiswa::whereNotNull('nomor_tes')->whereNull('pilihan_program')->count();
         
-        // Belum Lengkap - yang belum punya nomor tes dan data belum lengkap
-        $belumLengkap = CalonSiswa::whereNull('nomor_tes')
-            ->where(function($q) {
-                $q->where('data_diri_completed', false)
-                  ->orWhere('data_ortu_completed', false)
-                  ->orWhere('data_dokumen_completed', false);
-            })->count();
-        $belumLengkapReguler = CalonSiswa::whereNull('nomor_tes')
-            ->where('pilihan_program', 'Reguler')
-            ->where(function($q) {
-                $q->where('data_diri_completed', false)
-                  ->orWhere('data_ortu_completed', false)
-                  ->orWhere('data_dokumen_completed', false);
-            })->count();
-        $belumLengkapAsrama = CalonSiswa::whereNull('nomor_tes')
-            ->where('pilihan_program', 'Asrama')
-            ->where(function($q) {
-                $q->where('data_diri_completed', false)
-                  ->orWhere('data_ortu_completed', false)
-                  ->orWhere('data_dokumen_completed', false);
-            })->count();
-        $belumLengkapBelumMemilih = CalonSiswa::whereNull('nomor_tes')
-            ->whereNull('pilihan_program')
-            ->where(function($q) {
-                $q->where('data_diri_completed', false)
-                  ->orWhere('data_ortu_completed', false)
-                  ->orWhere('data_dokumen_completed', false);
-            })->count();
+        // Belum Lengkap - semua yang belum punya nomor tes (Total - Mendapatkan No.Tes)
+        $belumLengkap = CalonSiswa::whereNull('nomor_tes')->count();
+        $belumLengkapReguler = CalonSiswa::whereNull('nomor_tes')->where('pilihan_program', 'Reguler')->count();
+        $belumLengkapAsrama = CalonSiswa::whereNull('nomor_tes')->where('pilihan_program', 'Asrama')->count();
+        $belumLengkapBelumMemilih = CalonSiswa::whereNull('nomor_tes')->whereNull('pilihan_program')->count();
         
         // Siap Verifikasi: sudah upload Rapor1-5, KK, Foto, Kartu Pelajar, belum dapat nomor tes
         $siapVerifikasiQuery = function($q) {
@@ -180,34 +157,11 @@ class DashboardController extends Controller
         $mendapatkanNomorTesAsrama = CalonSiswa::whereNotNull('nomor_tes')->where('pilihan_program', 'Asrama')->count();
         $mendapatkanNomorTesBelumMemilih = CalonSiswa::whereNotNull('nomor_tes')->whereNull('pilihan_program')->count();
         
-        // Belum Lengkap
-        $belumLengkap = CalonSiswa::whereNull('nomor_tes')
-            ->where(function($q) {
-                $q->where('data_diri_completed', false)
-                  ->orWhere('data_ortu_completed', false)
-                  ->orWhere('data_dokumen_completed', false);
-            })->count();
-        $belumLengkapReguler = CalonSiswa::whereNull('nomor_tes')
-            ->where('pilihan_program', 'Reguler')
-            ->where(function($q) {
-                $q->where('data_diri_completed', false)
-                  ->orWhere('data_ortu_completed', false)
-                  ->orWhere('data_dokumen_completed', false);
-            })->count();
-        $belumLengkapAsrama = CalonSiswa::whereNull('nomor_tes')
-            ->where('pilihan_program', 'Asrama')
-            ->where(function($q) {
-                $q->where('data_diri_completed', false)
-                  ->orWhere('data_ortu_completed', false)
-                  ->orWhere('data_dokumen_completed', false);
-            })->count();
-        $belumLengkapBelumMemilih = CalonSiswa::whereNull('nomor_tes')
-            ->whereNull('pilihan_program')
-            ->where(function($q) {
-                $q->where('data_diri_completed', false)
-                  ->orWhere('data_ortu_completed', false)
-                  ->orWhere('data_dokumen_completed', false);
-            })->count();
+        // Belum Lengkap - semua yang belum punya nomor tes
+        $belumLengkap = CalonSiswa::whereNull('nomor_tes')->count();
+        $belumLengkapReguler = CalonSiswa::whereNull('nomor_tes')->where('pilihan_program', 'Reguler')->count();
+        $belumLengkapAsrama = CalonSiswa::whereNull('nomor_tes')->where('pilihan_program', 'Asrama')->count();
+        $belumLengkapBelumMemilih = CalonSiswa::whereNull('nomor_tes')->whereNull('pilihan_program')->count();
         
         // Siap Verifikasi
         $siapVerifikasiQuery = function($q) {

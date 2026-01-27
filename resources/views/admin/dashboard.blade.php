@@ -86,16 +86,16 @@
         </div>
     </div>
 
-    <!-- Main Stats - Small boxes (Big Cards) -->
+    <!-- Main Stats - Small boxes (5 Cards in one row) -->
     <div class="row">
-        <div class="col-12 col-sm-6 col-md-3">
+        <div class="col-12 col-sm-6 col-lg">
             <div class="small-box bg-info">
                 <div class="inner">
                     <h3 data-stat="total_pendaftar">{{ number_format($stats['total_pendaftar']) }}</h3>
                     <p>Total Pendaftar</p>
-                    <small style="font-size: 11px; opacity: 0.9;">
-                        Reguler = <span data-stat="pendaftar_reguler">{{ number_format($stats['pendaftar_reguler']) }}</span> | 
-                        Asrama = <span data-stat="pendaftar_asrama">{{ number_format($stats['pendaftar_asrama']) }}</span> |
+                    <small style="font-size: 10px; opacity: 0.9; line-height: 1.4; display: block;">
+                        Reguler = <span data-stat="pendaftar_reguler">{{ number_format($stats['pendaftar_reguler']) }}</span><br>
+                        Asrama = <span data-stat="pendaftar_asrama">{{ number_format($stats['pendaftar_asrama']) }}</span><br>
                         Belum Memilih = <span data-stat="pendaftar_belum_memilih">{{ number_format($stats['pendaftar_belum_memilih']) }}</span>
                     </small>
                 </div>
@@ -107,14 +107,14 @@
                 </a>
             </div>
         </div>
-        <div class="col-12 col-sm-6 col-md-3">
+        <div class="col-12 col-sm-6 col-lg">
             <div class="small-box bg-warning">
                 <div class="inner">
                     <h3 data-stat="pendaftar_baru">{{ number_format($stats['pendaftar_baru']) }}</h3>
                     <p>Belum Lengkap</p>
-                    <small style="font-size: 11px; opacity: 0.9;">
-                        Reguler = <span data-stat="pendaftar_baru_reguler">{{ number_format($stats['pendaftar_baru_reguler']) }}</span> | 
-                        Asrama = <span data-stat="pendaftar_baru_asrama">{{ number_format($stats['pendaftar_baru_asrama']) }}</span> |
+                    <small style="font-size: 10px; opacity: 0.9; line-height: 1.4; display: block;">
+                        Reguler = <span data-stat="pendaftar_baru_reguler">{{ number_format($stats['pendaftar_baru_reguler']) }}</span><br>
+                        Asrama = <span data-stat="pendaftar_baru_asrama">{{ number_format($stats['pendaftar_baru_asrama']) }}</span><br>
                         Belum Memilih = <span data-stat="pendaftar_baru_belum_memilih">{{ number_format($stats['pendaftar_baru_belum_memilih']) }}</span>
                     </small>
                 </div>
@@ -126,14 +126,14 @@
                 </a>
             </div>
         </div>
-        <div class="col-12 col-sm-6 col-md-3">
+        <div class="col-12 col-sm-6 col-lg">
             <div class="small-box bg-success">
                 <div class="inner">
                     <h3 data-stat="terverifikasi">{{ number_format($stats['terverifikasi']) }}</h3>
                     <p>Mendapatkan No. Tes</p>
-                    <small style="font-size: 11px; opacity: 0.9;">
-                        Reguler = <span data-stat="terverifikasi_reguler">{{ number_format($stats['terverifikasi_reguler']) }}</span> | 
-                        Asrama = <span data-stat="terverifikasi_asrama">{{ number_format($stats['terverifikasi_asrama']) }}</span> |
+                    <small style="font-size: 10px; opacity: 0.9; line-height: 1.4; display: block;">
+                        Reguler = <span data-stat="terverifikasi_reguler">{{ number_format($stats['terverifikasi_reguler']) }}</span><br>
+                        Asrama = <span data-stat="terverifikasi_asrama">{{ number_format($stats['terverifikasi_asrama']) }}</span><br>
                         Belum Memilih = <span data-stat="terverifikasi_belum_memilih">{{ number_format($stats['terverifikasi_belum_memilih']) }}</span>
                     </small>
                 </div>
@@ -145,14 +145,14 @@
                 </a>
             </div>
         </div>
-        <div class="col-12 col-sm-6 col-md-3">
+        <div class="col-12 col-sm-6 col-lg">
             <div class="small-box bg-primary">
                 <div class="inner">
                     <h3 data-stat="siap_verifikasi">{{ number_format($stats['siap_verifikasi']) }}</h3>
                     <p>Siap Verifikasi</p>
-                    <small style="font-size: 11px; opacity: 0.9;">
-                        Reguler = <span data-stat="siap_verifikasi_reguler">{{ number_format($stats['siap_verifikasi_reguler']) }}</span> | 
-                        Asrama = <span data-stat="siap_verifikasi_asrama">{{ number_format($stats['siap_verifikasi_asrama']) }}</span> |
+                    <small style="font-size: 10px; opacity: 0.9; line-height: 1.4; display: block;">
+                        Reguler = <span data-stat="siap_verifikasi_reguler">{{ number_format($stats['siap_verifikasi_reguler']) }}</span><br>
+                        Asrama = <span data-stat="siap_verifikasi_asrama">{{ number_format($stats['siap_verifikasi_asrama']) }}</span><br>
                         Belum Memilih = <span data-stat="siap_verifikasi_belum_memilih">{{ number_format($stats['siap_verifikasi_belum_memilih']) }}</span>
                     </small>
                 </div>
@@ -164,18 +164,14 @@
                 </a>
             </div>
         </div>
-    </div>
-
-    <!-- Row 2: Hanya Mendaftar -->
-    <div class="row">
-        <div class="col-12 col-sm-6 col-md-3">
+        <div class="col-12 col-sm-6 col-lg">
             <div class="small-box bg-secondary">
                 <div class="inner">
                     <h3 data-stat="hanya_mendaftar">{{ number_format($stats['hanya_mendaftar']) }}</h3>
                     <p>Hanya Mendaftar</p>
-                    <small style="font-size: 11px; opacity: 0.9;">
-                        Reguler = <span data-stat="hanya_mendaftar_reguler">{{ number_format($stats['hanya_mendaftar_reguler']) }}</span> | 
-                        Asrama = <span data-stat="hanya_mendaftar_asrama">{{ number_format($stats['hanya_mendaftar_asrama']) }}</span> |
+                    <small style="font-size: 10px; opacity: 0.9; line-height: 1.4; display: block;">
+                        Reguler = <span data-stat="hanya_mendaftar_reguler">{{ number_format($stats['hanya_mendaftar_reguler']) }}</span><br>
+                        Asrama = <span data-stat="hanya_mendaftar_asrama">{{ number_format($stats['hanya_mendaftar_asrama']) }}</span><br>
                         Belum Memilih = <span data-stat="hanya_mendaftar_belum_memilih">{{ number_format($stats['hanya_mendaftar_belum_memilih']) }}</span>
                     </small>
                 </div>
