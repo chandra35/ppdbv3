@@ -34,14 +34,14 @@ class DashboardController extends Controller
         $belumLengkapAsrama = CalonSiswa::whereNull('nomor_tes')->where('pilihan_program', 'Asrama')->count();
         $belumLengkapBelumMemilih = CalonSiswa::whereNull('nomor_tes')->whereNull('pilihan_program')->count();
         
-        // Siap Verifikasi: sudah upload Rapor1-5, KK, Foto, Kartu Pelajar, belum dapat nomor tes
+        // Siap Verifikasi: sudah upload Rapor Sem 1-5, KK, Foto, Kartu Pelajar, belum dapat nomor tes
         $siapVerifikasiQuery = function($q) {
             $q->whereNull('nomor_tes')
-              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_1'); })
-              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_2'); })
-              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_3'); })
-              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_4'); })
-              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_5'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_sem_1'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_sem_2'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_sem_3'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_sem_4'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_sem_5'); })
               ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'kk'); })
               ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); })
               ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'kartu_pelajar'); });
@@ -166,11 +166,11 @@ class DashboardController extends Controller
         // Siap Verifikasi
         $siapVerifikasiQuery = function($q) {
             $q->whereNull('nomor_tes')
-              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_1'); })
-              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_2'); })
-              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_3'); })
-              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_4'); })
-              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_5'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_sem_1'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_sem_2'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_sem_3'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_sem_4'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_sem_5'); })
               ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'kk'); })
               ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); })
               ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'kartu_pelajar'); });

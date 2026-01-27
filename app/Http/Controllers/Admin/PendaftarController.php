@@ -111,13 +111,13 @@ class PendaftarController extends Controller
                     break;
                     
                 case 'siap_verifikasi':
-                    // Siap verifikasi: sudah upload Rapor1-5, KK, Foto, Kartu Pelajar, belum dapat nomor tes
+                    // Siap verifikasi: sudah upload Rapor Sem 1-5, KK, Foto, Kartu Pelajar, belum dapat nomor tes
                     $query->whereNull('nomor_tes')
-                        ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_1'); })
-                        ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_2'); })
-                        ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_3'); })
-                        ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_4'); })
-                        ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_5'); })
+                        ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_sem_1'); })
+                        ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_sem_2'); })
+                        ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_sem_3'); })
+                        ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_sem_4'); })
+                        ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_sem_5'); })
                         ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'kk'); })
                         ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); })
                         ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'kartu_pelajar'); });
