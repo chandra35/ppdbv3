@@ -10,6 +10,7 @@ use App\Mail\RegistrasiNotification;
 use App\Mail\RevisiDokumenNotification;
 use App\Mail\HasilSeleksiNotification;
 use App\Mail\NomorTesNotification;
+use App\Mail\CustomNotification;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
@@ -258,6 +259,54 @@ class EmailNotificationService
             );
 
             Log::error("Failed to send nomor tes email: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Kirim email notifikasi custom/lainnya
+     */
+    public static function sendCustom(CalonSiswa $calonSiswa, string $subject, string $message): bool
+    {
+        $email = $calonSiswa->user?->email ?? $calonSiswa->email ?? null;
+        
+        if (!$email) {
+            Log::warning("Cannot send custom email: No email for calon_siswa {$calonSiswa->id}");
+            return false;
+        }
+
+        try {
+            $mailable = new CustomNotification($calonSiswa, $subject, $message);
+            Mail::to($email)->send($mailable);
+
+            // Get subject from mailable
+            $sentSubject = $mailable->envelope()->subject;
+
+            EmailLog::logSent(
+                toEmail: $email,
+                subject: $sentSubject,
+                type: EmailLog::TYPE_GENERAL,
+                calonSiswaId: $calonSiswa->id,
+                toName: $calonSiswa->nama_lengkap,
+                messagePreview: $mailable->getRenderedBody()
+            );
+
+            Log::info("Custom email sent to {$email} for calon_siswa {$calonSiswa->id}");
+            return true;
+
+        } catch (\Exception $e) {
+            $settings = \App\Models\PpdbSettings::first();
+
+            EmailLog::logFailed(
+                toEmail: $email,
+                subject: $subject,
+                type: EmailLog::TYPE_GENERAL,
+                errorMessage: $e->getMessage(),
+                calonSiswaId: $calonSiswa->id,
+                toName: $calonSiswa->nama_lengkap
+            );
+
+            Log::error("Failed to send custom email: " . $e->getMessage());
             return false;
         }
     }

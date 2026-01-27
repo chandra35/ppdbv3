@@ -621,6 +621,18 @@ dl.row dt {
                             </td>
                         </tr>
                         <tr>
+                            <td><i class="fas fa-graduation-cap text-muted"></i> <strong>Pilihan Program</strong></td>
+                            <td class="text-right">
+                                @if($pendaftar->pilihan_program == 'Reguler')
+                                    <span class="label label-info">Reguler</span>
+                                @elseif($pendaftar->pilihan_program == 'Asrama')
+                                    <span class="label label-success">Asrama</span>
+                                @else
+                                    <span class="label label-secondary">Belum Memilih</span>
+                                @endif
+                            </td>
+                        </tr>
+                        <tr>
                             <td><i class="fas fa-calendar text-muted"></i> <strong>Terdaftar</strong></td>
                             <td class="text-right"><small>{{ $pendaftar->created_at->format('d/m/Y') }}</small></td>
                         </tr>
@@ -1889,7 +1901,14 @@ dl.row dt {
                             @endif
                             <option value="diterima">🎉 Notifikasi Diterima</option>
                             <option value="ditolak">📋 Notifikasi Ditolak</option>
+                            <option value="lainnya">✉️ Notifikasi Lainnya (Custom)</option>
                         </select>
+                    </div>
+                    
+                    {{-- Field Subject (untuk lainnya) --}}
+                    <div class="form-group" id="subjectField" style="display: none;">
+                        <label for="emailSubject"><strong>Subjek Email:</strong> <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="emailSubject" name="subject" placeholder="Masukkan subjek email...">
                     </div>
                     
                     {{-- Field Dokumen (untuk revisi) --}}
@@ -1905,8 +1924,8 @@ dl.row dt {
                     
                     {{-- Field Catatan --}}
                     <div class="form-group" id="catatanField" style="display: none;">
-                        <label for="emailCatatan"><strong>Catatan/Keterangan:</strong></label>
-                        <textarea class="form-control" id="emailCatatan" name="catatan" rows="3" placeholder="Masukkan catatan..."></textarea>
+                        <label for="emailCatatan"><strong><span id="catatanLabel">Catatan/Keterangan</span>:</strong> <span class="text-danger" id="catatanRequired" style="display: none;">*</span></label>
+                        <textarea class="form-control" id="emailCatatan" name="catatan" rows="4" placeholder="Masukkan catatan..."></textarea>
                     </div>
                     
                     <div class="alert alert-info mb-0" id="emailInfo" style="display: none;">
@@ -2071,13 +2090,20 @@ $('#emailType').on('change', function() {
     var type = $(this).val();
     var dokumenField = $('#dokumenField');
     var catatanField = $('#catatanField');
+    var subjectField = $('#subjectField');
     var emailInfo = $('#emailInfo');
     var emailInfoText = $('#emailInfoText');
+    var catatanLabel = $('#catatanLabel');
+    var catatanRequired = $('#catatanRequired');
     
     // Reset fields
     dokumenField.hide();
     catatanField.hide();
+    subjectField.hide();
     emailInfo.hide();
+    catatanRequired.hide();
+    catatanLabel.text('Catatan/Keterangan');
+    $('#emailCatatan').attr('placeholder', 'Masukkan catatan...');
     
     switch(type) {
         case 'registrasi':
@@ -2104,6 +2130,15 @@ $('#emailType').on('change', function() {
             emailInfo.show();
             emailInfoText.html('<i class="fas fa-info-circle"></i> Email pemberitahuan hasil seleksi (tidak diterima).');
             break;
+        case 'lainnya':
+            subjectField.show();
+            catatanField.show();
+            catatanRequired.show();
+            catatanLabel.text('Isi Pesan');
+            $('#emailCatatan').attr('placeholder', 'Masukkan isi pesan email...');
+            emailInfo.show();
+            emailInfoText.html('<i class="fas fa-info-circle"></i> Email custom dengan subjek dan isi pesan yang Anda tentukan sendiri.');
+            break;
     }
 });
 
@@ -2120,6 +2155,17 @@ function sendEmailNotification() {
         return;
     }
     
+    if (type === 'lainnya') {
+        if (!$('#emailSubject').val()) {
+            Swal.fire('Peringatan', 'Subjek email harus diisi', 'warning');
+            return;
+        }
+        if (!$('#emailCatatan').val()) {
+            Swal.fire('Peringatan', 'Isi pesan email harus diisi', 'warning');
+            return;
+        }
+    }
+    
     var btn = $('#btnSendEmail');
     btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Mengirim...');
     
@@ -2130,7 +2176,8 @@ function sendEmailNotification() {
             _token: '{{ csrf_token() }}',
             type: type,
             dokumen_id: $('#dokumenSelect').val(),
-            catatan: $('#emailCatatan').val()
+            catatan: $('#emailCatatan').val(),
+            subject: $('#emailSubject').val()
         },
         success: function(response) {
             $('#sendEmailModal').modal('hide');
@@ -2158,7 +2205,10 @@ function sendEmailNotification() {
             $('#emailType').val('');
             $('#dokumenSelect').val('');
             $('#emailCatatan').val('');
-            $('#dokumenField, #catatanField, #emailInfo').hide();
+            $('#emailSubject').val('');
+            $('#dokumenField, #catatanField, #subjectField, #emailInfo').hide();
+            $('#catatanRequired').hide();
+            $('#catatanLabel').text('Catatan/Keterangan');
         }
     });
 }

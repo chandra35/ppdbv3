@@ -167,6 +167,18 @@
                         <i class="fas fa-layer-group mr-2"></i><strong>Gelombang:</strong> {{ $pendaftar->gelombangPendaftaran->nama ?? '-' }}
                     </span>
                 </li>
+                <li class="nav-item">
+                    <span class="nav-link">
+                        <i class="fas fa-graduation-cap mr-2"></i><strong>Program:</strong> 
+                        @if($pendaftar->pilihan_program == 'Reguler')
+                            <span class="badge badge-info">Reguler</span>
+                        @elseif($pendaftar->pilihan_program == 'Asrama')
+                            <span class="badge badge-success">Asrama</span>
+                        @else
+                            <span class="badge badge-secondary">Belum Memilih</span>
+                        @endif
+                    </span>
+                </li>
                 @if($pendaftar->nomor_tes)
                 <li class="nav-item">
                     <span class="nav-link">
@@ -202,6 +214,32 @@
     <form action="{{ route('admin.pendaftar.update', $pendaftar->id) }}" method="POST" id="formEditPendaftar">
         @csrf
         @method('PUT')
+        
+        <!-- Pilihan Program -->
+        <div class="card card-info card-outline mb-3">
+            <div class="card-header py-2">
+                <h3 class="card-title"><i class="fas fa-graduation-cap mr-2"></i>Pilihan Program</h3>
+            </div>
+            <div class="card-body py-2">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-0">
+                            <label for="pilihan_program">Pilihan Program <span class="text-danger">*</span></label>
+                            <select name="pilihan_program" id="pilihan_program" 
+                                class="form-control @error('pilihan_program') is-invalid @enderror" required>
+                                <option value="">-- Pilih Program --</option>
+                                <option value="Reguler" {{ old('pilihan_program', $pendaftar->pilihan_program) == 'Reguler' ? 'selected' : '' }}>Reguler</option>
+                                <option value="Asrama" {{ old('pilihan_program', $pendaftar->pilihan_program) == 'Asrama' ? 'selected' : '' }}>Asrama</option>
+                            </select>
+                            @error('pilihan_program')
+                                <span class="invalid-feedback">{{ $message }}</span>
+                            @enderror
+                            <small class="form-text text-muted">Pilih program yang diinginkan (Reguler atau Asrama)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         
         <!-- Data Pribadi -->
         <div class="card card-primary card-outline">

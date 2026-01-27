@@ -93,9 +93,10 @@
                 <div class="inner">
                     <h3 data-stat="total_pendaftar">{{ number_format($stats['total_pendaftar']) }}</h3>
                     <p>Total Pendaftar</p>
-                    <small style="font-size: 12px; opacity: 0.9;">
+                    <small style="font-size: 11px; opacity: 0.9;">
                         Reguler = <span data-stat="pendaftar_reguler">{{ number_format($stats['pendaftar_reguler']) }}</span> | 
-                        Asrama = <span data-stat="pendaftar_asrama">{{ number_format($stats['pendaftar_asrama']) }}</span>
+                        Asrama = <span data-stat="pendaftar_asrama">{{ number_format($stats['pendaftar_asrama']) }}</span> |
+                        Belum Memilih = <span data-stat="pendaftar_belum_memilih">{{ number_format($stats['pendaftar_belum_memilih']) }}</span>
                     </small>
                 </div>
                 <div class="icon">
@@ -110,16 +111,17 @@
             <div class="small-box bg-warning">
                 <div class="inner">
                     <h3 data-stat="pendaftar_baru">{{ number_format($stats['pendaftar_baru']) }}</h3>
-                    <p>Menunggu Verifikasi</p>
-                    <small style="font-size: 12px; opacity: 0.9;">
+                    <p>Belum Lengkap</p>
+                    <small style="font-size: 11px; opacity: 0.9;">
                         Reguler = <span data-stat="pendaftar_baru_reguler">{{ number_format($stats['pendaftar_baru_reguler']) }}</span> | 
-                        Asrama = <span data-stat="pendaftar_baru_asrama">{{ number_format($stats['pendaftar_baru_asrama']) }}</span>
+                        Asrama = <span data-stat="pendaftar_baru_asrama">{{ number_format($stats['pendaftar_baru_asrama']) }}</span> |
+                        Belum Memilih = <span data-stat="pendaftar_baru_belum_memilih">{{ number_format($stats['pendaftar_baru_belum_memilih']) }}</span>
                     </small>
                 </div>
                 <div class="icon">
                     <i class="fas fa-user-clock"></i>
                 </div>
-                <a href="{{ route('admin.pendaftar.index') }}?status=pending" class="small-box-footer">
+                <a href="{{ route('admin.pendaftar.index') }}?filter=belum_lengkap" class="small-box-footer">
                     Lihat Detail <i class="fas fa-arrow-circle-right"></i>
                 </a>
             </div>
@@ -128,16 +130,17 @@
             <div class="small-box bg-success">
                 <div class="inner">
                     <h3 data-stat="terverifikasi">{{ number_format($stats['terverifikasi']) }}</h3>
-                    <p>Terverifikasi</p>
-                    <small style="font-size: 12px; opacity: 0.9;">
+                    <p>Mendapatkan No. Tes</p>
+                    <small style="font-size: 11px; opacity: 0.9;">
                         Reguler = <span data-stat="terverifikasi_reguler">{{ number_format($stats['terverifikasi_reguler']) }}</span> | 
-                        Asrama = <span data-stat="terverifikasi_asrama">{{ number_format($stats['terverifikasi_asrama']) }}</span>
+                        Asrama = <span data-stat="terverifikasi_asrama">{{ number_format($stats['terverifikasi_asrama']) }}</span> |
+                        Belum Memilih = <span data-stat="terverifikasi_belum_memilih">{{ number_format($stats['terverifikasi_belum_memilih']) }}</span>
                     </small>
                 </div>
                 <div class="icon">
                     <i class="fas fa-user-check"></i>
                 </div>
-                <a href="{{ route('admin.pendaftar.index') }}?status=verified" class="small-box-footer">
+                <a href="{{ route('admin.pendaftar.index') }}?status=has_nomor_tes" class="small-box-footer">
                     Lihat Detail <i class="fas fa-arrow-circle-right"></i>
                 </a>
             </div>
@@ -145,17 +148,41 @@
         <div class="col-12 col-sm-6 col-md-3">
             <div class="small-box bg-primary">
                 <div class="inner">
-                    <h3 data-stat="finalisasi">{{ number_format($stats['finalisasi']) }}</h3>
-                    <p>Finalisasi</p>
-                    <small style="font-size: 12px; opacity: 0.9;">
-                        Reguler = <span data-stat="finalisasi_reguler">{{ number_format($stats['finalisasi_reguler']) }}</span> | 
-                        Asrama = <span data-stat="finalisasi_asrama">{{ number_format($stats['finalisasi_asrama']) }}</span>
+                    <h3 data-stat="siap_verifikasi">{{ number_format($stats['siap_verifikasi']) }}</h3>
+                    <p>Siap Verifikasi</p>
+                    <small style="font-size: 11px; opacity: 0.9;">
+                        Reguler = <span data-stat="siap_verifikasi_reguler">{{ number_format($stats['siap_verifikasi_reguler']) }}</span> | 
+                        Asrama = <span data-stat="siap_verifikasi_asrama">{{ number_format($stats['siap_verifikasi_asrama']) }}</span> |
+                        Belum Memilih = <span data-stat="siap_verifikasi_belum_memilih">{{ number_format($stats['siap_verifikasi_belum_memilih']) }}</span>
                     </small>
                 </div>
                 <div class="icon">
                     <i class="fas fa-clipboard-check"></i>
                 </div>
-                <a href="{{ route('admin.pendaftar.index') }}?finalisasi=1" class="small-box-footer">
+                <a href="{{ route('admin.pendaftar.index') }}?filter=siap_verifikasi" class="small-box-footer">
+                    Lihat Detail <i class="fas fa-arrow-circle-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 2: Hanya Mendaftar -->
+    <div class="row">
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="small-box bg-secondary">
+                <div class="inner">
+                    <h3 data-stat="hanya_mendaftar">{{ number_format($stats['hanya_mendaftar']) }}</h3>
+                    <p>Hanya Mendaftar</p>
+                    <small style="font-size: 11px; opacity: 0.9;">
+                        Reguler = <span data-stat="hanya_mendaftar_reguler">{{ number_format($stats['hanya_mendaftar_reguler']) }}</span> | 
+                        Asrama = <span data-stat="hanya_mendaftar_asrama">{{ number_format($stats['hanya_mendaftar_asrama']) }}</span> |
+                        Belum Memilih = <span data-stat="hanya_mendaftar_belum_memilih">{{ number_format($stats['hanya_mendaftar_belum_memilih']) }}</span>
+                    </small>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <a href="{{ route('admin.pendaftar.index') }}?filter=hanya_mendaftar" class="small-box-footer">
                     Lihat Detail <i class="fas fa-arrow-circle-right"></i>
                 </a>
             </div>

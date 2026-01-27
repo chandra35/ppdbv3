@@ -20,19 +20,111 @@ class DashboardController extends Controller
         $isAdmin = $user->isAdmin();
         
         // Statistics for all roles
+        $totalPendaftar = CalonSiswa::count();
+        
+        // Mendapatkan Nomor Tes - yang sudah punya nomor_tes
+        $mendapatkanNomorTes = CalonSiswa::whereNotNull('nomor_tes')->count();
+        $mendapatkanNomorTesReguler = CalonSiswa::whereNotNull('nomor_tes')->where('pilihan_program', 'Reguler')->count();
+        $mendapatkanNomorTesAsrama = CalonSiswa::whereNotNull('nomor_tes')->where('pilihan_program', 'Asrama')->count();
+        $mendapatkanNomorTesBelumMemilih = CalonSiswa::whereNotNull('nomor_tes')->whereNull('pilihan_program')->count();
+        
+        // Belum Lengkap - yang belum punya nomor tes dan data belum lengkap
+        $belumLengkap = CalonSiswa::whereNull('nomor_tes')
+            ->where(function($q) {
+                $q->where('data_diri_completed', false)
+                  ->orWhere('data_ortu_completed', false)
+                  ->orWhere('data_dokumen_completed', false);
+            })->count();
+        $belumLengkapReguler = CalonSiswa::whereNull('nomor_tes')
+            ->where('pilihan_program', 'Reguler')
+            ->where(function($q) {
+                $q->where('data_diri_completed', false)
+                  ->orWhere('data_ortu_completed', false)
+                  ->orWhere('data_dokumen_completed', false);
+            })->count();
+        $belumLengkapAsrama = CalonSiswa::whereNull('nomor_tes')
+            ->where('pilihan_program', 'Asrama')
+            ->where(function($q) {
+                $q->where('data_diri_completed', false)
+                  ->orWhere('data_ortu_completed', false)
+                  ->orWhere('data_dokumen_completed', false);
+            })->count();
+        $belumLengkapBelumMemilih = CalonSiswa::whereNull('nomor_tes')
+            ->whereNull('pilihan_program')
+            ->where(function($q) {
+                $q->where('data_diri_completed', false)
+                  ->orWhere('data_ortu_completed', false)
+                  ->orWhere('data_dokumen_completed', false);
+            })->count();
+        
+        // Siap Verifikasi: sudah upload Rapor1-5, KK, Foto, Kartu Pelajar, belum dapat nomor tes
+        $siapVerifikasiQuery = function($q) {
+            $q->whereNull('nomor_tes')
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_1'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_2'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_3'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_4'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_5'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'kk'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'kartu_pelajar'); });
+        };
+        
+        $siapVerifikasi = CalonSiswa::where($siapVerifikasiQuery)->count();
+        $siapVerifikasiReguler = CalonSiswa::where('pilihan_program', 'Reguler')->where($siapVerifikasiQuery)->count();
+        $siapVerifikasiAsrama = CalonSiswa::where('pilihan_program', 'Asrama')->where($siapVerifikasiQuery)->count();
+        $siapVerifikasiBelumMemilih = CalonSiswa::whereNull('pilihan_program')->where($siapVerifikasiQuery)->count();
+        
+        // Hanya Mendaftar - hanya register tanpa mengisi nilai atau upload foto
+        $hanyaMendaftar = CalonSiswa::whereNull('nomor_tes')
+            ->where(function($q) {
+                $q->whereDoesntHave('nilaiRapor')
+                  ->orWhereDoesntHave('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); });
+            })->count();
+        $hanyaMendaftarReguler = CalonSiswa::where('pilihan_program', 'Reguler')
+            ->whereNull('nomor_tes')
+            ->where(function($q) {
+                $q->whereDoesntHave('nilaiRapor')
+                  ->orWhereDoesntHave('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); });
+            })->count();
+        $hanyaMendaftarAsrama = CalonSiswa::where('pilihan_program', 'Asrama')
+            ->whereNull('nomor_tes')
+            ->where(function($q) {
+                $q->whereDoesntHave('nilaiRapor')
+                  ->orWhereDoesntHave('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); });
+            })->count();
+        $hanyaMendaftarBelumMemilih = CalonSiswa::whereNull('pilihan_program')
+            ->whereNull('nomor_tes')
+            ->where(function($q) {
+                $q->whereDoesntHave('nilaiRapor')
+                  ->orWhereDoesntHave('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); });
+            })->count();
+        
         $stats = [
-            'total_pendaftar' => CalonSiswa::count(),
-            'pendaftar_reguler' => CalonSiswa::where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program')->count(),
+            'total_pendaftar' => $totalPendaftar,
+            'pendaftar_reguler' => CalonSiswa::where('pilihan_program', 'Reguler')->count(),
             'pendaftar_asrama' => CalonSiswa::where('pilihan_program', 'Asrama')->count(),
-            'pendaftar_baru' => CalonSiswa::where('status_verifikasi', 'pending')->count(),
-            'pendaftar_baru_reguler' => CalonSiswa::where('status_verifikasi', 'pending')->where(function($q) { $q->where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program'); })->count(),
-            'pendaftar_baru_asrama' => CalonSiswa::where('status_verifikasi', 'pending')->where('pilihan_program', 'Asrama')->count(),
-            'terverifikasi' => CalonSiswa::whereNotNull('nomor_tes')->count(),
-            'terverifikasi_reguler' => CalonSiswa::whereNotNull('nomor_tes')->where(function($q) { $q->where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program'); })->count(),
-            'terverifikasi_asrama' => CalonSiswa::whereNotNull('nomor_tes')->where('pilihan_program', 'Asrama')->count(),
-            'finalisasi' => CalonSiswa::where('is_finalisasi', true)->count(),
-            'finalisasi_reguler' => CalonSiswa::where('is_finalisasi', true)->where(function($q) { $q->where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program'); })->count(),
-            'finalisasi_asrama' => CalonSiswa::where('is_finalisasi', true)->where('pilihan_program', 'Asrama')->count(),
+            'pendaftar_belum_memilih' => CalonSiswa::whereNull('pilihan_program')->count(),
+            // Belum lengkap
+            'pendaftar_baru' => $belumLengkap,
+            'pendaftar_baru_reguler' => $belumLengkapReguler,
+            'pendaftar_baru_asrama' => $belumLengkapAsrama,
+            'pendaftar_baru_belum_memilih' => $belumLengkapBelumMemilih,
+            // Mendapatkan Nomor Tes
+            'terverifikasi' => $mendapatkanNomorTes,
+            'terverifikasi_reguler' => $mendapatkanNomorTesReguler,
+            'terverifikasi_asrama' => $mendapatkanNomorTesAsrama,
+            'terverifikasi_belum_memilih' => $mendapatkanNomorTesBelumMemilih,
+            // Siap Verifikasi
+            'siap_verifikasi' => $siapVerifikasi,
+            'siap_verifikasi_reguler' => $siapVerifikasiReguler,
+            'siap_verifikasi_asrama' => $siapVerifikasiAsrama,
+            'siap_verifikasi_belum_memilih' => $siapVerifikasiBelumMemilih,
+            // Hanya Mendaftar
+            'hanya_mendaftar' => $hanyaMendaftar,
+            'hanya_mendaftar_reguler' => $hanyaMendaftarReguler,
+            'hanya_mendaftar_asrama' => $hanyaMendaftarAsrama,
+            'hanya_mendaftar_belum_memilih' => $hanyaMendaftarBelumMemilih,
         ];
 
         // Admin-only statistics
@@ -80,19 +172,111 @@ class DashboardController extends Controller
         $user = auth()->user();
         $isAdmin = $user->isAdmin();
         
+        $totalPendaftar = CalonSiswa::count();
+        
+        // Mendapatkan Nomor Tes
+        $mendapatkanNomorTes = CalonSiswa::whereNotNull('nomor_tes')->count();
+        $mendapatkanNomorTesReguler = CalonSiswa::whereNotNull('nomor_tes')->where('pilihan_program', 'Reguler')->count();
+        $mendapatkanNomorTesAsrama = CalonSiswa::whereNotNull('nomor_tes')->where('pilihan_program', 'Asrama')->count();
+        $mendapatkanNomorTesBelumMemilih = CalonSiswa::whereNotNull('nomor_tes')->whereNull('pilihan_program')->count();
+        
+        // Belum Lengkap
+        $belumLengkap = CalonSiswa::whereNull('nomor_tes')
+            ->where(function($q) {
+                $q->where('data_diri_completed', false)
+                  ->orWhere('data_ortu_completed', false)
+                  ->orWhere('data_dokumen_completed', false);
+            })->count();
+        $belumLengkapReguler = CalonSiswa::whereNull('nomor_tes')
+            ->where('pilihan_program', 'Reguler')
+            ->where(function($q) {
+                $q->where('data_diri_completed', false)
+                  ->orWhere('data_ortu_completed', false)
+                  ->orWhere('data_dokumen_completed', false);
+            })->count();
+        $belumLengkapAsrama = CalonSiswa::whereNull('nomor_tes')
+            ->where('pilihan_program', 'Asrama')
+            ->where(function($q) {
+                $q->where('data_diri_completed', false)
+                  ->orWhere('data_ortu_completed', false)
+                  ->orWhere('data_dokumen_completed', false);
+            })->count();
+        $belumLengkapBelumMemilih = CalonSiswa::whereNull('nomor_tes')
+            ->whereNull('pilihan_program')
+            ->where(function($q) {
+                $q->where('data_diri_completed', false)
+                  ->orWhere('data_ortu_completed', false)
+                  ->orWhere('data_dokumen_completed', false);
+            })->count();
+        
+        // Siap Verifikasi
+        $siapVerifikasiQuery = function($q) {
+            $q->whereNull('nomor_tes')
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_1'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_2'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_3'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_4'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_5'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'kk'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); })
+              ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'kartu_pelajar'); });
+        };
+        
+        $siapVerifikasi = CalonSiswa::where($siapVerifikasiQuery)->count();
+        $siapVerifikasiReguler = CalonSiswa::where('pilihan_program', 'Reguler')->where($siapVerifikasiQuery)->count();
+        $siapVerifikasiAsrama = CalonSiswa::where('pilihan_program', 'Asrama')->where($siapVerifikasiQuery)->count();
+        $siapVerifikasiBelumMemilih = CalonSiswa::whereNull('pilihan_program')->where($siapVerifikasiQuery)->count();
+        
+        // Hanya Mendaftar
+        $hanyaMendaftar = CalonSiswa::whereNull('nomor_tes')
+            ->where(function($q) {
+                $q->whereDoesntHave('nilaiRapor')
+                  ->orWhereDoesntHave('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); });
+            })->count();
+        $hanyaMendaftarReguler = CalonSiswa::where('pilihan_program', 'Reguler')
+            ->whereNull('nomor_tes')
+            ->where(function($q) {
+                $q->whereDoesntHave('nilaiRapor')
+                  ->orWhereDoesntHave('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); });
+            })->count();
+        $hanyaMendaftarAsrama = CalonSiswa::where('pilihan_program', 'Asrama')
+            ->whereNull('nomor_tes')
+            ->where(function($q) {
+                $q->whereDoesntHave('nilaiRapor')
+                  ->orWhereDoesntHave('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); });
+            })->count();
+        $hanyaMendaftarBelumMemilih = CalonSiswa::whereNull('pilihan_program')
+            ->whereNull('nomor_tes')
+            ->where(function($q) {
+                $q->whereDoesntHave('nilaiRapor')
+                  ->orWhereDoesntHave('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); });
+            })->count();
+        
         $stats = [
-            'total_pendaftar' => CalonSiswa::count(),
-            'pendaftar_reguler' => CalonSiswa::where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program')->count(),
+            'total_pendaftar' => $totalPendaftar,
+            'pendaftar_reguler' => CalonSiswa::where('pilihan_program', 'Reguler')->count(),
             'pendaftar_asrama' => CalonSiswa::where('pilihan_program', 'Asrama')->count(),
-            'pendaftar_baru' => CalonSiswa::where('status_verifikasi', 'pending')->count(),
-            'pendaftar_baru_reguler' => CalonSiswa::where('status_verifikasi', 'pending')->where(function($q) { $q->where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program'); })->count(),
-            'pendaftar_baru_asrama' => CalonSiswa::where('status_verifikasi', 'pending')->where('pilihan_program', 'Asrama')->count(),
-            'terverifikasi' => CalonSiswa::whereNotNull('nomor_tes')->count(),
-            'terverifikasi_reguler' => CalonSiswa::whereNotNull('nomor_tes')->where(function($q) { $q->where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program'); })->count(),
-            'terverifikasi_asrama' => CalonSiswa::whereNotNull('nomor_tes')->where('pilihan_program', 'Asrama')->count(),
-            'finalisasi' => CalonSiswa::where('is_finalisasi', true)->count(),
-            'finalisasi_reguler' => CalonSiswa::where('is_finalisasi', true)->where(function($q) { $q->where('pilihan_program', 'Reguler')->orWhereNull('pilihan_program'); })->count(),
-            'finalisasi_asrama' => CalonSiswa::where('is_finalisasi', true)->where('pilihan_program', 'Asrama')->count(),
+            'pendaftar_belum_memilih' => CalonSiswa::whereNull('pilihan_program')->count(),
+            // Belum lengkap
+            'pendaftar_baru' => $belumLengkap,
+            'pendaftar_baru_reguler' => $belumLengkapReguler,
+            'pendaftar_baru_asrama' => $belumLengkapAsrama,
+            'pendaftar_baru_belum_memilih' => $belumLengkapBelumMemilih,
+            // Mendapatkan Nomor Tes
+            'terverifikasi' => $mendapatkanNomorTes,
+            'terverifikasi_reguler' => $mendapatkanNomorTesReguler,
+            'terverifikasi_asrama' => $mendapatkanNomorTesAsrama,
+            'terverifikasi_belum_memilih' => $mendapatkanNomorTesBelumMemilih,
+            // Siap Verifikasi
+            'siap_verifikasi' => $siapVerifikasi,
+            'siap_verifikasi_reguler' => $siapVerifikasiReguler,
+            'siap_verifikasi_asrama' => $siapVerifikasiAsrama,
+            'siap_verifikasi_belum_memilih' => $siapVerifikasiBelumMemilih,
+            // Hanya Mendaftar
+            'hanya_mendaftar' => $hanyaMendaftar,
+            'hanya_mendaftar_reguler' => $hanyaMendaftarReguler,
+            'hanya_mendaftar_asrama' => $hanyaMendaftarAsrama,
+            'hanya_mendaftar_belum_memilih' => $hanyaMendaftarBelumMemilih,
         ];
 
         if ($isAdmin) {

@@ -102,6 +102,43 @@ class PendaftarController extends Controller
             }
         }
 
+        // Filter by custom filters from dashboard
+        if ($request->filled('filter')) {
+            switch ($request->filter) {
+                case 'belum_lengkap':
+                    // Belum lengkap: belum punya nomor tes dan data belum lengkap
+                    $query->whereNull('nomor_tes')
+                        ->where(function($q) {
+                            $q->where('data_diri_completed', false)
+                              ->orWhere('data_ortu_completed', false)
+                              ->orWhere('data_dokumen_completed', false);
+                        });
+                    break;
+                    
+                case 'siap_verifikasi':
+                    // Siap verifikasi: sudah upload Rapor1-5, KK, Foto, Kartu Pelajar, belum dapat nomor tes
+                    $query->whereNull('nomor_tes')
+                        ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_1'); })
+                        ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_2'); })
+                        ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_3'); })
+                        ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_4'); })
+                        ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'rapor_5'); })
+                        ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'kk'); })
+                        ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); })
+                        ->whereHas('dokumen', function($d) { $d->where('jenis_dokumen', 'kartu_pelajar'); });
+                    break;
+                    
+                case 'hanya_mendaftar':
+                    // Hanya mendaftar: belum punya nomor tes dan (belum ada nilai rapor ATAU belum upload foto)
+                    $query->whereNull('nomor_tes')
+                        ->where(function($q) {
+                            $q->whereDoesntHave('nilaiRapor')
+                              ->orWhereDoesntHave('dokumen', function($d) { $d->where('jenis_dokumen', 'foto'); });
+                        });
+                    break;
+            }
+        }
+
         // Search
         if ($request->filled('search')) {
             $search = $request->search;
@@ -1115,6 +1152,7 @@ class PendaftarController extends Controller
             // Email updated via user
             'jalur_pendaftaran_id' => 'nullable|exists:jalur_pendaftaran,id',
             'gelombang_pendaftaran_id' => 'nullable|exists:gelombang_pendaftaran,id',
+            'pilihan_program' => 'required|in:Reguler,Asrama',
             // Data Orang Tua
             'no_kk' => 'nullable|digits:16',
             // Data Orang Tua - Ayah
@@ -1204,6 +1242,7 @@ class PendaftarController extends Controller
             'kelurahan_id_siswa' => $validated['kelurahan_id_siswa'],
             'kodepos_siswa' => $validated['kodepos_siswa'] ?? null,
             'nomor_hp' => $validated['nomor_hp'],
+            'pilihan_program' => $validated['pilihan_program'],
             'nama_sekolah_asal' => $validated['nama_sekolah_asal'] ?? null,
             'npsn_asal_sekolah' => $validated['npsn_asal_sekolah'] ?? null,
             'alamat_sekolah_asal' => $validated['alamat_sekolah_asal'] ?? null,
@@ -1879,9 +1918,10 @@ class PendaftarController extends Controller
     public function sendEmail(Request $request, $id)
     {
         $request->validate([
-            'type' => 'required|in:registrasi,revisi,nomor_tes,diterima,ditolak',
+            'type' => 'required|in:registrasi,revisi,nomor_tes,diterima,ditolak,lainnya',
             'dokumen_id' => 'required_if:type,revisi|nullable|exists:calon_dokumens,id',
-            'catatan' => 'nullable|string|max:500',
+            'catatan' => 'nullable|string|max:1000',
+            'subject' => 'required_if:type,lainnya|nullable|string|max:255',
         ]);
 
         $pendaftar = CalonSiswa::with(['user', 'jalurPendaftaran', 'dokumen'])->findOrFail($id);
@@ -1938,6 +1978,27 @@ class PendaftarController extends Controller
                 case 'ditolak':
                     $catatan = $request->catatan ?? '';
                     $result = \App\Services\EmailNotificationService::sendHasilSeleksi($pendaftar, 'ditolak', $catatan);
+                    break;
+
+                case 'lainnya':
+                    $subject = $request->subject;
+                    $message = $request->catatan ?? '';
+                    
+                    if (!$subject) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Subjek email harus diisi untuk jenis notifikasi lainnya'
+                        ], 400);
+                    }
+                    
+                    if (!$message) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Isi pesan email harus diisi'
+                        ], 400);
+                    }
+                    
+                    $result = \App\Services\EmailNotificationService::sendCustom($pendaftar, $subject, $message);
                     break;
             }
 
