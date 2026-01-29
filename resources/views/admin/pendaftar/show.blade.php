@@ -1804,6 +1804,11 @@ dl.row dt {
                                                     <td class="data-separator" style="width: 8px; color: #666; font-size: 9px; vertical-align: top; text-align: left;">:</td>
                                                     <td class="data-value" style="font-weight: bold; color: #333; font-size: 9px; text-align: left;">{{ $pendaftar->tempat_lahir ?? '-' }}, {{ $pendaftar->tanggal_lahir ? \Carbon\Carbon::parse($pendaftar->tanggal_lahir)->format('d/m/Y') : '-' }}</td>
                                                 </tr>
+                                                <tr>
+                                                    <td class="data-label" style="width: 40px; color: #666; font-size: 9px; vertical-align: top; text-align: left;">Program</td>
+                                                    <td class="data-separator" style="width: 8px; color: #666; font-size: 9px; vertical-align: top; text-align: left;">:</td>
+                                                    <td class="data-value" style="font-weight: bold; color: #333; font-size: 9px; text-align: left;">{{ $pendaftar->pilihan_program ?? '-' }}</td>
+                                                </tr>
                                             </table>
                                             
                                             {{-- Password --}}
