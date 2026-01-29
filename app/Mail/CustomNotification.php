@@ -12,7 +12,7 @@ use Illuminate\Queue\SerializesModels;
 
 class CustomNotification extends Mailable
 {
-    use Queueable, SerializesModels;
+    use Queueable, SerializesModels;   
 
     public CalonSiswa $calonSiswa;
     public string $customSubject;
