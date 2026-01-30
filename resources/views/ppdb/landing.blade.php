@@ -592,11 +592,13 @@
         }
         
         .berita-card .card-img-wrapper {
+            display: block;
             position: relative;
             width: 100%;
             padding-top: 60%; /* Aspect ratio 5:3 */
             overflow: hidden;
             background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+            cursor: pointer;
         }
         
         .berita-card .card-img-wrapper img {
@@ -1181,7 +1183,7 @@
                 @foreach($beritas as $berita)
                 <div class="col-md-4">
                     <div class="card h-100 berita-card border-0 shadow-sm">
-                        <div class="card-img-wrapper">
+                        <a href="{{ route('ppdb.berita.show', $berita->slug) }}" class="card-img-wrapper">
                             @if($berita->gambar)
                             <img src="{{ asset('storage/' . $berita->gambar) }}" alt="{{ $berita->judul }}">
                             @else
@@ -1189,7 +1191,7 @@
                                 <i class="fas fa-newspaper fa-3x text-white opacity-50"></i>
                             </div>
                             @endif
-                        </div>
+                        </a>
                         <div class="card-body">
                             @if($berita->kategori)
                             <span class="badge bg-primary mb-2">{{ ucfirst($berita->kategori) }}</span>
@@ -1197,7 +1199,9 @@
                             @if($berita->is_featured)
                             <span class="badge bg-warning mb-2"><i class="fas fa-star"></i> Featured</span>
                             @endif
-                            <h5 class="card-title">{{ Str::limit($berita->judul, 50) }}</h5>
+                            <a href="{{ route('ppdb.berita.show', $berita->slug) }}" class="text-decoration-none">
+                                <h5 class="card-title text-dark">{{ Str::limit($berita->judul, 50) }}</h5>
+                            </a>
                             <p class="card-text text-muted small">{{ $berita->excerpt }}</p>
                         </div>
                         <div class="card-footer bg-white border-0 d-flex justify-content-between align-items-center">
