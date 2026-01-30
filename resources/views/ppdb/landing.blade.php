@@ -100,9 +100,12 @@
         .hero-slider {
             position: relative;
             width: 100%;
-            height: 500px;
+            height: 60vh;
+            min-height: 400px;
+            max-height: 600px;
             overflow: hidden;
             margin-top: 70px;
+            background: #000;
         }
         
         .hero-slider .slide {
@@ -113,6 +116,10 @@
             height: 100%;
             opacity: 0;
             transition: opacity 0.8s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
         }
         
         .hero-slider .slide.active {
@@ -122,7 +129,38 @@
         .hero-slider .slide img {
             width: 100%;
             height: 100%;
+            object-fit: contain;
+            object-position: center center;
+        }
+        
+        /* Background blur for portrait images */
+        .hero-slider .slide-bg {
+            position: absolute;
+            top: -10%;
+            left: -10%;
+            width: 120%;
+            height: 120%;
             object-fit: cover;
+            filter: blur(30px) brightness(0.4);
+            z-index: 0;
+        }
+        
+        .hero-slider .slide-img-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .hero-slider .slide-img-container img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
         }
         
         .hero-slider .slide-overlay {
@@ -131,10 +169,12 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 100%);
+            background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.3) 100%);
             display: flex;
-            align-items: center;
+            align-items: flex-end;
             justify-content: center;
+            padding-bottom: 80px;
+            z-index: 2;
         }
         
         .hero-slider .slide-content {
@@ -145,16 +185,17 @@
         }
         
         .hero-slider .slide-content h2 {
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: 700;
-            margin-bottom: 15px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 12px;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
         }
         
         .hero-slider .slide-content p {
-            font-size: 1.2rem;
-            margin-bottom: 25px;
-            opacity: 0.9;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            opacity: 0.95;
+            text-shadow: 1px 1px 4px rgba(0,0,0,0.5);
         }
         
         .hero-slider .slide-content .btn {
@@ -215,6 +256,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            backdrop-filter: blur(5px);
         }
         
         .slider-btn:hover {
@@ -226,18 +268,23 @@
         
         @media (max-width: 768px) {
             .hero-slider {
-                height: 400px;
+                height: 50vh;
+                min-height: 300px;
+                max-height: 450px;
             }
             .hero-slider .slide-content h2 {
-                font-size: 1.8rem;
+                font-size: 1.4rem;
             }
             .hero-slider .slide-content p {
-                font-size: 1rem;
+                font-size: 0.95rem;
             }
             .slider-btn {
                 width: 40px;
                 height: 40px;
                 font-size: 18px;
+            }
+            .hero-slider .slide-overlay {
+                padding-bottom: 70px;
             }
         }
         
@@ -534,9 +581,55 @@
         }
         
         /* Berita Card */
+        .berita-card {
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .berita-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        .berita-card .card-img-wrapper {
+            position: relative;
+            width: 100%;
+            padding-top: 60%; /* Aspect ratio 5:3 */
+            overflow: hidden;
+            background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+        }
+        
+        .berita-card .card-img-wrapper img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center center;
+            transition: transform 0.4s ease;
+        }
+        
+        .berita-card:hover .card-img-wrapper img {
+            transform: scale(1.08);
+        }
+        
+        .berita-card .card-img-wrapper .img-placeholder {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 70%, black) 100%);
+        }
+        
         .berita-card .card-img-top {
             height: 180px;
             object-fit: cover;
+            object-position: center center;
         }
         
         /* WhatsApp Float Button */
@@ -646,7 +739,12 @@
             @foreach($sliders as $index => $slider)
                 <div class="slide {{ $index === 0 ? 'active' : '' }}" data-slide="{{ $index }}">
                     @if($slider->gambar && file_exists(public_path('storage/' . $slider->gambar)))
-                        <img src="{{ asset('storage/' . $slider->gambar) }}" alt="{{ $slider->judul }}">
+                        {{-- Background blur untuk portrait images --}}
+                        <img src="{{ asset('storage/' . $slider->gambar) }}" alt="" class="slide-bg" aria-hidden="true">
+                        {{-- Main image container --}}
+                        <div class="slide-img-container">
+                            <img src="{{ asset('storage/' . $slider->gambar) }}" alt="{{ $slider->judul }}">
+                        </div>
                     @else
                         <div style="width: 100%; height: 100%; background: linear-gradient(135deg, var(--primary-color), color-mix(in srgb, var(--primary-color) 60%, black));"></div>
                     @endif
@@ -1082,14 +1180,16 @@
             <div class="row g-4">
                 @foreach($beritas as $berita)
                 <div class="col-md-4">
-                    <div class="card h-100 berita-card">
-                        @if($berita->gambar)
-                        <img src="{{ asset('storage/' . $berita->gambar) }}" class="card-img-top" alt="{{ $berita->judul }}">
-                        @else
-                        <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 180px;">
-                            <i class="fas fa-newspaper fa-3x text-white"></i>
+                    <div class="card h-100 berita-card border-0 shadow-sm">
+                        <div class="card-img-wrapper">
+                            @if($berita->gambar)
+                            <img src="{{ asset('storage/' . $berita->gambar) }}" alt="{{ $berita->judul }}">
+                            @else
+                            <div class="img-placeholder">
+                                <i class="fas fa-newspaper fa-3x text-white opacity-50"></i>
+                            </div>
+                            @endif
                         </div>
-                        @endif
                         <div class="card-body">
                             @if($berita->kategori)
                             <span class="badge bg-primary mb-2">{{ ucfirst($berita->kategori) }}</span>
