@@ -221,7 +221,8 @@
                                     @if(in_array($sesiUjian->status, ['locked', 'in_progress']))
                                         <button type="button" class="btn btn-sm btn-outline-primary mt-2 btn-assign-penguji"
                                                 data-ruang-id="{{ $ruang->id }}"
-                                                data-ruang-nama="{{ $ruang->nama_ruang }}">
+                                                data-ruang-nama="{{ $ruang->nama_ruang }}"
+                                                data-jumlah-peserta="{{ $totalPeserta }}">
                                             <i class="fas fa-user-plus mr-1"></i>Kelola Penguji
                                         </button>
                                     @endif
@@ -275,13 +276,43 @@
             </div>
         </div>
     </div>
+
+    <!-- Info Penguji Card -->
+    <div class="card">
+        <div class="card-header bg-light">
+            <h3 class="card-title">
+                <i class="fas fa-info-circle mr-2"></i>Panduan Penugasan Penguji
+            </h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6><i class="fas fa-user-tie text-primary mr-2"></i>Cara Menugaskan Penguji</h6>
+                    <ol class="pl-3">
+                        <li>Klik tombol <span class="badge badge-outline-primary">Kelola Penguji</span> pada setiap ruangan</li>
+                        <li>Pilih satu atau lebih penguji dari daftar</li>
+                        <li>Tentukan ketua penguji (opsional)</li>
+                        <li>Klik Simpan</li>
+                    </ol>
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="fas fa-clipboard-check text-success mr-2"></i>Catatan Penting</h6>
+                    <ul class="pl-3">
+                        <li>Penguji harus sudah terdaftar di <a href="{{ route('admin.penguji.index') }}">Manajemen Penguji</a></li>
+                        <li>Ketua penguji bertanggung jawab atas jalannya ujian di ruangan</li>
+                        <li>Setelah penugasan, penguji dapat login ke portal <code>/penguji</code></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- Modal Assign Penguji -->
+<!-- Modal Assign Penguji (Improved) -->
 <div class="modal fade" id="assignPengujiModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-primary">
+            <div class="modal-header bg-gradient-primary">
                 <h5 class="modal-title text-white">
                     <i class="fas fa-user-plus mr-2"></i>Kelola Penguji - <span id="modalRuangNama"></span>
                 </h5>
@@ -292,30 +323,79 @@
                 <div class="modal-body">
                     <input type="hidden" name="ruang_ujian_id" id="modalRuangId">
                     
+                    <!-- Info Ruangan -->
+                    <div class="alert alert-info mb-4">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong><i class="fas fa-door-open mr-1"></i>Ruangan:</strong>
+                                <span id="infoRuangNama">-</span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong><i class="fas fa-users mr-1"></i>Jumlah Peserta:</strong>
+                                <span id="infoJumlahPeserta">0</span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong><i class="fas fa-user-tie mr-1"></i>Penguji Saat Ini:</strong>
+                                <span id="infoJumlahPenguji">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pilih Penguji -->
                     <div class="form-group">
-                        <label><strong>Pilih Penguji:</strong></label>
+                        <label class="d-flex justify-content-between align-items-center">
+                            <span><strong><i class="fas fa-users mr-1"></i>Pilih Penguji:</strong></span>
+                            <a href="{{ route('admin.penguji.create') }}" target="_blank" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-plus mr-1"></i>Tambah Penguji Baru
+                            </a>
+                        </label>
                         <select name="penguji_ids[]" id="selectPenguji" class="form-control" multiple="multiple" style="width: 100%">
                             @foreach($pengujiList as $penguji)
-                                <option value="{{ $penguji->id }}">
-                                    {{ $penguji->name }} ({{ $penguji->email }})
+                                @php
+                                    $roleNames = $penguji->roles->pluck('display_name')->join(', ');
+                                    $isDedicatedPenguji = $penguji->roles->contains('name', 'penguji');
+                                @endphp
+                                <option value="{{ $penguji->id }}" 
+                                        data-email="{{ $penguji->email }}"
+                                        data-phone="{{ $penguji->phone ?? '-' }}"
+                                        data-roles="{{ $roleNames }}"
+                                        data-dedicated="{{ $isDedicatedPenguji ? '1' : '0' }}">
+                                    {{ $penguji->name }} ({{ $isDedicatedPenguji ? 'Penguji' : $roleNames }})
                                 </option>
                             @endforeach
                         </select>
-                        <small class="text-muted">Pilih satu atau lebih penguji untuk ruangan ini</small>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle mr-1"></i>Pilih satu atau lebih penguji. 
+                            Penguji dengan label <span class="badge badge-primary badge-sm">Penguji</span> adalah penguji khusus.
+                        </small>
                     </div>
 
+                    <!-- Daftar Penguji Terpilih -->
+                    <div id="selectedPengujiList" class="mb-3" style="display: none;">
+                        <label><strong><i class="fas fa-check-circle mr-1"></i>Penguji Terpilih:</strong></label>
+                        <div id="selectedPengujiCards" class="row"></div>
+                    </div>
+
+                    <!-- Pilih Ketua -->
                     <div class="form-group">
-                        <label><strong>Ketua Penguji:</strong></label>
+                        <label>
+                            <strong><i class="fas fa-star text-warning mr-1"></i>Ketua Penguji:</strong>
+                        </label>
                         <select name="ketua_id" id="selectKetua" class="form-control">
-                            <option value="">-- Pilih Ketua Penguji --</option>
+                            <option value="">-- Pilih Ketua Penguji (Opsional) --</option>
                         </select>
-                        <small class="text-muted">Ketua penguji bertanggung jawab atas jalannya ujian di ruangan</small>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle mr-1"></i>Ketua penguji bertanggung jawab koordinasi dan memastikan kelancaran ujian di ruangan.
+                        </small>
                     </div>
                 </div>
                 <div class="modal-footer">
+                    <a href="{{ route('admin.penguji.index') }}" target="_blank" class="btn btn-outline-info mr-auto">
+                        <i class="fas fa-external-link-alt mr-1"></i>Kelola Semua Penguji
+                    </a>
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save mr-1"></i>Simpan
+                        <i class="fas fa-save mr-1"></i>Simpan Penugasan
                     </button>
                 </div>
             </form>
@@ -328,35 +408,107 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 $(document).ready(function() {
-    // Initialize Select2 for penguji
+    // Custom template for Select2 options
+    function formatPenguji(penguji) {
+        if (!penguji.id) return penguji.text;
+        
+        var $option = $(penguji.element);
+        var isDedicated = $option.data('dedicated') == '1';
+        var roles = $option.data('roles') || '';
+        var email = $option.data('email') || '';
+        
+        var badge = isDedicated 
+            ? '<span class="badge badge-primary ml-2">Penguji</span>'
+            : '<span class="badge badge-secondary ml-2">' + roles + '</span>';
+        
+        return $('<span>' + penguji.text.split('(')[0].trim() + badge + '<br><small class="text-muted">' + email + '</small></span>');
+    }
+
+    // Initialize Select2 for penguji with custom template
     $('#selectPenguji').select2({
         theme: 'bootstrap4',
-        placeholder: 'Cari dan pilih penguji...',
+        placeholder: 'Ketik untuk mencari penguji...',
         allowClear: true,
-        dropdownParent: $('#assignPengujiModal')
+        dropdownParent: $('#assignPengujiModal'),
+        templateResult: formatPenguji,
+        matcher: function(params, data) {
+            if ($.trim(params.term) === '') {
+                return data;
+            }
+            
+            var searchTerm = params.term.toLowerCase();
+            var text = (data.text || '').toLowerCase();
+            var email = ($(data.element).data('email') || '').toLowerCase();
+            
+            if (text.indexOf(searchTerm) > -1 || email.indexOf(searchTerm) > -1) {
+                return data;
+            }
+            
+            return null;
+        }
     });
 
     $('#selectKetua').select2({
         theme: 'bootstrap4',
-        placeholder: 'Pilih ketua penguji',
+        placeholder: 'Pilih ketua penguji...',
         allowClear: true,
         dropdownParent: $('#assignPengujiModal')
     });
 
-    // Update ketua options when penguji selection changes
+    // Update selected penguji cards and ketua options
     $('#selectPenguji').on('change', function() {
         var selected = $(this).select2('data');
         var ketuaSelect = $('#selectKetua');
         var currentKetua = ketuaSelect.val();
+        var cardsContainer = $('#selectedPengujiCards');
         
+        // Update ketua dropdown
         ketuaSelect.empty();
-        ketuaSelect.append('<option value="">-- Pilih Ketua Penguji --</option>');
+        ketuaSelect.append('<option value="">-- Pilih Ketua Penguji (Opsional) --</option>');
         
-        selected.forEach(function(item) {
-            ketuaSelect.append('<option value="' + item.id + '">' + item.text + '</option>');
-        });
+        // Update cards
+        cardsContainer.empty();
+        
+        if (selected.length > 0) {
+            $('#selectedPengujiList').show();
+            
+            selected.forEach(function(item) {
+                var $option = $(item.element);
+                var isDedicated = $option.data('dedicated') == '1';
+                var email = $option.data('email') || '';
+                var phone = $option.data('phone') || '-';
+                
+                ketuaSelect.append('<option value="' + item.id + '">' + item.text.split('(')[0].trim() + '</option>');
+                
+                var card = `
+                    <div class="col-md-6 mb-2">
+                        <div class="card card-outline ${isDedicated ? 'card-primary' : 'card-secondary'} mb-0">
+                            <div class="card-body p-2">
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle bg-${isDedicated ? 'primary' : 'secondary'} text-white d-flex align-items-center justify-content-center mr-2" style="width: 35px; height: 35px; font-size: 0.9rem;">
+                                        ${item.text.split('(')[0].trim().substring(0, 2).toUpperCase()}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <strong>${item.text.split('(')[0].trim()}</strong>
+                                        ${isDedicated ? '<i class="fas fa-check-circle text-primary ml-1" title="Penguji Terdaftar"></i>' : ''}
+                                        <br>
+                                        <small class="text-muted">${email}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                cardsContainer.append(card);
+            });
+            
+            $('#infoJumlahPenguji').text(selected.length);
+        } else {
+            $('#selectedPengujiList').hide();
+            $('#infoJumlahPenguji').text('0');
+        }
 
-        // Restore selection if still valid
+        // Restore ketua selection if still valid
         if (currentKetua && selected.find(s => s.id == currentKetua)) {
             ketuaSelect.val(currentKetua).trigger('change.select2');
         }
@@ -366,24 +518,83 @@ $(document).ready(function() {
     $('.btn-assign-penguji').on('click', function() {
         var ruangId = $(this).data('ruang-id');
         var ruangNama = $(this).data('ruang-nama');
+        var jumlahPeserta = $(this).data('jumlah-peserta') || 0;
         
         $('#modalRuangId').val(ruangId);
         $('#modalRuangNama').text(ruangNama);
+        $('#infoRuangNama').text(ruangNama);
+        $('#infoJumlahPeserta').text(jumlahPeserta);
         $('#assignPengujiForm').attr('action', '{{ route("admin.sesi-ujian.assign-penguji", $sesiUjian->id) }}');
+        
+        // Reset form
+        $('#selectPenguji').val([]).trigger('change');
+        $('#selectKetua').val('').trigger('change.select2');
+        $('#selectedPengujiList').hide();
         
         // Load current penguji for this ruangan
         $.get('{{ route("admin.sesi-ujian.index") }}/{{ $sesiUjian->id }}/ruangan/' + ruangId + '/penguji', function(data) {
-            var pengujiIds = data.penguji.map(p => p.user_id);
-            var ketuaId = data.penguji.find(p => p.is_ketua)?.user_id || '';
-            
-            $('#selectPenguji').val(pengujiIds).trigger('change');
-            
-            setTimeout(function() {
-                $('#selectKetua').val(ketuaId).trigger('change.select2');
-            }, 100);
+            if (data.penguji && data.penguji.length > 0) {
+                var pengujiIds = data.penguji.map(function(p) { return p.user_id; });
+                var ketuaItem = data.penguji.find(function(p) { return p.is_ketua; });
+                var ketuaId = ketuaItem ? ketuaItem.user_id : '';
+                
+                $('#selectPenguji').val(pengujiIds).trigger('change');
+                
+                setTimeout(function() {
+                    $('#selectKetua').val(ketuaId).trigger('change.select2');
+                }, 150);
+            }
+        }).fail(function() {
+            console.log('Failed to load penguji data');
         });
         
         $('#assignPengujiModal').modal('show');
+    });
+
+    // Form submit with AJAX
+    $('#assignPengujiForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        var form = $(this);
+        var submitBtn = form.find('button[type="submit"]');
+        var originalText = submitBtn.html();
+        
+        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Menyimpan...');
+        
+        $.ajax({
+            url: form.attr('action'),
+            method: 'POST',
+            data: form.serialize(),
+            success: function(response) {
+                if (response.success) {
+                    // Update penguji display on the card
+                    var ruangId = $('#modalRuangId').val();
+                    var pengujiNames = response.penguji_names || '-';
+                    
+                    $('#penguji-list-' + ruangId).html(
+                        pengujiNames === '-' 
+                            ? '<span class="text-muted">Belum ada penguji</span>'
+                            : pengujiNames.split(', ').map(function(name) {
+                                return '<span class="penguji-tag">' + name + '</span>';
+                            }).join('')
+                    );
+                    
+                    $('#assignPengujiModal').modal('hide');
+                    
+                    // Show success toast
+                    toastr.success(response.message || 'Penguji berhasil ditugaskan');
+                } else {
+                    toastr.error(response.message || 'Gagal menyimpan penugasan');
+                }
+            },
+            error: function(xhr) {
+                var message = xhr.responseJSON?.message || 'Terjadi kesalahan. Silakan coba lagi.';
+                toastr.error(message);
+            },
+            complete: function() {
+                submitBtn.prop('disabled', false).html(originalText);
+            }
+        });
     });
 });
 </script>

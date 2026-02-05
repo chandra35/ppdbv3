@@ -167,6 +167,11 @@ return [
                     'icon' => 'fas fa-fw fa-calendar-check',
                 ],
                 [
+                    'text' => 'Manajemen Penguji',
+                    'route' => 'admin.penguji.index',
+                    'icon' => 'fas fa-fw fa-user-tie',
+                ],
+                [
                     'text' => 'Nilai Seleksi',
                     'route' => 'admin.nilai-seleksi.index',
                     'icon' => 'fas fa-fw fa-chart-bar',

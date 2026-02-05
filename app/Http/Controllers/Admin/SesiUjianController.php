@@ -71,15 +71,19 @@ class SesiUjianController extends Controller
             'gelombang',
             'creator',
             'locker',
-            'ruangan.penguji.user',
+            'ruangan.penguji.user.roles',
             'ruangan.peserta.calonSiswa',
         ]);
 
         // Get users for penguji assignment
-        // Filter by roles: admin, verifikator, super-admin (users who can be assigned as penguji)
-        $pengujiList = User::whereHas('roles', function($query) {
-            $query->whereIn('name', ['admin', 'verifikator', 'super-admin', 'mas-admin']);
-        })->orderBy('name')->get();
+        // Include: dedicated penguji role AND admin/verifikator roles
+        $pengujiList = User::with('roles')
+            ->whereHas('roles', function($query) {
+                $query->whereIn('name', ['penguji', 'admin', 'verifikator', 'super-admin', 'mas-admin']);
+            })
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
 
         // Calculate progress
         $totalPeserta = $sesiUjian->pesertaRuang()->count();
@@ -184,10 +188,22 @@ class SesiUjianController extends Controller
     {
         $pengujiRuang = PengujiRuang::where('sesi_ujian_id', $sesiUjian->id)
             ->where('ruang_ujian_id', $ruangUjian->id)
-            ->with('user')
+            ->with('user.roles')
             ->get();
 
+        $pengujiData = $pengujiRuang->map(function ($pr) {
+            return [
+                'id' => $pr->id,
+                'user_id' => $pr->user_id,
+                'name' => $pr->user->name ?? 'Unknown',
+                'email' => $pr->user->email ?? '',
+                'is_ketua' => $pr->is_ketua,
+                'roles' => $pr->user->roles->pluck('display_name')->join(', '),
+            ];
+        });
+
         return response()->json([
+            'penguji' => $pengujiData,
             'penguji_ids' => $pengujiRuang->pluck('user_id'),
             'ketua_id' => $pengujiRuang->where('is_ketua', true)->first()?->user_id,
         ]);

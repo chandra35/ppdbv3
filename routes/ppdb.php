@@ -270,6 +270,22 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/print/nama-ruang', [\App\Http\Controllers\Admin\CetakRuangController::class, 'printNamaRuang'])->name('print.nama-ruang');
     });
 
+    // ---- MANAJEMEN PENGUJI ----
+    // Penguji adalah GTK yang di-assign langsung dengan role "Penguji TES Wawancara"
+    // Interface dual-listbox: GTK di kiri, Penguji di kanan
+    Route::prefix('penguji')->name('penguji.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\PengujiController::class, 'index'])->name('index');
+        Route::get('/available-gtk', [\App\Http\Controllers\Admin\PengujiController::class, 'getAvailableGtk'])->name('available-gtk');
+        Route::post('/assign', [\App\Http\Controllers\Admin\PengujiController::class, 'assignPenguji'])->name('assign');
+        Route::post('/remove', [\App\Http\Controllers\Admin\PengujiController::class, 'removePenguji'])->name('remove');
+        Route::get('/list', [\App\Http\Controllers\Admin\PengujiController::class, 'getPengujiList'])->name('list');
+        Route::get('/{penguji}', [\App\Http\Controllers\Admin\PengujiController::class, 'show'])->name('show');
+        Route::delete('/{penguji}', [\App\Http\Controllers\Admin\PengujiController::class, 'destroy'])->name('destroy');
+        Route::post('/{penguji}/toggle-status', [\App\Http\Controllers\Admin\PengujiController::class, 'toggleStatus'])->name('toggle-status');
+        Route::post('/{penguji}/reset-password', [\App\Http\Controllers\Admin\PengujiController::class, 'resetPassword'])->name('reset-password');
+        Route::get('/sesi/{sesiUjian}/summary', [\App\Http\Controllers\Admin\PengujiController::class, 'getAssignmentSummary'])->name('assignment-summary');
+    });
+
     // ---- SESI UJIAN & SELEKSI ----
     Route::prefix('sesi-ujian')->name('sesi-ujian.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\SesiUjianController::class, 'index'])->name('index');
