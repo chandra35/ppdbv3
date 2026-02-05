@@ -98,7 +98,7 @@ class PenjadwalanUjianController extends Controller
 
         // Save settings to session
         session(['penjadwalan_settings' => $request->only([
-            'tanggal_ujian', 'jam_mulai', 'jeda_sesi',
+            'tanggal_ujian', 'jam_mulai', 'jeda_sesi', 'mode',
             'jumlah_ruang_cbt', 'kapasitas_cbt', 'durasi_cbt', 'prefix_ruang_cbt',
             'jumlah_ruang_wawancara', 'kapasitas_wawancara', 'durasi_wawancara', 'prefix_ruang_wawancara',
             'jalur_id', 'gelombang_id', 'tahun_pelajaran_id'
@@ -127,22 +127,24 @@ class PenjadwalanUjianController extends Controller
 
         // Check capacity imbalance warning
         $warnings = [];
-        if ($kapasitasCbt != $kapasitasWawancara) {
+        $mode = $request->mode ?? 'swap';
+        
+        if ($mode === 'swap' && $kapasitasCbt != $kapasitasWawancara) {
             $diff = abs($kapasitasCbt - $kapasitasWawancara);
             $persen = round(($diff / max($kapasitasCbt, $kapasitasWawancara)) * 100);
             if ($kapasitasCbt > $kapasitasWawancara) {
-                $warnings[] = "Kapasitas CBT ({$kapasitasCbt}) lebih besar dari Wawancara ({$kapasitasWawancara}). Perbedaan {$persen}%. Beberapa ruang CBT mungkin tidak terpakai penuh.";
+                $warnings[] = "Kapasitas CBT ({$kapasitasCbt}) lebih besar dari Wawancara ({$kapasitasWawancara}). Perbedaan {$persen}%. Disarankan gunakan mode Queue atau seimbangkan kapasitas.";
             } else {
-                $warnings[] = "Kapasitas Wawancara ({$kapasitasWawancara}) lebih besar dari CBT ({$kapasitasCbt}). Perbedaan {$persen}%. Beberapa ruang Wawancara mungkin tidak terpakai penuh.";
+                $warnings[] = "Kapasitas Wawancara ({$kapasitasWawancara}) lebih besar dari CBT ({$kapasitasCbt}). Perbedaan {$persen}%. Disarankan gunakan mode Queue untuk memaksimalkan ruangan.";
             }
         }
 
-        // Generate schedule
-        $schedule = $this->generateSchedule(
-            $pesertaList,
-            $request->all(),
-            $kapasitasParalel
-        );
+        // Generate schedule based on mode
+        if ($mode === 'queue') {
+            $schedule = $this->generateQueueSchedule($pesertaList, $request->all());
+        } else {
+            $schedule = $this->generateSchedule($pesertaList, $request->all(), $kapasitasParalel);
+        }
 
         // Get filter lists
         $tahunPelajaranList = TahunPelajaran::orderBy('is_active', 'desc')->orderBy('nama', 'desc')->get();
@@ -150,7 +152,7 @@ class PenjadwalanUjianController extends Controller
         $gelombangList = $tahunAktif ? GelombangPendaftaran::whereHas('jalur', fn($q) => $q->where('tahun_pelajaran_id', $tahunAktif->id))->get() : collect();
 
         $settings = $request->only([
-            'tanggal_ujian', 'jam_mulai', 'jeda_sesi',
+            'tanggal_ujian', 'jam_mulai', 'jeda_sesi', 'mode',
             'jumlah_ruang_cbt', 'kapasitas_cbt', 'durasi_cbt', 'prefix_ruang_cbt',
             'jumlah_ruang_wawancara', 'kapasitas_wawancara', 'durasi_wawancara', 'prefix_ruang_wawancara',
             'jalur_id', 'gelombang_id', 'tahun_pelajaran_id'
@@ -229,6 +231,7 @@ class PenjadwalanUjianController extends Controller
                 'kapasitas_wawancara' => $settings['kapasitas_wawancara'],
                 'durasi_wawancara' => $settings['durasi_wawancara'],
                 'prefix_ruang_wawancara' => $settings['prefix_ruang_wawancara'] ?? 'Ruang Wawancara',
+                'mode' => $settings['mode'] ?? 'swap',
                 'total_peserta' => $pesertaList->count(),
                 'status' => 'locked',
                 'generated_at' => now(),
@@ -237,8 +240,13 @@ class PenjadwalanUjianController extends Controller
                 'locked_by' => Auth::id(),
             ]);
 
-            // Generate schedule
-            $schedule = $this->generateSchedule($pesertaList, $settings, $kapasitasParalel);
+            // Generate schedule based on mode
+            $mode = $settings['mode'] ?? 'swap';
+            if ($mode === 'queue') {
+                $schedule = $this->generateQueueSchedule($pesertaList, $settings);
+            } else {
+                $schedule = $this->generateSchedule($pesertaList, $settings, $kapasitasParalel);
+            }
 
             // Create sesi and ruang, then assign peserta
             $this->saveScheduleToDatabase($jadwalUjian, $schedule, $settings, $tahunAktif);
@@ -639,6 +647,147 @@ class PenjadwalanUjianController extends Controller
         }
 
         $schedule['estimasi_selesai'] = $currentTime->subMinutes($jedaSesi)->format('H:i');
+
+        return $schedule;
+    }
+
+    /**
+     * Generate Queue Schedule - CBT first, remaining do wawancara while waiting
+     * More efficient when wawancara capacity > CBT capacity
+     */
+    protected function generateQueueSchedule($pesertaList, $settings)
+    {
+        $totalPeserta = $pesertaList->count();
+        $kapasitasCbt = (int) $settings['jumlah_ruang_cbt'] * (int) $settings['kapasitas_cbt'];
+        $kapasitasWawancara = (int) $settings['jumlah_ruang_wawancara'] * (int) $settings['kapasitas_wawancara'];
+        
+        $jamMulai = Carbon::parse($settings['tanggal_ujian'] . ' ' . $settings['jam_mulai']);
+        $durasiMax = (int) max($settings['durasi_cbt'], $settings['durasi_wawancara']);
+        $jedaSesi = (int) $settings['jeda_sesi'];
+
+        $schedule = [
+            'sesi' => [],
+            'gelombang' => [],
+            'peserta' => [],
+            'estimasi_selesai' => null,
+        ];
+
+        // Track status peserta
+        $belumCbt = $pesertaList->pluck('id')->toArray();
+        $sudahCbt = []; // id => true, waiting for wawancara
+        $belumWawancara = [];
+        $selesai = [];
+
+        $currentTime = $jamMulai->copy();
+        $sesiCounter = 1;
+
+        // Loop until everyone done both CBT and Wawancara
+        while (count($selesai) < $totalPeserta) {
+            $sesiStart = $currentTime->copy();
+            $sesiEnd = $currentTime->copy()->addMinutes($durasiMax);
+
+            // CBT: Take from belumCbt queue
+            $cbtPeserta = array_slice($belumCbt, 0, $kapasitasCbt);
+            $belumCbt = array_slice($belumCbt, $kapasitasCbt);
+
+            // Wawancara: Prioritize those who finished CBT, then those who haven't started
+            $wawancaraPeserta = [];
+            
+            // First: from sudahCbt (already did CBT, need wawancara)
+            $fromSudahCbt = array_slice($sudahCbt, 0, $kapasitasWawancara);
+            $sudahCbt = array_slice($sudahCbt, count($fromSudahCbt));
+            $wawancaraPeserta = array_merge($wawancaraPeserta, $fromSudahCbt);
+            
+            // If still have space: from belumCbt that are NOT doing CBT this session
+            $remainingWawancaraSlots = $kapasitasWawancara - count($wawancaraPeserta);
+            if ($remainingWawancaraSlots > 0 && count($belumWawancara) > 0) {
+                $fromBelumWawancara = array_slice($belumWawancara, 0, $remainingWawancaraSlots);
+                $belumWawancara = array_slice($belumWawancara, count($fromBelumWawancara));
+                $wawancaraPeserta = array_merge($wawancaraPeserta, $fromBelumWawancara);
+            }
+
+            // Get nomor_tes for display
+            $cbtCollection = $pesertaList->whereIn('id', $cbtPeserta);
+            $wawancaraCollection = $pesertaList->whereIn('id', $wawancaraPeserta);
+
+            $schedule['sesi'][$sesiCounter] = [
+                'nomor' => $sesiCounter,
+                'waktu_mulai' => $sesiStart->format('H:i'),
+                'waktu_selesai' => $sesiEnd->format('H:i'),
+                'cbt' => [
+                    'peserta' => $cbtPeserta,
+                    'jumlah' => count($cbtPeserta),
+                    'range' => count($cbtPeserta) > 0 ? ($cbtCollection->first()->nomor_tes . ' - ' . $cbtCollection->last()->nomor_tes) : '-',
+                ],
+                'wawancara' => [
+                    'peserta' => $wawancaraPeserta,
+                    'jumlah' => count($wawancaraPeserta),
+                    'range' => count($wawancaraPeserta) > 0 ? ($wawancaraCollection->first()->nomor_tes . ' - ' . $wawancaraCollection->last()->nomor_tes) : '-',
+                ],
+            ];
+
+            // Update peserta mapping
+            foreach ($cbtPeserta as $idx => $pesertaId) {
+                if (!isset($schedule['peserta'][$pesertaId])) {
+                    $schedule['peserta'][$pesertaId] = [
+                        'grup' => 'Q', // Queue mode
+                        'gelombang' => 1,
+                    ];
+                }
+                $schedule['peserta'][$pesertaId]['sesi_cbt'] = $sesiCounter;
+                $schedule['peserta'][$pesertaId]['urut_cbt'] = $idx + 1;
+                $schedule['peserta'][$pesertaId]['ruang_cbt_idx'] = floor($idx / (int) $settings['kapasitas_cbt']);
+            }
+
+            foreach ($wawancaraPeserta as $idx => $pesertaId) {
+                if (!isset($schedule['peserta'][$pesertaId])) {
+                    $schedule['peserta'][$pesertaId] = [
+                        'grup' => 'Q',
+                        'gelombang' => 1,
+                    ];
+                }
+                $schedule['peserta'][$pesertaId]['sesi_wawancara'] = $sesiCounter;
+                $schedule['peserta'][$pesertaId]['urut_wawancara'] = $idx + 1;
+                $schedule['peserta'][$pesertaId]['ruang_wawancara_idx'] = floor($idx / (int) $settings['kapasitas_wawancara']);
+            }
+
+            // After this sesi:
+            // - Those who did CBT now need wawancara (if haven't done)
+            foreach ($cbtPeserta as $pesertaId) {
+                // Check if they already did wawancara
+                if (isset($schedule['peserta'][$pesertaId]['sesi_wawancara'])) {
+                    $selesai[] = $pesertaId;
+                } else {
+                    $sudahCbt[] = $pesertaId;
+                }
+            }
+
+            // - Those who did Wawancara, check if they already did CBT
+            foreach ($wawancaraPeserta as $pesertaId) {
+                if (isset($schedule['peserta'][$pesertaId]['sesi_cbt'])) {
+                    if (!in_array($pesertaId, $selesai)) {
+                        $selesai[] = $pesertaId;
+                    }
+                } else {
+                    $belumWawancara[] = $pesertaId; // They did wawancara but still need CBT
+                }
+            }
+
+            $currentTime = $sesiEnd->copy()->addMinutes($jedaSesi);
+            $sesiCounter++;
+
+            // Safety: prevent infinite loop
+            if ($sesiCounter > 100) {
+                break;
+            }
+        }
+
+        $schedule['estimasi_selesai'] = $currentTime->subMinutes($jedaSesi)->format('H:i');
+        $schedule['gelombang'][1] = [
+            'grup_a' => 0,
+            'grup_b' => 0,
+            'total' => $totalPeserta,
+        ];
 
         return $schedule;
     }

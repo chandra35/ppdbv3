@@ -29,6 +29,7 @@ class JadwalUjian extends Model
         'kapasitas_wawancara',
         'durasi_wawancara',
         'prefix_ruang_wawancara',
+        'mode',
         'total_peserta',
         'total_sesi',
         'estimasi_selesai',

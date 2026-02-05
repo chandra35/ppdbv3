@@ -231,6 +231,22 @@
                                value="{{ $settings['jeda_sesi'] ?? 30 }}" min="5" max="120" required>
                     </div>
                     <div class="form-group">
+                        <label>Mode Penjadwalan <span class="text-danger">*</span></label>
+                        <select name="mode" class="form-control" required>
+                            <option value="swap" {{ ($settings['mode'] ?? 'swap') == 'swap' ? 'selected' : '' }}>
+                                🔄 Swap (Grup A↔B bertukar)
+                            </option>
+                            <option value="queue" {{ ($settings['mode'] ?? 'swap') == 'queue' ? 'selected' : '' }}>
+                                📋 Queue (CBT dulu, sisa langsung wawancara)
+                            </option>
+                        </select>
+                        <small class="text-muted">
+                            <strong>Swap:</strong> Grup A CBT, Grup B Wawancara, lalu tukar.<br>
+                            <strong>Queue:</strong> CBT penuh dulu, sisanya langsung wawancara.
+                        </small>
+                    </div>
+                    <hr>
+                    <div class="form-group">
                         <label>Filter Jalur</label>
                         <select name="jalur_id" class="form-control">
                             <option value="">-- Semua Jalur --</option>
@@ -289,6 +305,16 @@
                         <h6><i class="fas fa-calculator mr-2"></i>Ringkasan Perhitungan</h6>
                         <table class="table table-sm table-borderless mb-0">
                             <tr>
+                                <td>Mode</td>
+                                <td class="text-right">
+                                    @if(($settings['mode'] ?? 'swap') == 'queue')
+                                    <span class="badge badge-info">📋 Queue</span>
+                                    @else
+                                    <span class="badge badge-primary">🔄 Swap</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            <tr>
                                 <td>Total Peserta</td>
                                 <td class="text-right"><strong>{{ $totalPeserta }}</strong></td>
                             </tr>
@@ -299,10 +325,6 @@
                             <tr>
                                 <td>Kapasitas Wawancara/Sesi</td>
                                 <td class="text-right"><strong class="text-warning">{{ $kapasitasWawancara }}</strong> ({{ $settings['jumlah_ruang_wawancara'] }} × {{ $settings['kapasitas_wawancara'] }})</td>
-                            </tr>
-                            <tr>
-                                <td>Kapasitas Paralel</td>
-                                <td class="text-right"><strong class="text-primary">{{ $kapasitasParalel }}</strong></td>
                             </tr>
                             <tr>
                                 <td>Jumlah Sesi</td>
@@ -319,13 +341,22 @@
             <div class="col-md-6">
                 <div class="card bg-light">
                     <div class="card-body">
-                        <h6><i class="fas fa-info-circle mr-2"></i>Cara Kerja</h6>
+                        <h6><i class="fas fa-info-circle mr-2"></i>Cara Kerja - {{ ($settings['mode'] ?? 'swap') == 'queue' ? 'Mode Queue' : 'Mode Swap' }}</h6>
+                        @if(($settings['mode'] ?? 'swap') == 'queue')
+                        <ul class="mb-0 pl-3">
+                            <li>CBT diisi penuh terlebih dahulu ({{ $kapasitasCbt }} orang)</li>
+                            <li>Peserta yang belum CBT langsung <strong>wawancara</strong> sambil menunggu</li>
+                            <li>Setelah CBT selesai, peserta langsung pindah ke wawancara</li>
+                            <li>Efisien jika kapasitas wawancara > CBT</li>
+                        </ul>
+                        @else
                         <ul class="mb-0 pl-3">
                             <li><strong>Grup A</strong>: CBT dulu → lalu Wawancara</li>
                             <li><strong>Grup B</strong>: Wawancara dulu → lalu CBT</li>
                             <li>Setiap peserta mengikuti <strong>2 sesi</strong> (CBT + Wawancara)</li>
                             <li>Distribusi berdasarkan <strong>Nomor Tes</strong></li>
                         </ul>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -362,7 +393,8 @@
             </table>
         </div>
 
-        {{-- Gelombang Detail --}}
+        {{-- Gelombang Detail (only for Swap mode) --}}
+        @if(($settings['mode'] ?? 'swap') == 'swap')
         <h5 class="mt-4"><i class="fas fa-layer-group mr-2"></i>Detail per Gelombang</h5>
         <div class="row">
             @foreach($schedule['gelombang'] as $nomorGelombang => $gelombang)
@@ -389,6 +421,13 @@
             </div>
             @endforeach
         </div>
+        @else
+        <div class="alert alert-info mt-4">
+            <i class="fas fa-info-circle mr-2"></i>
+            <strong>Mode Queue:</strong> Peserta mengikuti CBT dan Wawancara secara mengalir. 
+            Yang belum dapat giliran CBT bisa langsung wawancara dulu, begitu pula sebaliknya.
+        </div>
+        @endif
     </div>
     <div class="card-footer">
         <form method="POST" action="{{ route('admin.penjadwalan-ujian.store') }}">
