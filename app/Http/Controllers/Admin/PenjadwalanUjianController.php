@@ -182,6 +182,15 @@ class PenjadwalanUjianController extends Controller
                 ->with('error', 'Silakan generate preview terlebih dahulu.');
         }
 
+        // Cast numeric settings to integers
+        $settings['jeda_sesi'] = (int) ($settings['jeda_sesi'] ?? 30);
+        $settings['jumlah_ruang_cbt'] = (int) ($settings['jumlah_ruang_cbt'] ?? 3);
+        $settings['kapasitas_cbt'] = (int) ($settings['kapasitas_cbt'] ?? 30);
+        $settings['durasi_cbt'] = (int) ($settings['durasi_cbt'] ?? 90);
+        $settings['jumlah_ruang_wawancara'] = (int) ($settings['jumlah_ruang_wawancara'] ?? 4);
+        $settings['kapasitas_wawancara'] = (int) ($settings['kapasitas_wawancara'] ?? 15);
+        $settings['durasi_wawancara'] = (int) ($settings['durasi_wawancara'] ?? 60);
+
         $tahunAktif = isset($settings['tahun_pelajaran_id']) 
             ? TahunPelajaran::find($settings['tahun_pelajaran_id'])
             : TahunPelajaran::where('is_active', true)->first();
@@ -522,8 +531,8 @@ class PenjadwalanUjianController extends Controller
 
         // Calculate time
         $jamMulai = Carbon::parse($settings['tanggal_ujian'] . ' ' . $settings['jam_mulai']);
-        $durasiMax = max($settings['durasi_cbt'], $settings['durasi_wawancara']);
-        $jedaSesi = $settings['jeda_sesi'];
+        $durasiMax = (int) max($settings['durasi_cbt'], $settings['durasi_wawancara']);
+        $jedaSesi = (int) $settings['jeda_sesi'];
 
         $schedule = [
             'sesi' => [],
