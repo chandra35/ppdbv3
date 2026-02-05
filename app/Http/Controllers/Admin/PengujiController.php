@@ -45,8 +45,13 @@ class PengujiController extends Controller
             ->toArray();
 
         // Get GTK that are NOT yet penguji (available to be assigned)
+        // Include GTK with null/empty email (they haven't been assigned)
         $availableGtk = LocalGtk::aktif()
-            ->whereNotIn('email', $pengujiEmails)
+            ->where(function($q) use ($pengujiEmails) {
+                $q->whereNull('email')
+                  ->orWhere('email', '')
+                  ->orWhereNotIn('email', $pengujiEmails);
+            })
             ->orderBy('nama_lengkap')
             ->get();
 
@@ -93,7 +98,11 @@ class PengujiController extends Controller
             ->toArray();
 
         $query = LocalGtk::aktif()
-            ->whereNotIn('email', $pengujiEmails)
+            ->where(function($q) use ($pengujiEmails) {
+                $q->whereNull('email')
+                  ->orWhere('email', '')
+                  ->orWhereNotIn('email', $pengujiEmails);
+            })
             ->orderBy('nama_lengkap');
 
         if ($request->filled('search')) {
@@ -146,24 +155,30 @@ class PengujiController extends Controller
 
                 $gtk = LocalGtk::findOrFail($gtkId);
                 
-                // Check if user already exists
-                $user = User::where('email', $gtk->email)->first();
+                // Generate username from NIP/NIK/nama
+                $username = $gtk->nip ?? $gtk->nik ?? Str::slug($gtk->nama_lengkap);
+                $counter = 1;
+                $originalUsername = $username;
+                while (User::where('username', $username)->exists()) {
+                    $username = $originalUsername . $counter;
+                    $counter++;
+                }
+                
+                // Check if user already exists by username or email
+                $user = null;
+                if (!empty($gtk->email)) {
+                    $user = User::where('email', $gtk->email)->first();
+                }
+                if (!$user) {
+                    $user = User::where('username', $originalUsername)->first();
+                }
 
                 if (!$user) {
-                    // Generate username
-                    $username = $gtk->nip ?? $gtk->nik ?? Str::slug($gtk->nama_lengkap);
-                    $counter = 1;
-                    $originalUsername = $username;
-                    while (User::where('username', $username)->exists()) {
-                        $username = $originalUsername . $counter;
-                        $counter++;
-                    }
-
-                    // Create new user
+                    // Create new user - email can be null, login uses username
                     $user = User::create([
                         'id' => Str::uuid(),
                         'name' => $gtk->nama_lengkap,
-                        'email' => $gtk->email,
+                        'email' => $gtk->email, // Can be null - login uses username
                         'username' => $username,
                         'phone' => $gtk->nomor_hp,
                         'password' => Hash::make($defaultPassword),

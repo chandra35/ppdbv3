@@ -15,8 +15,8 @@
         box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
     }
     .penguji-avatar {
-        width: 40px;
-        height: 40px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         display: flex;
@@ -24,11 +24,11 @@
         justify-content: center;
         color: white;
         font-weight: bold;
-        font-size: 0.9rem;
+        font-size: 0.7rem;
     }
     .gtk-avatar {
-        width: 40px;
-        height: 40px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
         display: flex;
@@ -36,43 +36,44 @@
         justify-content: center;
         color: white;
         font-weight: bold;
-        font-size: 0.9rem;
+        font-size: 0.7rem;
     }
     .dual-list-container {
         display: flex;
-        gap: 20px;
+        gap: 15px;
     }
     .dual-list-box {
         flex: 1;
         border: 1px solid #dee2e6;
-        border-radius: 8px;
+        border-radius: 6px;
         overflow: hidden;
     }
     .dual-list-header {
-        padding: 12px 15px;
+        padding: 8px 12px;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         font-weight: 600;
+        font-size: 0.85rem;
     }
     .dual-list-header.gtk {
         background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
     }
     .dual-list-search {
-        padding: 10px;
+        padding: 6px 8px;
         border-bottom: 1px solid #dee2e6;
     }
     .dual-list-content {
-        max-height: 400px;
+        max-height: 250px;
         overflow-y: auto;
     }
     .dual-list-item {
-        padding: 10px 15px;
+        padding: 6px 10px;
         border-bottom: 1px solid #f0f0f0;
         cursor: pointer;
         transition: all 0.2s;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
     }
     .dual-list-item:hover {
         background-color: #f8f9fa;
@@ -86,20 +87,21 @@
     .dual-list-item .name {
         font-weight: 600;
         color: #333;
+        font-size: 0.85rem;
     }
     .dual-list-item .meta {
-        font-size: 0.8rem;
+        font-size: 0.7rem;
         color: #6c757d;
     }
     .dual-list-actions {
         display: flex;
         flex-direction: column;
         justify-content: center;
-        gap: 10px;
+        gap: 8px;
     }
     .dual-list-actions .btn {
-        width: 50px;
-        height: 50px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -114,18 +116,18 @@
     .status-active { background-color: #28a745; }
     .status-inactive { background-color: #dc3545; }
     .empty-state {
-        padding: 40px 20px;
+        padding: 25px 15px;
         text-align: center;
         color: #6c757d;
     }
     .empty-state i {
-        font-size: 3rem;
-        margin-bottom: 15px;
+        font-size: 2rem;
+        margin-bottom: 10px;
         opacity: 0.5;
     }
     .checkbox-gtk {
-        width: 20px;
-        height: 20px;
+        width: 16px;
+        height: 16px;
     }
     .role-badge {
         font-size: 0.7rem;
@@ -169,55 +171,55 @@
         </div>
     @endif
 
-    <!-- Statistics Cards -->
-    <div class="row">
+    <!-- Statistics Cards - Compact -->
+    <div class="row mb-2">
         <div class="col-lg-3 col-6">
-            <div class="small-box bg-info stats-card">
-                <div class="inner">
-                    <h3 id="statTotal">{{ $stats['total'] }}</h3>
-                    <p>Total Penguji</p>
+            <div class="info-box bg-info mb-2">
+                <span class="info-box-icon"><i class="fas fa-users"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Total Penguji</span>
+                    <span class="info-box-number" id="statTotal">{{ $stats['total'] }}</span>
                 </div>
-                <div class="icon"><i class="fas fa-users"></i></div>
             </div>
         </div>
         <div class="col-lg-3 col-6">
-            <div class="small-box bg-success stats-card">
-                <div class="inner">
-                    <h3 id="statActive">{{ $stats['active'] }}</h3>
-                    <p>Penguji Aktif</p>
+            <div class="info-box bg-success mb-2">
+                <span class="info-box-icon"><i class="fas fa-user-check"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Penguji Aktif</span>
+                    <span class="info-box-number" id="statActive">{{ $stats['active'] }}</span>
                 </div>
-                <div class="icon"><i class="fas fa-user-check"></i></div>
             </div>
         </div>
         <div class="col-lg-3 col-6">
-            <div class="small-box bg-warning stats-card">
-                <div class="inner">
-                    <h3>{{ $stats['assigned_today'] }}</h3>
-                    <p>Ditugaskan Saat Ini</p>
+            <div class="info-box bg-warning mb-2">
+                <span class="info-box-icon"><i class="fas fa-clipboard-check"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Ditugaskan</span>
+                    <span class="info-box-number">{{ $stats['assigned_today'] }}</span>
                 </div>
-                <div class="icon"><i class="fas fa-clipboard-check"></i></div>
             </div>
         </div>
         <div class="col-lg-3 col-6">
-            <div class="small-box bg-olive stats-card">
-                <div class="inner">
-                    <h3 id="statAvailable">{{ $availableGtk->count() }}</h3>
-                    <p>GTK Tersedia</p>
+            <div class="info-box bg-olive mb-2">
+                <span class="info-box-icon"><i class="fas fa-user-plus"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">GTK Tersedia</span>
+                    <span class="info-box-number" id="statAvailable">{{ $availableGtk->count() }}</span>
                 </div>
-                <div class="icon"><i class="fas fa-user-plus"></i></div>
             </div>
         </div>
     </div>
 
     <!-- Dual Listbox Card -->
     <div class="card card-primary card-outline">
-        <div class="card-header">
+        <div class="card-header py-2">
             <h3 class="card-title">
                 <i class="fas fa-exchange-alt mr-2"></i>Assign GTK sebagai Penguji
             </h3>
             <div class="card-tools">
-                <div class="input-group input-group-sm" style="width: 200px;">
-                    <input type="password" class="form-control" id="defaultPassword" placeholder="Password default" value="ppdb123">
+                <div class="input-group input-group-sm" style="width: 180px;">
+                    <input type="password" class="form-control form-control-sm" id="defaultPassword" placeholder="Password" value="ppdb123">
                     <div class="input-group-append">
                         <span class="input-group-text" title="Password untuk user baru">
                             <i class="fas fa-key"></i>
@@ -226,7 +228,7 @@
                 </div>
             </div>
         </div>
-        <div class="card-body">
+        <div class="card-body py-2">
             <div class="row">
                 <!-- Left Column: Available GTK -->
                 <div class="col-md-5">
@@ -260,7 +262,7 @@
                             @empty
                                 <div class="empty-state">
                                     <i class="fas fa-user-check"></i>
-                                    <p>Semua GTK sudah menjadi penguji</p>
+                                    <p class="mb-0">Semua GTK sudah menjadi penguji</p>
                                 </div>
                             @endforelse
                         </div>
@@ -268,7 +270,7 @@
                 </div>
 
                 <!-- Center: Action Buttons -->
-                <div class="col-md-2 d-flex align-items-center justify-content-center">
+                <div class="col-md-2 d-flex align-items-center justify-content-center py-3">
                     <div class="dual-list-actions">
                         <button type="button" class="btn btn-success" id="btnAssign" title="Jadikan Penguji" disabled>
                             <i class="fas fa-chevron-right"></i>
@@ -310,15 +312,15 @@
                                         </div>
                                         <div class="meta">{{ $penguji->email }}</div>
                                     </div>
-                                    <a href="{{ route('admin.penguji.show', $penguji) }}" class="btn btn-sm btn-outline-info" title="Detail">
+                                    <a href="{{ route('admin.penguji.show', $penguji) }}" class="btn btn-xs btn-outline-info" title="Detail">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                 </div>
                             @empty
                                 <div class="empty-state">
                                     <i class="fas fa-user-plus"></i>
-                                    <p>Belum ada penguji terdaftar</p>
-                                    <small>Pilih GTK dari kiri dan klik tombol <i class="fas fa-chevron-right"></i></small>
+                                    <p class="mb-1">Belum ada penguji</p>
+                                    <small>Pilih GTK dari kiri</small>
                                 </div>
                             @endforelse
                         </div>
@@ -326,21 +328,20 @@
                 </div>
             </div>
         </div>
-        <div class="card-footer text-muted">
+        <div class="card-footer py-2 text-muted small">
             <i class="fas fa-info-circle mr-1"></i>
-            Pilih GTK di kiri, lalu klik <span class="badge badge-success"><i class="fas fa-chevron-right"></i></span> untuk menjadikan penguji.
-            Password default: <code id="showPassword">ppdb123</code>
+            Pilih GTK → klik <span class="badge badge-success"><i class="fas fa-chevron-right"></i></span> → Password: <code id="showPassword">ppdb123</code>
         </div>
     </div>
 
     <!-- Penguji Table Card -->
-    <div class="card">
-        <div class="card-header">
+    <div class="card card-outline card-secondary">
+        <div class="card-header py-2">
             <h3 class="card-title"><i class="fas fa-list mr-2"></i>Daftar Penguji</h3>
             <div class="card-tools">
                 <form action="{{ route('admin.penguji.index') }}" method="GET" class="form-inline">
                     <select name="status" class="form-control form-control-sm mr-2" onchange="this.form.submit()">
-                        <option value="">Semua Status</option>
+                        <option value="">Semua</option>
                         <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Aktif</option>
                         <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Nonaktif</option>
                     </select>
@@ -354,16 +355,15 @@
             </div>
         </div>
         <div class="card-body table-responsive p-0">
-            <table class="table table-hover table-striped">
-                <thead>
+            <table class="table table-hover table-striped table-sm">
+                <thead class="thead-light">
                     <tr>
-                        <th width="50">#</th>
+                        <th width="40">#</th>
                         <th>Nama</th>
                         <th>Email</th>
-                        <th>Role</th>
                         <th>Status</th>
-                        <th>Terakhir Ditugaskan</th>
-                        <th width="150">Aksi</th>
+                        <th>Terakhir Tugas</th>
+                        <th width="120">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -371,24 +371,14 @@
                         <tr>
                             <td>{{ $pengujiList->firstItem() + $index }}</td>
                             <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="penguji-avatar mr-2">{{ strtoupper(substr($penguji->name, 0, 2)) }}</div>
-                                    <strong>{{ $penguji->name }}</strong>
-                                </div>
+                                <strong>{{ $penguji->name }}</strong>
                             </td>
-                            <td><small>{{ $penguji->email }}</small></td>
-                            <td>
-                                @foreach($penguji->roles as $role)
-                                    <span class="badge {{ $role->name == 'penguji' ? 'badge-primary' : 'badge-secondary' }} role-badge">
-                                        {{ $role->display_name }}
-                                    </span>
-                                @endforeach
-                            </td>
+                            <td><small class="text-muted">{{ $penguji->email }}</small></td>
                             <td>
                                 @if($penguji->is_active)
-                                    <span class="badge badge-success"><i class="fas fa-check"></i> Aktif</span>
+                                    <span class="badge badge-success">Aktif</span>
                                 @else
-                                    <span class="badge badge-danger"><i class="fas fa-times"></i> Nonaktif</span>
+                                    <span class="badge badge-danger">Nonaktif</span>
                                 @endif
                             </td>
                             <td>
@@ -397,23 +387,23 @@
                                         ->where('user_id', $penguji->id)->latest()->first();
                                 @endphp
                                 @if($lastAssignment && $lastAssignment->sesiUjian)
-                                    <small>{{ $lastAssignment->sesiUjian->tanggal?->format('d M Y') }}</small>
+                                    <small>{{ $lastAssignment->sesiUjian->tanggal?->format('d/m/Y') }}</small>
                                 @else
                                     <span class="text-muted">-</span>
                                 @endif
                             </td>
                             <td>
-                                <div class="btn-group btn-group-sm">
-                                    <a href="{{ route('admin.penguji.show', $penguji) }}" class="btn btn-info" title="Detail">
+                                <div class="btn-group btn-group-xs">
+                                    <a href="{{ route('admin.penguji.show', $penguji) }}" class="btn btn-xs btn-info" title="Detail">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <button type="button" class="btn btn-secondary btn-reset-password" 
+                                    <button type="button" class="btn btn-xs btn-secondary btn-reset-password" 
                                             data-id="{{ $penguji->id }}" data-name="{{ $penguji->name }}" title="Reset Password">
                                         <i class="fas fa-key"></i>
                                     </button>
                                     <form action="{{ route('admin.penguji.toggle-status', $penguji) }}" method="POST" class="d-inline">
                                         @csrf
-                                        <button type="submit" class="btn {{ $penguji->is_active ? 'btn-warning' : 'btn-success' }}"
+                                        <button type="submit" class="btn btn-xs {{ $penguji->is_active ? 'btn-warning' : 'btn-success' }}"
                                                 title="{{ $penguji->is_active ? 'Nonaktifkan' : 'Aktifkan' }}"
                                                 onclick="return confirm('{{ $penguji->is_active ? 'Nonaktifkan' : 'Aktifkan' }} penguji?')">
                                             <i class="fas {{ $penguji->is_active ? 'fa-user-slash' : 'fa-user-check' }}"></i>
@@ -424,9 +414,9 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center py-4">
-                                <i class="fas fa-user-tie fa-2x text-muted mb-2"></i>
-                                <p class="text-muted mb-0">Belum ada penguji terdaftar</p>
+                            <td colspan="6" class="text-center py-3">
+                                <i class="fas fa-user-tie text-muted"></i>
+                                <span class="text-muted ml-2">Belum ada penguji terdaftar</span>
                             </td>
                         </tr>
                     @endforelse

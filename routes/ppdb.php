@@ -260,7 +260,23 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/batch-kartu-tes', [\App\Http\Controllers\Admin\CetakDokumenController::class, 'batchCetakKartuTes'])->name('batch-kartu-tes');
     });
 
-    // ---- CETAK RUANG UJIAN ----
+    // ---- PENJADWALAN UJIAN (CBT + WAWANCARA PARALEL) ----
+    Route::prefix('penjadwalan-ujian')->name('penjadwalan-ujian.')->middleware('permission:verifikasi.cetak')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'index'])->name('index');
+        Route::post('/preview', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'preview'])->name('preview');
+        Route::post('/store', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'store'])->name('store');
+        Route::get('/list', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'list'])->name('list');
+        Route::get('/{jadwalUjian}', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'show'])->name('show');
+        Route::delete('/{jadwalUjian}', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'destroy'])->name('destroy');
+        // Print routes
+        Route::get('/{jadwalUjian}/print/kartu-peserta', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'printKartuPeserta'])->name('print.kartu-peserta');
+        Route::get('/{jadwalUjian}/print/daftar-hadir', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'printDaftarHadir'])->name('print.daftar-hadir');
+        Route::get('/{jadwalUjian}/print/nama-ruang', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'printNamaRuang'])->name('print.nama-ruang');
+        Route::get('/{jadwalUjian}/print/jadwal-sesi', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'printJadwalSesi'])->name('print.jadwal-sesi');
+        Route::get('/{jadwalUjian}/export/excel', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'exportExcel'])->name('export.excel');
+    });
+
+    // ---- CETAK RUANG UJIAN (Legacy) ----
     Route::prefix('cetak-ruang')->name('cetak-ruang.')->middleware('permission:verifikasi.cetak')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\CetakRuangController::class, 'index'])->name('index');
         Route::post('/preview', [\App\Http\Controllers\Admin\CetakRuangController::class, 'preview'])->name('preview');

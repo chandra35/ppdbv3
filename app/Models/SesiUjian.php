@@ -18,10 +18,14 @@ class SesiUjian extends Model
         'tahun_pelajaran_id',
         'jalur_pendaftaran_id',
         'gelombang_pendaftaran_id',
+        'jadwal_ujian_id',
         'nama',
+        'jenis_ujian',
+        'nomor_sesi',
         'tanggal',
         'waktu_mulai',
         'waktu_selesai',
+        'durasi',
         'peserta_per_ruang',
         'prefix_ruang',
         'urutan_peserta',
@@ -70,9 +74,25 @@ class SesiUjian extends Model
     }
 
     /**
+     * Get jadwal ujian
+     */
+    public function jadwalUjian(): BelongsTo
+    {
+        return $this->belongsTo(JadwalUjian::class, 'jadwal_ujian_id');
+    }
+
+    /**
      * Get ruangan
      */
     public function ruangan(): HasMany
+    {
+        return $this->hasMany(RuangUjian::class, 'sesi_ujian_id')->orderBy('nomor_ruang');
+    }
+
+    /**
+     * Alias for ruangan
+     */
+    public function ruangUjian(): HasMany
     {
         return $this->hasMany(RuangUjian::class, 'sesi_ujian_id')->orderBy('nomor_ruang');
     }

@@ -162,6 +162,11 @@ return [
             'can' => 'admin',
             'submenu' => [
                 [
+                    'text' => 'Penjadwalan Ujian',
+                    'route' => 'admin.penjadwalan-ujian.index',
+                    'icon' => 'fas fa-fw fa-calendar-alt',
+                ],
+                [
                     'text' => 'Sesi Ujian',
                     'route' => 'admin.sesi-ujian.index',
                     'icon' => 'fas fa-fw fa-calendar-check',
