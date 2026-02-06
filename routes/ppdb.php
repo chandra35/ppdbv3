@@ -267,6 +267,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/store', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'store'])->name('store');
         Route::get('/list', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'list'])->name('list');
         Route::get('/{jadwalUjian}', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'show'])->name('show');
+        Route::patch('/{jadwalUjian}/unlock', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'unlock'])->name('unlock');
         Route::delete('/{jadwalUjian}', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'destroy'])->name('destroy');
         // Print routes
         Route::get('/{jadwalUjian}/print/kartu-peserta', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'printKartuPeserta'])->name('print.kartu-peserta');
@@ -274,6 +275,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/{jadwalUjian}/print/nama-ruang', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'printNamaRuang'])->name('print.nama-ruang');
         Route::get('/{jadwalUjian}/print/jadwal-sesi', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'printJadwalSesi'])->name('print.jadwal-sesi');
         Route::get('/{jadwalUjian}/export/excel', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'exportExcel'])->name('export.excel');
+        // PDF routes
+        Route::get('/{jadwalUjian}/pdf/daftar-hadir', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'pdfDaftarHadir'])->name('pdf.daftar-hadir');
+        Route::get('/{jadwalUjian}/pdf/nama-ruang', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'pdfNamaRuang'])->name('pdf.nama-ruang');
+        Route::get('/{jadwalUjian}/pdf/daftar-peserta', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'pdfDaftarPeserta'])->name('pdf.daftar-peserta');
     });
 
     // ---- CETAK RUANG UJIAN (Legacy) ----

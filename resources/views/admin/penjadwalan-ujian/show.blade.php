@@ -103,34 +103,70 @@
         <h3 class="card-title"><i class="fas fa-print mr-2"></i>Cetak & Export</h3>
     </div>
     <div class="card-body">
-        <div class="row">
-            <div class="col-md-4 col-sm-6 mb-2">
+        {{-- Quick Print (HTML) --}}
+        <h6 class="mb-2"><i class="fas fa-bolt text-warning mr-2"></i>Quick Print (HTML)</h6>
+        <p class="text-muted small mb-3">Print langsung tanpa download, cocok untuk kebutuhan cepat.</p>
+        <div class="row mb-4">
+            <div class="col-md-3 col-sm-6 mb-2">
                 <a href="{{ route('admin.penjadwalan-ujian.print.kartu-peserta', $jadwal) }}" 
                    target="_blank" class="btn btn-outline-primary btn-block btn-print">
                     <i class="fas fa-id-card mr-2"></i>Kartu Peserta
                 </a>
             </div>
-            <div class="col-md-4 col-sm-6 mb-2">
+            <div class="col-md-3 col-sm-6 mb-2">
                 <a href="{{ route('admin.penjadwalan-ujian.print.daftar-hadir', $jadwal) }}" 
                    target="_blank" class="btn btn-outline-success btn-block btn-print">
                     <i class="fas fa-clipboard-list mr-2"></i>Daftar Hadir
                 </a>
             </div>
-            <div class="col-md-4 col-sm-6 mb-2">
+            <div class="col-md-3 col-sm-6 mb-2">
                 <a href="{{ route('admin.penjadwalan-ujian.print.nama-ruang', $jadwal) }}" 
                    target="_blank" class="btn btn-outline-warning btn-block btn-print">
                     <i class="fas fa-door-open mr-2"></i>Nama Ruang
                 </a>
             </div>
-            <div class="col-md-4 col-sm-6 mb-2">
+            <div class="col-md-3 col-sm-6 mb-2">
                 <a href="{{ route('admin.penjadwalan-ujian.print.jadwal-sesi', $jadwal) }}" 
                    target="_blank" class="btn btn-outline-info btn-block btn-print">
                     <i class="fas fa-calendar-alt mr-2"></i>Jadwal Sesi
                 </a>
             </div>
-            <div class="col-md-4 col-sm-6 mb-2">
+        </div>
+
+        <hr>
+
+        {{-- PDF Print (with Kop Surat) --}}
+        <h6 class="mb-2"><i class="fas fa-file-pdf text-danger mr-2"></i>Cetak PDF (dengan Kop Surat)</h6>
+        <p class="text-muted small mb-3">Download PDF dengan kop surat resmi, cocok untuk dokumen formal.</p>
+        <div class="row mb-4">
+            <div class="col-md-3 col-sm-6 mb-2">
+                <a href="{{ route('admin.penjadwalan-ujian.pdf.daftar-hadir', $jadwal) }}" 
+                   class="btn btn-success btn-block btn-print">
+                    <i class="fas fa-file-pdf mr-2"></i>Daftar Hadir
+                </a>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-2">
+                <a href="{{ route('admin.penjadwalan-ujian.pdf.nama-ruang', $jadwal) }}" 
+                   class="btn btn-warning btn-block btn-print">
+                    <i class="fas fa-file-pdf mr-2"></i>Nama Ruang
+                </a>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-2">
+                <a href="{{ route('admin.penjadwalan-ujian.pdf.daftar-peserta', $jadwal) }}" 
+                   class="btn btn-info btn-block btn-print">
+                    <i class="fas fa-file-pdf mr-2"></i>Daftar Peserta
+                </a>
+            </div>
+        </div>
+
+        <hr>
+
+        {{-- Export --}}
+        <h6 class="mb-2"><i class="fas fa-file-excel text-success mr-2"></i>Export Data</h6>
+        <div class="row">
+            <div class="col-md-3 col-sm-6 mb-2">
                 <a href="{{ route('admin.penjadwalan-ujian.export.excel', $jadwal) }}" 
-                   class="btn btn-outline-dark btn-block btn-print">
+                   class="btn btn-dark btn-block btn-print">
                     <i class="fas fa-file-excel mr-2"></i>Export Excel
                 </a>
             </div>
@@ -317,22 +353,123 @@
 </div>
 
 {{-- Danger Zone --}}
-@if($jadwal->status !== 'locked')
 <div class="card card-danger">
     <div class="card-header">
         <h3 class="card-title"><i class="fas fa-exclamation-triangle mr-2"></i>Zona Berbahaya</h3>
     </div>
     <div class="card-body">
-        <form method="POST" action="{{ route('admin.penjadwalan-ujian.destroy', $jadwal) }}">
-            @csrf
-            @method('DELETE')
-            <button type="submit" class="btn btn-danger" onclick="return confirm('Hapus jadwal ini? Semua data peserta akan dihapus.')">
-                <i class="fas fa-trash mr-1"></i>Hapus Jadwal
-            </button>
-        </form>
+        <div class="row">
+            @if($jadwal->status === 'locked')
+            {{-- Unlock Button --}}
+            <div class="col-md-6 mb-3">
+                <div class="card bg-light">
+                    <div class="card-body py-3">
+                        <h6 class="mb-2"><i class="fas fa-unlock text-warning mr-2"></i>Buka Kunci Jadwal</h6>
+                        <p class="text-muted small mb-2">Jadwal akan dibuka kuncinya agar bisa dihapus atau diubah.</p>
+                        <button type="button" class="btn btn-warning btn-sm" data-toggle="modal" data-target="#unlockModal">
+                            <i class="fas fa-unlock mr-1"></i>Buka Kunci
+                        </button>
+                    </div>
+                </div>
+            </div>
+            @endif
+            
+            {{-- Delete Button --}}
+            <div class="col-md-6 mb-3">
+                <div class="card bg-light">
+                    <div class="card-body py-3">
+                        <h6 class="mb-2"><i class="fas fa-trash text-danger mr-2"></i>Hapus Jadwal</h6>
+                        <p class="text-muted small mb-2">Hapus semua data jadwal termasuk sesi dan peserta.</p>
+                        @if($jadwal->status === 'locked')
+                        <button type="button" class="btn btn-secondary btn-sm" disabled title="Buka kunci terlebih dahulu">
+                            <i class="fas fa-lock mr-1"></i>Terkunci
+                        </button>
+                        @else
+                        <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#deleteModal">
+                            <i class="fas fa-trash mr-1"></i>Hapus Jadwal
+                        </button>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
-@endif
+
+{{-- Unlock Modal --}}
+<div class="modal fade" id="unlockModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title"><i class="fas fa-unlock mr-2"></i>Buka Kunci Jadwal</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    <strong>Perhatian!</strong> Setelah dibuka kuncinya, jadwal dapat dihapus.
+                </div>
+                <p>Apakah Anda yakin ingin membuka kunci jadwal ini?</p>
+                <ul class="mb-0">
+                    <li><strong>Tanggal:</strong> {{ $jadwal->tanggal_ujian->isoFormat('dddd, D MMMM Y') }}</li>
+                    <li><strong>Peserta:</strong> {{ number_format($jadwal->total_peserta) }} orang</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>Batal
+                </button>
+                <form method="POST" action="{{ route('admin.penjadwalan-ujian.unlock', $jadwal) }}" class="d-inline">
+                    @csrf
+                    @method('PATCH')
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-unlock mr-1"></i>Ya, Buka Kunci
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Delete Modal --}}
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-trash mr-2"></i>Hapus Jadwal</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    <strong>Peringatan!</strong> Tindakan ini tidak dapat dibatalkan!
+                </div>
+                <p>Apakah Anda yakin ingin menghapus jadwal ini? Semua data berikut akan dihapus:</p>
+                <ul class="text-danger">
+                    <li>{{ number_format($jadwal->total_peserta) }} data jadwal peserta</li>
+                    <li>{{ $jadwal->total_sesi }} sesi ujian</li>
+                    <li>Semua data ruang dan penempatan</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>Batal
+                </button>
+                <form method="POST" action="{{ route('admin.penjadwalan-ujian.destroy', $jadwal) }}" class="d-inline">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash mr-1"></i>Ya, Hapus Sekarang
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('js')

@@ -430,7 +430,7 @@
         @endif
     </div>
     <div class="card-footer">
-        <form method="POST" action="{{ route('admin.penjadwalan-ujian.store') }}">
+        <form id="storeForm" method="POST" action="{{ route('admin.penjadwalan-ujian.store') }}">
             @csrf
             <div class="row">
                 <div class="col-md-6">
@@ -442,12 +442,48 @@
                     </button>
                 </div>
                 <div class="col-md-6 text-right">
-                    <button type="submit" class="btn btn-success btn-lg" onclick="return confirm('Simpan dan kunci jadwal? Jadwal yang sudah dikunci tidak dapat diubah.')">
+                    <button type="button" class="btn btn-success btn-lg" data-toggle="modal" data-target="#confirmSaveModal">
                         <i class="fas fa-lock mr-2"></i>Simpan & Kunci Jadwal
                     </button>
                 </div>
             </div>
         </form>
+    </div>
+</div>
+{{-- Confirmation Modal --}}
+<div class="modal fade" id="confirmSaveModal" tabindex="-1" role="dialog" aria-labelledby="confirmSaveModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="confirmSaveModalLabel">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>Konfirmasi Simpan & Kunci
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning mb-3">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <strong>Perhatian!</strong> Jadwal yang sudah dikunci tidak dapat diubah.
+                </div>
+                <p class="mb-2">Apakah Anda yakin ingin menyimpan dan mengunci jadwal ini?</p>
+                <ul class="mb-0">
+                    <li><strong>Total Peserta:</strong> {{ $totalPeserta ?? 0 }} orang</li>
+                    <li><strong>Total Sesi:</strong> {{ isset($schedule['sesi']) ? count($schedule['sesi']) : 0 }} sesi</li>
+                    <li><strong>Mode:</strong> {{ ($settings['mode'] ?? 'swap') == 'queue' ? 'Queue (Antrian)' : 'Swap (Grup A↔B)' }}</li>
+                    <li><strong>Estimasi Selesai:</strong> {{ $schedule['estimasi_selesai'] ?? '-' }}</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>Batal
+                </button>
+                <button type="button" class="btn btn-success" onclick="document.getElementById('storeForm').submit()">
+                    <i class="fas fa-lock mr-1"></i>Ya, Simpan & Kunci
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 @endif

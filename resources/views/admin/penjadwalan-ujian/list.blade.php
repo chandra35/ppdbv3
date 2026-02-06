@@ -166,20 +166,60 @@
                             <i class="fas fa-file-excel"></i>
                         </a>
                         @if($jadwal->status !== 'locked')
-                        <form method="POST" action="{{ route('admin.penjadwalan-ujian.destroy', $jadwal) }}" class="d-inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-danger" title="Hapus" 
-                                    onclick="return confirm('Hapus jadwal ini?')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </form>
+                        <button type="button" class="btn btn-danger" title="Hapus" 
+                                data-toggle="modal" data-target="#deleteModal{{ $jadwal->id }}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        @else
+                        <button type="button" class="btn btn-secondary" title="Terkunci" disabled>
+                            <i class="fas fa-lock"></i>
+                        </button>
                         @endif
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    
+    {{-- Delete Modal for each jadwal --}}
+    @if($jadwal->status !== 'locked')
+    <div class="modal fade" id="deleteModal{{ $jadwal->id }}" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-trash mr-2"></i>Hapus Jadwal</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        <strong>Peringatan!</strong> Tindakan ini tidak dapat dibatalkan!
+                    </div>
+                    <p>Apakah Anda yakin ingin menghapus jadwal berikut?</p>
+                    <ul class="mb-0">
+                        <li><strong>Tanggal:</strong> {{ $jadwal->tanggal_ujian->isoFormat('dddd, D MMMM Y') }}</li>
+                        <li><strong>Peserta:</strong> {{ number_format($jadwal->total_peserta) }} orang</li>
+                        <li><strong>Sesi:</strong> {{ $jadwal->total_sesi }}</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i>Batal
+                    </button>
+                    <form method="POST" action="{{ route('admin.penjadwalan-ujian.destroy', $jadwal) }}" class="d-inline">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash mr-1"></i>Ya, Hapus
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
     @endforeach
 </div>
 

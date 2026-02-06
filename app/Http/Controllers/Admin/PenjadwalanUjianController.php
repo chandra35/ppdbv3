@@ -288,7 +288,8 @@ class PenjadwalanUjianController extends Controller
         // Group sesi by nomor_sesi
         $sesiGrouped = $jadwalUjian->sesiUjian->groupBy('nomor_sesi');
 
-        return view('admin.penjadwalan-ujian.show', compact('jadwalUjian', 'sesiGrouped'));
+        $jadwal = $jadwalUjian;
+        return view('admin.penjadwalan-ujian.show', compact('jadwal', 'sesiGrouped'));
     }
 
     /**
@@ -308,6 +309,22 @@ class PenjadwalanUjianController extends Controller
         $tahunPelajaranList = TahunPelajaran::orderBy('is_active', 'desc')->orderBy('nama', 'desc')->get();
 
         return view('admin.penjadwalan-ujian.list', compact('jadwalList', 'tahunPelajaranList', 'tahunAktif'));
+    }
+
+    /**
+     * Unlock jadwal (change status from locked to draft)
+     */
+    public function unlock(JadwalUjian $jadwalUjian)
+    {
+        try {
+            $jadwalUjian->update(['status' => 'draft']);
+
+            return redirect()->back()
+                ->with('success', 'Jadwal berhasil dibuka kuncinya. Sekarang jadwal dapat dihapus.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal membuka kunci jadwal: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -352,7 +369,7 @@ class PenjadwalanUjianController extends Controller
         $jadwalUjian->load(['tahunPelajaran']);
         
         $pesertaList = JadwalPeserta::with([
-            'calonSiswa.jalur',
+            'calonSiswa.jalurPendaftaran',
             'sesiCbt',
             'ruangCbt',
             'sesiWawancara',
@@ -363,9 +380,10 @@ class PenjadwalanUjianController extends Controller
         ->sortBy(fn($jp) => $jp->calonSiswa->nomor_tes ?? '');
 
         $sekolah = SekolahSettings::first();
+        $jadwal = $jadwalUjian;
 
         return view('admin.penjadwalan-ujian.print.kartu-peserta', compact(
-            'jadwalUjian', 'pesertaList', 'sekolah'
+            'jadwal', 'pesertaList', 'sekolah'
         ));
     }
 
@@ -404,9 +422,10 @@ class PenjadwalanUjianController extends Controller
         }
 
         $sekolah = SekolahSettings::first();
+        $jadwal = $jadwalUjian;
 
         return view('admin.penjadwalan-ujian.print.daftar-hadir', compact(
-            'jadwalUjian', 'ruangList', 'sekolah'
+            'jadwal', 'ruangList', 'sekolah'
         ));
     }
 
@@ -417,9 +436,10 @@ class PenjadwalanUjianController extends Controller
     {
         $jadwalUjian->load(['tahunPelajaran']);
         $sekolah = SekolahSettings::first();
+        $jadwal = $jadwalUjian;
 
         return view('admin.penjadwalan-ujian.print.nama-ruang', compact(
-            'jadwalUjian', 'sekolah'
+            'jadwal', 'sekolah'
         ));
     }
 
@@ -430,10 +450,159 @@ class PenjadwalanUjianController extends Controller
     {
         $jadwalUjian->load(['tahunPelajaran', 'sesiUjian', 'jadwalPeserta']);
         $sekolah = SekolahSettings::first();
+        $jadwal = $jadwalUjian;
 
         return view('admin.penjadwalan-ujian.print.jadwal-sesi', compact(
-            'jadwalUjian', 'sekolah'
+            'jadwal', 'sekolah'
         ));
+    }
+
+    /**
+     * PDF Daftar Hadir (with Kop Surat)
+     */
+    public function pdfDaftarHadir(JadwalUjian $jadwalUjian)
+    {
+        // Increase memory limit for large PDFs
+        ini_set('memory_limit', '512M');
+        set_time_limit(300);
+        
+        $jadwalUjian->load(['tahunPelajaran', 'sesiUjian']);
+        
+        // Build room list with peserta
+        $ruangList = [];
+        
+        foreach ($jadwalUjian->sesiUjian as $sesi) {
+            $ruangUjianList = RuangUjian::where('sesi_ujian_id', $sesi->id)->get();
+            
+            foreach ($ruangUjianList as $ruang) {
+                $pesertaRuang = PesertaRuang::with('calonSiswa')
+                    ->where('ruang_ujian_id', $ruang->id)
+                    ->orderBy('nomor_urut')
+                    ->get();
+                
+                $ruangList[] = [
+                    'nama' => $ruang->nama_ruang,
+                    'jenis' => $sesi->jenis_ujian,
+                    'sesi' => $sesi->nomor_sesi,
+                    'waktu_mulai' => $sesi->waktu_mulai?->format('H:i') ?? '-',
+                    'waktu_selesai' => $sesi->waktu_selesai?->format('H:i') ?? '-',
+                    'kapasitas' => $ruang->kapasitas,
+                    'peserta' => $pesertaRuang,
+                ];
+            }
+        }
+
+        $sekolah = SekolahSettings::first();
+        $jadwal = $jadwalUjian;
+        $kopSuratService = app(\App\Services\KopSuratService::class);
+        $kopSurat = $kopSuratService->renderKopHtml($sekolah, true);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.penjadwalan-ujian.pdf.daftar-hadir', compact(
+            'jadwal', 'ruangList', 'sekolah', 'kopSurat'
+        ));
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf->stream('daftar-hadir-' . $jadwalUjian->tanggal_ujian->format('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * PDF Nama Ruang (with Kop Surat)
+     */
+    public function pdfNamaRuang(JadwalUjian $jadwalUjian)
+    {
+        // Increase memory limit for large PDFs
+        ini_set('memory_limit', '512M');
+        set_time_limit(300);
+        
+        $jadwalUjian->load(['tahunPelajaran', 'sesiUjian']);
+        
+        // Build room list
+        $ruangList = [];
+        
+        foreach ($jadwalUjian->sesiUjian as $sesi) {
+            $ruangUjianList = RuangUjian::where('sesi_ujian_id', $sesi->id)->get();
+            
+            foreach ($ruangUjianList as $ruang) {
+                // Get peserta range
+                $pesertaRuang = PesertaRuang::with('calonSiswa')
+                    ->where('ruang_ujian_id', $ruang->id)
+                    ->orderBy('nomor_urut')
+                    ->get();
+                
+                $nomorTes = $pesertaRuang->map(fn($pr) => $pr->calonSiswa->nomor_tes ?? '')->filter()->sort()->values();
+                
+                $ruangList[] = [
+                    'nama' => $ruang->nama_ruang,
+                    'jenis' => $sesi->jenis_ujian,
+                    'sesi' => $sesi->nomor_sesi,
+                    'waktu' => $sesi->waktu_mulai?->format('H:i') . ' - ' . $sesi->waktu_selesai?->format('H:i'),
+                    'jumlah_peserta' => $pesertaRuang->count(),
+                    'nomor_tes_awal' => $nomorTes->first() ?? '-',
+                    'nomor_tes_akhir' => $nomorTes->last() ?? '-',
+                ];
+            }
+        }
+
+        $sekolah = SekolahSettings::first();
+        $jadwal = $jadwalUjian;
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.penjadwalan-ujian.pdf.nama-ruang', compact(
+            'jadwal', 'ruangList', 'sekolah'
+        ));
+        $pdf->setPaper('A4', 'landscape');
+
+        return $pdf->stream('nama-ruang-' . $jadwalUjian->tanggal_ujian->format('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * PDF Daftar Peserta (untuk ditempel di depan ruang)
+     */
+    public function pdfDaftarPeserta(JadwalUjian $jadwalUjian)
+    {
+        // Increase memory limit for large PDFs
+        ini_set('memory_limit', '512M');
+        set_time_limit(300);
+        
+        $jadwalUjian->load(['tahunPelajaran', 'sesiUjian']);
+        
+        // Build room list with peserta
+        $ruangList = [];
+        
+        foreach ($jadwalUjian->sesiUjian as $sesi) {
+            $ruangUjianList = RuangUjian::where('sesi_ujian_id', $sesi->id)->get();
+            
+            foreach ($ruangUjianList as $ruang) {
+                $pesertaRuang = PesertaRuang::with('calonSiswa')
+                    ->where('ruang_ujian_id', $ruang->id)
+                    ->orderBy('nomor_urut')
+                    ->get();
+                
+                $nomorTes = $pesertaRuang->map(fn($pr) => $pr->calonSiswa->nomor_tes ?? '')->filter()->sort()->values();
+                
+                $ruangList[] = [
+                    'nama' => $ruang->nama_ruang,
+                    'jenis' => $sesi->jenis_ujian,
+                    'sesi' => $sesi->nomor_sesi,
+                    'waktu' => $sesi->waktu_mulai?->format('H:i') . ' - ' . $sesi->waktu_selesai?->format('H:i'),
+                    'jumlah_peserta' => $pesertaRuang->count(),
+                    'nomor_tes_awal' => $nomorTes->first() ?? '-',
+                    'nomor_tes_akhir' => $nomorTes->last() ?? '-',
+                    'peserta' => $pesertaRuang,
+                ];
+            }
+        }
+
+        $sekolah = SekolahSettings::first();
+        $jadwal = $jadwalUjian;
+        $kopSuratService = app(\App\Services\KopSuratService::class);
+        $kopSurat = $kopSuratService->renderKopHtml($sekolah, true);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.penjadwalan-ujian.pdf.daftar-peserta', compact(
+            'jadwal', 'ruangList', 'sekolah', 'kopSurat'
+        ));
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf->stream('daftar-peserta-' . $jadwalUjian->tanggal_ujian->format('Y-m-d') . '.pdf');
     }
 
     /**
