@@ -38,7 +38,8 @@ class PendaftarExport implements FromCollection, WithHeadings, WithMapping, With
             'provinsiSiswa',
             'kabupatenSiswa',
             'kecamatanSiswa',
-            'kelurahanSiswa'
+            'kelurahanSiswa',
+            'user'
         ]);
 
         if ($this->type === 'with_nomor_tes') {
@@ -62,6 +63,7 @@ class PendaftarExport implements FromCollection, WithHeadings, WithMapping, With
             // Data Diri
             'No',
             'Nomor Tes',
+            'Password',
             'No Registrasi',
             'NISN',
             'NIK',
@@ -189,6 +191,7 @@ class PendaftarExport implements FromCollection, WithHeadings, WithMapping, With
             // Data Diri
             $no,
             $pendaftar->nomor_tes ?? '',
+            $pendaftar->user?->readable_password ?? '',
             $pendaftar->nomor_registrasi ?? '',
             $pendaftar->nisn ?? '',
             $pendaftar->nik ?? '',
