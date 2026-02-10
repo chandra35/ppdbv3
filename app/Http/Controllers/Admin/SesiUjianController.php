@@ -11,20 +11,11 @@ use App\Models\NilaiSeleksi;
 use App\Models\TahunPelajaran;
 use App\Models\User;
 use App\Models\SekolahSettings;
-use App\Services\KopSuratService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class SesiUjianController extends Controller
 {
-    protected $kopSuratService;
-
-    public function __construct(KopSuratService $kopSuratService)
-    {
-        $this->kopSuratService = $kopSuratService;
-    }
-
     /**
      * Display a listing of sesi ujian
      */
@@ -253,61 +244,38 @@ class SesiUjianController extends Controller
     }
 
     /**
-     * Print daftar hadir from saved sesi
+     * Print daftar hadir from saved sesi (HTML)
      */
     public function printDaftarHadir(SesiUjian $sesiUjian, Request $request)
     {
-        ini_set('memory_limit', '512M');
-
         $sesiUjian->load([
             'ruangan.peserta.calonSiswa',
-            'ruangan.penguji.user',
+            'tahunPelajaran',
         ]);
 
-        $sekolah = SekolahSettings::first();
-        $kopHtml = $this->kopSuratService->renderKopHtml($sekolah, true);
+        // Build room list with peserta (same format as PenjadwalanUjianController)
+        $ruangList = [];
 
-        // Format rooms data
-        $rooms = $sesiUjian->ruangan->map(function ($ruang) {
-            return [
-                'nomor' => $ruang->nomor_ruang,
+        foreach ($sesiUjian->ruangan as $ruang) {
+            $peserta = $ruang->peserta->sortBy('nomor_urut');
+
+            $ruangList[] = [
                 'nama' => $ruang->nama_ruang,
-                'peserta' => $ruang->peserta->map(function ($pr) {
-                    return (object) [
-                        'nomor_tes' => $pr->calonSiswa->nomor_tes,
-                        'nama_lengkap' => $pr->calonSiswa->nama_lengkap,
-                        'jenis_kelamin' => $pr->calonSiswa->jenis_kelamin,
-                        'nama_sekolah_asal' => $pr->calonSiswa->nama_sekolah_asal,
-                    ];
-                }),
-                'jumlah' => $ruang->peserta->count(),
-                'penguji' => $ruang->penguji->pluck('user.name')->join(', '),
+                'kapasitas' => $ruang->kapasitas,
+                'peserta' => $peserta->map(fn($pr) => [
+                    'nomor_tes' => $pr->calonSiswa->nomor_tes ?? '-',
+                    'nama' => $pr->calonSiswa->nama_lengkap ?? '-',
+                ])->values()->toArray(),
             ];
-        });
+        }
 
         // Filter specific room if requested
         if ($request->ruang) {
-            $rooms = $rooms->filter(fn($r) => $r['nama'] === $request->ruang)->values();
+            $ruangList = collect($ruangList)->filter(fn($r) => $r['nama'] === $request->ruang)->values()->toArray();
         }
 
-        $settings = [
-            'tanggal_ujian' => $sesiUjian->tanggal->format('Y-m-d'),
-            'waktu_mulai' => $sesiUjian->waktu_mulai->format('H:i'),
-            'waktu_selesai' => $sesiUjian->waktu_selesai->format('H:i'),
-        ];
-
-        $tahunAktif = $sesiUjian->tahunPelajaran;
-
-        $pdf = Pdf::loadView('admin.sesi-ujian.pdf.daftar-hadir', compact(
-            'rooms',
-            'sekolah',
-            'tahunAktif',
-            'settings',
-            'kopHtml'
+        return view('admin.sesi-ujian.print.daftar-hadir', compact(
+            'sesiUjian', 'ruangList'
         ));
-
-        $pdf->setPaper('A4', 'portrait');
-
-        return $pdf->stream('daftar-hadir-' . $sesiUjian->nama . '.pdf');
     }
 }
