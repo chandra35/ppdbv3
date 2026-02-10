@@ -41,6 +41,21 @@
         max-height: 300px;
         overflow-y: auto;
     }
+    .bg-info-light {
+        background-color: #d1ecf1 !important;
+        animation: pulse-bg 2s ease-in-out infinite;
+    }
+    .bg-success-light {
+        background-color: #d4edda !important;
+    }
+    @keyframes pulse-bg {
+        0%, 100% { background-color: #d1ecf1; }
+        50% { background-color: #bee5eb; }
+    }
+    .badge-sm {
+        font-size: 0.7rem;
+        padding: 0.15rem 0.4rem;
+    }
 </style>
 @stop
 
@@ -229,13 +244,21 @@
                                             <i class="fas fa-users-cog"></i> Kelola
                                         </a>
                                     </label>
-                                    <div class="peserta-list border rounded p-2">
+                                    <div class="peserta-list border rounded p-2" id="peserta-list-{{ $ruang->id }}">
                                         <table class="table table-sm table-borderless mb-0">
                                             @forelse($ruang->peserta as $pr)
-                                                <tr>
+                                                <tr id="peserta-row-{{ $pr->id }}" class="peserta-row 
+                                                    @if($pr->status == 'in_progress') bg-info-light @elseif($pr->status == 'completed') bg-success-light @endif">
                                                     <td width="30">{{ $pr->nomor_urut }}.</td>
                                                     <td width="90"><small class="text-muted">{{ $pr->calonSiswa->nomor_tes ?? '-' }}</small></td>
-                                                    <td>{{ $pr->calonSiswa->nama_lengkap ?? '-' }}</td>
+                                                    <td>
+                                                        {{ $pr->calonSiswa->nama_lengkap ?? '-' }}
+                                                        @if($pr->status == 'in_progress')
+                                                            <span class="badge badge-primary badge-sm ml-1 peserta-status-badge"><i class="fas fa-volume-up mr-1"></i>Sedang Diuji</span>
+                                                        @elseif($pr->status == 'completed')
+                                                            <span class="badge badge-success badge-sm ml-1 peserta-status-badge"><i class="fas fa-check mr-1"></i>Selesai</span>
+                                                        @endif
+                                                    </td>
                                                     <td width="30">
                                                         @php
                                                             $nilai = \App\Models\NilaiSeleksi::where('sesi_ujian_id', $sesiUjian->id)
@@ -674,6 +697,57 @@ $(document).ready(function() {
             }
         });
     });
+
+    // ====================================
+    // AJAX Polling: Real-time peserta status
+    // ====================================
+    @if(in_array($sesiUjian->status, ['in_progress']))
+    function updatePesertaStatus(data) {
+        $.each(data, function(ruangId, ruangData) {
+            $.each(ruangData.peserta, function(i, peserta) {
+                var row = $('#peserta-row-' + peserta.id);
+                if (row.length === 0) return;
+
+                row.removeClass('bg-info-light bg-success-light');
+                row.find('.peserta-status-badge').remove();
+
+                var nameTd = row.find('td').eq(2);
+                if (peserta.status === 'in_progress') {
+                    row.addClass('bg-info-light');
+                    nameTd.append(' <span class="badge badge-primary badge-sm ml-1 peserta-status-badge"><i class="fas fa-volume-up mr-1"></i>Sedang Diuji</span>');
+                } else if (peserta.status === 'completed') {
+                    row.addClass('bg-success-light');
+                    nameTd.append(' <span class="badge badge-success badge-sm ml-1 peserta-status-badge"><i class="fas fa-check mr-1"></i>Selesai</span>');
+                }
+            });
+        });
+    }
+
+    var statusPollInterval = setInterval(function() {
+        $.get('{{ route("admin.sesi-ujian.status-peserta", $sesiUjian->id) }}', function(data) {
+            updatePesertaStatus(data);
+        });
+    }, 10000); // Poll every 10 seconds
+
+    // Stop polling when page is hidden, restart when visible
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            clearInterval(statusPollInterval);
+            statusPollInterval = null;
+        } else if (!statusPollInterval) {
+            statusPollInterval = setInterval(function() {
+                $.get('{{ route("admin.sesi-ujian.status-peserta", $sesiUjian->id) }}', function(data) {
+                    updatePesertaStatus(data);
+                });
+            }, 10000);
+            // Immediately fetch on tab focus
+            $.get('{{ route("admin.sesi-ujian.status-peserta", $sesiUjian->id) }}', function(data) {
+                updatePesertaStatus(data);
+            });
+        }
+    });
+
+    @endif
 });
 </script>
 @stop

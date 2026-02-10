@@ -149,6 +149,16 @@ class DashboardController extends Controller
         $dokumenList = $calonSiswa->dokumen()->orderBy('jenis_dokumen')->get();
         $dokumenLabels = CalonDokumen::JENIS_DOKUMEN;
 
+        // Auto-set status to in_progress when penguji opens this peserta
+        if ($pesertaRuang->status === PesertaRuang::STATUS_WAITING) {
+            // Reset any other in_progress peserta in this room
+            PesertaRuang::where('ruang_ujian_id', $ruangUjian->id)
+                ->where('status', PesertaRuang::STATUS_IN_PROGRESS)
+                ->update(['status' => PesertaRuang::STATUS_WAITING]);
+            
+            $pesertaRuang->update(['status' => PesertaRuang::STATUS_IN_PROGRESS]);
+        }
+
         return view('penguji.input-nilai', compact(
             'ruangUjian',
             'sesiUjian',
@@ -161,6 +171,42 @@ class DashboardController extends Controller
             'dokumenList',
             'dokumenLabels'
         ));
+    }
+
+    /**
+     * Panggil peserta - set status in_progress
+     */
+    public function panggilPeserta(Request $request, RuangUjian $ruangUjian, PesertaRuang $pesertaRuang)
+    {
+        $user = Auth::user();
+
+        // Check if penguji is assigned
+        $isAssigned = PengujiRuang::where('user_id', $user->id)
+            ->where('ruang_ujian_id', $ruangUjian->id)
+            ->where('is_active', true)
+            ->exists();
+
+        if (!$isAssigned) {
+            return response()->json(['error' => 'Tidak memiliki akses.'], 403);
+        }
+
+        // Only allow calling waiting peserta
+        if ($pesertaRuang->status !== PesertaRuang::STATUS_WAITING) {
+            return response()->json(['error' => 'Peserta sudah dipanggil atau selesai.'], 422);
+        }
+
+        // Set any currently in_progress peserta in this room back to waiting (only one active at a time)
+        PesertaRuang::where('ruang_ujian_id', $ruangUjian->id)
+            ->where('status', PesertaRuang::STATUS_IN_PROGRESS)
+            ->update(['status' => PesertaRuang::STATUS_WAITING]);
+
+        // Set this peserta as in_progress
+        $pesertaRuang->update(['status' => PesertaRuang::STATUS_IN_PROGRESS]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Peserta ' . ($pesertaRuang->calonSiswa->nama_lengkap ?? '') . ' dipanggil.',
+        ]);
     }
 
     /**
@@ -214,6 +260,14 @@ class DashboardController extends Controller
 
         $nilai->save();
         $nilai->updateTotalNilai();
+
+        // Update peserta_ruang status
+        if ($request->action === 'submit') {
+            $pesertaRuang->update(['status' => PesertaRuang::STATUS_COMPLETED]);
+        } elseif ($pesertaRuang->status === PesertaRuang::STATUS_WAITING) {
+            // If saving draft and still waiting, mark in_progress
+            $pesertaRuang->update(['status' => PesertaRuang::STATUS_IN_PROGRESS]);
+        }
 
         $message = $request->action === 'submit' 
             ? 'Nilai berhasil disubmit.' 

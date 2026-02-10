@@ -13,11 +13,17 @@ class PesertaRuang extends Model
 
     protected $table = 'peserta_ruang';
 
+    // Status constants
+    const STATUS_WAITING = 'waiting';
+    const STATUS_IN_PROGRESS = 'in_progress';
+    const STATUS_COMPLETED = 'completed';
+
     protected $fillable = [
         'sesi_ujian_id',
         'ruang_ujian_id',
         'calon_siswa_id',
         'nomor_urut',
+        'status',
     ];
 
     /**

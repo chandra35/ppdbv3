@@ -298,4 +298,31 @@ class SesiUjianController extends Controller
 
         return $pdf->stream('daftar-hadir-' . $sesiUjian->nama . '.pdf');
     }
+
+    /**
+     * AJAX endpoint: Get peserta status per ruangan for real-time polling
+     */
+    public function statusPeserta(SesiUjian $sesiUjian)
+    {
+        $ruangan = $sesiUjian->ruangan()->with(['peserta.calonSiswa'])->get();
+
+        $data = [];
+        foreach ($ruangan as $ruang) {
+            $pesertaData = [];
+            foreach ($ruang->peserta as $pr) {
+                $pesertaData[] = [
+                    'id' => $pr->id,
+                    'nomor_urut' => $pr->nomor_urut,
+                    'nama' => $pr->calonSiswa->nama_lengkap ?? '-',
+                    'status' => $pr->status ?? 'waiting',
+                ];
+            }
+            $data[$ruang->id] = [
+                'nama_ruang' => $ruang->nama_ruang,
+                'peserta' => $pesertaData,
+            ];
+        }
+
+        return response()->json($data);
+    }
 }

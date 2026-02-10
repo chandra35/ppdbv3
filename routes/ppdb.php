@@ -317,6 +317,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         // ---- ADMIN INPUT NILAI LANGSUNG ----
         Route::get('/{sesiUjian}/ruangan/{ruangUjian}/input-nilai/{pesertaRuang}', [\App\Http\Controllers\Admin\AdminNilaiController::class, 'inputNilai'])->name('admin-input-nilai');
         Route::post('/{sesiUjian}/ruangan/{ruangUjian}/input-nilai/{pesertaRuang}', [\App\Http\Controllers\Admin\AdminNilaiController::class, 'saveNilai'])->name('admin-save-nilai');
+        
+        // ---- AJAX STATUS PESERTA (Polling) ----
+        Route::get('/{sesiUjian}/status-peserta', [\App\Http\Controllers\Admin\SesiUjianController::class, 'statusPeserta'])->name('status-peserta');
     });
     
     // ---- NILAI SELEKSI ----
@@ -636,4 +639,5 @@ Route::middleware(['auth'])->prefix('penguji')->name('penguji.')->group(function
     Route::get('/ruangan/{ruangUjian}', [\App\Http\Controllers\Penguji\DashboardController::class, 'ruangan'])->name('ruangan');
     Route::get('/ruangan/{ruangUjian}/peserta/{pesertaRuang}', [\App\Http\Controllers\Penguji\DashboardController::class, 'inputNilai'])->name('input-nilai');
     Route::post('/ruangan/{ruangUjian}/peserta/{pesertaRuang}', [\App\Http\Controllers\Penguji\DashboardController::class, 'saveNilai'])->name('save-nilai');
+    Route::post('/ruangan/{ruangUjian}/peserta/{pesertaRuang}/panggil', [\App\Http\Controllers\Penguji\DashboardController::class, 'panggilPeserta'])->name('panggil-peserta');
 });
