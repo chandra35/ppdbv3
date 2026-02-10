@@ -26,11 +26,19 @@
         padding: 14px 16px;
     }
     .peserta-header .avatar {
-        width: 60px;
-        height: 60px;
+        width: 90px;
+        height: 90px;
         border-radius: 50%;
         border: 3px solid rgba(255,255,255,0.5);
         object-fit: cover;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .peserta-header .avatar.clickable {
+        cursor: pointer;
+    }
+    .peserta-header .avatar.clickable:hover {
+        transform: scale(1.08);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
     .peserta-body { padding: 0; }
     .peserta-body .info-section {
@@ -321,8 +329,8 @@
                                 $avatarSrc = 'https://ui-avatars.com/api/?name=' . urlencode($initials) . '&size=80&background=' . $bgColor . '&color=ffffff&bold=true';
                             }
                         @endphp
-                        <img src="{{ $avatarSrc }}" class="avatar mr-3" alt="Foto"
-                             @if($pasFoto) style="cursor:pointer" onclick="openDocPreview(0)" @endif>
+                        <img src="{{ $avatarSrc }}" class="avatar mr-3 {{ $pasFoto ? 'clickable' : '' }}" alt="Foto"
+                             @if($pasFoto) onclick="openFotoPreview()" title="Klik untuk preview foto" @endif>
                         <div>
                             <h5 class="mb-0" style="font-weight:700; font-size:16px;">{{ $calonSiswa->nama_lengkap }}</h5>
                             <div class="mt-1">
@@ -932,6 +940,24 @@ $(document).ready(function() {
 // ==========================================
 // Doc Preview Functions
 // ==========================================
+function openFotoPreview() {
+    // Find the foto doc in the list
+    var fotoIndex = -1;
+    for (var i = 0; i < docList.length; i++) {
+        if (docList[i].title === 'Pas Foto') { fotoIndex = i; break; }
+    }
+    if (fotoIndex >= 0) {
+        openDocPreview(fotoIndex);
+    } else {
+        // Fallback: open the avatar image directly
+        var src = $('.peserta-header .avatar').attr('src');
+        if (src) {
+            docList.push({ url: src, title: 'Pas Foto', type: 'image' });
+            openDocPreview(docList.length - 1);
+        }
+    }
+}
+
 function openDocPreview(index) {
     if (index < 0 || index >= docList.length) return;
     currentDocIndex = index;
