@@ -1130,7 +1130,6 @@ dl.row dt {
                                                 @endif
                                             </div>
                                             
-                                            @if($dokumen->jenis_dokumen != 'foto')
                                                 @if($dokumen->status_verifikasi == 'pending')
                                                 <div class="btn-group d-flex" role="group">
                                                     <button type="button" class="btn btn-success flex-fill approve-card-btn" data-dokumen-id="{{ $dokumen->id }}" title="Setujui" style="font-size: 9px; padding: 3px;">
@@ -1152,9 +1151,6 @@ dl.row dt {
                                                     <i class="fas fa-undo"></i> Batal Revisi
                                                 </button>
                                                 @endif
-                                            @else
-                                                <small class="text-muted" style="font-size: 8px;"><i class="fas fa-info-circle"></i> Auto</small>
-                                            @endif
                                         </div>
                                     @else
                                         {{-- Placeholder for missing document --}}
@@ -2632,12 +2628,6 @@ $(document).ready(function() {
         // Skip untuk dokumen tambahan (opsional) - tidak punya ID
         if (!currentDokumenId) {
             container.html('<p class="text-muted mb-0"><i class="fas fa-info-circle"></i> Dokumen opsional tidak perlu verifikasi</p>');
-            return;
-        }
-        
-        // Skip untuk pas_foto
-        if (currentJenisDokumen === 'foto') {
-            container.html('<p class="text-muted mb-0"><i class="fas fa-info-circle"></i> Pas foto tidak perlu approval</p>');
             return;
         }
         
