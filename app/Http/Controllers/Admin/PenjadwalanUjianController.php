@@ -982,6 +982,8 @@ class PenjadwalanUjianController extends Controller
             $sesiCbt = SesiUjian::create([
                 'jadwal_ujian_id' => $jadwalUjian->id,
                 'tahun_pelajaran_id' => $tahunAktif->id,
+                'jalur_pendaftaran_id' => $jadwalUjian->jalur_pendaftaran_id,
+                'gelombang_pendaftaran_id' => $jadwalUjian->gelombang_pendaftaran_id,
                 'nama' => "Sesi {$nomorSesi} - CBT",
                 'jenis_ujian' => 'cbt',
                 'nomor_sesi' => $nomorSesi,
@@ -998,6 +1000,8 @@ class PenjadwalanUjianController extends Controller
             $sesiWawancara = SesiUjian::create([
                 'jadwal_ujian_id' => $jadwalUjian->id,
                 'tahun_pelajaran_id' => $tahunAktif->id,
+                'jalur_pendaftaran_id' => $jadwalUjian->jalur_pendaftaran_id,
+                'gelombang_pendaftaran_id' => $jadwalUjian->gelombang_pendaftaran_id,
                 'nama' => "Sesi {$nomorSesi} - Wawancara",
                 'jenis_ujian' => 'wawancara',
                 'nomor_sesi' => $nomorSesi,
