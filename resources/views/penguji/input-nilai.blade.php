@@ -4,15 +4,9 @@
 
 @section('css')
 <style>
-    /* ===== Two-Column Layout ===== */
-    .layout-row { display: flex; gap: 15px; align-items: flex-start; }
-    .col-peserta { flex: 0 0 420px; position: sticky; top: 10px; }
-    .col-nilai { flex: 1; min-width: 0; }
-
-    @media (max-width: 1200px) {
-        .layout-row { flex-direction: column; }
-        .col-peserta { flex: none; width: 100%; position: static; }
-    }
+    /* ===== Stacked Layout ===== */
+    .col-peserta { width: 100%; }
+    .col-nilai { width: 100%; }
 
     /* ===== Peserta Card ===== */
     .peserta-detail-card {
@@ -32,12 +26,19 @@
         border: 3px solid rgba(255,255,255,0.5);
         object-fit: cover;
     }
-    .peserta-body { padding: 0; }
+    .peserta-body {
+        padding: 0;
+        display: flex;
+        flex-wrap: wrap;
+    }
     .peserta-body .info-section {
         padding: 10px 16px;
         border-bottom: 1px solid #f0f0f0;
+        flex: 1 1 auto;
+        min-width: 200px;
+        border-right: 1px solid #f0f0f0;
     }
-    .peserta-body .info-section:last-child { border-bottom: none; }
+    .peserta-body .info-section:last-child { border-right: none; }
     .info-section h6 {
         font-size: 11px;
         font-weight: 700;
@@ -55,6 +56,19 @@
     .info-item { font-size: 12px; line-height: 1.6; }
     .info-item .label { color: #888; }
     .info-item .value { font-weight: 600; color: #333; }
+
+    /* Dokumen sections full width */
+    .peserta-body .info-section.dok-section {
+        flex: 0 0 100%;
+        border-right: none;
+    }
+
+    @media (max-width: 768px) {
+        .peserta-body .info-section {
+            flex: 0 0 100%;
+            border-right: none;
+        }
+    }
 
     /* ===== Dokumen Buttons ===== */
     .dok-btn-grid { display: flex; flex-wrap: wrap; gap: 5px; }
@@ -302,8 +316,8 @@
         </div>
     @endif
 
-    <div class="layout-row">
-        {{-- ===== LEFT: PESERTA INFO ===== --}}
+    <div>
+        {{-- ===== TOP: PESERTA INFO ===== --}}
         <div class="col-peserta">
             <div class="card peserta-detail-card mb-3">
                 {{-- Header --}}
@@ -452,7 +466,7 @@
 
                     {{-- Dokumen Utama --}}
                     @if($dokumenList->count() > 0)
-                    <div class="info-section">
+                    <div class="info-section dok-section">
                         <h6><i class="fas fa-folder-open mr-1"></i>Dokumen Persyaratan ({{ $dokumenList->count() }})</h6>
                         <div class="dok-btn-grid">
                             @foreach($dokumenList as $dok)
@@ -475,7 +489,7 @@
 
                     {{-- Dokumen Tambahan (Grouped) --}}
                     @if($dokumenTambahan->count() > 0)
-                    <div class="info-section">
+                    <div class="info-section dok-section">
                         <h6><i class="fas fa-paperclip mr-1"></i>Dokumen Tambahan ({{ $dokumenTambahan->count() }})</h6>
                         @php
                             $grupPrestasi = $dokumenTambahan->filter(fn($d) => in_array($d->jenis_dokumen, ['sertifikat_prestasi', 'piagam']));
@@ -577,7 +591,7 @@
             </div>
         </div>
 
-        {{-- ===== RIGHT: FORM INPUT NILAI ===== --}}
+        {{-- ===== BELOW: FORM INPUT NILAI ===== --}}
         <div class="col-nilai">
             <form action="{{ $saveRoute ?? route('penguji.save-nilai', [$ruangUjian->id, $pesertaRuang->id]) }}" method="POST" id="nilaiForm">
                 @csrf
