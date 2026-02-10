@@ -751,14 +751,18 @@ class PenjadwalanUjianController extends Controller
             ];
 
             // Save peserta mapping for Sesi 1
+            // Distribusi round-robin agar semua ruang terisi merata
+            $jumlahRuangCbt = (int) $settings['jumlah_ruang_cbt'];
+            $jumlahRuangWawancara = (int) $settings['jumlah_ruang_wawancara'];
+
             foreach ($grupA as $idx => $peserta) {
                 $schedule['peserta'][$peserta->id] = [
                     'grup' => 'A',
                     'gelombang' => $gelombangNum,
                     'sesi_cbt' => $sesiCounter,
                     'sesi_wawancara' => $sesiCounter + 1,
-                    'urut_cbt' => $idx + 1,
-                    'ruang_cbt_idx' => floor($idx / $settings['kapasitas_cbt']),
+                    'urut_cbt' => floor($idx / $jumlahRuangCbt) + 1,
+                    'ruang_cbt_idx' => $idx % $jumlahRuangCbt,
                 ];
             }
             foreach ($grupB as $idx => $peserta) {
@@ -767,8 +771,8 @@ class PenjadwalanUjianController extends Controller
                     'gelombang' => $gelombangNum,
                     'sesi_cbt' => $sesiCounter + 1,
                     'sesi_wawancara' => $sesiCounter,
-                    'urut_wawancara' => $idx + 1,
-                    'ruang_wawancara_idx' => floor($idx / $settings['kapasitas_wawancara']),
+                    'urut_wawancara' => floor($idx / $jumlahRuangWawancara) + 1,
+                    'ruang_wawancara_idx' => $idx % $jumlahRuangWawancara,
                 ];
             }
 
@@ -795,14 +799,14 @@ class PenjadwalanUjianController extends Controller
                 ],
             ];
 
-            // Update peserta mapping for Sesi 2
+            // Update peserta mapping for Sesi 2 (round-robin distribution)
             foreach ($grupA as $idx => $peserta) {
-                $schedule['peserta'][$peserta->id]['urut_wawancara'] = $idx + 1;
-                $schedule['peserta'][$peserta->id]['ruang_wawancara_idx'] = floor($idx / $settings['kapasitas_wawancara']);
+                $schedule['peserta'][$peserta->id]['urut_wawancara'] = floor($idx / $jumlahRuangWawancara) + 1;
+                $schedule['peserta'][$peserta->id]['ruang_wawancara_idx'] = $idx % $jumlahRuangWawancara;
             }
             foreach ($grupB as $idx => $peserta) {
-                $schedule['peserta'][$peserta->id]['urut_cbt'] = $idx + 1;
-                $schedule['peserta'][$peserta->id]['ruang_cbt_idx'] = floor($idx / $settings['kapasitas_cbt']);
+                $schedule['peserta'][$peserta->id]['urut_cbt'] = floor($idx / $jumlahRuangCbt) + 1;
+                $schedule['peserta'][$peserta->id]['ruang_cbt_idx'] = $idx % $jumlahRuangCbt;
             }
 
             $currentTime = $sesi2End->copy()->addMinutes($jedaSesi);
@@ -895,7 +899,10 @@ class PenjadwalanUjianController extends Controller
                 ],
             ];
 
-            // Update peserta mapping
+            // Update peserta mapping (round-robin distribution)
+            $jumlahRuangCbt = (int) $settings['jumlah_ruang_cbt'];
+            $jumlahRuangWawancara = (int) $settings['jumlah_ruang_wawancara'];
+
             foreach ($cbtPeserta as $idx => $pesertaId) {
                 if (!isset($schedule['peserta'][$pesertaId])) {
                     $schedule['peserta'][$pesertaId] = [
@@ -904,8 +911,8 @@ class PenjadwalanUjianController extends Controller
                     ];
                 }
                 $schedule['peserta'][$pesertaId]['sesi_cbt'] = $sesiCounter;
-                $schedule['peserta'][$pesertaId]['urut_cbt'] = $idx + 1;
-                $schedule['peserta'][$pesertaId]['ruang_cbt_idx'] = floor($idx / (int) $settings['kapasitas_cbt']);
+                $schedule['peserta'][$pesertaId]['urut_cbt'] = floor($idx / $jumlahRuangCbt) + 1;
+                $schedule['peserta'][$pesertaId]['ruang_cbt_idx'] = $idx % $jumlahRuangCbt;
             }
 
             foreach ($wawancaraPeserta as $idx => $pesertaId) {
@@ -916,8 +923,8 @@ class PenjadwalanUjianController extends Controller
                     ];
                 }
                 $schedule['peserta'][$pesertaId]['sesi_wawancara'] = $sesiCounter;
-                $schedule['peserta'][$pesertaId]['urut_wawancara'] = $idx + 1;
-                $schedule['peserta'][$pesertaId]['ruang_wawancara_idx'] = floor($idx / (int) $settings['kapasitas_wawancara']);
+                $schedule['peserta'][$pesertaId]['urut_wawancara'] = floor($idx / $jumlahRuangWawancara) + 1;
+                $schedule['peserta'][$pesertaId]['ruang_wawancara_idx'] = $idx % $jumlahRuangWawancara;
             }
 
             // After this sesi:
