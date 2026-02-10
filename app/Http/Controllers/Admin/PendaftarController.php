@@ -1678,7 +1678,7 @@ class PendaftarController extends Controller
 
                 $dokumen->update([
                     'file_path' => $filePath,
-                    'original_name' => $originalName,
+                    'nama_file' => $originalName,
                     'file_size' => $fileSize,
                     'mime_type' => $mimeType,
                     'status_verifikasi' => 'pending',
@@ -1690,8 +1690,8 @@ class PendaftarController extends Controller
                 $dokumen = CalonDokumen::create([
                     'calon_siswa_id' => $calonSiswa->id,
                     'jenis_dokumen' => $jenisDokumen,
+                    'nama_file' => $originalName,
                     'file_path' => $filePath,
-                    'original_name' => $originalName,
                     'file_size' => $fileSize,
                     'mime_type' => $mimeType,
                     'status_verifikasi' => 'pending',
