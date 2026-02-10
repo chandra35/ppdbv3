@@ -1130,7 +1130,7 @@ dl.row dt {
                                                 @endif
                                             </div>
                                             
-                                            @if($dokumen->jenis_dokumen != 'pas_foto')
+                                            @if($dokumen->jenis_dokumen != 'foto')
                                                 @if($dokumen->status_verifikasi == 'pending')
                                                 <div class="btn-group d-flex" role="group">
                                                     <button type="button" class="btn btn-success flex-fill approve-card-btn" data-dokumen-id="{{ $dokumen->id }}" title="Setujui" style="font-size: 9px; padding: 3px;">
@@ -1978,7 +1978,7 @@ dl.row dt {
                                         <option value="akta_lahir">Akta Kelahiran</option>
                                         <option value="ijazah">Ijazah / SKL</option>
                                         <option value="rapor">Rapor</option>
-                                        <option value="pas_foto">Pas Foto</option>
+                                        <option value="foto">Pas Foto</option>
                                         <option value="ktp_ortu">KTP Orang Tua</option>
                                         <option value="skhun">SKHUN</option>
                                         <option value="surat_pindah">Surat Pindah</option>
@@ -2636,7 +2636,7 @@ $(document).ready(function() {
         }
         
         // Skip untuk pas_foto
-        if (currentJenisDokumen === 'pas_foto') {
+        if (currentJenisDokumen === 'foto') {
             container.html('<p class="text-muted mb-0"><i class="fas fa-info-circle"></i> Pas foto tidak perlu approval</p>');
             return;
         }
