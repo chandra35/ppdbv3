@@ -26,7 +26,7 @@ class NpsnService
             if (!$this->validateNpsnFormat($npsn)) {
                 return [
                     'success' => false,
-                    'message' => 'Format NPSN tidak valid. NPSN harus 8 digit angka.',
+                    'message' => 'Format NPSN tidak valid. NPSN harus 8 karakter (huruf dan/atau angka).',
                     'data' => null
                 ];
             }
@@ -208,7 +208,7 @@ class NpsnService
      */
     public function validateNpsnFormat($npsn)
     {
-        // NPSN should be exactly 8 digits
-        return preg_match('/^\d{8}$/', $npsn);
+        // NPSN should be exactly 8 alphanumeric characters (PKBM/SKB may use letters)
+        return preg_match('/^[A-Za-z0-9]{8}$/', $npsn);
     }
 }

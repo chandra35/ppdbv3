@@ -831,9 +831,8 @@
                                     class="form-control @error('npsn_asal_sekolah') is-invalid @enderror" 
                                     value="{{ old('npsn_asal_sekolah', $pendaftar->npsn_asal_sekolah) }}"
                                     maxlength="8"
-                                    placeholder="8 digit NPSN"
-                                    pattern="[0-9]{8}"
-                                    inputmode="numeric"
+                                    placeholder="8 karakter NPSN"
+                                    pattern="[A-Za-z0-9]{8}"
                                     {{ !$npsnKosong ? 'readonly' : '' }}>
                                 <div class="input-group-append">
                                     <button type="button" class="btn btn-info" id="btnSyncNpsn" title="Sync data dari Kemdikdasmen">
@@ -1228,11 +1227,11 @@ $(document).ready(function() {
             return;
         }
         
-        if (!/^\d{8}$/.test(npsn)) {
+        if (!/^[A-Za-z0-9]{8}$/.test(npsn)) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Format NPSN Salah',
-                text: 'NPSN harus 8 digit angka.',
+                text: 'NPSN harus 8 karakter (huruf dan/atau angka).',
             });
             return;
         }
@@ -1312,9 +1311,9 @@ $(document).ready(function() {
         });
     });
     
-    // Allow NPSN input only numbers
+    // Allow NPSN input alphanumeric only
     $('#npsn_asal_sekolah').on('input', function() {
-        this.value = this.value.replace(/\D/g, '').slice(0, 8);
+        this.value = this.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 8);
     });
 });
 </script>

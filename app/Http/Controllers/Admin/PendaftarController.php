@@ -1873,7 +1873,7 @@ class PendaftarController extends Controller
     public function syncNpsn(Request $request)
     {
         $request->validate([
-            'npsn' => 'required|digits:8',
+            'npsn' => 'required|alpha_num|size:8',
         ]);
 
         $npsn = $request->npsn;
