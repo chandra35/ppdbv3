@@ -71,7 +71,7 @@
                                             <td>
                                                 <input type="hidden" name="bobot[{{ $index }}][id]" value="{{ $bobot->id }}">
                                                 <strong>{{ $bobot->nama_komponen }}</strong>
-                                                <br><small class="text-muted">{{ $bobot->kode_komponen }}</small>
+                                                <br><small class="text-muted">{{ $bobot->komponen }}</small>
                                             </td>
                                             <td>
                                                 <div class="input-group">

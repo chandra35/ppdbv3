@@ -77,6 +77,11 @@
 @stop
 
 @section('content')
+@php
+    $isCbt = $sesiUjian->jenis_ujian === 'cbt';
+    $labelPetugas = $isCbt ? 'Pengawas & Proktor' : 'Penguji';
+    $labelKetuaPetugas = $isCbt ? 'Koordinator' : 'Ketua Penguji';
+@endphp
 <div class="container-fluid">
     @if(session('success'))
         <div class="alert alert-success alert-dismissible">
@@ -209,9 +214,9 @@
                                     </div>
                                 </div>
 
-                                <!-- Penguji -->
+                                <!-- Petugas (Penguji / Pengawas & Proktor) -->
                                 <div class="mb-3">
-                                    <label class="mb-1"><strong><i class="fas fa-user-tie mr-1"></i>Penguji:</strong></label>
+                                    <label class="mb-1"><strong><i class="fas fa-user-tie mr-1"></i>{{ $labelPetugas }}:</strong></label>
                                     <div id="penguji-list-{{ $ruang->id }}">
                                         @forelse($ruang->penguji as $pr)
                                             <span class="penguji-tag {{ $pr->is_ketua ? 'ketua' : '' }}">
@@ -221,7 +226,7 @@
                                                 @endif
                                             </span>
                                         @empty
-                                            <span class="text-muted">Belum ada penguji</span>
+                                            <span class="text-muted">Belum ada {{ strtolower($labelPetugas) }}</span>
                                         @endforelse
                                     </div>
                                     
@@ -230,7 +235,7 @@
                                                 data-ruang-id="{{ $ruang->id }}"
                                                 data-ruang-nama="{{ $ruang->nama_ruang }}"
                                                 data-jumlah-peserta="{{ $totalPeserta }}">
-                                            <i class="fas fa-user-plus mr-1"></i>Kelola Penguji
+                                            <i class="fas fa-user-plus mr-1"></i>Kelola {{ $labelPetugas }}
                                         </button>
                                     @endif
                                 </div>
@@ -301,26 +306,26 @@
     <div class="card">
         <div class="card-header bg-light">
             <h3 class="card-title">
-                <i class="fas fa-info-circle mr-2"></i>Panduan Penugasan Penguji
+                <i class="fas fa-info-circle mr-2"></i>Panduan Penugasan {{ $labelPetugas }}
             </h3>
         </div>
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6">
-                    <h6><i class="fas fa-user-tie text-primary mr-2"></i>Cara Menugaskan Penguji</h6>
+                    <h6><i class="fas fa-user-tie text-primary mr-2"></i>Cara Menugaskan {{ $labelPetugas }}</h6>
                     <ol class="pl-3">
-                        <li>Klik tombol <span class="badge badge-outline-primary">Kelola Penguji</span> pada setiap ruangan</li>
-                        <li>Pilih satu atau lebih penguji dari daftar</li>
-                        <li>Tentukan ketua penguji (opsional)</li>
+                        <li>Klik tombol <span class="badge badge-outline-primary">Kelola {{ $labelPetugas }}</span> pada setiap ruangan</li>
+                        <li>Pilih satu atau lebih {{ strtolower($labelPetugas) }} dari daftar</li>
+                        <li>Tentukan {{ strtolower($labelKetuaPetugas) }} (opsional)</li>
                         <li>Klik Simpan</li>
                     </ol>
                 </div>
                 <div class="col-md-6">
                     <h6><i class="fas fa-clipboard-check text-success mr-2"></i>Catatan Penting</h6>
                     <ul class="pl-3">
-                        <li>Penguji harus sudah terdaftar di <a href="{{ route('admin.penguji.index') }}">Manajemen Penguji</a></li>
-                        <li>Ketua penguji bertanggung jawab atas jalannya ujian di ruangan</li>
-                        <li>Setelah penugasan, penguji dapat login ke portal <code>/penguji</code></li>
+                        <li>{{ $labelPetugas }} harus sudah terdaftar di <a href="{{ route('admin.penguji.index') }}">Manajemen {{ $labelPetugas }}</a></li>
+                        <li>{{ $labelKetuaPetugas }} bertanggung jawab atas jalannya ujian di ruangan</li>
+                        <li>Setelah penugasan, {{ strtolower($labelPetugas) }} dapat login ke portal <code>/penguji</code></li>
                     </ul>
                 </div>
             </div>
@@ -334,7 +339,7 @@
         <div class="modal-content">
             <div class="modal-header bg-gradient-primary">
                 <h5 class="modal-title text-white">
-                    <i class="fas fa-user-plus mr-2"></i>Kelola Penguji - <span id="modalRuangNama"></span>
+                    <i class="fas fa-user-plus mr-2"></i>Kelola {{ $labelPetugas }} - <span id="modalRuangNama"></span>
                 </h5>
                 <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
             </div>
@@ -355,7 +360,7 @@
                                 <span id="infoJumlahPeserta">0</span>
                             </div>
                             <div class="col-md-4">
-                                <strong><i class="fas fa-user-tie mr-1"></i>Penguji Saat Ini:</strong>
+                                <strong><i class="fas fa-user-tie mr-1"></i>{{ $labelPetugas }} Saat Ini:</strong>
                                 <span id="infoJumlahPenguji">0</span>
                             </div>
                         </div>
@@ -364,9 +369,9 @@
                     <!-- Pilih Penguji -->
                     <div class="form-group">
                         <label class="d-flex justify-content-between align-items-center">
-                            <span><strong><i class="fas fa-users mr-1"></i>Pilih Penguji:</strong></span>
+                            <span><strong><i class="fas fa-users mr-1"></i>Pilih {{ $labelPetugas }}:</strong></span>
                             <a href="{{ route('admin.penguji.index') }}" target="_blank" class="btn btn-sm btn-outline-success">
-                                <i class="fas fa-plus mr-1"></i>Kelola Penguji
+                                <i class="fas fa-plus mr-1"></i>Kelola {{ $labelPetugas }}
                             </a>
                         </label>
                         <select name="penguji_ids[]" id="selectPenguji" class="form-control" multiple="multiple" style="width: 100%">
@@ -380,38 +385,38 @@
                                         data-phone="{{ $penguji->phone ?? '-' }}"
                                         data-roles="{{ $roleNames }}"
                                         data-dedicated="{{ $isDedicatedPenguji ? '1' : '0' }}">
-                                    {{ $penguji->name }} ({{ $isDedicatedPenguji ? 'Penguji' : $roleNames }})
+                                    {{ $penguji->name }} ({{ $isDedicatedPenguji ? $labelPetugas : $roleNames }})
                                 </option>
                             @endforeach
                         </select>
                         <small class="text-muted">
-                            <i class="fas fa-info-circle mr-1"></i>Pilih satu atau lebih penguji. 
-                            Penguji dengan label <span class="badge badge-primary badge-sm">Penguji</span> adalah penguji khusus.
+                            <i class="fas fa-info-circle mr-1"></i>Pilih satu atau lebih {{ strtolower($labelPetugas) }}. 
+                            {{ $labelPetugas }} dengan label <span class="badge badge-primary badge-sm">{{ $labelPetugas }}</span> adalah {{ strtolower($labelPetugas) }} khusus.
                         </small>
                     </div>
 
                     <!-- Daftar Penguji Terpilih -->
                     <div id="selectedPengujiList" class="mb-3" style="display: none;">
-                        <label><strong><i class="fas fa-check-circle mr-1"></i>Penguji Terpilih:</strong></label>
+                        <label><strong><i class="fas fa-check-circle mr-1"></i>{{ $labelPetugas }} Terpilih:</strong></label>
                         <div id="selectedPengujiCards" class="row"></div>
                     </div>
 
                     <!-- Pilih Ketua -->
                     <div class="form-group">
                         <label>
-                            <strong><i class="fas fa-star text-warning mr-1"></i>Ketua Penguji:</strong>
+                            <strong><i class="fas fa-star text-warning mr-1"></i>{{ $labelKetuaPetugas }}:</strong>
                         </label>
                         <select name="ketua_id" id="selectKetua" class="form-control">
-                            <option value="">-- Pilih Ketua Penguji (Opsional) --</option>
+                            <option value="">-- Pilih {{ $labelKetuaPetugas }} (Opsional) --</option>
                         </select>
                         <small class="text-muted">
-                            <i class="fas fa-info-circle mr-1"></i>Ketua penguji bertanggung jawab koordinasi dan memastikan kelancaran ujian di ruangan.
+                            <i class="fas fa-info-circle mr-1"></i>{{ $labelKetuaPetugas }} bertanggung jawab koordinasi dan memastikan kelancaran ujian di ruangan.
                         </small>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <a href="{{ route('admin.penguji.index') }}" target="_blank" class="btn btn-outline-info mr-auto">
-                        <i class="fas fa-external-link-alt mr-1"></i>Kelola Semua Penguji
+                        <i class="fas fa-external-link-alt mr-1"></i>Kelola Semua {{ $labelPetugas }}
                     </a>
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary">

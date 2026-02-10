@@ -164,55 +164,44 @@
                         }
                     @endphp
                     <div class="col-md-6 col-lg-4">
-                        <div class="card peserta-card {{ $statusClass }}" id="peserta-card-{{ $item['peserta']->id }}">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <span class="badge badge-secondary mb-2">No. {{ $item['peserta']->nomor_urut }}</span>
-                                        @if($pesertaStatus == 'in_progress')
-                                            <span class="badge badge-primary mb-2"><i class="fas fa-volume-up mr-1"></i>Sedang Diuji</span>
-                                        @elseif($pesertaStatus == 'completed')
-                                            <span class="badge badge-success mb-2"><i class="fas fa-check mr-1"></i>Selesai</span>
-                                        @endif
-                                        <h6 class="mb-1">{{ $item['calon_siswa']->nama_lengkap ?? '-' }}</h6>
-                                        <small class="text-muted">{{ $item['calon_siswa']->no_pendaftaran ?? '-' }}</small>
-                                    </div>
-                                    <div class="text-right">
-                                        @if($nilaiStatus == 'submitted' || $nilaiStatus == 'verified')
-                                            <i class="fas fa-check-circle text-success status-icon"></i>
-                                            @if($item['nilai'])
+                        <a href="{{ route('penguji.input-nilai', [$ruangUjian->id, $item['peserta']->id]) }}" class="text-decoration-none">
+                            <div class="card peserta-card {{ $statusClass }}" id="peserta-card-{{ $item['peserta']->id }}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <span class="badge badge-secondary mb-2">No. {{ $item['peserta']->nomor_urut }}</span>
+                                            @if($pesertaStatus == 'in_progress')
+                                                <span class="badge badge-primary mb-2"><i class="fas fa-volume-up mr-1"></i>Sedang Diuji</span>
+                                            @elseif($pesertaStatus == 'completed')
+                                                <span class="badge badge-success mb-2"><i class="fas fa-check mr-1"></i>Selesai</span>
+                                            @endif
+                                            <h6 class="mb-1">{{ $item['calon_siswa']->nama_lengkap ?? '-' }}</h6>
+                                            <small class="text-muted">{{ $item['calon_siswa']->no_pendaftaran ?? '-' }}</small>
+                                        </div>
+                                        <div class="text-right">
+                                            @if($nilaiStatus == 'submitted' || $nilaiStatus == 'verified')
+                                                <i class="fas fa-check-circle text-success status-icon"></i>
+                                                @if($item['nilai'])
+                                                    <div class="mt-2">
+                                                        <span class="badge badge-primary">{{ number_format($item['nilai']->total_nilai, 2) }}</span>
+                                                    </div>
+                                                @endif
+                                            @elseif($nilaiStatus == 'draft')
+                                                <i class="fas fa-edit text-warning status-icon"></i>
                                                 <div class="mt-2">
-                                                    <span class="badge badge-primary">{{ number_format($item['nilai']->total_nilai, 2) }}</span>
+                                                    <span class="badge badge-warning">Draft</span>
+                                                </div>
+                                            @else
+                                                <i class="fas fa-minus-circle text-danger status-icon"></i>
+                                                <div class="mt-2">
+                                                    <span class="badge badge-danger">Belum</span>
                                                 </div>
                                             @endif
-                                        @elseif($nilaiStatus == 'draft')
-                                            <i class="fas fa-edit text-warning status-icon"></i>
-                                            <div class="mt-2">
-                                                <span class="badge badge-warning">Draft</span>
-                                            </div>
-                                        @else
-                                            <i class="fas fa-minus-circle text-danger status-icon"></i>
-                                            <div class="mt-2">
-                                                <span class="badge badge-danger">Belum</span>
-                                            </div>
-                                        @endif
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="mt-2 d-flex gap-1">
-                                    @if($pesertaStatus == 'waiting' && $nilaiStatus == 'belum')
-                                        <button type="button" class="btn btn-sm btn-info btn-panggil mr-1"
-                                                data-peserta-id="{{ $item['peserta']->id }}"
-                                                data-peserta-nama="{{ $item['calon_siswa']->nama_lengkap ?? '-' }}">
-                                            <i class="fas fa-bullhorn mr-1"></i>Panggil
-                                        </button>
-                                    @endif
-                                    <a href="{{ route('penguji.input-nilai', [$ruangUjian->id, $item['peserta']->id]) }}" 
-                                       class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-pen mr-1"></i>Input Nilai
-                                    </a>
-                                </div>
                             </div>
-                        </div>
+                        </a>
                     </div>
                 @empty
                     <div class="col-12">
@@ -261,33 +250,6 @@ $(document).ready(function() {
                 }
             }
         }
-    });
-
-    // Panggil Peserta button
-    $(document).on('click', '.btn-panggil', function(e) {
-        e.preventDefault();
-        var btn = $(this);
-        var pesertaId = btn.data('peserta-id');
-        var pesertaNama = btn.data('peserta-nama');
-
-        if (!confirm('Panggil peserta ' + pesertaNama + '?')) return;
-
-        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Memanggil...');
-
-        $.ajax({
-            url: '{{ url("penguji/ruangan") }}/' + '{{ $ruangUjian->id }}' + '/peserta/' + pesertaId + '/panggil',
-            method: 'POST',
-            data: { _token: '{{ csrf_token() }}' },
-            success: function(res) {
-                // Reload page to reflect new status
-                location.reload();
-            },
-            error: function(xhr) {
-                var msg = xhr.responseJSON?.error || 'Gagal memanggil peserta.';
-                alert(msg);
-                btn.prop('disabled', false).html('<i class="fas fa-bullhorn mr-1"></i>Panggil');
-            }
-        });
     });
 });
 </script>

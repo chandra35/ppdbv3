@@ -356,7 +356,7 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    @if($bobot->kode_komponen == 'wawancara')
+                    @if($bobot->komponen == 'wawancara')
                         <div class="form-group mb-0">
                             <label class="mb-1">Nilai Wawancara <span class="text-danger">*</span></label>
                             <input type="number" name="nilai_wawancara" 
@@ -367,7 +367,7 @@
                                    {{ $nilai && $nilai->exists && !$nilai->isEditable() ? 'readonly' : '' }}>
                         </div>
 
-                    @elseif($bobot->kode_komponen == 'baca_quran')
+                    @elseif($bobot->komponen == 'baca_quran')
                         {{-- Sub-komponen: Tajwid, Makhroj, Kelancaran → rata-rata --}}
                         <div class="sub-komponen-row">
                             <div class="form-group">
@@ -403,7 +403,7 @@
                             </div>
                         </div>
 
-                    @elseif($bobot->kode_komponen == 'tulis_quran')
+                    @elseif($bobot->komponen == 'tulis_quran')
                         <div class="form-group mb-0">
                             <label class="mb-1">Nilai Tulis Arab <span class="text-danger">*</span></label>
                             <input type="number" name="nilai_tulis_quran" 
@@ -414,7 +414,7 @@
                                    {{ $nilai && $nilai->exists && !$nilai->isEditable() ? 'readonly' : '' }}>
                         </div>
 
-                    @elseif($bobot->kode_komponen == 'hafalan')
+                    @elseif($bobot->komponen == 'hafalan')
                         <div class="form-group">
                             <label class="mb-1">Nilai Hafalan <span class="text-danger">*</span></label>
                             <input type="number" name="nilai_hafalan" 

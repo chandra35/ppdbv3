@@ -639,5 +639,4 @@ Route::middleware(['auth'])->prefix('penguji')->name('penguji.')->group(function
     Route::get('/ruangan/{ruangUjian}', [\App\Http\Controllers\Penguji\DashboardController::class, 'ruangan'])->name('ruangan');
     Route::get('/ruangan/{ruangUjian}/peserta/{pesertaRuang}', [\App\Http\Controllers\Penguji\DashboardController::class, 'inputNilai'])->name('input-nilai');
     Route::post('/ruangan/{ruangUjian}/peserta/{pesertaRuang}', [\App\Http\Controllers\Penguji\DashboardController::class, 'saveNilai'])->name('save-nilai');
-    Route::post('/ruangan/{ruangUjian}/peserta/{pesertaRuang}/panggil', [\App\Http\Controllers\Penguji\DashboardController::class, 'panggilPeserta'])->name('panggil-peserta');
 });

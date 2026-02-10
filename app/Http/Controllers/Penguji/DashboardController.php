@@ -174,42 +174,6 @@ class DashboardController extends Controller
     }
 
     /**
-     * Panggil peserta - set status in_progress
-     */
-    public function panggilPeserta(Request $request, RuangUjian $ruangUjian, PesertaRuang $pesertaRuang)
-    {
-        $user = Auth::user();
-
-        // Check if penguji is assigned
-        $isAssigned = PengujiRuang::where('user_id', $user->id)
-            ->where('ruang_ujian_id', $ruangUjian->id)
-            ->where('is_active', true)
-            ->exists();
-
-        if (!$isAssigned) {
-            return response()->json(['error' => 'Tidak memiliki akses.'], 403);
-        }
-
-        // Only allow calling waiting peserta
-        if ($pesertaRuang->status !== PesertaRuang::STATUS_WAITING) {
-            return response()->json(['error' => 'Peserta sudah dipanggil atau selesai.'], 422);
-        }
-
-        // Set any currently in_progress peserta in this room back to waiting (only one active at a time)
-        PesertaRuang::where('ruang_ujian_id', $ruangUjian->id)
-            ->where('status', PesertaRuang::STATUS_IN_PROGRESS)
-            ->update(['status' => PesertaRuang::STATUS_WAITING]);
-
-        // Set this peserta as in_progress
-        $pesertaRuang->update(['status' => PesertaRuang::STATUS_IN_PROGRESS]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Peserta ' . ($pesertaRuang->calonSiswa->nama_lengkap ?? '') . ' dipanggil.',
-        ]);
-    }
-
-    /**
      * Save nilai
      */
     public function saveNilai(Request $request, RuangUjian $ruangUjian, PesertaRuang $pesertaRuang)
