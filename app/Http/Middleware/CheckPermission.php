@@ -56,6 +56,11 @@ class CheckPermission
             return redirect()->route('pendaftar.dashboard');
         }
 
+        // Penguji → ke penguji dashboard
+        if ($user->hasRole('penguji') && !$user->isAdmin()) {
+            return redirect()->route('penguji.dashboard');
+        }
+
         // Admin, Operator, Verifikator → ke admin dashboard
         if ($user->isAdmin() || $user->hasAnyRole(['operator', 'verifikator'])) {
             return redirect()->route('admin.dashboard');

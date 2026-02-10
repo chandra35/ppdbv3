@@ -382,6 +382,20 @@ return [
             'can' => 'logs.view',
         ],
 
+        // ============================================
+        // PORTAL PENGUJI
+        // ============================================
+        [
+            'header' => 'PORTAL PENGUJI',
+            'can' => 'penguji-panel',
+        ],
+        [
+            'text' => 'Dashboard Penguji',
+            'route' => 'penguji.dashboard',
+            'icon' => 'fas fa-fw fa-clipboard-check',
+            'can' => 'penguji-panel',
+        ],
+
         ['header' => 'AKUN'],
         [
             'text' => 'Profil Saya',

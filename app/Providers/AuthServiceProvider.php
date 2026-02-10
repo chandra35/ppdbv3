@@ -48,8 +48,17 @@ class AuthServiceProvider extends ServiceProvider
         });
 
         // Gate untuk akses admin panel (berdasarkan can_access_admin di role)
+        // Penguji-only users go to their own portal, not admin panel
         Gate::define('admin-panel', function (User $user) {
+            if ($user->hasRole('penguji') && !$user->isAdmin() && !$user->hasAnyRole(['operator', 'verifikator'])) {
+                return false;
+            }
             return $user->canAccessAdminPanel();
+        });
+
+        // Gate untuk Penguji - akses menu portal penguji
+        Gate::define('penguji-panel', function (User $user) {
+            return $user->hasRole('penguji') || $user->isAdmin();
         });
 
         // Register Gate untuk setiap permission dari database
@@ -72,6 +81,10 @@ class AuthServiceProvider extends ServiceProvider
                         // Admin selalu punya akses
                         if ($user->isAdmin()) {
                             return true;
+                        }
+                        // Penguji-only users should not access admin permissions
+                        if ($user->hasRole('penguji') && !$user->hasAnyRole(['operator', 'verifikator'])) {
+                            return false;
                         }
                         // Cek permission via hasPermission
                         return $user->hasPermission($permissionKey);
