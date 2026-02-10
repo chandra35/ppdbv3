@@ -767,15 +767,17 @@ class PenjadwalanUjianController extends Controller
                     'ruang_cbt_idx' => $ruangIdx,
                 ];
             }
-            // Wawancara: round-robin (distribusi merata agar semua ruang terpakai)
+            // Wawancara: sequential-even (bagi rata, peserta berurutan per ruang)
+            $perRoomWawancaraB = max(1, ceil($grupB->count() / $jumlahRuangWawancara));
             foreach ($grupB as $idx => $peserta) {
+                $ruangIdx = min(floor($idx / $perRoomWawancaraB), $jumlahRuangWawancara - 1);
                 $schedule['peserta'][$peserta->id] = [
                     'grup' => 'B',
                     'gelombang' => $gelombangNum,
                     'sesi_cbt' => $sesiCounter + 1,
                     'sesi_wawancara' => $sesiCounter,
-                    'urut_wawancara' => floor($idx / $jumlahRuangWawancara) + 1,
-                    'ruang_wawancara_idx' => $idx % $jumlahRuangWawancara,
+                    'urut_wawancara' => $idx - ($ruangIdx * $perRoomWawancaraB) + 1,
+                    'ruang_wawancara_idx' => $ruangIdx,
                 ];
             }
 
@@ -803,10 +805,12 @@ class PenjadwalanUjianController extends Controller
             ];
 
             // Update peserta mapping for Sesi 2
-            // Wawancara: round-robin (distribusi merata)
+            // Wawancara: sequential-even (bagi rata, peserta berurutan per ruang)
+            $perRoomWawancaraA = max(1, ceil($grupA->count() / $jumlahRuangWawancara));
             foreach ($grupA as $idx => $peserta) {
-                $schedule['peserta'][$peserta->id]['urut_wawancara'] = floor($idx / $jumlahRuangWawancara) + 1;
-                $schedule['peserta'][$peserta->id]['ruang_wawancara_idx'] = $idx % $jumlahRuangWawancara;
+                $ruangIdx = min(floor($idx / $perRoomWawancaraA), $jumlahRuangWawancara - 1);
+                $schedule['peserta'][$peserta->id]['urut_wawancara'] = $idx - ($ruangIdx * $perRoomWawancaraA) + 1;
+                $schedule['peserta'][$peserta->id]['ruang_wawancara_idx'] = $ruangIdx;
             }
             // CBT: sequential fill (room 1 penuh dulu, lalu room 2, dst)
             foreach ($grupB as $idx => $peserta) {
@@ -924,7 +928,8 @@ class PenjadwalanUjianController extends Controller
                 $schedule['peserta'][$pesertaId]['ruang_cbt_idx'] = $ruangIdx;
             }
 
-            // Wawancara: round-robin (distribusi merata agar semua ruang terpakai)
+            // Wawancara: sequential-even (bagi rata, peserta berurutan per ruang)
+            $perRoomWawancara = max(1, ceil(count($wawancaraPeserta) / $jumlahRuangWawancara));
             foreach ($wawancaraPeserta as $idx => $pesertaId) {
                 if (!isset($schedule['peserta'][$pesertaId])) {
                     $schedule['peserta'][$pesertaId] = [
@@ -932,9 +937,10 @@ class PenjadwalanUjianController extends Controller
                         'gelombang' => 1,
                     ];
                 }
+                $ruangIdx = min(floor($idx / $perRoomWawancara), $jumlahRuangWawancara - 1);
                 $schedule['peserta'][$pesertaId]['sesi_wawancara'] = $sesiCounter;
-                $schedule['peserta'][$pesertaId]['urut_wawancara'] = floor($idx / $jumlahRuangWawancara) + 1;
-                $schedule['peserta'][$pesertaId]['ruang_wawancara_idx'] = $idx % $jumlahRuangWawancara;
+                $schedule['peserta'][$pesertaId]['urut_wawancara'] = $idx - ($ruangIdx * $perRoomWawancara) + 1;
+                $schedule['peserta'][$pesertaId]['ruang_wawancara_idx'] = $ruangIdx;
             }
 
             // After this sesi:
