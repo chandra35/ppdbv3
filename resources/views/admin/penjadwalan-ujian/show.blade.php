@@ -141,19 +141,19 @@
         <div class="row mb-4">
             <div class="col-md-3 col-sm-6 mb-2">
                 <a href="{{ route('admin.penjadwalan-ujian.pdf.daftar-hadir', $jadwal) }}" 
-                   class="btn btn-success btn-block btn-print">
+                   target="_blank" class="btn btn-success btn-block btn-print">
                     <i class="fas fa-file-pdf mr-2"></i>Daftar Hadir
                 </a>
             </div>
             <div class="col-md-3 col-sm-6 mb-2">
                 <a href="{{ route('admin.penjadwalan-ujian.pdf.nama-ruang', $jadwal) }}" 
-                   class="btn btn-warning btn-block btn-print">
+                   target="_blank" class="btn btn-warning btn-block btn-print">
                     <i class="fas fa-file-pdf mr-2"></i>Nama Ruang
                 </a>
             </div>
             <div class="col-md-3 col-sm-6 mb-2">
                 <a href="{{ route('admin.penjadwalan-ujian.pdf.daftar-peserta', $jadwal) }}" 
-                   class="btn btn-info btn-block btn-print">
+                   target="_blank" class="btn btn-info btn-block btn-print">
                     <i class="fas fa-file-pdf mr-2"></i>Daftar Peserta
                 </a>
             </div>
@@ -166,7 +166,7 @@
         <div class="row">
             <div class="col-md-3 col-sm-6 mb-2">
                 <a href="{{ route('admin.penjadwalan-ujian.export.excel', $jadwal) }}" 
-                   class="btn btn-dark btn-block btn-print">
+                   target="_blank" class="btn btn-dark btn-block btn-print">
                     <i class="fas fa-file-excel mr-2"></i>Export Excel
                 </a>
             </div>
@@ -470,7 +470,7 @@
         </div>
     </div>
 </div>
-@endsection
+@stop
 
 @section('js')
 <script>
@@ -484,4 +484,4 @@ $(document).ready(function() {
     });
 });
 </script>
-@endsection
+@stop
