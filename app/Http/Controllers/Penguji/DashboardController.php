@@ -119,6 +119,12 @@ class DashboardController extends Controller
         $sesiUjian = $ruangUjian->sesiUjian;
         $calonSiswa = $pesertaRuang->calonSiswa;
 
+        // Eager load ortu with address relations
+        $calonSiswa->load([
+            'ortu.provinsiOrtu', 'ortu.kabupatenOrtu', 'ortu.kecamatanOrtu', 'ortu.kelurahanOrtu',
+            'jalurPendaftaran', 'gelombangPendaftaran',
+        ]);
+
         // Get or create nilai
         $nilai = NilaiSeleksi::firstOrNew([
             'sesi_ujian_id' => $sesiUjian->id,
@@ -145,9 +151,13 @@ class DashboardController extends Controller
         $prevPeserta = $currentIndex > 0 ? $allPeserta[$currentIndex - 1] : null;
         $nextPeserta = $currentIndex < count($allPeserta) - 1 ? $allPeserta[$currentIndex + 1] : null;
 
-        // Dokumen pendaftar untuk preview
-        $dokumenList = $calonSiswa->dokumen()->orderBy('jenis_dokumen')->get();
+        // Dokumen pendaftar - split into utama and tambahan
+        $semuaDokumen = $calonSiswa->dokumen()->orderBy('jenis_dokumen')->get();
+        $dokumenTambahanKeys = array_keys(CalonDokumen::DOKUMEN_TAMBAHAN);
+        $dokumenList = $semuaDokumen->filter(fn($d) => !in_array($d->jenis_dokumen, $dokumenTambahanKeys));
+        $dokumenTambahan = $semuaDokumen->filter(fn($d) => in_array($d->jenis_dokumen, $dokumenTambahanKeys));
         $dokumenLabels = CalonDokumen::JENIS_DOKUMEN;
+        $dokumenTambahanLabels = CalonDokumen::DOKUMEN_TAMBAHAN;
 
         // Auto-set status to in_progress when penguji opens this peserta
         if ($pesertaRuang->status === PesertaRuang::STATUS_WAITING) {
@@ -169,7 +179,9 @@ class DashboardController extends Controller
             'prevPeserta',
             'nextPeserta',
             'dokumenList',
-            'dokumenLabels'
+            'dokumenLabels',
+            'dokumenTambahan',
+            'dokumenTambahanLabels'
         ));
     }
 
