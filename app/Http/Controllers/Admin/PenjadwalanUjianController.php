@@ -751,20 +751,23 @@ class PenjadwalanUjianController extends Controller
             ];
 
             // Save peserta mapping for Sesi 1
-            // Distribusi round-robin agar semua ruang terisi merata
             $jumlahRuangCbt = (int) $settings['jumlah_ruang_cbt'];
             $jumlahRuangWawancara = (int) $settings['jumlah_ruang_wawancara'];
+            $kapasitasCbt = (int) $settings['kapasitas_cbt'];
 
+            // CBT: sequential fill (room 1 penuh dulu, lalu room 2, dst. Room terakhir sisanya)
             foreach ($grupA as $idx => $peserta) {
+                $ruangIdx = min(floor($idx / $kapasitasCbt), $jumlahRuangCbt - 1);
                 $schedule['peserta'][$peserta->id] = [
                     'grup' => 'A',
                     'gelombang' => $gelombangNum,
                     'sesi_cbt' => $sesiCounter,
                     'sesi_wawancara' => $sesiCounter + 1,
-                    'urut_cbt' => floor($idx / $jumlahRuangCbt) + 1,
-                    'ruang_cbt_idx' => $idx % $jumlahRuangCbt,
+                    'urut_cbt' => $idx - ($ruangIdx * $kapasitasCbt) + 1,
+                    'ruang_cbt_idx' => $ruangIdx,
                 ];
             }
+            // Wawancara: round-robin (distribusi merata agar semua ruang terpakai)
             foreach ($grupB as $idx => $peserta) {
                 $schedule['peserta'][$peserta->id] = [
                     'grup' => 'B',
@@ -799,14 +802,17 @@ class PenjadwalanUjianController extends Controller
                 ],
             ];
 
-            // Update peserta mapping for Sesi 2 (round-robin distribution)
+            // Update peserta mapping for Sesi 2
+            // Wawancara: round-robin (distribusi merata)
             foreach ($grupA as $idx => $peserta) {
                 $schedule['peserta'][$peserta->id]['urut_wawancara'] = floor($idx / $jumlahRuangWawancara) + 1;
                 $schedule['peserta'][$peserta->id]['ruang_wawancara_idx'] = $idx % $jumlahRuangWawancara;
             }
+            // CBT: sequential fill (room 1 penuh dulu, lalu room 2, dst)
             foreach ($grupB as $idx => $peserta) {
-                $schedule['peserta'][$peserta->id]['urut_cbt'] = floor($idx / $jumlahRuangCbt) + 1;
-                $schedule['peserta'][$peserta->id]['ruang_cbt_idx'] = $idx % $jumlahRuangCbt;
+                $ruangIdx = min(floor($idx / $kapasitasCbt), $jumlahRuangCbt - 1);
+                $schedule['peserta'][$peserta->id]['urut_cbt'] = $idx - ($ruangIdx * $kapasitasCbt) + 1;
+                $schedule['peserta'][$peserta->id]['ruang_cbt_idx'] = $ruangIdx;
             }
 
             $currentTime = $sesi2End->copy()->addMinutes($jedaSesi);
@@ -899,10 +905,12 @@ class PenjadwalanUjianController extends Controller
                 ],
             ];
 
-            // Update peserta mapping (round-robin distribution)
+            // Update peserta mapping
             $jumlahRuangCbt = (int) $settings['jumlah_ruang_cbt'];
             $jumlahRuangWawancara = (int) $settings['jumlah_ruang_wawancara'];
+            $kapasitasCbt = (int) $settings['kapasitas_cbt'];
 
+            // CBT: sequential fill (room 1 penuh dulu, lalu room 2, dst)
             foreach ($cbtPeserta as $idx => $pesertaId) {
                 if (!isset($schedule['peserta'][$pesertaId])) {
                     $schedule['peserta'][$pesertaId] = [
@@ -910,11 +918,13 @@ class PenjadwalanUjianController extends Controller
                         'gelombang' => 1,
                     ];
                 }
+                $ruangIdx = min(floor($idx / $kapasitasCbt), $jumlahRuangCbt - 1);
                 $schedule['peserta'][$pesertaId]['sesi_cbt'] = $sesiCounter;
-                $schedule['peserta'][$pesertaId]['urut_cbt'] = floor($idx / $jumlahRuangCbt) + 1;
-                $schedule['peserta'][$pesertaId]['ruang_cbt_idx'] = $idx % $jumlahRuangCbt;
+                $schedule['peserta'][$pesertaId]['urut_cbt'] = $idx - ($ruangIdx * $kapasitasCbt) + 1;
+                $schedule['peserta'][$pesertaId]['ruang_cbt_idx'] = $ruangIdx;
             }
 
+            // Wawancara: round-robin (distribusi merata agar semua ruang terpakai)
             foreach ($wawancaraPeserta as $idx => $pesertaId) {
                 if (!isset($schedule['peserta'][$pesertaId])) {
                     $schedule['peserta'][$pesertaId] = [
