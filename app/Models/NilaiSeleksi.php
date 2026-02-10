@@ -19,6 +19,9 @@ class NilaiSeleksi extends Model
         'calon_siswa_id',
         'penguji_id',
         'nilai_wawancara',
+        'nilai_tajwid',
+        'nilai_makhroj',
+        'nilai_kelancaran',
         'nilai_baca_quran',
         'nilai_tulis_quran',
         'nilai_hafalan',
@@ -33,6 +36,9 @@ class NilaiSeleksi extends Model
 
     protected $casts = [
         'nilai_wawancara' => 'decimal:2',
+        'nilai_tajwid' => 'decimal:2',
+        'nilai_makhroj' => 'decimal:2',
+        'nilai_kelancaran' => 'decimal:2',
         'nilai_baca_quran' => 'decimal:2',
         'nilai_tulis_quran' => 'decimal:2',
         'nilai_hafalan' => 'decimal:2',
@@ -40,11 +46,24 @@ class NilaiSeleksi extends Model
         'verified_at' => 'datetime',
     ];
 
-    // Status constants
+    // Status constants (tanpa verifikasi - langsung submitted = final)
     const STATUS_DRAFT = 'draft';
     const STATUS_SUBMITTED = 'submitted';
-    const STATUS_VERIFIED = 'verified';
-    const STATUS_REVISION = 'revision';
+
+    /**
+     * Hitung rata-rata nilai Baca Al-Qur'an dari sub-komponen (Tajwid, Makhroj, Kelancaran)
+     */
+    public function calculateNilaiBacaQuran(): ?float
+    {
+        $sub = array_filter([
+            $this->nilai_tajwid,
+            $this->nilai_makhroj,
+            $this->nilai_kelancaran,
+        ], fn($v) => $v !== null);
+
+        if (empty($sub)) return null;
+        return round(array_sum($sub) / count($sub), 2);
+    }
 
     /**
      * Get sesi ujian
@@ -132,6 +151,12 @@ class NilaiSeleksi extends Model
      */
     public function updateTotalNilai(): void
     {
+        // Auto-calculate nilai_baca_quran dari sub-komponen
+        $nilaiBaca = $this->calculateNilaiBacaQuran();
+        if ($nilaiBaca !== null) {
+            $this->nilai_baca_quran = $nilaiBaca;
+        }
+        
         $this->total_nilai = $this->calculateTotalNilai();
         $this->save();
     }
@@ -143,9 +168,7 @@ class NilaiSeleksi extends Model
     {
         return match($this->status) {
             self::STATUS_DRAFT => '<span class="badge badge-secondary">Draft</span>',
-            self::STATUS_SUBMITTED => '<span class="badge badge-info">Submitted</span>',
-            self::STATUS_VERIFIED => '<span class="badge badge-success">Terverifikasi</span>',
-            self::STATUS_REVISION => '<span class="badge badge-warning">Revisi</span>',
+            self::STATUS_SUBMITTED => '<span class="badge badge-success">Submitted</span>',
             default => '<span class="badge badge-secondary">-</span>',
         };
     }
@@ -155,7 +178,7 @@ class NilaiSeleksi extends Model
      */
     public function isEditable(): bool
     {
-        return in_array($this->status, [self::STATUS_DRAFT, self::STATUS_REVISION]);
+        return $this->status === self::STATUS_DRAFT;
     }
 
     /**
@@ -167,17 +190,9 @@ class NilaiSeleksi extends Model
     }
 
     /**
-     * Scope verified
+     * Scope final (submitted = final, no verification needed)
      */
-    public function scopeVerified($query)
-    {
-        return $query->where('status', self::STATUS_VERIFIED);
-    }
-
-    /**
-     * Scope needs verification
-     */
-    public function scopeNeedsVerification($query)
+    public function scopeFinal($query)
     {
         return $query->where('status', self::STATUS_SUBMITTED);
     }

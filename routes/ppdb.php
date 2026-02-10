@@ -316,6 +316,17 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/{sesiUjian}/ruangan/{ruangUjian}/penguji', [\App\Http\Controllers\Admin\SesiUjianController::class, 'getPengujiRuangan'])->name('get-penguji');
         Route::delete('/{sesiUjian}', [\App\Http\Controllers\Admin\SesiUjianController::class, 'destroy'])->name('destroy');
         Route::get('/{sesiUjian}/print-daftar-hadir', [\App\Http\Controllers\Admin\SesiUjianController::class, 'printDaftarHadir'])->name('print-daftar-hadir');
+        
+        // ---- KELOLA PESERTA RUANGAN ----
+        Route::get('/{sesiUjian}/ruangan/{ruangUjian}/peserta', [\App\Http\Controllers\Admin\PesertaRuangController::class, 'index'])->name('peserta-ruang');
+        Route::get('/{sesiUjian}/cari-pendaftar', [\App\Http\Controllers\Admin\PesertaRuangController::class, 'cariPendaftar'])->name('cari-pendaftar');
+        Route::post('/{sesiUjian}/ruangan/{ruangUjian}/peserta', [\App\Http\Controllers\Admin\PesertaRuangController::class, 'tambahPeserta'])->name('tambah-peserta');
+        Route::delete('/{sesiUjian}/ruangan/{ruangUjian}/peserta/{pesertaRuang}', [\App\Http\Controllers\Admin\PesertaRuangController::class, 'hapusPeserta'])->name('hapus-peserta');
+        Route::post('/{sesiUjian}/ruangan/{ruangUjian}/peserta/{pesertaRuang}/pindah', [\App\Http\Controllers\Admin\PesertaRuangController::class, 'pindahPeserta'])->name('pindah-peserta');
+        
+        // ---- ADMIN INPUT NILAI LANGSUNG ----
+        Route::get('/{sesiUjian}/ruangan/{ruangUjian}/input-nilai/{pesertaRuang}', [\App\Http\Controllers\Admin\AdminNilaiController::class, 'inputNilai'])->name('admin-input-nilai');
+        Route::post('/{sesiUjian}/ruangan/{ruangUjian}/input-nilai/{pesertaRuang}', [\App\Http\Controllers\Admin\AdminNilaiController::class, 'saveNilai'])->name('admin-save-nilai');
     });
     
     // ---- NILAI SELEKSI ----

@@ -232,6 +232,10 @@
                                 <div>
                                     <label class="mb-1">
                                         <strong><i class="fas fa-users mr-1"></i>Peserta ({{ $totalPeserta }}):</strong>
+                                        <a href="{{ route('admin.sesi-ujian.peserta-ruang', [$sesiUjian->id, $ruang->id]) }}" 
+                                           class="btn btn-xs btn-outline-info float-right" title="Kelola Peserta">
+                                            <i class="fas fa-users-cog"></i> Kelola
+                                        </a>
                                     </label>
                                     <div class="peserta-list border rounded p-2">
                                         <table class="table table-sm table-borderless mb-0">
@@ -245,9 +249,9 @@
                                                                 ->where('calon_siswa_id', $pr->calon_siswa_id)
                                                                 ->first();
                                                         @endphp
-                                                        @if($nilai && $nilai->status == 'verified')
+                                                        @if($nilai && in_array($nilai->status, ['submitted', 'verified']))
                                                             <i class="fas fa-check-circle text-success"></i>
-                                                        @elseif($nilai && $nilai->status == 'submitted')
+                                                        @elseif($nilai && $nilai->status == 'draft')
                                                             <i class="fas fa-clock text-warning"></i>
                                                         @else
                                                             <i class="fas fa-minus text-muted"></i>

@@ -9,6 +9,7 @@ use App\Models\PesertaRuang;
 use App\Models\PengujiRuang;
 use App\Models\NilaiSeleksi;
 use App\Models\BobotNilaiSeleksi;
+use App\Models\CalonDokumen;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -144,6 +145,10 @@ class DashboardController extends Controller
         $prevPeserta = $currentIndex > 0 ? $allPeserta[$currentIndex - 1] : null;
         $nextPeserta = $currentIndex < count($allPeserta) - 1 ? $allPeserta[$currentIndex + 1] : null;
 
+        // Dokumen pendaftar untuk preview
+        $dokumenList = $calonSiswa->dokumen()->orderBy('jenis_dokumen')->get();
+        $dokumenLabels = CalonDokumen::JENIS_DOKUMEN;
+
         return view('penguji.input-nilai', compact(
             'ruangUjian',
             'sesiUjian',
@@ -152,7 +157,9 @@ class DashboardController extends Controller
             'nilai',
             'bobotList',
             'prevPeserta',
-            'nextPeserta'
+            'nextPeserta',
+            'dokumenList',
+            'dokumenLabels'
         ));
     }
 
@@ -165,7 +172,9 @@ class DashboardController extends Controller
 
         $request->validate([
             'nilai_wawancara' => 'nullable|numeric|min:0|max:100',
-            'nilai_baca_quran' => 'nullable|numeric|min:0|max:100',
+            'nilai_tajwid' => 'nullable|numeric|min:0|max:100',
+            'nilai_makhroj' => 'nullable|numeric|min:0|max:100',
+            'nilai_kelancaran' => 'nullable|numeric|min:0|max:100',
             'nilai_tulis_quran' => 'nullable|numeric|min:0|max:100',
             'nilai_hafalan' => 'nullable|numeric|min:0|max:100',
             'jumlah_juz_hafalan' => 'nullable|integer|min:0|max:30',
@@ -191,7 +200,9 @@ class DashboardController extends Controller
         $nilai->fill([
             'ruang_ujian_id' => $ruangUjian->id,
             'nilai_wawancara' => $request->nilai_wawancara,
-            'nilai_baca_quran' => $request->nilai_baca_quran,
+            'nilai_tajwid' => $request->nilai_tajwid,
+            'nilai_makhroj' => $request->nilai_makhroj,
+            'nilai_kelancaran' => $request->nilai_kelancaran,
             'nilai_tulis_quran' => $request->nilai_tulis_quran,
             'nilai_hafalan' => $request->nilai_hafalan,
             'jumlah_juz_hafalan' => $request->jumlah_juz_hafalan,
