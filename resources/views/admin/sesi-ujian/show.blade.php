@@ -242,6 +242,7 @@
                                             @forelse($ruang->peserta as $pr)
                                                 <tr>
                                                     <td width="30">{{ $pr->nomor_urut }}.</td>
+                                                    <td width="90"><small class="text-muted">{{ $pr->calonSiswa->nomor_tes ?? '-' }}</small></td>
                                                     <td>{{ $pr->calonSiswa->nama_lengkap ?? '-' }}</td>
                                                     <td width="30">
                                                         @php
@@ -260,7 +261,7 @@
                                                 </tr>
                                             @empty
                                                 <tr>
-                                                    <td colspan="3" class="text-center text-muted">Tidak ada peserta</td>
+                                                    <td colspan="4" class="text-center text-muted">Tidak ada peserta</td>
                                                 </tr>
                                             @endforelse
                                         </table>

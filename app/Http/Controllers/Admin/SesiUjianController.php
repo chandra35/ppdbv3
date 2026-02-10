@@ -11,8 +11,10 @@ use App\Models\NilaiSeleksi;
 use App\Models\TahunPelajaran;
 use App\Models\User;
 use App\Models\SekolahSettings;
+use App\Services\KopSuratService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class SesiUjianController extends Controller
 {
@@ -244,10 +246,13 @@ class SesiUjianController extends Controller
     }
 
     /**
-     * Print daftar hadir from saved sesi (HTML)
+     * Print daftar hadir from saved sesi (PDF with Kop Surat)
      */
     public function printDaftarHadir(SesiUjian $sesiUjian, Request $request)
     {
+        ini_set('memory_limit', '512M');
+        set_time_limit(300);
+
         $sesiUjian->load([
             'ruangan.peserta.calonSiswa',
             'tahunPelajaran',
@@ -257,15 +262,19 @@ class SesiUjianController extends Controller
         $ruangList = [];
 
         foreach ($sesiUjian->ruangan as $ruang) {
-            $peserta = $ruang->peserta->sortBy('nomor_urut');
+            $pesertaRuang = PesertaRuang::with('calonSiswa')
+                ->where('ruang_ujian_id', $ruang->id)
+                ->orderBy('nomor_urut')
+                ->get();
 
             $ruangList[] = [
                 'nama' => $ruang->nama_ruang,
+                'jenis' => $sesiUjian->jenis_ujian,
+                'sesi' => $sesiUjian->nomor_sesi,
+                'waktu_mulai' => $sesiUjian->waktu_mulai?->format('H:i') ?? '-',
+                'waktu_selesai' => $sesiUjian->waktu_selesai?->format('H:i') ?? '-',
                 'kapasitas' => $ruang->kapasitas,
-                'peserta' => $peserta->map(fn($pr) => [
-                    'nomor_tes' => $pr->calonSiswa->nomor_tes ?? '-',
-                    'nama' => $pr->calonSiswa->nama_lengkap ?? '-',
-                ])->values()->toArray(),
+                'peserta' => $pesertaRuang,
             ];
         }
 
@@ -274,8 +283,19 @@ class SesiUjianController extends Controller
             $ruangList = collect($ruangList)->filter(fn($r) => $r['nama'] === $request->ruang)->values()->toArray();
         }
 
-        return view('admin.sesi-ujian.print.daftar-hadir', compact(
-            'sesiUjian', 'ruangList'
+        $sekolah = SekolahSettings::first();
+        $jadwal = (object) [
+            'tanggal_ujian' => $sesiUjian->tanggal,
+            'tahunPelajaran' => $sesiUjian->tahunPelajaran,
+        ];
+        $kopSuratService = app(KopSuratService::class);
+        $kopSurat = $kopSuratService->renderKopHtml($sekolah, true);
+
+        $pdf = Pdf::loadView('admin.penjadwalan-ujian.pdf.daftar-hadir', compact(
+            'jadwal', 'ruangList', 'sekolah', 'kopSurat'
         ));
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf->stream('daftar-hadir-' . $sesiUjian->nama . '.pdf');
     }
 }
