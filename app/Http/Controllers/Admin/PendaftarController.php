@@ -1722,7 +1722,7 @@ class PendaftarController extends Controller
             ]);
 
             // Update completion status
-            $calonSiswa->updateDokumenCompletion();
+            $calonSiswa->syncCompletionStatus();
 
             return response()->json([
                 'success' => true,
