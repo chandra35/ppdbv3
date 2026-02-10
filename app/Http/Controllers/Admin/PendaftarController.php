@@ -1702,11 +1702,11 @@ class PendaftarController extends Controller
 
             // Log history
             DokumenVerifikasiHistory::create([
-                'calon_dokumen_id' => $dokumen->id,
+                'dokumen_id' => $dokumen->id,
                 'action' => 'upload',
-                'status_before' => null,
-                'status_after' => 'pending',
-                'catatan' => $request->catatan ?? 'Dokumen diupload oleh verifikator: ' . auth()->user()->name,
+                'status_from' => null,
+                'status_to' => 'pending',
+                'keterangan' => $request->catatan ?? 'Dokumen diupload oleh verifikator: ' . auth()->user()->name,
                 'user_id' => auth()->id(),
             ]);
 
