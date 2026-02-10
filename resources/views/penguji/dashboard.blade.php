@@ -1,8 +1,8 @@
-@extends('layouts.admin')
+@extends('adminlte::page')
 
 @section('title', 'Dashboard Penguji')
 
-@push('css')
+@section('css')
 <style>
     .sesi-card {
         transition: all 0.3s ease;
@@ -25,9 +25,9 @@
         border-radius: 3px;
     }
 </style>
-@endpush
+@stop
 
-@section('content-header')
+@section('content_header')
 <div class="row mb-2">
     <div class="col-sm-6">
         <h1 class="m-0">
@@ -40,7 +40,7 @@
         </ol>
     </div>
 </div>
-@endsection
+@stop
 
 @section('content')
 <div class="container-fluid">
@@ -80,7 +80,7 @@
             <div class="card sesi-card">
                 <div class="card-header">
                     <h3 class="card-title">
-                        <i class="fas fa-calendar-alt mr-2"></i>{{ $group['sesi']->nama_sesi }}
+                        <i class="fas fa-calendar-alt mr-2"></i>{{ $group['sesi']->nama }}
                     </h3>
                     <div class="card-tools">
                         @if($group['sesi']->status == 'locked')
@@ -94,7 +94,7 @@
                     <div class="row mb-3">
                         <div class="col-md-4">
                             <small class="text-muted">Tanggal Ujian</small>
-                            <p class="mb-0"><strong>{{ $group['sesi']->tanggal_ujian?->format('d F Y') ?? '-' }}</strong></p>
+                            <p class="mb-0"><strong>{{ $group['sesi']->tanggal?->format('d F Y') ?? '-' }}</strong></p>
                         </div>
                         <div class="col-md-4">
                             <small class="text-muted">Waktu</small>
@@ -102,7 +102,7 @@
                         </div>
                         <div class="col-md-4">
                             <small class="text-muted">Jalur</small>
-                            <p class="mb-0"><strong>{{ $group['sesi']->jalurPendaftaran->nama ?? '-' }}</strong></p>
+                            <p class="mb-0"><strong>{{ $group['sesi']->jalur->nama ?? '-' }}</strong></p>
                         </div>
                     </div>
 
@@ -111,7 +111,7 @@
                     <div class="row">
                         @foreach($group['ruangan'] as $ruang)
                             @php
-                                $totalPeserta = $ruang->pesertaRuangs->count();
+                                $totalPeserta = $ruang->peserta->count();
                                 $sudahDinilai = \App\Models\NilaiSeleksi::where('sesi_ujian_id', $group['sesi']->id)
                                     ->where('ruang_ujian_id', $ruang->id)
                                     ->where('penguji_id', Auth::id())
@@ -192,4 +192,4 @@
         </div>
     </div>
 </div>
-@endsection
+@stop

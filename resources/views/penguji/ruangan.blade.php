@@ -1,8 +1,8 @@
-@extends('layouts.admin')
+@extends('adminlte::page')
 
 @section('title', 'Ruangan ' . $ruangUjian->nama_ruang)
 
-@push('css')
+@section('css')
 <style>
     .peserta-card {
         transition: all 0.3s ease;
@@ -29,15 +29,15 @@
         height: 120px;
     }
 </style>
-@endpush
+@stop
 
-@section('content-header')
+@section('content_header')
 <div class="row mb-2">
     <div class="col-sm-6">
         <h1 class="m-0">
             <i class="fas fa-door-open mr-2"></i>{{ $ruangUjian->nama_ruang }}
         </h1>
-        <small class="text-muted">{{ $sesiUjian->nama_sesi }}</small>
+        <small class="text-muted">{{ $sesiUjian->nama }}</small>
     </div>
     <div class="col-sm-6">
         <ol class="breadcrumb float-sm-right">
@@ -46,7 +46,7 @@
         </ol>
     </div>
 </div>
-@endsection
+@stop
 
 @section('content')
 <div class="container-fluid">
@@ -104,7 +104,7 @@
                             <table class="table table-sm table-borderless">
                                 <tr>
                                     <td width="40%"><strong>Tanggal</strong></td>
-                                    <td>: {{ $sesiUjian->tanggal_ujian?->format('d F Y') }}</td>
+                                    <td>: {{ $sesiUjian->tanggal?->format('d F Y') }}</td>
                                 </tr>
                                 <tr>
                                     <td><strong>Waktu</strong></td>
@@ -116,11 +116,11 @@
                             <table class="table table-sm table-borderless">
                                 <tr>
                                     <td width="40%"><strong>Jalur</strong></td>
-                                    <td>: {{ $sesiUjian->jalurPendaftaran->nama ?? '-' }}</td>
+                                    <td>: {{ $sesiUjian->jalur->nama ?? '-' }}</td>
                                 </tr>
                                 <tr>
                                     <td><strong>Gelombang</strong></td>
-                                    <td>: {{ $sesiUjian->gelombangPendaftaran->nama ?? 'Semua' }}</td>
+                                    <td>: {{ $sesiUjian->gelombang->nama ?? 'Semua' }}</td>
                                 </tr>
                             </table>
                         </div>
@@ -196,9 +196,9 @@
         </a>
     </div>
 </div>
-@endsection
+@stop
 
-@push('js')
+@section('js')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
 $(document).ready(function() {
@@ -228,4 +228,4 @@ $(document).ready(function() {
     });
 });
 </script>
-@endpush
+@stop

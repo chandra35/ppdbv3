@@ -23,7 +23,7 @@ class DashboardController extends Controller
         $user = Auth::user();
         
         // Get sesi ujian where penguji is assigned
-        $assignments = PengujiRuang::with(['sesiUjian', 'ruangUjian'])
+        $assignments = PengujiRuang::with(['sesiUjian.jalur', 'ruangUjian.peserta'])
             ->where('user_id', $user->id)
             ->where('is_active', true)
             ->whereHas('sesiUjian', function ($q) {
