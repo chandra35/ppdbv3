@@ -349,8 +349,8 @@
                     <div class="form-group">
                         <label class="d-flex justify-content-between align-items-center">
                             <span><strong><i class="fas fa-users mr-1"></i>Pilih Penguji:</strong></span>
-                            <a href="{{ route('admin.penguji.create') }}" target="_blank" class="btn btn-sm btn-outline-success">
-                                <i class="fas fa-plus mr-1"></i>Tambah Penguji Baru
+                            <a href="{{ route('admin.penguji.index') }}" target="_blank" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-plus mr-1"></i>Kelola Penguji
                             </a>
                         </label>
                         <select name="penguji_ids[]" id="selectPenguji" class="form-control" multiple="multiple" style="width: 100%">
