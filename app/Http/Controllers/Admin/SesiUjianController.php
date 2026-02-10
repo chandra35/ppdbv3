@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\SesiUjian;
 use App\Models\RuangUjian;
+use App\Models\PesertaRuang;
 use App\Models\PengujiRuang;
 use App\Models\NilaiSeleksi;
 use App\Models\TahunPelajaran;
@@ -214,15 +215,41 @@ class SesiUjianController extends Controller
      */
     public function destroy(SesiUjian $sesiUjian)
     {
-        if ($sesiUjian->status !== SesiUjian::STATUS_DRAFT) {
-            return back()->with('error', 'Hanya sesi ujian dengan status draft yang bisa dihapus.');
+        if ($sesiUjian->status === 'in_progress') {
+            return back()->with('error', 'Sesi ujian yang sedang berlangsung tidak bisa dihapus. Selesaikan dulu.');
         }
 
-        $sesiUjian->delete();
+        if ($sesiUjian->status === 'completed') {
+            return back()->with('error', 'Sesi ujian yang sudah selesai tidak bisa dihapus.');
+        }
 
-        return redirect()
-            ->route('admin.sesi-ujian.index')
-            ->with('success', 'Sesi ujian berhasil dihapus.');
+        try {
+            DB::beginTransaction();
+
+            // Delete related peserta_ruang
+            PesertaRuang::where('sesi_ujian_id', $sesiUjian->id)->delete();
+
+            // Delete related penguji_ruang
+            PengujiRuang::where('sesi_ujian_id', $sesiUjian->id)->delete();
+
+            // Delete related nilai_seleksi
+            NilaiSeleksi::where('sesi_ujian_id', $sesiUjian->id)->delete();
+
+            // Delete related ruang_ujian
+            RuangUjian::where('sesi_ujian_id', $sesiUjian->id)->delete();
+
+            // Delete sesi
+            $sesiUjian->delete();
+
+            DB::commit();
+
+            return redirect()
+                ->route('admin.sesi-ujian.index')
+                ->with('success', 'Sesi ujian berhasil dihapus beserta semua data terkait.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal menghapus sesi ujian: ' . $e->getMessage());
+        }
     }
 
     /**

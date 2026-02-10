@@ -198,7 +198,7 @@
                                     <i class="fas fa-print mr-1"></i> Cetak
                                 </a>
                             @endif
-                            @if($sesi->status == 'draft')
+                            @if(in_array($sesi->status, ['draft', 'locked']))
                                 <button type="button" class="btn btn-sm btn-danger float-right btn-delete" 
                                         data-id="{{ $sesi->id }}" data-nama="{{ $sesi->nama }}">
                                     <i class="fas fa-trash"></i>
