@@ -271,7 +271,7 @@ class SesiUjianController extends Controller
 
         $tahunAktif = $sesiUjian->tahunPelajaran;
 
-        $pdf = Pdf::loadView('admin.cetak-ruang.pdf.daftar-hadir', compact(
+        $pdf = Pdf::loadView('admin.sesi-ujian.pdf.daftar-hadir', compact(
             'rooms',
             'sekolah',
             'tahunAktif',

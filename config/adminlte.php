@@ -136,12 +136,7 @@ return [
                     'icon' => 'fas fa-fw fa-print',
                     'can' => 'verifikasi.cetak',
                 ],
-                [
-                    'text' => 'Cetak Ruang Ujian',
-                    'route' => 'admin.cetak-ruang.index',
-                    'icon' => 'fas fa-fw fa-door-open',
-                    'can' => 'verifikasi.cetak',
-                ],
+
                 [
                     'text' => 'Statistik',
                     'route' => 'admin.statistik.index',

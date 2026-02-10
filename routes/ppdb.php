@@ -281,16 +281,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/{jadwalUjian}/pdf/daftar-peserta', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'pdfDaftarPeserta'])->name('pdf.daftar-peserta');
     });
 
-    // ---- CETAK RUANG UJIAN (Legacy) ----
-    Route::prefix('cetak-ruang')->name('cetak-ruang.')->middleware('permission:verifikasi.cetak')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\CetakRuangController::class, 'index'])->name('index');
-        Route::post('/preview', [\App\Http\Controllers\Admin\CetakRuangController::class, 'preview'])->name('preview');
-        Route::post('/save-and-lock', [\App\Http\Controllers\Admin\CetakRuangController::class, 'saveAndLock'])->name('save-and-lock');
-        Route::get('/print/daftar-hadir', [\App\Http\Controllers\Admin\CetakRuangController::class, 'printDaftarHadir'])->name('print.daftar-hadir');
-        Route::get('/print/daftar-peserta', [\App\Http\Controllers\Admin\CetakRuangController::class, 'printDaftarPeserta'])->name('print.daftar-peserta');
-        Route::get('/print/nama-ruang', [\App\Http\Controllers\Admin\CetakRuangController::class, 'printNamaRuang'])->name('print.nama-ruang');
-    });
-
     // ---- MANAJEMEN PENGUJI ----
     // Penguji adalah GTK yang di-assign langsung dengan role "Penguji TES Wawancara"
     // Interface dual-listbox: GTK di kiri, Penguji di kanan

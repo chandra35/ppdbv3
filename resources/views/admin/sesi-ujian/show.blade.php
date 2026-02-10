@@ -48,7 +48,7 @@
 <div class="row mb-2">
     <div class="col-sm-6">
         <h1 class="m-0">
-            <i class="fas fa-clipboard-list mr-2"></i>{{ $sesiUjian->nama_sesi }}
+            <i class="fas fa-clipboard-list mr-2"></i>{{ $sesiUjian->nama }}
         </h1>
     </div>
     <div class="col-sm-6">
@@ -59,7 +59,7 @@
         </ol>
     </div>
 </div>
-@endsection
+@stop
 
 @section('content')
 <div class="container-fluid">
@@ -105,12 +105,12 @@
                                 </tr>
                                 <tr>
                                     <td><strong>Jalur Pendaftaran</strong></td>
-                                    <td>: {{ $sesiUjian->jalurPendaftaran->nama ?? '-' }}</td>
+                                    <td>: {{ $sesiUjian->jalur->nama ?? '-' }}</td>
                                 </tr>
-                                @if($sesiUjian->gelombangPendaftaran)
+                                @if($sesiUjian->gelombang)
                                 <tr>
                                     <td><strong>Gelombang</strong></td>
-                                    <td>: {{ $sesiUjian->gelombangPendaftaran->nama }}</td>
+                                    <td>: {{ $sesiUjian->gelombang->nama }}</td>
                                 </tr>
                                 @endif
                             </table>
@@ -119,7 +119,7 @@
                             <table class="table table-sm table-borderless">
                                 <tr>
                                     <td width="40%"><strong>Tanggal Ujian</strong></td>
-                                    <td>: {{ $sesiUjian->tanggal_ujian?->format('d F Y') ?? '-' }}</td>
+                                    <td>: {{ $sesiUjian->tanggal?->format('d F Y') ?? '-' }}</td>
                                 </tr>
                                 <tr>
                                     <td><strong>Waktu</strong></td>
@@ -127,7 +127,7 @@
                                 </tr>
                                 <tr>
                                     <td><strong>Kapasitas/Ruang</strong></td>
-                                    <td>: {{ $sesiUjian->kapasitas_per_ruang }} peserta</td>
+                                    <td>: {{ $sesiUjian->peserta_per_ruang }} peserta</td>
                                 </tr>
                             </table>
                         </div>
@@ -406,7 +406,7 @@
         </div>
     </div>
 </div>
-@endsection
+@stop
 
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>

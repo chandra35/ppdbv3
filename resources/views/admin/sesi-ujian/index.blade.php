@@ -35,7 +35,7 @@
         </ol>
     </div>
 </div>
-@endsection
+@stop
 
 @section('content')
 <div class="container-fluid">
@@ -108,8 +108,8 @@
     <div class="callout callout-info">
         <h5><i class="fas fa-info-circle mr-2"></i>Informasi</h5>
         <p class="mb-0">
-            Sesi ujian dibuat otomatis dari menu <strong>Cetak Ruang Ujian</strong> dengan klik tombol "Simpan & Kunci Distribusi".
-            Setelah sesi terkunci, Anda dapat menugaskan penguji ke setiap ruangan.
+            Sesi ujian dibuat otomatis dari menu <a href="{{ route('admin.penjadwalan-ujian.index') }}"><strong>Penjadwalan Ujian</strong></a>.
+            Setelah jadwal disimpan & dikunci, sesi ujian akan muncul di sini. Anda dapat menugaskan penguji ke setiap ruangan.
         </p>
     </div>
 
@@ -121,7 +121,7 @@
                     <div class="card session-card">
                         <div class="card-header">
                             <h3 class="card-title">
-                                <i class="fas fa-calendar-alt mr-2"></i>{{ $sesi->nama_sesi }}
+                                <i class="fas fa-calendar-alt mr-2"></i>{{ $sesi->nama }}
                             </h3>
                             <div class="card-tools">
                                 @if($sesi->status == 'draft')
@@ -143,17 +143,17 @@
                                 </tr>
                                 <tr>
                                     <td><i class="fas fa-road mr-2 text-muted"></i>Jalur</td>
-                                    <td>: {{ $sesi->jalurPendaftaran->nama ?? '-' }}</td>
+                                    <td>: {{ $sesi->jalur->nama ?? '-' }}</td>
                                 </tr>
-                                @if($sesi->gelombangPendaftaran)
+                                @if($sesi->gelombang)
                                 <tr>
                                     <td><i class="fas fa-wave-square mr-2 text-muted"></i>Gelombang</td>
-                                    <td>: {{ $sesi->gelombangPendaftaran->nama }}</td>
+                                    <td>: {{ $sesi->gelombang->nama }}</td>
                                 </tr>
                                 @endif
                                 <tr>
                                     <td><i class="fas fa-clock mr-2 text-muted"></i>Waktu</td>
-                                    <td>: {{ $sesi->tanggal_ujian?->format('d/m/Y') }} {{ $sesi->waktu_mulai }}</td>
+                                    <td>: {{ $sesi->tanggal?->format('d/m/Y') }} {{ $sesi->waktu_mulai }}</td>
                                 </tr>
                             </table>
 
@@ -200,7 +200,7 @@
                             @endif
                             @if($sesi->status == 'draft')
                                 <button type="button" class="btn btn-sm btn-danger float-right btn-delete" 
-                                        data-id="{{ $sesi->id }}" data-nama="{{ $sesi->nama_sesi }}">
+                                        data-id="{{ $sesi->id }}" data-nama="{{ $sesi->nama }}">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             @endif
@@ -219,7 +219,7 @@
                 <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
                 <h5>Belum Ada Sesi Ujian</h5>
                 <p class="text-muted">
-                    Buat sesi ujian melalui menu <a href="{{ route('admin.cetak-ruang.index') }}">Cetak Ruang Ujian</a>
+                    Buat sesi ujian melalui menu <a href="{{ route('admin.penjadwalan-ujian.index') }}">Penjadwalan Ujian</a>
                 </p>
             </div>
         </div>
@@ -251,7 +251,7 @@
         </div>
     </div>
 </div>
-@endsection
+@stop
 
 @section('js')
 <script>
