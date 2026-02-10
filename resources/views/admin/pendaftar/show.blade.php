@@ -527,11 +527,14 @@ dl.row dt {
     </div>
 
     @php
-        $dokumenCount = $pendaftar->dokumen->count();
-        $validCount = $pendaftar->dokumen->where('status_verifikasi', 'valid')->count();
-        $pendingCount = $pendaftar->dokumen->where('status_verifikasi', 'pending')->count();
-        $invalidCount = $pendaftar->dokumen->where('status_verifikasi', 'invalid')->count();
-        $revisionCount = $pendaftar->dokumen->where('status_verifikasi', 'revision')->count();
+        // Exclude dokumen tambahan dari statistik verifikasi (hanya hitung dokumen yang diperlukan/required)
+        $dokumenTambahanKeys = array_keys(\App\Models\CalonDokumen::DOKUMEN_TAMBAHAN);
+        $dokumenRequired = $pendaftar->dokumen->whereNotIn('jenis_dokumen', $dokumenTambahanKeys);
+        $dokumenCount = $dokumenRequired->count();
+        $validCount = $dokumenRequired->where('status_verifikasi', 'valid')->count();
+        $pendingCount = $dokumenRequired->where('status_verifikasi', 'pending')->count();
+        $invalidCount = $dokumenRequired->where('status_verifikasi', 'invalid')->count();
+        $revisionCount = $dokumenRequired->where('status_verifikasi', 'revision')->count();
     @endphp
 
     <div class="row">

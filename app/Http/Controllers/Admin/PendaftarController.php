@@ -1665,6 +1665,9 @@ class PendaftarController extends Controller
                 $mimeType = $file->getMimeType();
             }
 
+            // Semua dokumen yang diupload admin langsung valid
+            $isDokumenTambahan = array_key_exists($jenisDokumen, CalonDokumen::DOKUMEN_TAMBAHAN);
+
             // Find existing document or create new
             $dokumen = CalonDokumen::where('calon_siswa_id', $calonSiswa->id)
                 ->where('jenis_dokumen', $jenisDokumen)
@@ -1676,28 +1679,38 @@ class PendaftarController extends Controller
                     Storage::disk('public')->delete($dokumen->file_path);
                 }
 
-                $dokumen->update([
+                $updateData = [
                     'file_path' => $filePath,
                     'nama_file' => $originalName,
                     'file_size' => $fileSize,
                     'mime_type' => $mimeType,
-                    'status_verifikasi' => 'pending',
+                    'status_verifikasi' => 'valid',
                     'catatan_verifikasi' => null,
                     'uploaded_by' => auth()->id(),
                     'uploaded_at' => now(),
-                ]);
+                    'verified_at' => now(),
+                ];
+                if ($isDokumenTambahan) {
+                    $updateData['is_required'] = false;
+                }
+                $dokumen->update($updateData);
             } else {
-                $dokumen = CalonDokumen::create([
+                $createData = [
                     'calon_siswa_id' => $calonSiswa->id,
                     'jenis_dokumen' => $jenisDokumen,
                     'nama_file' => $originalName,
                     'file_path' => $filePath,
                     'file_size' => $fileSize,
                     'mime_type' => $mimeType,
-                    'status_verifikasi' => 'pending',
+                    'status_verifikasi' => 'valid',
                     'uploaded_by' => auth()->id(),
                     'uploaded_at' => now(),
-                ]);
+                    'verified_at' => now(),
+                ];
+                if ($isDokumenTambahan) {
+                    $createData['is_required'] = false;
+                }
+                $dokumen = CalonDokumen::create($createData);
             }
 
             // Log history
@@ -1705,8 +1718,8 @@ class PendaftarController extends Controller
                 'dokumen_id' => $dokumen->id,
                 'action' => 'upload',
                 'status_from' => null,
-                'status_to' => 'pending',
-                'keterangan' => $request->catatan ?? 'Dokumen diupload oleh verifikator: ' . auth()->user()->name,
+                'status_to' => 'valid',
+                'keterangan' => 'Dokumen diupload oleh admin (otomatis valid): ' . auth()->user()->name,
                 'user_id' => auth()->id(),
             ]);
 
