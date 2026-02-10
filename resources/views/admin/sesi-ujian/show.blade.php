@@ -142,21 +142,13 @@
                 </div>
                 <div class="card-body">
                     @if($sesiUjian->status == 'locked')
-                        <form action="{{ route('admin.sesi-ujian.update-status', $sesiUjian->id) }}" method="POST" class="mb-2">
-                            @csrf
-                            <input type="hidden" name="status" value="in_progress">
-                            <button type="submit" class="btn btn-primary btn-block" onclick="return confirm('Mulai sesi ujian sekarang?')">
-                                <i class="fas fa-play mr-2"></i>Mulai Sesi Ujian
-                            </button>
-                        </form>
+                        <button type="button" class="btn btn-primary btn-block mb-2" data-toggle="modal" data-target="#mulaiSesiModal">
+                            <i class="fas fa-play mr-2"></i>Mulai Sesi Ujian
+                        </button>
                     @elseif($sesiUjian->status == 'in_progress')
-                        <form action="{{ route('admin.sesi-ujian.update-status', $sesiUjian->id) }}" method="POST" class="mb-2">
-                            @csrf
-                            <input type="hidden" name="status" value="completed">
-                            <button type="submit" class="btn btn-success btn-block" onclick="return confirm('Selesaikan sesi ujian? Semua nilai akan dikunci.')">
-                                <i class="fas fa-check mr-2"></i>Selesaikan Sesi
-                            </button>
-                        </form>
+                        <button type="button" class="btn btn-success btn-block mb-2" data-toggle="modal" data-target="#selesaikanSesiModal">
+                            <i class="fas fa-check mr-2"></i>Selesaikan Sesi
+                        </button>
                     @endif
 
                     <a href="{{ route('admin.sesi-ujian.print-daftar-hadir', $sesiUjian->id) }}" class="btn btn-info btn-block" target="_blank">
@@ -407,9 +399,88 @@
         </div>
     </div>
 </div>
-@stop
 
-@section('js')
+{{-- Modal Mulai Sesi Ujian --}}
+@if($sesiUjian->status == 'locked')
+<div class="modal fade" id="mulaiSesiModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-play mr-2"></i>Mulai Sesi Ujian</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Sesi ujian akan dimulai dan penguji dapat mulai menginput nilai.
+                </div>
+                <p>Apakah Anda yakin ingin memulai sesi ujian ini?</p>
+                <ul class="mb-0">
+                    <li><strong>Sesi:</strong> {{ $sesiUjian->nama }}</li>
+                    <li><strong>Tanggal:</strong> {{ $sesiUjian->tanggal?->isoFormat('dddd, D MMMM Y') ?? '-' }}</li>
+                    <li><strong>Waktu:</strong> {{ $sesiUjian->waktu_mulai?->format('H:i') ?? '-' }} - {{ $sesiUjian->waktu_selesai?->format('H:i') ?? '-' }}</li>
+                    <li><strong>Ruangan:</strong> {{ $sesiUjian->ruangan->count() }} ruang</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>Batal
+                </button>
+                <form action="{{ route('admin.sesi-ujian.update-status', $sesiUjian->id) }}" method="POST" class="d-inline">
+                    @csrf
+                    <input type="hidden" name="status" value="in_progress">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-play mr-1"></i>Ya, Mulai Sekarang
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
+{{-- Modal Selesaikan Sesi --}}
+@if($sesiUjian->status == 'in_progress')
+<div class="modal fade" id="selesaikanSesiModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-check mr-2"></i>Selesaikan Sesi Ujian</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    <strong>Perhatian!</strong> Setelah sesi diselesaikan, semua nilai akan dikunci dan tidak dapat diubah lagi.
+                </div>
+                <p>Apakah Anda yakin ingin menyelesaikan sesi ujian ini?</p>
+                <ul class="mb-0">
+                    <li><strong>Sesi:</strong> {{ $sesiUjian->nama }}</li>
+                    <li><strong>Tanggal:</strong> {{ $sesiUjian->tanggal?->isoFormat('dddd, D MMMM Y') ?? '-' }}</li>
+                    <li><strong>Ruangan:</strong> {{ $sesiUjian->ruangan->count() }} ruang</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>Batal
+                </button>
+                <form action="{{ route('admin.sesi-ujian.update-status', $sesiUjian->id) }}" method="POST" class="d-inline">
+                    @csrf
+                    <input type="hidden" name="status" value="completed">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check mr-1"></i>Ya, Selesaikan
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+@stop
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 $(document).ready(function() {
