@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'Nilai Seleksi - ' . $sesiUjian->nama_sesi)
+@section('title', 'Nilai Seleksi - ' . $sesiUjian->nama)
 
 @section('css')
 <style>
@@ -27,17 +27,17 @@
         <h1 class="m-0">
             <i class="fas fa-chart-bar mr-2"></i>Nilai Seleksi
         </h1>
-        <small class="text-muted">{{ $sesiUjian->nama_sesi }}</small>
+        <small class="text-muted">{{ $sesiUjian->nama }}</small>
     </div>
     <div class="col-sm-6">
         <ol class="breadcrumb float-sm-right">
             <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
             <li class="breadcrumb-item"><a href="{{ route('admin.nilai-seleksi.index') }}">Nilai Seleksi</a></li>
-            <li class="breadcrumb-item active">{{ $sesiUjian->nama_sesi }}</li>
+            <li class="breadcrumb-item active">{{ $sesiUjian->nama }}</li>
         </ol>
     </div>
 </div>
-@endsection
+@stop
 
 @section('content')
 <div class="container-fluid">
@@ -63,13 +63,13 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-4">
-                    <p><strong>Jalur:</strong> {{ $sesiUjian->jalurPendaftaran->nama ?? '-' }}</p>
+                    <p><strong>Jalur:</strong> {{ $sesiUjian->jalur->nama ?? '-' }}</p>
                 </div>
                 <div class="col-md-4">
-                    <p><strong>Gelombang:</strong> {{ $sesiUjian->gelombangPendaftaran->nama ?? 'Semua' }}</p>
+                    <p><strong>Gelombang:</strong> {{ $sesiUjian->gelombang->nama ?? 'Semua' }}</p>
                 </div>
                 <div class="col-md-4">
-                    <p><strong>Tanggal:</strong> {{ $sesiUjian->tanggal_ujian?->format('d F Y') ?? '-' }}</p>
+                    <p><strong>Tanggal:</strong> {{ $sesiUjian->tanggal?->format('d F Y') ?? '-' }}</p>
                 </div>
             </div>
         </div>
@@ -106,7 +106,7 @@
                         Semua Ruangan
                     </a>
                 </li>
-                @foreach($sesiUjian->ruangUjians as $ruang)
+                @foreach($sesiUjian->ruangan as $ruang)
                     <li class="nav-item">
                         <a class="nav-link {{ request('ruang') == $ruang->id ? 'active' : '' }}" 
                            href="{{ route('admin.nilai-seleksi.show', [$sesiUjian->id, 'ruang' => $ruang->id]) }}">
@@ -215,4 +215,4 @@
         </div>
     </div>
 </div>
-@endsection
+@stop

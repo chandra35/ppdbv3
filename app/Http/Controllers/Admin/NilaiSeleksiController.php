@@ -48,18 +48,27 @@ class NilaiSeleksiController extends Controller
     }
 
     /**
-     * Show detail nilai
+     * Show detail nilai per sesi ujian
      */
-    public function show(NilaiSeleksi $nilaiSeleksi)
+    public function show(SesiUjian $sesiUjian, Request $request)
     {
-        $nilaiSeleksi->load(['calonSiswa', 'penguji', 'ruangUjian', 'sesiUjian', 'verifier']);
+        $sesiUjian->load(['jalur', 'gelombang', 'ruangan.peserta']);
         
-        $bobotList = BobotNilaiSeleksi::where('tahun_pelajaran_id', $nilaiSeleksi->sesiUjian->tahun_pelajaran_id)
+        $bobotList = BobotNilaiSeleksi::where('tahun_pelajaran_id', $sesiUjian->tahun_pelajaran_id)
             ->where('is_active', true)
             ->orderBy('urutan')
             ->get();
 
-        return view('admin.nilai-seleksi.show', compact('nilaiSeleksi', 'bobotList'));
+        $nilaiQuery = NilaiSeleksi::with(['calonSiswa', 'penguji', 'ruangUjian'])
+            ->where('sesi_ujian_id', $sesiUjian->id);
+
+        if ($request->ruang) {
+            $nilaiQuery->where('ruang_ujian_id', $request->ruang);
+        }
+
+        $nilaiList = $nilaiQuery->orderBy('created_at', 'desc')->get();
+
+        return view('admin.nilai-seleksi.show', compact('sesiUjian', 'nilaiList', 'bobotList'));
     }
 
     /**
