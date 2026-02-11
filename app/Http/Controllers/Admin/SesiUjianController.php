@@ -65,7 +65,7 @@ class SesiUjianController extends Controller
             'gelombang',
             'creator',
             'locker',
-            'ketuaPanitia',
+            'jadwalUjian.ketuaPanitia',
             'ruangan.penguji.user.roles',
             'ruangan.peserta.calonSiswa',
         ]);
@@ -131,7 +131,8 @@ class SesiUjianController extends Controller
             'ketua_panitia_id' => 'nullable|exists:users,id',
         ]);
 
-        $sesiUjian->update([
+        $jadwalUjian = $sesiUjian->jadwalUjian;
+        $jadwalUjian->update([
             'ketua_panitia_id' => $request->ketua_panitia_id ?: null,
         ]);
 
@@ -300,7 +301,7 @@ class SesiUjianController extends Controller
             'ruangan.peserta.calonSiswa',
             'ruangan.penguji.user',
             'tahunPelajaran',
-            'ketuaPanitia',
+            'jadwalUjian.ketuaPanitia',
         ]);
 
         // Build room list with peserta (same format as PenjadwalanUjianController)
@@ -342,7 +343,7 @@ class SesiUjianController extends Controller
         $kopSuratService = app(KopSuratService::class);
         $kopSurat = $kopSuratService->renderKopHtml($sekolah, true);
 
-        $ketuaPanitia = $sesiUjian->ketuaPanitia;
+        $ketuaPanitia = $sesiUjian->jadwalUjian?->ketuaPanitia;
 
         $pdf = Pdf::loadView('admin.penjadwalan-ujian.pdf.daftar-hadir', compact(
             'jadwal', 'ruangList', 'sekolah', 'kopSurat', 'ketuaPanitia'

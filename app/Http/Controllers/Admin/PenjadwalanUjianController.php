@@ -467,17 +467,13 @@ class PenjadwalanUjianController extends Controller
         ini_set('memory_limit', '512M');
         set_time_limit(300);
         
-        $jadwalUjian->load(['tahunPelajaran', 'sesiUjian.ketuaPanitia']);
+        $jadwalUjian->load(['tahunPelajaran', 'ketuaPanitia']);
         
         // Build room list with peserta
         $ruangList = [];
-        $ketuaPanitia = null;
+        $ketuaPanitia = $jadwalUjian->ketuaPanitia;
         
         foreach ($jadwalUjian->sesiUjian as $sesi) {
-            // Use the first sesi's ketua panitia if set
-            if (!$ketuaPanitia && $sesi->ketuaPanitia) {
-                $ketuaPanitia = $sesi->ketuaPanitia;
-            }
 
             $ruangUjianList = RuangUjian::where('sesi_ujian_id', $sesi->id)->get();
             

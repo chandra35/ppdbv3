@@ -39,6 +39,7 @@ class JadwalUjian extends Model
         'locked_at',
         'locked_by',
         'catatan',
+        'ketua_panitia_id',
     ];
 
     protected $casts = [
@@ -73,6 +74,11 @@ class JadwalUjian extends Model
     public function lockedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'locked_by');
+    }
+
+    public function ketuaPanitia(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'ketua_panitia_id');
     }
 
     public function jadwalPeserta(): HasMany

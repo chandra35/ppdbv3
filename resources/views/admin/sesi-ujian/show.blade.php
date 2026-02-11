@@ -151,7 +151,7 @@
                                 </tr>
                                 <tr>
                                     <td><strong>Ketua Panitia</strong></td>
-                                    <td>: <span id="ketuaPanitiaDisplay">{{ $sesiUjian->ketuaPanitia->name ?? '-' }}</span></td>
+                                    <td>: <span id="ketuaPanitiaDisplay">{{ $sesiUjian->jadwalUjian->ketuaPanitia->name ?? '-' }}</span></td>
                                 </tr>
                             </table>
                         </div>
@@ -172,7 +172,7 @@
                             <select id="selectKetuaPanitia" class="form-control form-control-sm">
                                 <option value="">-- Pilih Ketua Panitia --</option>
                                 @foreach($pengujiList as $user)
-                                    <option value="{{ $user->id }}" {{ $sesiUjian->ketua_panitia_id == $user->id ? 'selected' : '' }}>
+                                    <option value="{{ $user->id }}" {{ $sesiUjian->jadwalUjian->ketua_panitia_id == $user->id ? 'selected' : '' }}>
                                         {{ $user->name }} ({{ $user->roles->pluck('display_name')->join(', ') }})
                                     </option>
                                 @endforeach
