@@ -174,6 +174,46 @@
     </div>
 </div>
 
+{{-- Ketua Panitia --}}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-user-shield mr-2"></i>Ketua Panitia</h3>
+    </div>
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <p class="mb-1"><strong>Ketua Panitia saat ini:</strong></p>
+                <h5 id="ketuaPanitiaDisplay">
+                    @if($jadwal->ketuaPanitia)
+                        <i class="fas fa-user-check text-success mr-1"></i>{{ $jadwal->ketuaPanitia->name }}
+                    @else
+                        <span class="text-muted"><i class="fas fa-user-times mr-1"></i>Belum ditentukan</span>
+                    @endif
+                </h5>
+                <small class="text-muted">Berlaku untuk semua sesi dalam jadwal ini.</small>
+            </div>
+            <div class="col-md-6">
+                <label class="mb-1"><strong>Ubah Ketua Panitia:</strong></label>
+                <div class="input-group">
+                    <select id="selectKetuaPanitia" class="form-control">
+                        <option value="">-- Pilih Ketua Panitia --</option>
+                        @foreach($pengujiList as $user)
+                            <option value="{{ $user->id }}" {{ $jadwal->ketua_panitia_id == $user->id ? 'selected' : '' }}>
+                                {{ $user->name }} ({{ $user->roles->pluck('display_name')->join(', ') }})
+                            </option>
+                        @endforeach
+                    </select>
+                    <div class="input-group-append">
+                        <button type="button" class="btn btn-primary" id="btnSaveKetuaPanitia">
+                            <i class="fas fa-save mr-1"></i>Simpan
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- Schedule Overview --}}
 <div class="card">
     <div class="card-header sesi-header">
@@ -480,6 +520,38 @@ $(document).ready(function() {
         var value = $(this).val().toLowerCase();
         $('#pesertaTable tbody tr').filter(function() {
             $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+        });
+    });
+
+    // Save Ketua Panitia
+    $('#btnSaveKetuaPanitia').on('click', function() {
+        var btn = $(this);
+        var ketuaId = $('#selectKetuaPanitia').val();
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Simpan');
+
+        $.ajax({
+            url: '{{ route("admin.penjadwalan-ujian.update-ketua-panitia", $jadwal->id) }}',
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                ketua_panitia_id: ketuaId
+            },
+            success: function(response) {
+                if (response.success) {
+                    if (response.ketua_panitia_name) {
+                        $('#ketuaPanitiaDisplay').html('<i class="fas fa-user-check text-success mr-1"></i>' + response.ketua_panitia_name);
+                    } else {
+                        $('#ketuaPanitiaDisplay').html('<span class="text-muted"><i class="fas fa-user-times mr-1"></i>Belum ditentukan</span>');
+                    }
+                    toastr.success(response.message);
+                }
+            },
+            error: function(xhr) {
+                toastr.error('Gagal menyimpan Ketua Panitia.');
+            },
+            complete: function() {
+                btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i>Simpan');
+            }
         });
     });
 });

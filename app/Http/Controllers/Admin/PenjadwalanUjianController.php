@@ -282,6 +282,7 @@ class PenjadwalanUjianController extends Controller
             'tahunPelajaran',
             'jalurPendaftaran',
             'gelombangPendaftaran',
+            'ketuaPanitia',
             'sesiUjian.ruangUjian',
             'jadwalPeserta.calonSiswa',
         ]);
@@ -289,8 +290,17 @@ class PenjadwalanUjianController extends Controller
         // Group sesi by nomor_sesi
         $sesiGrouped = $jadwalUjian->sesiUjian->groupBy('nomor_sesi');
 
+        // Get users for ketua panitia assignment
+        $pengujiList = User::with('roles')
+            ->whereHas('roles', function($query) {
+                $query->whereIn('name', ['penguji', 'admin', 'verifikator', 'super-admin', 'mas-admin']);
+            })
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
         $jadwal = $jadwalUjian;
-        return view('admin.penjadwalan-ujian.show', compact('jadwal', 'sesiGrouped'));
+        return view('admin.penjadwalan-ujian.show', compact('jadwal', 'sesiGrouped', 'pengujiList'));
     }
 
     /**
@@ -310,6 +320,30 @@ class PenjadwalanUjianController extends Controller
         $tahunPelajaranList = TahunPelajaran::orderBy('is_active', 'desc')->orderBy('nama', 'desc')->get();
 
         return view('admin.penjadwalan-ujian.list', compact('jadwalList', 'tahunPelajaranList', 'tahunAktif'));
+    }
+
+    /**
+     * Update ketua panitia for jadwal (AJAX)
+     */
+    public function updateKetuaPanitia(Request $request, JadwalUjian $jadwalUjian)
+    {
+        $request->validate([
+            'ketua_panitia_id' => 'nullable|exists:users,id',
+        ]);
+
+        $jadwalUjian->update([
+            'ketua_panitia_id' => $request->ketua_panitia_id ?: null,
+        ]);
+
+        $namaKetua = $request->ketua_panitia_id
+            ? User::find($request->ketua_panitia_id)?->name ?? '-'
+            : null;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Ketua Panitia berhasil diperbarui.',
+            'ketua_panitia_name' => $namaKetua,
+        ]);
     }
 
     /**

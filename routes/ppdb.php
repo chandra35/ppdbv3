@@ -279,6 +279,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/{jadwalUjian}/pdf/daftar-hadir', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'pdfDaftarHadir'])->name('pdf.daftar-hadir');
         Route::get('/{jadwalUjian}/pdf/nama-ruang', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'pdfNamaRuang'])->name('pdf.nama-ruang');
         Route::get('/{jadwalUjian}/pdf/daftar-peserta', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'pdfDaftarPeserta'])->name('pdf.daftar-peserta');
+        Route::post('/{jadwalUjian}/update-ketua-panitia', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'updateKetuaPanitia'])->name('update-ketua-panitia');
     });
 
     // ---- MANAJEMEN PENGUJI ----
