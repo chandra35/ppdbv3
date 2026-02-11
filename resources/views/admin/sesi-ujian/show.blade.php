@@ -572,36 +572,40 @@ $(document).ready(function() {
         return $('<span>' + penguji.text.split('(')[0].trim() + badge + '<br><small class="text-muted">' + email + '</small></span>');
     }
 
-    // Initialize Select2 for penguji with custom template
-    $('#selectPenguji').select2({
-        theme: 'bootstrap4',
-        placeholder: 'Ketik untuk mencari penguji...',
-        allowClear: true,
-        dropdownParent: $('#assignPengujiModal .modal-body'),
-        templateResult: formatPenguji,
-        matcher: function(params, data) {
-            if ($.trim(params.term) === '') {
-                return data;
-            }
-            
-            var searchTerm = params.term.toLowerCase();
-            var text = (data.text || '').toLowerCase();
-            var email = ($(data.element).data('email') || '').toLowerCase();
-            
-            if (text.indexOf(searchTerm) > -1 || email.indexOf(searchTerm) > -1) {
-                return data;
-            }
-            
-            return null;
+    // Initialize Select2 inside modal after it's fully visible
+    var select2Initialized = false;
+    function initSelect2() {
+        if (select2Initialized) {
+            return;
         }
-    });
+        $('#selectPenguji').select2({
+            theme: 'bootstrap4',
+            placeholder: 'Ketik untuk mencari penguji...',
+            allowClear: true,
+            dropdownParent: $('#assignPengujiModal .modal-body'),
+            templateResult: formatPenguji,
+            matcher: function(params, data) {
+                if ($.trim(params.term) === '') {
+                    return data;
+                }
+                var searchTerm = params.term.toLowerCase();
+                var text = (data.text || '').toLowerCase();
+                var email = ($(data.element).data('email') || '').toLowerCase();
+                if (text.indexOf(searchTerm) > -1 || email.indexOf(searchTerm) > -1) {
+                    return data;
+                }
+                return null;
+            }
+        });
 
-    $('#selectKetua').select2({
-        theme: 'bootstrap4',
-        placeholder: 'Pilih ketua penguji...',
-        allowClear: true,
-        dropdownParent: $('#assignPengujiModal .modal-body')
-    });
+        $('#selectKetua').select2({
+            theme: 'bootstrap4',
+            placeholder: 'Pilih ketua penguji...',
+            allowClear: true,
+            dropdownParent: $('#assignPengujiModal .modal-body')
+        });
+        select2Initialized = true;
+    }
 
     // Update selected penguji cards and ketua options
     $('#selectPenguji').on('change', function() {
@@ -663,6 +667,8 @@ $(document).ready(function() {
     });
 
     // Open modal and load current penguji
+    var pendingRuangId = null;
+    
     $('.btn-assign-penguji').on('click', function() {
         var ruangId = $(this).data('ruang-id');
         var ruangNama = $(this).data('ruang-nama');
@@ -674,11 +680,23 @@ $(document).ready(function() {
         $('#infoJumlahPeserta').text(jumlahPeserta);
         $('#assignPengujiForm').attr('action', '{{ route("admin.sesi-ujian.assign-penguji", $sesiUjian->id) }}');
         
+        pendingRuangId = ruangId;
+        $('#assignPengujiModal').modal('show');
+    });
+
+    // After modal is fully visible: init Select2 then load data
+    $('#assignPengujiModal').on('shown.bs.modal', function() {
+        initSelect2();
+
         // Reset form
         $('#selectPenguji').val([]).trigger('change');
         $('#selectKetua').val('').trigger('change.select2');
         $('#selectedPengujiList').hide();
-        
+
+        if (!pendingRuangId) return;
+        var ruangId = pendingRuangId;
+        pendingRuangId = null;
+
         // Load current penguji for this ruangan
         $.get('{{ route("admin.sesi-ujian.index") }}/{{ $sesiUjian->id }}/ruangan/' + ruangId + '/penguji', function(data) {
             if (data.penguji && data.penguji.length > 0) {
@@ -695,8 +713,6 @@ $(document).ready(function() {
         }).fail(function() {
             console.log('Failed to load penguji data');
         });
-        
-        $('#assignPengujiModal').modal('show');
     });
 
     // Form submit with AJAX
