@@ -65,7 +65,7 @@ class DashboardController extends Controller
         $sesiUjian = $ruangUjian->sesiUjian;
 
         // Get peserta with their nilai status
-        $pesertaList = PesertaRuang::with(['calonSiswa'])
+        $pesertaList = PesertaRuang::with(['calonSiswa.dokumen'])
             ->where('ruang_ujian_id', $ruangUjian->id)
             ->orderBy('nomor_urut')
             ->get()

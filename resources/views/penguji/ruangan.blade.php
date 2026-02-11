@@ -37,6 +37,18 @@
         width: 120px;
         height: 120px;
     }
+    .peserta-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #dee2e6;
+        flex-shrink: 0;
+    }
+    .peserta-card.dinilai .peserta-avatar { border-color: #28a745; }
+    .peserta-card.draft .peserta-avatar { border-color: #ffc107; }
+    .peserta-card.sedang-diuji .peserta-avatar { border-color: #007bff; }
+    .peserta-card.belum .peserta-avatar { border-color: #dc3545; }
 </style>
 @stop
 
@@ -166,34 +178,57 @@
                     <div class="col-md-6 col-lg-4">
                         <a href="{{ route('penguji.input-nilai', [$ruangUjian->id, $item['peserta']->id]) }}" class="text-decoration-none">
                             <div class="card peserta-card {{ $statusClass }}" id="peserta-card-{{ $item['peserta']->id }}">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <span class="badge badge-secondary mb-2">No. {{ $item['peserta']->nomor_urut }}</span>
-                                            @if($pesertaStatus == 'in_progress')
-                                                <span class="badge badge-primary mb-2"><i class="fas fa-volume-up mr-1"></i>Sedang Diuji</span>
-                                            @elseif($pesertaStatus == 'completed')
-                                                <span class="badge badge-success mb-2"><i class="fas fa-check mr-1"></i>Selesai</span>
-                                            @endif
-                                            <h6 class="mb-1">{{ $item['calon_siswa']->nama_lengkap ?? '-' }}</h6>
+                                <div class="card-body py-3">
+                                    <div class="d-flex align-items-center">
+                                        {{-- Avatar --}}
+                                        @php
+                                            $pasFoto = $item['calon_siswa']?->dokumen?->where('jenis_dokumen', 'foto')->first();
+                                            $fotoSrc = null;
+                                            if($pasFoto && $pasFoto->file_path && file_exists(public_path('storage/' . $pasFoto->file_path))) {
+                                                $fotoSrc = asset('storage/' . $pasFoto->file_path);
+                                            }
+                                            if(!$fotoSrc) {
+                                                $initials = collect(explode(' ', $item['calon_siswa']->nama_lengkap ?? '-'))->take(2)->map(fn($w) => strtoupper(substr($w,0,1)))->join('');
+                                                $bgColor = ($item['calon_siswa']->jenis_kelamin ?? 'L') == 'L' ? '3498db' : 'e74c3c';
+                                                $fotoSrc = 'https://ui-avatars.com/api/?name=' . urlencode($initials) . '&size=50&background=' . $bgColor . '&color=ffffff&bold=true';
+                                            }
+                                        @endphp
+                                        <img src="{{ $fotoSrc }}" class="peserta-avatar mr-3" alt="Foto">
+                                        
+                                        {{-- Info --}}
+                                        <div class="flex-grow-1 min-width-0">
+                                            <div class="mb-1">
+                                                <span class="badge badge-secondary">No. {{ $item['peserta']->nomor_urut }}</span>
+                                                @if($item['calon_siswa']->nomor_tes)
+                                                    <span class="badge badge-warning">{{ $item['calon_siswa']->nomor_tes }}</span>
+                                                @endif
+                                                @if($pesertaStatus == 'in_progress')
+                                                    <span class="badge badge-primary"><i class="fas fa-volume-up mr-1"></i>Diuji</span>
+                                                @elseif($pesertaStatus == 'completed')
+                                                    <span class="badge badge-success"><i class="fas fa-check mr-1"></i>Selesai</span>
+                                                @endif
+                                            </div>
+                                            <h6 class="mb-0 text-truncate" style="font-weight:600;">{{ $item['calon_siswa']->nama_lengkap ?? '-' }}</h6>
                                             <small class="text-muted">{{ $item['calon_siswa']->no_pendaftaran ?? '-' }}</small>
                                         </div>
-                                        <div class="text-right">
+                                        
+                                        {{-- Status Icon --}}
+                                        <div class="text-right ml-2">
                                             @if($nilaiStatus == 'submitted' || $nilaiStatus == 'verified')
                                                 <i class="fas fa-check-circle text-success status-icon"></i>
                                                 @if($item['nilai'])
-                                                    <div class="mt-2">
+                                                    <div class="mt-1">
                                                         <span class="badge badge-primary">{{ number_format($item['nilai']->total_nilai, 2) }}</span>
                                                     </div>
                                                 @endif
                                             @elseif($nilaiStatus == 'draft')
                                                 <i class="fas fa-edit text-warning status-icon"></i>
-                                                <div class="mt-2">
+                                                <div class="mt-1">
                                                     <span class="badge badge-warning">Draft</span>
                                                 </div>
                                             @else
                                                 <i class="fas fa-minus-circle text-danger status-icon"></i>
-                                                <div class="mt-2">
+                                                <div class="mt-1">
                                                     <span class="badge badge-danger">Belum</span>
                                                 </div>
                                             @endif
