@@ -35,6 +35,13 @@
     .select2-container--bootstrap4 .select2-selection--multiple {
         min-height: 38px;
     }
+    /* Fix Select2 dropdown inside Bootstrap modal */
+    .select2-container--open {
+        z-index: 9999 !important;
+    }
+    .modal .select2-container--open .select2-dropdown {
+        z-index: 9999 !important;
+    }
     .progress-sm {
         height: 8px;
     }
@@ -541,6 +548,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script>
 $(document).ready(function() {
+    // Fix Select2 search inside Bootstrap modal (prevent modal from stealing focus)
+    $(document).on('select2:open', function() {
+        var searchField = document.querySelector('.select2-container--open .select2-search__field');
+        if (searchField) {
+            searchField.focus();
+        }
+    });
+
     // Custom template for Select2 options
     function formatPenguji(penguji) {
         if (!penguji.id) return penguji.text;
@@ -562,7 +577,7 @@ $(document).ready(function() {
         theme: 'bootstrap4',
         placeholder: 'Ketik untuk mencari penguji...',
         allowClear: true,
-        dropdownParent: $('#assignPengujiModal'),
+        dropdownParent: $('#assignPengujiModal .modal-body'),
         templateResult: formatPenguji,
         matcher: function(params, data) {
             if ($.trim(params.term) === '') {
@@ -585,7 +600,7 @@ $(document).ready(function() {
         theme: 'bootstrap4',
         placeholder: 'Pilih ketua penguji...',
         allowClear: true,
-        dropdownParent: $('#assignPengujiModal')
+        dropdownParent: $('#assignPengujiModal .modal-body')
     });
 
     // Update selected penguji cards and ketua options
