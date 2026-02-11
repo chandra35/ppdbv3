@@ -302,6 +302,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/', [\App\Http\Controllers\Admin\SesiUjianController::class, 'index'])->name('index');
         Route::get('/{sesiUjian}', [\App\Http\Controllers\Admin\SesiUjianController::class, 'show'])->name('show');
         Route::post('/{sesiUjian}/update-status', [\App\Http\Controllers\Admin\SesiUjianController::class, 'updateStatus'])->name('update-status');
+        Route::post('/{sesiUjian}/update-ketua-panitia', [\App\Http\Controllers\Admin\SesiUjianController::class, 'updateKetuaPanitia'])->name('update-ketua-panitia');
         Route::post('/{sesiUjian}/assign-penguji', [\App\Http\Controllers\Admin\SesiUjianController::class, 'assignPenguji'])->name('assign-penguji');
         Route::get('/{sesiUjian}/ruangan/{ruangUjian}/penguji', [\App\Http\Controllers\Admin\SesiUjianController::class, 'getPengujiRuangan'])->name('get-penguji');
         Route::delete('/{sesiUjian}', [\App\Http\Controllers\Admin\SesiUjianController::class, 'destroy'])->name('destroy');

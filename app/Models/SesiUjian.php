@@ -34,6 +34,7 @@ class SesiUjian extends Model
         'created_by',
         'locked_by',
         'locked_at',
+        'ketua_panitia_id',
     ];
 
     protected $casts = [
@@ -135,6 +136,14 @@ class SesiUjian extends Model
     public function locker(): BelongsTo
     {
         return $this->belongsTo(User::class, 'locked_by');
+    }
+
+    /**
+     * Get ketua panitia
+     */
+    public function ketuaPanitia(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'ketua_panitia_id');
     }
 
     /**

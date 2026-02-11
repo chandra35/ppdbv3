@@ -65,6 +65,7 @@ class SesiUjianController extends Controller
             'gelombang',
             'creator',
             'locker',
+            'ketuaPanitia',
             'ruangan.penguji.user.roles',
             'ruangan.peserta.calonSiswa',
         ]);
@@ -122,6 +123,30 @@ class SesiUjianController extends Controller
     }
 
     /**
+     * Update ketua panitia (AJAX)
+     */
+    public function updateKetuaPanitia(Request $request, SesiUjian $sesiUjian)
+    {
+        $request->validate([
+            'ketua_panitia_id' => 'nullable|exists:users,id',
+        ]);
+
+        $sesiUjian->update([
+            'ketua_panitia_id' => $request->ketua_panitia_id ?: null,
+        ]);
+
+        $namaKetua = $request->ketua_panitia_id
+            ? User::find($request->ketua_panitia_id)?->name ?? '-'
+            : '-';
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Ketua Panitia berhasil diperbarui.',
+            'ketua_panitia_name' => $namaKetua,
+        ]);
+    }
+
+    /**
      * Assign penguji to ruangan (AJAX)
      */
     public function assignPenguji(Request $request, SesiUjian $sesiUjian)
@@ -137,6 +162,24 @@ class SesiUjianController extends Controller
             DB::beginTransaction();
 
             $ruangId = $request->ruang_ujian_id;
+
+            // Check for duplicate penguji in other rooms of the same sesi
+            $duplicates = PengujiRuang::where('sesi_ujian_id', $sesiUjian->id)
+                ->where('ruang_ujian_id', '!=', $ruangId)
+                ->whereIn('user_id', $request->penguji_ids)
+                ->with(['user', 'ruangUjian'])
+                ->get();
+
+            if ($duplicates->isNotEmpty()) {
+                $dupNames = $duplicates->map(function ($d) {
+                    return ($d->user->name ?? 'Unknown') . ' (sudah di ' . ($d->ruangUjian->nama_ruang ?? '-') . ')';
+                })->join(', ');
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal assign: ' . $dupNames . '. Satu penguji hanya boleh di satu ruangan dalam sesi yang sama.',
+                ], 422);
+            }
 
             // Remove existing penguji for this ruangan
             PengujiRuang::where('sesi_ujian_id', $sesiUjian->id)
@@ -255,7 +298,9 @@ class SesiUjianController extends Controller
 
         $sesiUjian->load([
             'ruangan.peserta.calonSiswa',
+            'ruangan.penguji.user',
             'tahunPelajaran',
+            'ketuaPanitia',
         ]);
 
         // Build room list with peserta (same format as PenjadwalanUjianController)
@@ -267,6 +312,11 @@ class SesiUjianController extends Controller
                 ->orderBy('nomor_urut')
                 ->get();
 
+            $pengujiRuangList = PengujiRuang::with('user')
+                ->where('ruang_ujian_id', $ruang->id)
+                ->where('is_active', true)
+                ->get();
+
             $ruangList[] = [
                 'nama' => $ruang->nama_ruang,
                 'jenis' => $sesiUjian->jenis_ujian,
@@ -275,6 +325,7 @@ class SesiUjianController extends Controller
                 'waktu_selesai' => $sesiUjian->waktu_selesai?->format('H:i') ?? '-',
                 'kapasitas' => $ruang->kapasitas,
                 'peserta' => $pesertaRuang,
+                'penguji' => $pengujiRuangList,
             ];
         }
 
@@ -291,8 +342,10 @@ class SesiUjianController extends Controller
         $kopSuratService = app(KopSuratService::class);
         $kopSurat = $kopSuratService->renderKopHtml($sekolah, true);
 
+        $ketuaPanitia = $sesiUjian->ketuaPanitia;
+
         $pdf = Pdf::loadView('admin.penjadwalan-ujian.pdf.daftar-hadir', compact(
-            'jadwal', 'ruangList', 'sekolah', 'kopSurat'
+            'jadwal', 'ruangList', 'sekolah', 'kopSurat', 'ketuaPanitia'
         ));
         $pdf->setPaper('A4', 'portrait');
 

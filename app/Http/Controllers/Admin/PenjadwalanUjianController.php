@@ -12,6 +12,7 @@ use App\Models\JadwalPeserta;
 use App\Models\SesiUjian;
 use App\Models\RuangUjian;
 use App\Models\PesertaRuang;
+use App\Models\PengujiRuang;
 use App\Models\SekolahSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -466,18 +467,29 @@ class PenjadwalanUjianController extends Controller
         ini_set('memory_limit', '512M');
         set_time_limit(300);
         
-        $jadwalUjian->load(['tahunPelajaran', 'sesiUjian']);
+        $jadwalUjian->load(['tahunPelajaran', 'sesiUjian.ketuaPanitia']);
         
         // Build room list with peserta
         $ruangList = [];
+        $ketuaPanitia = null;
         
         foreach ($jadwalUjian->sesiUjian as $sesi) {
+            // Use the first sesi's ketua panitia if set
+            if (!$ketuaPanitia && $sesi->ketuaPanitia) {
+                $ketuaPanitia = $sesi->ketuaPanitia;
+            }
+
             $ruangUjianList = RuangUjian::where('sesi_ujian_id', $sesi->id)->get();
             
             foreach ($ruangUjianList as $ruang) {
                 $pesertaRuang = PesertaRuang::with('calonSiswa')
                     ->where('ruang_ujian_id', $ruang->id)
                     ->orderBy('nomor_urut')
+                    ->get();
+
+                $pengujiRuangList = PengujiRuang::with('user')
+                    ->where('ruang_ujian_id', $ruang->id)
+                    ->where('is_active', true)
                     ->get();
                 
                 $ruangList[] = [
@@ -488,6 +500,7 @@ class PenjadwalanUjianController extends Controller
                     'waktu_selesai' => $sesi->waktu_selesai?->format('H:i') ?? '-',
                     'kapasitas' => $ruang->kapasitas,
                     'peserta' => $pesertaRuang,
+                    'penguji' => $pengujiRuangList,
                 ];
             }
         }
@@ -498,7 +511,7 @@ class PenjadwalanUjianController extends Controller
         $kopSurat = $kopSuratService->renderKopHtml($sekolah, true);
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.penjadwalan-ujian.pdf.daftar-hadir', compact(
-            'jadwal', 'ruangList', 'sekolah', 'kopSurat'
+            'jadwal', 'ruangList', 'sekolah', 'kopSurat', 'ketuaPanitia'
         ));
         $pdf->setPaper('A4', 'portrait');
 

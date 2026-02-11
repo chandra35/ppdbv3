@@ -328,21 +328,26 @@
         </table>
 
         {{-- Signature --}}
+        @php
+            $pengujiList = $room['penguji'] ?? collect();
+            $penguji1 = $pengujiList->first();
+            $penguji2 = $pengujiList->skip(1)->first();
+        @endphp
         <div class="signature-box">
             <div class="signature-cell">
-                <div class="signature-title">Pengawas 1</div>
+                <div class="signature-title">{{ $room['jenis'] === 'cbt' ? 'Pengawas 1' : 'Penguji 1' }}</div>
                 <div class="signature-line"></div>
-                <div class="signature-note">NIP: ........................</div>
+                <div class="signature-note">{{ $penguji1->user->name ?? '........................' }}</div>
             </div>
             <div class="signature-cell">
-                <div class="signature-title">Pengawas 2</div>
+                <div class="signature-title">{{ $room['jenis'] === 'cbt' ? 'Pengawas 2' : 'Penguji 2' }}</div>
                 <div class="signature-line"></div>
-                <div class="signature-note">NIP: ........................</div>
+                <div class="signature-note">{{ $penguji2->user->name ?? '........................' }}</div>
             </div>
             <div class="signature-cell">
                 <div class="signature-title">Mengetahui,<br>Ketua Panitia</div>
                 <div class="signature-line"></div>
-                <div class="signature-note">NIP: ........................</div>
+                <div class="signature-note">{{ (isset($ketuaPanitia) && $ketuaPanitia) ? $ketuaPanitia->name : '........................' }}</div>
             </div>
         </div>
 

@@ -149,6 +149,10 @@
                                     <td><strong>Kapasitas/Ruang</strong></td>
                                     <td>: {{ $sesiUjian->peserta_per_ruang }} peserta</td>
                                 </tr>
+                                <tr>
+                                    <td><strong>Ketua Panitia</strong></td>
+                                    <td>: <span id="ketuaPanitiaDisplay">{{ $sesiUjian->ketuaPanitia->name ?? '-' }}</span></td>
+                                </tr>
                             </table>
                         </div>
                     </div>
@@ -161,6 +165,27 @@
                     <h3 class="card-title"><i class="fas fa-cogs mr-2"></i>Aksi</h3>
                 </div>
                 <div class="card-body">
+                    {{-- Ketua Panitia --}}
+                    <div class="form-group mb-3">
+                        <label class="mb-1"><strong><i class="fas fa-user-shield mr-1"></i>Ketua Panitia:</strong></label>
+                        <div class="input-group">
+                            <select id="selectKetuaPanitia" class="form-control form-control-sm">
+                                <option value="">-- Pilih Ketua Panitia --</option>
+                                @foreach($pengujiList as $user)
+                                    <option value="{{ $user->id }}" {{ $sesiUjian->ketua_panitia_id == $user->id ? 'selected' : '' }}>
+                                        {{ $user->name }} ({{ $user->roles->pluck('display_name')->join(', ') }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-sm btn-primary" id="btnSaveKetuaPanitia">
+                                    <i class="fas fa-save"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="my-2">
+
                     @if($sesiUjian->status == 'locked')
                         <button type="button" class="btn btn-primary btn-block mb-2" data-toggle="modal" data-target="#mulaiSesiModal">
                             <i class="fas fa-play mr-2"></i>Mulai Sesi Ujian
@@ -699,6 +724,38 @@ $(document).ready(function() {
             },
             complete: function() {
                 submitBtn.prop('disabled', false).html(originalText);
+            }
+        });
+    });
+
+    // ====================================
+    // Save Ketua Panitia
+    // ====================================
+    $('#btnSaveKetuaPanitia').on('click', function() {
+        var btn = $(this);
+        var ketuaId = $('#selectKetuaPanitia').val();
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+        $.ajax({
+            url: '{{ route("admin.sesi-ujian.update-ketua-panitia", $sesiUjian->id) }}',
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                ketua_panitia_id: ketuaId
+            },
+            success: function(response) {
+                if (response.success) {
+                    toastr.success(response.message);
+                    $('#ketuaPanitiaDisplay').text(response.ketua_panitia_name || '-');
+                } else {
+                    toastr.error(response.message || 'Gagal menyimpan');
+                }
+            },
+            error: function(xhr) {
+                toastr.error(xhr.responseJSON?.message || 'Terjadi kesalahan');
+            },
+            complete: function() {
+                btn.prop('disabled', false).html('<i class="fas fa-save"></i>');
             }
         });
     });
