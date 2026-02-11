@@ -14,6 +14,7 @@ use App\Models\RuangUjian;
 use App\Models\PesertaRuang;
 use App\Models\PengujiRuang;
 use App\Models\SekolahSettings;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
