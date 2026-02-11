@@ -357,6 +357,12 @@
                                 <span class="label">No. Pendaftaran</span><br>
                                 <span class="value">{{ $calonSiswa->no_pendaftaran ?? $calonSiswa->nomor_registrasi ?? '-' }}</span>
                             </div>
+                            @if($calonSiswa->nomor_tes)
+                            <div class="info-item">
+                                <span class="label">No. Tes</span><br>
+                                <span class="value" style="font-weight:700; color:#856404;">{{ $calonSiswa->nomor_tes }}</span>
+                            </div>
+                            @endif
                             <div class="info-item">
                                 <span class="label">NISN</span><br>
                                 <span class="value">{{ $calonSiswa->nisn ?? '-' }}</span>
