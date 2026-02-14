@@ -282,6 +282,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/{jadwalUjian}/pdf/nama-ruang', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'pdfNamaRuang'])->name('pdf.nama-ruang');
         Route::get('/{jadwalUjian}/pdf/daftar-peserta', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'pdfDaftarPeserta'])->name('pdf.daftar-peserta');
         Route::get('/{jadwalUjian}/pdf/lembar-penilaian', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'pdfLembarPenilaian'])->name('pdf.lembar-penilaian');
+        Route::get('/{jadwalUjian}/pdf/data-petugas', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'pdfDataPetugas'])->name('pdf.data-petugas');
         Route::post('/{jadwalUjian}/update-ketua-panitia', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'updateKetuaPanitia'])->name('update-ketua-panitia');
         Route::post('/{jadwalUjian}/assign-petugas', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'assignPetugas'])->name('assign-petugas');
         Route::get('/{jadwalUjian}/get-petugas-ruang', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'getPetugasRuang'])->name('get-petugas-ruang');

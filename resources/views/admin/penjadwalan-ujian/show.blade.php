@@ -172,6 +172,12 @@
                     <i class="fas fa-file-pdf mr-2"></i>Daftar Peserta
                 </a>
             </div>
+            <div class="col-md-3 col-sm-6 mb-2">
+                <a href="{{ route('admin.penjadwalan-ujian.pdf.data-petugas', $jadwal) }}" 
+                   target="_blank" class="btn btn-danger btn-block btn-print">
+                    <i class="fas fa-file-pdf mr-2"></i>Data Petugas
+                </a>
+            </div>
         </div>
 
         <hr>

@@ -1218,6 +1218,81 @@ class PenjadwalanUjianController extends Controller
         return $pdf->stream('lembar-penilaian-' . $jadwalUjian->tanggal_ujian->format('Y-m-d') . '.pdf');
     }
 
+    /**
+     * PDF Data Petugas (Penguji, Pengawas, Proktor) with credentials
+     * Helps admin distribute login credentials to exam officers
+     */
+    public function pdfDataPetugas(JadwalUjian $jadwalUjian)
+    {
+        ini_set('memory_limit', '512M');
+        set_time_limit(300);
+
+        $jadwalUjian->load(['tahunPelajaran', 'ketuaPanitia', 'sesiUjian']);
+
+        $sekolah = SekolahSettings::first();
+
+        // Collect all petugas across all sesi
+        $petugasList = collect();
+        $pengujiWawancara = collect();
+        $pengawasList = collect();
+        $proktorList = collect();
+
+        foreach ($jadwalUjian->sesiUjian as $sesi) {
+            $ruangUjianList = RuangUjian::where('sesi_ujian_id', $sesi->id)->get();
+
+            foreach ($ruangUjianList as $ruang) {
+                $pengujiRuangList = PengujiRuang::with('user')
+                    ->where('ruang_ujian_id', $ruang->id)
+                    ->where('is_active', true)
+                    ->get();
+
+                foreach ($pengujiRuangList as $pr) {
+                    if (!$pr->user) continue;
+
+                    $data = [
+                        'nama' => $pr->user->name,
+                        'ruang' => $ruang->nama_ruang,
+                        'sesi' => $sesi->nomor_sesi,
+                        'waktu' => ($sesi->waktu_mulai?->format('H:i') ?? '-') . ' - ' . ($sesi->waktu_selesai?->format('H:i') ?? '-'),
+                        'peran' => $pr->peran,
+                        'is_ketua' => $pr->is_ketua,
+                        'username' => $pr->user->username,
+                        'password' => $pr->user->readable_password ?? '-',
+                    ];
+
+                    $petugasList->push($data);
+
+                    if ($pr->peran === 'penguji') {
+                        $pengujiWawancara->push($data);
+                    } elseif ($pr->peran === 'pengawas') {
+                        $pengawasList->push($data);
+                    } elseif ($pr->peran === 'proktor') {
+                        $proktorList->push($data);
+                    }
+                }
+            }
+        }
+
+        // Sort: ketua first, then by name
+        $pengujiWawancara = $pengujiWawancara->sortBy([['is_ketua', 'desc'], ['nama', 'asc']])->values();
+        $pengawasList = $pengawasList->sortBy('nama')->values();
+        $proktorList = $proktorList->sortBy('nama')->values();
+
+        // Rebuild petugasList in order: penguji → pengawas → proktor
+        $petugasList = $pengujiWawancara->concat($pengawasList)->concat($proktorList)->values();
+
+        $jadwal = $jadwalUjian;
+        $kopSuratService = app(\App\Services\KopSuratService::class);
+        $kopSurat = $kopSuratService->renderKopHtml($sekolah, true);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.penjadwalan-ujian.pdf.data-petugas', compact(
+            'jadwal', 'sekolah', 'kopSurat', 'petugasList', 'pengujiWawancara', 'pengawasList', 'proktorList'
+        ));
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf->stream('data-petugas-' . $jadwalUjian->tanggal_ujian->format('Y-m-d') . '.pdf');
+    }
+
     // ================== HELPER METHODS ==================
 
     /**
