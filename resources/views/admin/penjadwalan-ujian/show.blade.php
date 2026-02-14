@@ -184,10 +184,16 @@
                 </a>
             </div>
             <div class="col-md-3 col-sm-6 mb-2">
-                <a href="{{ route('admin.penjadwalan-ujian.export.moodle', $jadwal) }}" 
-                   target="_blank" class="btn btn-warning btn-block btn-print">
-                    <i class="fas fa-graduation-cap mr-2"></i>Export Moodle
-                </a>
+                <div class="btn-group btn-block">
+                    <a href="{{ route('admin.penjadwalan-ujian.export.moodle', [$jadwal, 'format' => 'csv']) }}" 
+                       target="_blank" class="btn btn-warning btn-print" style="width:60%">
+                        <i class="fas fa-graduation-cap mr-1"></i>Moodle CSV
+                    </a>
+                    <a href="{{ route('admin.penjadwalan-ujian.export.moodle', [$jadwal, 'format' => 'xlsx']) }}" 
+                       target="_blank" class="btn btn-success btn-print" style="width:40%">
+                        <i class="fas fa-file-excel mr-1"></i>XLSX
+                    </a>
+                </div>
             </div>
         </div>
     </div>

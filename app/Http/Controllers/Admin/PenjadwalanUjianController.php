@@ -1033,14 +1033,26 @@ class PenjadwalanUjianController extends Controller
      * Export Moodle CSV (user upload format)
      * Columns: firstname,lastname,username,password,email,cohort1
      */
-    public function exportMoodle(JadwalUjian $jadwalUjian)
+    public function exportMoodle(Request $request, JadwalUjian $jadwalUjian)
     {
         $jadwalUjian->load(['tahunPelajaran', 'sesiUjian']);
         $tahun = $jadwalUjian->tahunPelajaran->nama ?? date('Y');
-        // Extract year from tahun pelajaran name (e.g. "2025/2026" -> "2026")
-        $tahunShort = preg_match('/\d{4}\/(\d{4})/', $tahun, $m) ? $m[1] : date('Y');
+        // Extract first year from tahun pelajaran name (e.g. "2025/2026" -> "2025", "2026/2027" -> "2026")
+        $tahunShort = preg_match('/(\d{4})\/\d{4}/', $tahun, $m) ? $m[1] : date('Y');
 
-        $filename = 'moodle-import-' . $jadwalUjian->tanggal_ujian->format('Y-m-d') . '.csv';
+        $format = $request->query('format', 'csv');
+        $baseFilename = 'moodle-import-' . $jadwalUjian->tanggal_ujian->format('Y-m-d');
+
+        // XLSX format using MoodleExport class
+        if ($format === 'xlsx') {
+            return \Maatwebsite\Excel\Facades\Excel::download(
+                new \App\Exports\MoodleExport($jadwalUjian, $tahunShort),
+                $baseFilename . '.xlsx'
+            );
+        }
+
+        // CSV format (default)
+        $filename = $baseFilename . '.csv';
 
         $headers = [
             'Content-Type' => 'text/csv; charset=UTF-8',
