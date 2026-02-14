@@ -71,6 +71,9 @@ class MoodleExport implements FromArray, WithHeadings, WithStyles, WithColumnWid
         $students = []; // keyed by calon_siswa_id
 
         foreach ($this->jadwalUjian->sesiUjian as $sesi) {
+            // Only include CBT sessions (Moodle is for CBT only)
+            if ($sesi->jenis_ujian !== 'cbt') continue;
+
             $cohort = 'ppdb' . $this->tahunShort . '_s' . $sesi->nomor_sesi;
 
             $ruangList = RuangUjian::where('sesi_ujian_id', $sesi->id)->get();
@@ -108,7 +111,9 @@ class MoodleExport implements FromArray, WithHeadings, WithStyles, WithColumnWid
         }
 
         // Determine max cohort count
-        $this->cohortCount = max(1, ...array_map(fn($s) => count($s['cohorts']), $students));
+        if (!empty($students)) {
+            $this->cohortCount = max(1, ...array_map(fn($s) => count($s['cohorts']), $students));
+        }
 
         return array_values($students);
     }

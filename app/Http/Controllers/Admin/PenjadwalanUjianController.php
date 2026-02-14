@@ -1068,6 +1068,9 @@ class PenjadwalanUjianController extends Controller
             $students = [];
 
             foreach ($jadwalUjian->sesiUjian as $sesi) {
+                // Only include CBT sessions (Moodle is for CBT only)
+                if ($sesi->jenis_ujian !== 'cbt') continue;
+
                 $cohort = 'ppdb' . $tahunShort . '_s' . $sesi->nomor_sesi;
 
                 $ruangList = RuangUjian::where('sesi_ujian_id', $sesi->id)->get();
