@@ -207,14 +207,15 @@
             font-weight: bold;
             margin-bottom: 28px;
         }
-        .signature-line {
-            border-bottom: 1px solid #333;
-            width: 120px;
-            margin: 0 auto 4px;
-        }
         .signature-note {
             font-size: 9px;
             color: #333;
+            font-weight: bold;
+        }
+        .signature-underline {
+            border-bottom: 1px solid #333;
+            width: 140px;
+            margin: 0 auto;
         }
         
         /* Footer */
@@ -342,19 +343,19 @@
             @if($room['jenis'] === 'cbt')
             <div class="signature-cell">
                 <div class="signature-title">Pengawas</div>
-                <div class="signature-line"></div>
                 <div class="signature-note">{{ $pengawas->user->name ?? '........................' }}</div>
+                <div class="signature-underline"></div>
             </div>
             <div class="signature-cell">
                 <div class="signature-title">Proktor</div>
-                <div class="signature-line"></div>
                 <div class="signature-note">{{ $proktor->user->name ?? '........................' }}</div>
+                <div class="signature-underline"></div>
             </div>
             @else
             <div class="signature-cell">
                 <div class="signature-title">Penguji</div>
-                <div class="signature-line"></div>
                 <div class="signature-note">{{ $pengujiWaw->user->name ?? '........................' }}</div>
+                <div class="signature-underline"></div>
             </div>
             <div class="signature-cell">
                 {{-- Empty cell for alignment --}}
@@ -362,8 +363,8 @@
             @endif
             <div class="signature-cell">
                 <div class="signature-title">Mengetahui,<br>Ketua Panitia</div>
-                <div class="signature-line"></div>
                 <div class="signature-note">{{ (isset($ketuaPanitia) && $ketuaPanitia) ? $ketuaPanitia->name : '........................' }}</div>
+                <div class="signature-underline"></div>
             </div>
         </div>
 
