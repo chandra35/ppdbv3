@@ -177,6 +177,11 @@ return [
                     'icon' => 'fas fa-fw fa-chart-bar',
                 ],
                 [
+                    'text' => 'Upload Nilai',
+                    'route' => 'admin.nilai-seleksi.upload',
+                    'icon' => 'fas fa-fw fa-file-upload',
+                ],
+                [
                     'text' => 'Bobot Nilai',
                     'route' => 'admin.nilai-seleksi.bobot',
                     'icon' => 'fas fa-fw fa-balance-scale',

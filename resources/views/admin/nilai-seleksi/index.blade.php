@@ -87,7 +87,7 @@
 
     <!-- Menu Cards -->
     <div class="row">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <a href="{{ route('admin.nilai-seleksi.bobot') }}" class="text-decoration-none">
                 <div class="card bg-gradient-light">
                     <div class="card-body text-center py-4">
@@ -98,7 +98,18 @@
                 </div>
             </a>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
+            <a href="{{ route('admin.nilai-seleksi.upload') }}" class="text-decoration-none">
+                <div class="card bg-gradient-light">
+                    <div class="card-body text-center py-4">
+                        <i class="fas fa-file-upload fa-3x text-warning mb-3"></i>
+                        <h5>Upload Nilai</h5>
+                        <p class="text-muted mb-0">Upload nilai dari Excel Lembar Penilaian</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
             <a href="{{ route('admin.nilai-seleksi.rekap') }}" class="text-decoration-none">
                 <div class="card bg-gradient-light">
                     <div class="card-body text-center py-4">
@@ -109,7 +120,7 @@
                 </div>
             </a>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <a href="{{ route('admin.sesi-ujian.index') }}" class="text-decoration-none">
                 <div class="card bg-gradient-light">
                     <div class="card-body text-center py-4">

@@ -9,7 +9,9 @@ use App\Models\NilaiSeleksi;
 use App\Models\BobotNilaiSeleksi;
 use App\Models\TahunPelajaran;
 use App\Models\CalonSiswa;
+use App\Models\JadwalUjian;
 use App\Models\ActivityLog;
+use App\Imports\NilaiPenilaianImport;
 use App\Services\EmailNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -229,6 +231,114 @@ class NilaiSeleksiController extends Controller
             'tahunPelajarans',
             'jalurs'
         ));
+    }
+
+    /**
+     * Upload Nilai - Halaman dedicated untuk upload & manajemen nilai
+     */
+    public function uploadNilai(Request $request)
+    {
+        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+
+        // Get jadwal ujian dengan sesi yang sudah locked/in_progress
+        $jadwalList = JadwalUjian::with(['tahunPelajaran', 'jalurPendaftaran', 'gelombangPendaftaran'])
+            ->where('tahun_pelajaran_id', $tahunAktif?->id)
+            ->whereIn('status', ['locked', 'preview'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Bobot nilai aktif
+        $bobotList = BobotNilaiSeleksi::where('tahun_pelajaran_id', $tahunAktif?->id)
+            ->where('is_active', true)
+            ->orderBy('urutan')
+            ->get();
+
+        // Get semua nilai seleksi (filterable)
+        $nilaiQuery = NilaiSeleksi::with(['calonSiswa', 'penguji', 'ruangUjian', 'sesiUjian.jalur'])
+            ->whereHas('sesiUjian', function ($q) use ($tahunAktif) {
+                $q->where('tahun_pelajaran_id', $tahunAktif?->id);
+            });
+
+        // Filter by jadwal
+        if ($request->jadwal_id) {
+            $jadwal = JadwalUjian::find($request->jadwal_id);
+            if ($jadwal) {
+                $sesiIds = $jadwal->sesiUjian()->pluck('id');
+                $nilaiQuery->whereIn('sesi_ujian_id', $sesiIds);
+            }
+        }
+
+        // Filter by status
+        if ($request->status) {
+            $nilaiQuery->where('status', $request->status);
+        }
+
+        // Search by name/nomor tes
+        if ($request->search) {
+            $search = $request->search;
+            $nilaiQuery->whereHas('calonSiswa', function ($q) use ($search) {
+                $q->where('nama_lengkap', 'like', "%{$search}%")
+                  ->orWhere('nomor_tes', 'like', "%{$search}%");
+            });
+        }
+
+        $nilaiList = $nilaiQuery->orderBy('updated_at', 'desc')->paginate(25)->withQueryString();
+
+        // Stats
+        $allNilaiQuery = NilaiSeleksi::whereHas('sesiUjian', function ($q) use ($tahunAktif) {
+            $q->where('tahun_pelajaran_id', $tahunAktif?->id);
+        });
+        $stats = [
+            'total' => (clone $allNilaiQuery)->count(),
+            'draft' => (clone $allNilaiQuery)->where('status', 'draft')->count(),
+            'submitted' => (clone $allNilaiQuery)->where('status', 'submitted')->count(),
+            'verified' => (clone $allNilaiQuery)->where('status', 'verified')->count(),
+        ];
+
+        return view('admin.nilai-seleksi.upload', compact(
+            'jadwalList',
+            'bobotList',
+            'nilaiList',
+            'stats',
+            'tahunAktif'
+        ));
+    }
+
+    /**
+     * Process Upload Nilai dari Excel Lembar Penilaian
+     */
+    public function processUpload(Request $request)
+    {
+        $request->validate([
+            'jadwal_id' => 'required|exists:jadwal_ujian,id',
+            'file_nilai' => 'required|file|mimes:xlsx,xls|max:10240',
+        ], [
+            'jadwal_id.required' => 'Jadwal ujian wajib dipilih.',
+            'file_nilai.required' => 'File Excel wajib dipilih.',
+            'file_nilai.mimes' => 'File harus berformat .xlsx atau .xls.',
+            'file_nilai.max' => 'Ukuran file maksimal 10MB.',
+        ]);
+
+        try {
+            $jadwal = JadwalUjian::findOrFail($request->jadwal_id);
+            $file = $request->file('file_nilai');
+            $importer = new NilaiPenilaianImport($jadwal);
+            $result = $importer->import($file->getRealPath());
+
+            $message = "Import selesai: <strong>{$result['imported']}</strong> baru, <strong>{$result['updated']}</strong> diupdate, <strong>{$result['skipped']}</strong> dilewati.";
+
+            if (!empty($result['errors'])) {
+                return redirect()->route('admin.nilai-seleksi.upload')
+                    ->with('warning', $message)
+                    ->with('import_errors', $result['errors']);
+            }
+
+            return redirect()->route('admin.nilai-seleksi.upload')
+                ->with('success', $message);
+        } catch (\Exception $e) {
+            return redirect()->route('admin.nilai-seleksi.upload')
+                ->with('error', 'Gagal import: ' . $e->getMessage());
+        }
     }
 
     /**

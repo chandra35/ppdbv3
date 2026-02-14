@@ -42,27 +42,10 @@
     <i class="fas fa-check-circle mr-2"></i>{!! session('success') !!}
 </div>
 @endif
-@if(session('warning'))
-<div class="alert alert-warning alert-dismissible fade show">
-    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
-    <i class="fas fa-exclamation-triangle mr-2"></i>{!! session('warning') !!}
-</div>
-@endif
 @if(session('error'))
 <div class="alert alert-danger alert-dismissible fade show">
     <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
     <i class="fas fa-times-circle mr-2"></i>{!! session('error') !!}
-</div>
-@endif
-@if(session('import_errors'))
-<div class="alert alert-warning alert-dismissible fade show">
-    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
-    <i class="fas fa-exclamation-triangle mr-2"></i><strong>Detail Error Import:</strong>
-    <ul class="mb-0 mt-1">
-        @foreach(session('import_errors') as $err)
-            <li>{{ $err }}</li>
-        @endforeach
-    </ul>
 </div>
 @endif
 
@@ -228,13 +211,13 @@
             </div>
         </div>
 
-        {{-- Import Nilai --}}
+        {{-- Link ke Upload Nilai --}}
         <h6 class="mb-2 mt-3"><i class="fas fa-file-upload text-primary mr-2"></i>Import Data</h6>
         <div class="row">
             <div class="col-md-6">
-                <button type="button" class="btn btn-primary btn-block btn-print" data-toggle="modal" data-target="#importNilaiModal">
+                <a href="{{ route('admin.nilai-seleksi.upload') }}" class="btn btn-primary btn-block btn-print">
                     <i class="fas fa-file-upload mr-2"></i>Upload Nilai dari Excel Penilaian
-                </button>
+                </a>
             </div>
         </div>
     </div>
@@ -719,70 +702,12 @@
         </div>
     </div>
 </div>
-
-{{-- Import Nilai Modal --}}
-<div class="modal fade" id="importNilaiModal" tabindex="-1" role="dialog" aria-labelledby="importNilaiModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <form method="POST" action="{{ route('admin.penjadwalan-ujian.import.nilai', $jadwal) }}" enctype="multipart/form-data">
-                @csrf
-                <div class="modal-header bg-primary">
-                    <h5 class="modal-title" id="importNilaiModalLabel">
-                        <i class="fas fa-file-upload mr-2"></i>Upload Nilai dari Excel Penilaian
-                    </h5>
-                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle mr-2"></i>
-                        <strong>Format yang diterima:</strong> File Excel (.xlsx / .xls) hasil export <strong>Lembar Penilaian</strong> yang sudah diisi nilai oleh penguji.
-                    </div>
-                    <div class="form-group">
-                        <label for="file_nilai"><strong>Pilih File Excel</strong></label>
-                        <div class="custom-file">
-                            <input type="file" class="custom-file-input" id="file_nilai" name="file_nilai" accept=".xlsx,.xls" required>
-                            <label class="custom-file-label" for="file_nilai" data-browse="Pilih File">Belum ada file dipilih...</label>
-                        </div>
-                        <small class="form-text text-muted">Maksimal 10MB. Format: .xlsx atau .xls</small>
-                    </div>
-                    <div class="callout callout-warning py-2 px-3">
-                        <small>
-                            <i class="fas fa-exclamation-triangle mr-1"></i>
-                            <strong>Perhatian:</strong> Nilai yang sudah ada akan di-<em>update</em> dengan data dari file. Pastikan file yang diupload sudah benar.
-                        </small>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                        <i class="fas fa-times mr-1"></i>Batal
-                    </button>
-                    <button type="submit" class="btn btn-primary" id="btnImportNilai">
-                        <i class="fas fa-upload mr-1"></i>Upload & Import
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 @stop
 
 @section('js')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script>
 $(document).ready(function() {
-    // Custom file input label
-    $('.custom-file-input').on('change', function() {
-        var fileName = $(this).val().split('\\').pop();
-        $(this).next('.custom-file-label').html(fileName);
-    });
-
-    // Import form submit loading
-    $('#importNilaiModal form').on('submit', function() {
-        $('#btnImportNilai').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Mengimport...');
-    });
-
     // Search peserta
     $('#searchPeserta').on('keyup', function() {
         var value = $(this).val().toLowerCase();

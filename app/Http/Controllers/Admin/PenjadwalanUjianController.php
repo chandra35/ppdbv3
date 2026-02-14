@@ -1142,43 +1142,6 @@ class PenjadwalanUjianController extends Controller
     }
 
     /**
-     * Import Nilai dari Excel Lembar Penilaian
-     */
-    public function importNilai(Request $request, JadwalUjian $jadwalUjian)
-    {
-        $request->validate([
-            'file_nilai' => 'required|file|mimes:xlsx,xls|max:10240',
-        ], [
-            'file_nilai.required' => 'File Excel wajib dipilih.',
-            'file_nilai.mimes' => 'File harus berformat .xlsx atau .xls.',
-            'file_nilai.max' => 'Ukuran file maksimal 10MB.',
-        ]);
-
-        try {
-            $file = $request->file('file_nilai');
-            $importer = new \App\Imports\NilaiPenilaianImport($jadwalUjian);
-            $result = $importer->import($file->getRealPath());
-
-            $message = "Import selesai: {$result['imported']} baru, {$result['updated']} diupdate, {$result['skipped']} dilewati.";
-
-            if (!empty($result['errors'])) {
-                $errorList = implode("\n", array_slice($result['errors'], 0, 10));
-                $remaining = count($result['errors']) - 10;
-                if ($remaining > 0) {
-                    $errorList .= "\n...dan {$remaining} error lainnya.";
-                }
-                return back()
-                    ->with('warning', $message)
-                    ->with('import_errors', $result['errors']);
-            }
-
-            return back()->with('success', $message);
-        } catch (\Exception $e) {
-            return back()->with('error', 'Gagal import: ' . $e->getMessage());
-        }
-    }
-
-    /**
      * PDF Lembar Penilaian (per ruang)
      */
     public function pdfLembarPenilaian(JadwalUjian $jadwalUjian)
