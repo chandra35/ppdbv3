@@ -69,16 +69,11 @@
             margin-bottom: 1px;
             opacity: 0.9;
         }
-        .room-banner .exam-type {
-            font-size: 12px;
+        .room-banner .exam-date {
+            font-size: 11px;
             font-weight: bold;
             margin-bottom: 2px;
-        }
-        .room-banner .exam-type.cbt { color: #90EE90; }
-        .room-banner .exam-type.wawancara { color: #FFD700; }
-        .room-banner p {
-            font-size: 9px;
-            opacity: 0.9;
+            color: #ffffff;
         }
         
         /* Stats Box */
@@ -194,8 +189,7 @@
         <div class="room-banner">
             <div class="sesi-label">RUANG SESI {{ $room['sesi'] }}</div>
             <h2>{{ strtoupper($room['nama']) }}</h2>
-            <div class="exam-type {{ $room['jenis'] }}">{{ strtoupper($room['jenis']) }}</div>
-            <p>{{ $jadwal->tanggal_ujian->translatedFormat('l, d F Y') }} | {{ $room['waktu'] }}</p>
+            <div class="exam-date">{{ $jadwal->tanggal_ujian->translatedFormat('l, d F Y') }} | {{ $room['waktu'] }}</div>
         </div>
 
         {{-- Room Stats --}}
