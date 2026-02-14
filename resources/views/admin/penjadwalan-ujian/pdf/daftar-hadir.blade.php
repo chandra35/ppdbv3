@@ -83,7 +83,7 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 4px;
-            font-size: 11px;
+            font-size: 10px;
         }
         table.attendance th {
             background: #f0f0f0;
@@ -111,7 +111,7 @@
             width: 90px; 
             text-align: center;
             font-family: 'Courier New', monospace;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: bold;
             white-space: nowrap;
         }
@@ -120,7 +120,7 @@
             max-width: 150px;
             text-align: left; 
             padding-left: 4px;
-            font-size: 11px;
+            font-size: 10px;
         }
         table.attendance .col-jk { 
             width: 18px; 
@@ -129,7 +129,7 @@
         table.attendance .col-asal { 
             width: 130px;
             max-width: 130px;
-            font-size: 10px;
+            font-size: 9px;
             padding: 2px;
         }
         /* TTD Zigzag: rowspan bergantian */
