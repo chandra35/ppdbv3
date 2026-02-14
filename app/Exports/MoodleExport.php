@@ -15,6 +15,7 @@ class MoodleExport implements FromArray, WithHeadings, WithStyles, WithColumnWid
 {
     protected JadwalUjian $jadwalUjian;
     protected string $tahunShort;
+    protected int $cohortCount = 1;
 
     public function __construct(JadwalUjian $jadwalUjian, string $tahunShort)
     {
@@ -24,20 +25,50 @@ class MoodleExport implements FromArray, WithHeadings, WithStyles, WithColumnWid
 
     public function headings(): array
     {
-        return [
+        $headers = [
             'firstname',
             'lastname',
             'username',
             'password',
             'email',
-            'cohort1',
         ];
+
+        for ($i = 1; $i <= $this->cohortCount; $i++) {
+            $headers[] = 'cohort' . $i;
+        }
+
+        return $headers;
     }
 
     public function array(): array
     {
+        $studentData = $this->buildStudentData();
+
         $rows = [];
-        $processedUsers = [];
+        foreach ($studentData as $data) {
+            $row = [
+                $data['firstname'],
+                $data['lastname'],
+                $data['username'],
+                $data['password'],
+                $data['email'],
+            ];
+            // Pad cohorts to match cohortCount columns
+            for ($i = 0; $i < $this->cohortCount; $i++) {
+                $row[] = $data['cohorts'][$i] ?? '';
+            }
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Build unique student data with all their cohorts collected
+     */
+    protected function buildStudentData(): array
+    {
+        $students = []; // keyed by calon_siswa_id
 
         foreach ($this->jadwalUjian->sesiUjian as $sesi) {
             $cohort = 'ppdb' . $this->tahunShort . '_s' . $sesi->nomor_sesi;
@@ -54,26 +85,32 @@ class MoodleExport implements FromArray, WithHeadings, WithStyles, WithColumnWid
                     $cs = $pr->calonSiswa;
                     if (!$cs) continue;
 
-                    $key = $cs->id . '_' . $sesi->nomor_sesi;
-                    if (isset($processedUsers[$key])) continue;
-                    $processedUsers[$key] = true;
+                    if (!isset($students[$cs->id])) {
+                        $user = $cs->user;
+                        $password = $user?->readable_password ?? ($cs->nisn ?? 'ppdb' . $this->tahunShort);
 
-                    $user = $cs->user;
-                    $password = $user?->readable_password ?? ($cs->nisn ?? 'ppdb' . $this->tahunShort);
+                        $students[$cs->id] = [
+                            'firstname' => $cs->nama_lengkap ?? '',
+                            'lastname' => 'PPDB ' . $this->tahunShort,
+                            'username' => $cs->nisn ?? '',
+                            'password' => $password,
+                            'email' => $cs->email ?? ($cs->nisn . '@ppdb.local'),
+                            'cohorts' => [],
+                        ];
+                    }
 
-                    $rows[] = [
-                        $cs->nama_lengkap ?? '',
-                        'PPDB ' . $this->tahunShort,
-                        $cs->nisn ?? '',
-                        $password,
-                        $cs->email ?? ($cs->nisn . '@ppdb.local'),
-                        $cohort,
-                    ];
+                    // Add cohort if not already added
+                    if (!in_array($cohort, $students[$cs->id]['cohorts'])) {
+                        $students[$cs->id]['cohorts'][] = $cohort;
+                    }
                 }
             }
         }
 
-        return $rows;
+        // Determine max cohort count
+        $this->cohortCount = max(1, ...array_map(fn($s) => count($s['cohorts']), $students));
+
+        return array_values($students);
     }
 
     public function styles(Worksheet $sheet): array

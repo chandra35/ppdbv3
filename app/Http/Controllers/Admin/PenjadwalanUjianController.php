@@ -1064,17 +1064,8 @@ class PenjadwalanUjianController extends Controller
             // BOM for Excel UTF-8 compatibility
             fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-            // Moodle standard CSV header
-            fputcsv($file, [
-                'firstname',
-                'lastname',
-                'username',
-                'password',
-                'email',
-                'cohort1',
-            ]);
-
-            $processedUsers = []; // avoid duplicates (same student in multiple sesi)
+            // Collect unique students with their cohorts
+            $students = [];
 
             foreach ($jadwalUjian->sesiUjian as $sesi) {
                 $cohort = 'ppdb' . $tahunShort . '_s' . $sesi->nomor_sesi;
@@ -1091,24 +1082,50 @@ class PenjadwalanUjianController extends Controller
                         $cs = $pr->calonSiswa;
                         if (!$cs) continue;
 
-                        // Skip if already exported (student may be in CBT + Wawancara sesi)
-                        $key = $cs->id . '_' . $sesi->nomor_sesi;
-                        if (isset($processedUsers[$key])) continue;
-                        $processedUsers[$key] = true;
+                        if (!isset($students[$cs->id])) {
+                            $user = $cs->user;
+                            $password = $user?->readable_password ?? ($cs->nisn ?? 'ppdb' . $tahunShort);
 
-                        $user = $cs->user;
-                        $password = $user?->readable_password ?? ($cs->nisn ?? 'ppdb' . $tahunShort);
+                            $students[$cs->id] = [
+                                'firstname' => $cs->nama_lengkap ?? '',
+                                'lastname' => 'PPDB ' . $tahunShort,
+                                'username' => $cs->nisn ?? '',
+                                'password' => $password,
+                                'email' => $cs->email ?? ($cs->nisn . '@ppdb.local'),
+                                'cohorts' => [],
+                            ];
+                        }
 
-                        fputcsv($file, [
-                            $cs->nama_lengkap ?? '',                    // firstname
-                            'PPDB ' . $tahunShort,                     // lastname
-                            $cs->nisn ?? '',                           // username
-                            $password,                                 // password
-                            $cs->email ?? ($cs->nisn . '@ppdb.local'), // email
-                            $cohort,                                   // cohort1
-                        ]);
+                        if (!in_array($cohort, $students[$cs->id]['cohorts'])) {
+                            $students[$cs->id]['cohorts'][] = $cohort;
+                        }
                     }
                 }
+            }
+
+            // Determine max cohort columns
+            $maxCohorts = max(1, ...array_map(fn($s) => count($s['cohorts']), $students ?: [['cohorts' => []]]));
+
+            // CSV header
+            $header = ['firstname', 'lastname', 'username', 'password', 'email'];
+            for ($i = 1; $i <= $maxCohorts; $i++) {
+                $header[] = 'cohort' . $i;
+            }
+            fputcsv($file, $header);
+
+            // CSV rows
+            foreach ($students as $data) {
+                $row = [
+                    $data['firstname'],
+                    $data['lastname'],
+                    $data['username'],
+                    $data['password'],
+                    $data['email'],
+                ];
+                for ($i = 0; $i < $maxCohorts; $i++) {
+                    $row[] = $data['cohorts'][$i] ?? '';
+                }
+                fputcsv($file, $row);
             }
 
             fclose($file);
