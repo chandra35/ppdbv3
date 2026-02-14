@@ -53,7 +53,7 @@
             margin-bottom: 6px;
             border: 2px solid #333;
             border-radius: 8px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: #2c3e50;
             color: #fff;
             position: relative;
         }
@@ -62,18 +62,19 @@
             font-size: 26px;
             margin: 2px 0 2px;
             letter-spacing: 3px;
+            color: #ffffff;
         }
         .room-banner .sesi-label {
             font-size: 11px;
             font-weight: bold;
             margin-bottom: 1px;
-            opacity: 0.9;
+            color: #dddddd;
         }
         .room-banner .exam-date {
             font-size: 11px;
             font-weight: bold;
             margin-bottom: 2px;
-            color: #ffffff;
+            color: #dddddd;
         }
         
         /* Stats Box */
