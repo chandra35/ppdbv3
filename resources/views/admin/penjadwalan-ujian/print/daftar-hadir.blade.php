@@ -188,7 +188,10 @@
             <div>
                 <strong>Sesi {{ $ruang['sesi'] }}</strong> | 
                 {{ $ruang['waktu_mulai'] }} - {{ $ruang['waktu_selesai'] }} |
-                Kapasitas: {{ count($ruang['peserta']) }}/{{ $ruang['kapasitas'] }}
+                Peserta: {{ count($ruang['peserta']) }}/{{ $ruang['kapasitas'] }}
+                @if(count($ruang['peserta']) > $ruang['kapasitas'])
+                    <span style="color: #dc3545; font-weight: bold;"> (overflow +{{ count($ruang['peserta']) - $ruang['kapasitas'] }})</span>
+                @endif
             </div>
         </div>
         
@@ -230,11 +233,55 @@
                 Hadir: ___ orang | Tidak Hadir: ___ orang<br>
                 <small>Dicetak: {{ now()->isoFormat('D MMMM Y, HH:mm') }}</small>
             </div>
-            <div class="ttd-section">
-                <div class="ttd-line">
-                    Pengawas Ruang
+            @php
+                $petugasList = $room['penguji'] ?? collect();
+                if ($room['jenis'] === 'cbt') {
+                    $pengawas = is_object($petugasList) ? $petugasList->where('peran', 'pengawas')->first() : null;
+                    $proktor = is_object($petugasList) ? $petugasList->where('peran', 'proktor')->first() : null;
+                } else {
+                    $pengujiWaw = is_object($petugasList) ? $petugasList->where('peran', 'penguji')->first() : null;
+                    if (!$pengujiWaw && is_object($petugasList)) $pengujiWaw = $petugasList->first();
+                }
+            @endphp
+            @if($room['jenis'] === 'cbt')
+            <div style="display: flex; justify-content: flex-end; gap: 30mm;">
+                <div class="ttd-section">
+                    <div class="ttd-line">
+                        Pengawas<br>
+                        <strong>{{ $pengawas->user->name ?? '........................' }}</strong>
+                    </div>
+                </div>
+                <div class="ttd-section">
+                    <div class="ttd-line">
+                        Proktor<br>
+                        <strong>{{ $proktor->user->name ?? '........................' }}</strong>
+                    </div>
+                </div>
+                <div class="ttd-section">
+                    <div style="margin-bottom: 2mm; font-size: 8pt;">Mengetahui,</div>
+                    <div class="ttd-line">
+                        Ketua Panitia<br>
+                        <strong>{{ (isset($ketuaPanitia) && $ketuaPanitia) ? $ketuaPanitia->name : '........................' }}</strong>
+                    </div>
                 </div>
             </div>
+            @else
+            <div style="display: flex; justify-content: flex-end; gap: 40mm;">
+                <div class="ttd-section">
+                    <div class="ttd-line">
+                        Penguji<br>
+                        <strong>{{ $pengujiWaw->user->name ?? '........................' }}</strong>
+                    </div>
+                </div>
+                <div class="ttd-section">
+                    <div style="margin-bottom: 2mm; font-size: 8pt;">Mengetahui,</div>
+                    <div class="ttd-line">
+                        Ketua Panitia<br>
+                        <strong>{{ (isset($ketuaPanitia) && $ketuaPanitia) ? $ketuaPanitia->name : '........................' }}</strong>
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
     </div>
     @endforeach

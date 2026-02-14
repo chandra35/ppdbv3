@@ -9,6 +9,7 @@ use App\Models\PesertaRuang;
 use App\Models\PengujiRuang;
 use App\Models\NilaiSeleksi;
 use App\Models\BobotNilaiSeleksi;
+use App\Models\CalonSiswa;
 use App\Models\CalonDokumen;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -259,5 +260,101 @@ class DashboardController extends Controller
         return redirect()
             ->route('penguji.ruangan', $ruangUjian->id)
             ->with('success', $message);
+    }
+
+    /**
+     * Cari peserta susulan (AJAX) - pendaftar yang sudah finalisasi tapi belum di ruangan ini
+     */
+    public function cariPeserta(Request $request, RuangUjian $ruangUjian)
+    {
+        $user = Auth::user();
+
+        // Check if penguji is assigned
+        $isAssigned = PengujiRuang::where('user_id', $user->id)
+            ->where('ruang_ujian_id', $ruangUjian->id)
+            ->where('is_active', true)
+            ->exists();
+
+        if (!$isAssigned) {
+            return response()->json([], 403);
+        }
+
+        $q = $request->get('q', '');
+        if (strlen($q) < 2) {
+            return response()->json([]);
+        }
+
+        $sesiUjian = $ruangUjian->sesiUjian;
+
+        // Pendaftar yang sudah ada di sesi ini
+        $sudahDiAssign = PesertaRuang::where('sesi_ujian_id', $sesiUjian->id)
+            ->pluck('calon_siswa_id');
+
+        $results = CalonSiswa::where('is_finalisasi', true)
+            ->where(function ($query) use ($q) {
+                $query->where('nama_lengkap', 'LIKE', "%{$q}%")
+                    ->orWhere('nisn', 'LIKE', "%{$q}%")
+                    ->orWhere('no_pendaftaran', 'LIKE', "%{$q}%")
+                    ->orWhere('nomor_tes', 'LIKE', "%{$q}%");
+            })
+            ->whereNotIn('id', $sudahDiAssign)
+            ->limit(10)
+            ->get(['id', 'nama_lengkap', 'nisn', 'no_pendaftaran', 'nomor_tes', 'jenis_kelamin']);
+
+        return response()->json($results);
+    }
+
+    /**
+     * Tambah peserta susulan ke ruangan
+     */
+    public function tambahPeserta(Request $request, RuangUjian $ruangUjian)
+    {
+        $user = Auth::user();
+
+        // Check if penguji is assigned
+        $isAssigned = PengujiRuang::where('user_id', $user->id)
+            ->where('ruang_ujian_id', $ruangUjian->id)
+            ->where('is_active', true)
+            ->exists();
+
+        if (!$isAssigned) {
+            return redirect()->route('penguji.dashboard')
+                ->with('error', 'Anda tidak memiliki akses ke ruangan ini.');
+        }
+
+        $request->validate([
+            'calon_siswa_id' => 'required|exists:calon_siswas,id',
+        ]);
+
+        $sesiUjian = $ruangUjian->sesiUjian;
+
+        // Cek sudah terdaftar
+        $exists = PesertaRuang::where('sesi_ujian_id', $sesiUjian->id)
+            ->where('calon_siswa_id', $request->calon_siswa_id)
+            ->exists();
+
+        if ($exists) {
+            return back()->with('error', 'Peserta sudah terdaftar di sesi ini.');
+        }
+
+        // Nomor urut berikutnya
+        $lastUrut = PesertaRuang::where('ruang_ujian_id', $ruangUjian->id)
+            ->max('nomor_urut') ?? 0;
+
+        PesertaRuang::create([
+            'sesi_ujian_id' => $sesiUjian->id,
+            'ruang_ujian_id' => $ruangUjian->id,
+            'calon_siswa_id' => $request->calon_siswa_id,
+            'nomor_urut' => $lastUrut + 1,
+        ]);
+
+        // Update jumlah peserta
+        $ruangUjian->update([
+            'jumlah_peserta' => PesertaRuang::where('ruang_ujian_id', $ruangUjian->id)->count(),
+        ]);
+
+        $nama = CalonSiswa::find($request->calon_siswa_id)->nama_lengkap ?? '';
+
+        return back()->with('success', "Peserta susulan {$nama} berhasil ditambahkan.");
     }
 }

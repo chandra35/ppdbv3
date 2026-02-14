@@ -3,6 +3,7 @@
 @section('title', 'Ruangan ' . $ruangUjian->nama_ruang)
 
 @section('css')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 <style>
     .peserta-card {
         transition: all 0.3s ease;
@@ -151,6 +152,46 @@
         </div>
     </div>
 
+    <!-- Peserta Susulan -->
+    <div class="card card-outline card-info">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-user-plus mr-2"></i>Tambah Peserta Susulan</h3>
+            <div class="card-tools">
+                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <p class="text-muted small mb-2">Cari pendaftar berdasarkan nama, NISN, no. pendaftaran, atau nomor tes.</p>
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <input type="text" id="searchSusulan" class="form-control" placeholder="Ketik minimal 2 karakter...">
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-info" id="btnSearchSusulan">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="hasilCariSusulan" class="mt-3" style="display:none;">
+                <table class="table table-sm table-bordered">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Nomor Tes</th>
+                            <th>Nama</th>
+                            <th>NISN</th>
+                            <th width="100"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="listSusulan"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <!-- Daftar Peserta -->
     <div class="card">
         <div class="card-header">
@@ -260,6 +301,7 @@
 
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script>
 $(document).ready(function() {
     // Progress Chart
@@ -286,6 +328,54 @@ $(document).ready(function() {
             }
         }
     });
+
+    // ========== Peserta Susulan ==========
+    var searchTimer;
+    
+    function cariPesertaSusulan() {
+        var q = $('#searchSusulan').val().trim();
+        if (q.length < 2) {
+            $('#hasilCariSusulan').hide();
+            return;
+        }
+
+        $.get('{{ route("penguji.cari-peserta", $ruangUjian->id) }}', { q: q }, function(data) {
+            var tbody = $('#listSusulan');
+            tbody.empty();
+
+            if (data.length === 0) {
+                tbody.html('<tr><td colspan="4" class="text-center text-muted">Tidak ditemukan</td></tr>');
+            } else {
+                data.forEach(function(item) {
+                    tbody.append(
+                        '<tr>' +
+                            '<td>' + (item.nomor_tes || '-') + '</td>' +
+                            '<td>' + item.nama_lengkap + '</td>' +
+                            '<td>' + (item.nisn || '-') + '</td>' +
+                            '<td class="text-center">' +
+                                '<form method="POST" action="{{ route("penguji.tambah-peserta", $ruangUjian->id) }}" class="d-inline">' +
+                                    '@csrf' +
+                                    '<input type="hidden" name="calon_siswa_id" value="' + item.id + '">' +
+                                    '<button type="submit" class="btn btn-xs btn-success" onclick="return confirm(\'Tambahkan ' + item.nama_lengkap + '?\')">' +
+                                        '<i class="fas fa-plus"></i> Tambah' +
+                                    '</button>' +
+                                '</form>' +
+                            '</td>' +
+                        '</tr>'
+                    );
+                });
+            }
+
+            $('#hasilCariSusulan').show();
+        });
+    }
+
+    $('#searchSusulan').on('keyup', function() {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(cariPesertaSusulan, 400);
+    });
+
+    $('#btnSearchSusulan').on('click', cariPesertaSusulan);
 });
 </script>
 @stop

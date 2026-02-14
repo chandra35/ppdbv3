@@ -68,7 +68,18 @@ class PenjadwalanUjianController extends Controller
             'prefix_ruang_wawancara' => 'Ruang Wawancara',
             'jalur_id' => null,
             'gelombang_id' => null,
+            'max_sesi' => null,
+            'ketua_panitia_id' => null,
         ]);
+
+        // Get users for ketua panitia selection
+        $pengujiList = User::with('roles')
+            ->whereHas('roles', function($query) {
+                $query->whereIn('name', ['penguji', 'admin', 'verifikator', 'super-admin', 'mas-admin']);
+            })
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
 
         return view('admin.penjadwalan-ujian.index', compact(
             'tahunPelajaranList',
@@ -77,7 +88,8 @@ class PenjadwalanUjianController extends Controller
             'gelombangList',
             'totalPeserta',
             'settings',
-            'existingJadwal'
+            'existingJadwal',
+            'pengujiList'
         ));
     }
 
@@ -103,7 +115,7 @@ class PenjadwalanUjianController extends Controller
             'tanggal_ujian', 'jam_mulai', 'jeda_sesi', 'mode',
             'jumlah_ruang_cbt', 'kapasitas_cbt', 'durasi_cbt', 'prefix_ruang_cbt',
             'jumlah_ruang_wawancara', 'kapasitas_wawancara', 'durasi_wawancara', 'prefix_ruang_wawancara',
-            'jalur_id', 'gelombang_id', 'tahun_pelajaran_id'
+            'jalur_id', 'gelombang_id', 'tahun_pelajaran_id', 'max_sesi', 'ketua_panitia_id'
         ])]);
 
         $tahunAktif = $request->tahun_pelajaran_id 
@@ -141,11 +153,69 @@ class PenjadwalanUjianController extends Controller
             }
         }
 
+        // Max sesi validation
+        $maxSesi = $request->max_sesi ? (int) $request->max_sesi : null;
+
+        // Calculate unrestricted sesi count for warning
+        if ($maxSesi) {
+            if ($mode === 'queue') {
+                // Rough estimate - can't easily pre-calc queue mode exact sesi count
+                $sesiTanpaBatas = null; // will be filled after generation
+            } else {
+                $pesertaPerPutaran = $kapasitasParalel * 2;
+                $jumlahPutaranTanpaBatas = ceil($totalPeserta / max(1, $pesertaPerPutaran));
+                $sesiTanpaBatas = $jumlahPutaranTanpaBatas * 2;
+            }
+        }
+
         // Generate schedule based on mode
         if ($mode === 'queue') {
             $schedule = $this->generateQueueSchedule($pesertaList, $request->all());
         } else {
             $schedule = $this->generateSchedule($pesertaList, $request->all(), $kapasitasParalel);
+        }
+
+        // Add warning if max_sesi limits cause overflow into last rooms
+        $totalTerjadwal = count($schedule['peserta'] ?? []);
+        if ($maxSesi) {
+            $actualSesiCount = count($schedule['sesi']);
+            // For swap mode, use pre-calculated estimate
+            if ($mode !== 'queue' && isset($sesiTanpaBatas) && $sesiTanpaBatas > $maxSesi) {
+                $overflow = $totalPeserta - ($kapasitasParalel * 2 * (floor($maxSesi / 2) - 1) + $kapasitasParalel * 2);
+                $overflowPerSesi = $totalPeserta - ($kapasitasParalel * 2 * floor($maxSesi / 2));
+                if ($overflowPerSesi > 0) {
+                    $warnings[] = "Sisa {$overflowPerSesi} peserta akan disisipkan ke ruang terakhir pada putaran akhir. Ruang terakhir akan melebihi kapasitas normal.";
+                }
+            }
+        }
+
+        // General overflow warning — check if any room exceeds capacity
+        if ($totalTerjadwal > 0) {
+            $jumlahRuangCbt = (int) $request->jumlah_ruang_cbt;
+            $kapPerRuangCbt = (int) $request->kapasitas_cbt;
+            $jumlahRuangWaw = (int) $request->jumlah_ruang_wawancara;
+            $kapPerRuangWaw = (int) $request->kapasitas_wawancara;
+
+            // Check overflow in swap mode (last putaran might have more peserta)
+            foreach ($schedule['sesi'] as $nomorSesi => $sesiData) {
+                // CBT overflow check
+                $cbtCount = $sesiData['cbt']['jumlah'];
+                $normalCbtCap = $jumlahRuangCbt * $kapPerRuangCbt;
+                if ($cbtCount > $normalCbtCap) {
+                    $overflow = $cbtCount - $normalCbtCap;
+                    $lastRoomPeserta = $kapPerRuangCbt + $overflow;
+                    $warnings[] = "Sesi {$nomorSesi} CBT: Ruang terakhir menampung {$lastRoomPeserta} peserta ({$kapPerRuangCbt} + {$overflow} overflow).";
+                }
+                // Wawancara overflow check
+                $wawCount = $sesiData['wawancara']['jumlah'];
+                $normalWawCap = $jumlahRuangWaw * $kapPerRuangWaw;
+                if ($wawCount > $normalWawCap) {
+                    $overflow = $wawCount - $normalWawCap;
+                    // Wawancara uses even distribution, so overflow spreads
+                    $perRoom = ceil($wawCount / $jumlahRuangWaw);
+                    $warnings[] = "Sesi {$nomorSesi} Wawancara: Ruang terisi {$perRoom} peserta/ruang (melebihi kapasitas {$kapPerRuangWaw}). Pertimbangkan tambah ruang wawancara.";
+                }
+            }
         }
 
         // Get filter lists
@@ -157,8 +227,17 @@ class PenjadwalanUjianController extends Controller
             'tanggal_ujian', 'jam_mulai', 'jeda_sesi', 'mode',
             'jumlah_ruang_cbt', 'kapasitas_cbt', 'durasi_cbt', 'prefix_ruang_cbt',
             'jumlah_ruang_wawancara', 'kapasitas_wawancara', 'durasi_wawancara', 'prefix_ruang_wawancara',
-            'jalur_id', 'gelombang_id', 'tahun_pelajaran_id'
+            'jalur_id', 'gelombang_id', 'tahun_pelajaran_id', 'max_sesi', 'ketua_panitia_id'
         ]);
+
+        // Get users for ketua panitia selection
+        $pengujiList = User::with('roles')
+            ->whereHas('roles', function($query) {
+                $query->whereIn('name', ['penguji', 'admin', 'verifikator', 'super-admin', 'mas-admin']);
+            })
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
 
         return view('admin.penjadwalan-ujian.index', compact(
             'tahunPelajaranList',
@@ -171,7 +250,8 @@ class PenjadwalanUjianController extends Controller
             'warnings',
             'kapasitasCbt',
             'kapasitasWawancara',
-            'kapasitasParalel'
+            'kapasitasParalel',
+            'pengujiList'
         ));
     }
 
@@ -240,6 +320,7 @@ class PenjadwalanUjianController extends Controller
                 'generated_by' => Auth::id(),
                 'locked_at' => now(),
                 'locked_by' => Auth::id(),
+                'ketua_panitia_id' => $settings['ketua_panitia_id'] ?? null,
             ]);
 
             // Generate schedule based on mode
@@ -255,6 +336,7 @@ class PenjadwalanUjianController extends Controller
 
             // Update jadwal ujian with calculated values
             $jadwalUjian->update([
+                'total_peserta' => count($schedule['peserta']),
                 'total_sesi' => count($schedule['sesi']),
                 'estimasi_selesai' => $schedule['estimasi_selesai'],
             ]);
@@ -348,6 +430,182 @@ class PenjadwalanUjianController extends Controller
     }
 
     /**
+     * Assign petugas (pengawas/proktor/penguji) to room across ALL sesi in jadwal (AJAX)
+     * - CBT rooms: 1 Pengawas + 1 Proktor
+     * - Wawancara rooms: 1 Penguji
+     * Auto-syncs to all sesi that share the same room name
+     */
+    public function assignPetugas(Request $request, JadwalUjian $jadwalUjian)
+    {
+        $request->validate([
+            'nama_ruang' => 'required|string',
+            'jenis_ujian' => 'required|in:cbt,wawancara',
+            'pengawas_id' => 'nullable|exists:users,id',
+            'proktor_id' => 'nullable|exists:users,id',
+            'penguji_id' => 'nullable|exists:users,id',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $namaRuang = $request->nama_ruang;
+            $jenisUjian = $request->jenis_ujian;
+
+            // Find all sesi + ruang matching this room name in this jadwal
+            $sesiList = SesiUjian::where('jadwal_ujian_id', $jadwalUjian->id)
+                ->where('jenis_ujian', $jenisUjian)
+                ->get();
+
+            if ($sesiList->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'Sesi tidak ditemukan.'], 404);
+            }
+
+            // Collect all matching ruang_ujian records
+            $targetRuangs = collect();
+            foreach ($sesiList as $sesi) {
+                $ruangs = RuangUjian::where('sesi_ujian_id', $sesi->id)
+                    ->where('nama_ruang', $namaRuang)
+                    ->get();
+                foreach ($ruangs as $ruang) {
+                    $targetRuangs->push(['sesi' => $sesi, 'ruang' => $ruang]);
+                }
+            }
+
+            if ($targetRuangs->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'Ruang tidak ditemukan.'], 404);
+            }
+
+            // Check duplicate: same user assigned to another room name in this jadwal
+            $allSesiIds = $sesiList->pluck('id')->merge(
+                SesiUjian::where('jadwal_ujian_id', $jadwalUjian->id)->pluck('id')
+            )->unique();
+
+            $userIds = collect([$request->pengawas_id, $request->proktor_id, $request->penguji_id])
+                ->filter()
+                ->unique()
+                ->values();
+
+            if ($userIds->isNotEmpty()) {
+                $duplicates = PengujiRuang::whereIn('sesi_ujian_id', $allSesiIds)
+                    ->whereIn('user_id', $userIds)
+                    ->with(['user', 'ruangUjian'])
+                    ->get()
+                    ->filter(fn($pr) => $pr->ruangUjian && $pr->ruangUjian->nama_ruang !== $namaRuang);
+
+                if ($duplicates->isNotEmpty()) {
+                    $dupNames = $duplicates->unique('user_id')->map(function ($d) {
+                        return ($d->user->name ?? 'Unknown') . ' (sudah di ' . ($d->ruangUjian->nama_ruang ?? '-') . ')';
+                    })->join(', ');
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Gagal: ' . $dupNames . '. Satu orang hanya bisa di satu ruangan.',
+                    ], 422);
+                }
+            }
+
+            // Remove existing assignments for this room name across all sesi
+            foreach ($targetRuangs as $item) {
+                PengujiRuang::where('sesi_ujian_id', $item['sesi']->id)
+                    ->where('ruang_ujian_id', $item['ruang']->id)
+                    ->delete();
+            }
+
+            // Create new assignments for each sesi+ruang combo
+            foreach ($targetRuangs as $item) {
+                $sesi = $item['sesi'];
+                $ruang = $item['ruang'];
+
+                if ($jenisUjian === 'cbt') {
+                    // CBT: 1 Pengawas + 1 Proktor
+                    if ($request->pengawas_id) {
+                        PengujiRuang::create([
+                            'sesi_ujian_id' => $sesi->id,
+                            'ruang_ujian_id' => $ruang->id,
+                            'user_id' => $request->pengawas_id,
+                            'peran' => 'pengawas',
+                            'is_ketua' => false,
+                            'is_active' => true,
+                        ]);
+                    }
+                    if ($request->proktor_id) {
+                        PengujiRuang::create([
+                            'sesi_ujian_id' => $sesi->id,
+                            'ruang_ujian_id' => $ruang->id,
+                            'user_id' => $request->proktor_id,
+                            'peran' => 'proktor',
+                            'is_ketua' => false,
+                            'is_active' => true,
+                        ]);
+                    }
+                } else {
+                    // Wawancara: 1 Penguji
+                    if ($request->penguji_id) {
+                        PengujiRuang::create([
+                            'sesi_ujian_id' => $sesi->id,
+                            'ruang_ujian_id' => $ruang->id,
+                            'user_id' => $request->penguji_id,
+                            'peran' => 'penguji',
+                            'is_ketua' => false,
+                            'is_active' => true,
+                        ]);
+                    }
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Petugas berhasil di-assign ke ' . $namaRuang . ' (' . count($targetRuangs) . ' sesi).',
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal assign petugas: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get current petugas for all rooms in jadwal (AJAX)
+     */
+    public function getPetugasRuang(JadwalUjian $jadwalUjian)
+    {
+        $sesiList = SesiUjian::where('jadwal_ujian_id', $jadwalUjian->id)->get();
+        $result = [];
+
+        foreach ($sesiList as $sesi) {
+            $ruangs = RuangUjian::where('sesi_ujian_id', $sesi->id)->get();
+            foreach ($ruangs as $ruang) {
+                $key = $ruang->nama_ruang . '|' . $sesi->jenis_ujian;
+                if (isset($result[$key])) continue; // Only need one sesi per room name
+
+                $petugas = PengujiRuang::with('user')
+                    ->where('sesi_ujian_id', $sesi->id)
+                    ->where('ruang_ujian_id', $ruang->id)
+                    ->where('is_active', true)
+                    ->get();
+
+                $result[$key] = [
+                    'nama_ruang' => $ruang->nama_ruang,
+                    'jenis_ujian' => $sesi->jenis_ujian,
+                    'pengawas' => $petugas->where('peran', 'pengawas')->first()?->user,
+                    'proktor' => $petugas->where('peran', 'proktor')->first()?->user,
+                    'penguji' => $petugas->where('peran', 'penguji')->first()?->user,
+                ];
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => array_values($result),
+        ]);
+    }
+
+    /**
      * Unlock jadwal (change status from locked to draft)
      */
     public function unlock(JadwalUjian $jadwalUjian)
@@ -428,7 +686,7 @@ class PenjadwalanUjianController extends Controller
      */
     public function printDaftarHadir(JadwalUjian $jadwalUjian, Request $request)
     {
-        $jadwalUjian->load(['tahunPelajaran', 'sesiUjian']);
+        $jadwalUjian->load(['tahunPelajaran', 'sesiUjian', 'ketuaPanitia']);
         
         // Build room list with peserta
         $ruangList = [];
@@ -440,6 +698,11 @@ class PenjadwalanUjianController extends Controller
                 $pesertaRuang = PesertaRuang::with('calonSiswa')
                     ->where('ruang_ujian_id', $ruang->id)
                     ->orderBy('nomor_urut')
+                    ->get();
+
+                $pengujiRuangList = PengujiRuang::with('user')
+                    ->where('ruang_ujian_id', $ruang->id)
+                    ->where('is_active', true)
                     ->get();
                 
                 $ruangList[] = [
@@ -453,15 +716,17 @@ class PenjadwalanUjianController extends Controller
                         'nomor_tes' => $pr->calonSiswa->nomor_tes ?? '-',
                         'nama' => $pr->calonSiswa->nama_lengkap ?? '-',
                     ])->toArray(),
+                    'penguji' => $pengujiRuangList,
                 ];
             }
         }
 
         $sekolah = SekolahSettings::first();
         $jadwal = $jadwalUjian;
+        $ketuaPanitia = $jadwalUjian->ketuaPanitia;
 
         return view('admin.penjadwalan-ujian.print.daftar-hadir', compact(
-            'jadwal', 'ruangList', 'sekolah'
+            'jadwal', 'ruangList', 'sekolah', 'ketuaPanitia'
         ));
     }
 
@@ -470,12 +735,42 @@ class PenjadwalanUjianController extends Controller
      */
     public function printNamaRuang(JadwalUjian $jadwalUjian)
     {
-        $jadwalUjian->load(['tahunPelajaran']);
+        $jadwalUjian->load(['tahunPelajaran', 'sesiUjian.ruangUjian']);
         $sekolah = SekolahSettings::first();
         $jadwal = $jadwalUjian;
 
+        // Collect actual room data across all sesi
+        $cbtRooms = collect();
+        $wawancaraRooms = collect();
+        foreach ($jadwalUjian->sesiUjian as $sesi) {
+            foreach ($sesi->ruangUjian as $ruang) {
+                $roomData = [
+                    'nama_ruang' => $ruang->nama_ruang,
+                    'kapasitas' => $ruang->kapasitas,
+                    'jumlah_peserta' => $ruang->jumlah_peserta,
+                    'nomor_ruang' => $ruang->nomor_ruang,
+                    'overflow' => $ruang->jumlah_peserta > $ruang->kapasitas,
+                ];
+                if ($sesi->jenis_ujian === 'cbt') {
+                    $cbtRooms->push($roomData);
+                } else {
+                    $wawancaraRooms->push($roomData);
+                }
+            }
+        }
+        // Deduplicate rooms (same room appears in multiple sesi) - take max jumlah_peserta
+        $cbtRooms = $cbtRooms->groupBy('nama_ruang')->map(function($group) {
+            $maxRoom = $group->sortByDesc('jumlah_peserta')->first();
+            return $maxRoom;
+        })->sortBy('nomor_ruang')->values();
+
+        $wawancaraRooms = $wawancaraRooms->groupBy('nama_ruang')->map(function($group) {
+            $maxRoom = $group->sortByDesc('jumlah_peserta')->first();
+            return $maxRoom;
+        })->sortBy('nomor_ruang')->values();
+
         return view('admin.penjadwalan-ujian.print.nama-ruang', compact(
-            'jadwal', 'sekolah'
+            'jadwal', 'sekolah', 'cbtRooms', 'wawancaraRooms'
         ));
     }
 
@@ -484,12 +779,13 @@ class PenjadwalanUjianController extends Controller
      */
     public function printJadwalSesi(JadwalUjian $jadwalUjian)
     {
-        $jadwalUjian->load(['tahunPelajaran', 'sesiUjian', 'jadwalPeserta']);
+        $jadwalUjian->load(['tahunPelajaran', 'sesiUjian', 'jadwalPeserta', 'ketuaPanitia']);
         $sekolah = SekolahSettings::first();
         $jadwal = $jadwalUjian;
+        $ketuaPanitia = $jadwalUjian->ketuaPanitia;
 
         return view('admin.penjadwalan-ujian.print.jadwal-sesi', compact(
-            'jadwal', 'sekolah'
+            'jadwal', 'sekolah', 'ketuaPanitia'
         ));
     }
 
@@ -683,7 +979,7 @@ class PenjadwalanUjianController extends Controller
                 'Nama Peserta',
                 'Asal Sekolah',
                 'Grup',
-                'Gelombang',
+                'Putaran',
                 'Sesi CBT',
                 'Waktu CBT',
                 'Ruang CBT',
@@ -741,14 +1037,19 @@ class PenjadwalanUjianController extends Controller
     protected function generateSchedule($pesertaList, $settings, $kapasitasParalel)
     {
         $totalPeserta = $pesertaList->count();
+        $maxSesi = isset($settings['max_sesi']) && $settings['max_sesi'] ? (int) $settings['max_sesi'] : null;
         
-        // Each "gelombang" processes kapasitasParalel × 2 peserta (Grup A + Grup B swap)
+        // Each "putaran" processes kapasitasParalel × 2 peserta (Grup A + Grup B swap)
         // But if paralel can handle more than half of peserta, we only need fewer sesi
-        $pesertaPerGelombang = $kapasitasParalel * 2;
-        $jumlahGelombang = ceil($totalPeserta / $pesertaPerGelombang);
+        $pesertaPerPutaran = $kapasitasParalel * 2;
+        $jumlahPutaran = ceil($totalPeserta / $pesertaPerPutaran);
         
-        // Each gelombang has 2 sesi (for swap)
-        $jumlahSesi = $jumlahGelombang * 2;
+        // Each putaran has 2 sesi (for swap)
+        $jumlahSesi = $jumlahPutaran * 2;
+
+        // Limit putaran if max_sesi is set (each putaran = 2 sesi)
+        $maxPutaran = $maxSesi ? floor($maxSesi / 2) : null;
+        if ($maxPutaran && $maxPutaran < 1) $maxPutaran = 1;
 
         // Calculate time
         $jamMulai = Carbon::parse($settings['tanggal_ujian'] . ' ' . $settings['jam_mulai']);
@@ -762,19 +1063,33 @@ class PenjadwalanUjianController extends Controller
             'estimasi_selesai' => null,
         ];
 
-        $pesertaChunks = $pesertaList->chunk($pesertaPerGelombang);
+        $pesertaChunks = $pesertaList->chunk($pesertaPerPutaran);
+        // If max_sesi limits the putaran count, merge overflow into the last putaran
+        if ($maxPutaran && $pesertaChunks->count() > $maxPutaran) {
+            $chunks = $pesertaChunks->values();
+            $limited = $chunks->take($maxPutaran);
+            $overflow = $chunks->slice($maxPutaran)->flatten(1);
+            
+            if ($overflow->count() > 0) {
+                // Merge overflow peserta into the last allowed putaran
+                $lastIdx = $maxPutaran - 1;
+                $merged = $limited[$lastIdx]->concat($overflow);
+                $limited[$lastIdx] = $merged;
+            }
+            $pesertaChunks = $limited;
+        }
         $currentTime = $jamMulai->copy();
         $sesiCounter = 1;
 
-        foreach ($pesertaChunks as $gelombangIndex => $gelombangPeserta) {
-            $gelombangNum = $gelombangIndex + 1;
+        foreach ($pesertaChunks as $putaranIndex => $putaranPeserta) {
+            $putaranNum = $putaranIndex + 1;
             
             // Split into Grup A (CBT first) and Grup B (Wawancara first)
-            $halfPoint = ceil($gelombangPeserta->count() / 2);
-            $grupA = $gelombangPeserta->take($halfPoint)->values();
-            $grupB = $gelombangPeserta->skip($halfPoint)->values();
+            $halfPoint = ceil($putaranPeserta->count() / 2);
+            $grupA = $putaranPeserta->take($halfPoint)->values();
+            $grupB = $putaranPeserta->skip($halfPoint)->values();
 
-            // Sesi 1 for this gelombang
+            // Sesi 1 for this putaran
             $sesi1Start = $currentTime->copy();
             $sesi1End = $currentTime->copy()->addMinutes($durasiMax);
 
@@ -804,23 +1119,23 @@ class PenjadwalanUjianController extends Controller
                 $ruangIdx = min(floor($idx / $kapasitasCbt), $jumlahRuangCbt - 1);
                 $schedule['peserta'][$peserta->id] = [
                     'grup' => 'A',
-                    'gelombang' => $gelombangNum,
+                    'gelombang' => $putaranNum,
                     'sesi_cbt' => $sesiCounter,
                     'sesi_wawancara' => $sesiCounter + 1,
                     'urut_cbt' => $idx - ($ruangIdx * $kapasitasCbt) + 1,
                     'ruang_cbt_idx' => $ruangIdx,
                 ];
             }
-            // Wawancara: sequential-even (bagi rata, peserta berurutan per ruang)
-            $perRoomWawancaraB = max(1, ceil($grupB->count() / $jumlahRuangWawancara));
+            // Wawancara: sequential fill (room 1 penuh dulu, lalu room 2, dst. Room terakhir sisanya)
+            $kapasitasWaw = (int) $settings['kapasitas_wawancara'];
             foreach ($grupB as $idx => $peserta) {
-                $ruangIdx = min(floor($idx / $perRoomWawancaraB), $jumlahRuangWawancara - 1);
+                $ruangIdx = min(floor($idx / $kapasitasWaw), $jumlahRuangWawancara - 1);
                 $schedule['peserta'][$peserta->id] = [
                     'grup' => 'B',
-                    'gelombang' => $gelombangNum,
+                    'gelombang' => $putaranNum,
                     'sesi_cbt' => $sesiCounter + 1,
                     'sesi_wawancara' => $sesiCounter,
-                    'urut_wawancara' => $idx - ($ruangIdx * $perRoomWawancaraB) + 1,
+                    'urut_wawancara' => $idx - ($ruangIdx * $kapasitasWaw) + 1,
                     'ruang_wawancara_idx' => $ruangIdx,
                 ];
             }
@@ -828,7 +1143,7 @@ class PenjadwalanUjianController extends Controller
             $currentTime = $sesi1End->copy()->addMinutes($jedaSesi);
             $sesiCounter++;
 
-            // Sesi 2 for this gelombang (swap)
+            // Sesi 2 for this putaran (swap)
             $sesi2Start = $currentTime->copy();
             $sesi2End = $currentTime->copy()->addMinutes($durasiMax);
 
@@ -849,11 +1164,10 @@ class PenjadwalanUjianController extends Controller
             ];
 
             // Update peserta mapping for Sesi 2
-            // Wawancara: sequential-even (bagi rata, peserta berurutan per ruang)
-            $perRoomWawancaraA = max(1, ceil($grupA->count() / $jumlahRuangWawancara));
+            // Wawancara: sequential fill (room 1 penuh dulu, lalu room 2, dst. Room terakhir sisanya)
             foreach ($grupA as $idx => $peserta) {
-                $ruangIdx = min(floor($idx / $perRoomWawancaraA), $jumlahRuangWawancara - 1);
-                $schedule['peserta'][$peserta->id]['urut_wawancara'] = $idx - ($ruangIdx * $perRoomWawancaraA) + 1;
+                $ruangIdx = min(floor($idx / $kapasitasWaw), $jumlahRuangWawancara - 1);
+                $schedule['peserta'][$peserta->id]['urut_wawancara'] = $idx - ($ruangIdx * $kapasitasWaw) + 1;
                 $schedule['peserta'][$peserta->id]['ruang_wawancara_idx'] = $ruangIdx;
             }
             // CBT: sequential fill (room 1 penuh dulu, lalu room 2, dst)
@@ -866,10 +1180,10 @@ class PenjadwalanUjianController extends Controller
             $currentTime = $sesi2End->copy()->addMinutes($jedaSesi);
             $sesiCounter++;
 
-            $schedule['gelombang'][$gelombangNum] = [
+            $schedule['gelombang'][$putaranNum] = [
                 'grup_a' => $grupA->count(),
                 'grup_b' => $grupB->count(),
-                'total' => $gelombangPeserta->count(),
+                'total' => $putaranPeserta->count(),
             ];
         }
 
@@ -887,6 +1201,7 @@ class PenjadwalanUjianController extends Controller
         $totalPeserta = $pesertaList->count();
         $kapasitasCbt = (int) $settings['jumlah_ruang_cbt'] * (int) $settings['kapasitas_cbt'];
         $kapasitasWawancara = (int) $settings['jumlah_ruang_wawancara'] * (int) $settings['kapasitas_wawancara'];
+        $maxSesi = isset($settings['max_sesi']) && $settings['max_sesi'] ? (int) $settings['max_sesi'] : null;
         
         $jamMulai = Carbon::parse($settings['tanggal_ujian'] . ' ' . $settings['jam_mulai']);
         $durasiMax = (int) max($settings['durasi_cbt'], $settings['durasi_wawancara']);
@@ -910,27 +1225,45 @@ class PenjadwalanUjianController extends Controller
 
         // Loop until everyone done both CBT and Wawancara
         while (count($selesai) < $totalPeserta) {
+            // Check max_sesi limit — on the last sesi, overflow remaining into last rooms
+            $isLastSesi = $maxSesi && $sesiCounter >= $maxSesi;
+            if ($maxSesi && $sesiCounter > $maxSesi) {
+                break;
+            }
+
             $sesiStart = $currentTime->copy();
             $sesiEnd = $currentTime->copy()->addMinutes($durasiMax);
 
-            // CBT: Take from belumCbt queue
-            $cbtPeserta = array_slice($belumCbt, 0, $kapasitasCbt);
-            $belumCbt = array_slice($belumCbt, $kapasitasCbt);
+            // CBT: Take from belumCbt queue (on last sesi, take ALL remaining)
+            if ($isLastSesi) {
+                $cbtPeserta = $belumCbt;
+                $belumCbt = [];
+            } else {
+                $cbtPeserta = array_slice($belumCbt, 0, $kapasitasCbt);
+                $belumCbt = array_slice($belumCbt, $kapasitasCbt);
+            }
 
             // Wawancara: Prioritize those who finished CBT, then those who haven't started
             $wawancaraPeserta = [];
             
-            // First: from sudahCbt (already did CBT, need wawancara)
-            $fromSudahCbt = array_slice($sudahCbt, 0, $kapasitasWawancara);
-            $sudahCbt = array_slice($sudahCbt, count($fromSudahCbt));
-            $wawancaraPeserta = array_merge($wawancaraPeserta, $fromSudahCbt);
-            
-            // If still have space: from belumCbt that are NOT doing CBT this session
-            $remainingWawancaraSlots = $kapasitasWawancara - count($wawancaraPeserta);
-            if ($remainingWawancaraSlots > 0 && count($belumWawancara) > 0) {
-                $fromBelumWawancara = array_slice($belumWawancara, 0, $remainingWawancaraSlots);
-                $belumWawancara = array_slice($belumWawancara, count($fromBelumWawancara));
-                $wawancaraPeserta = array_merge($wawancaraPeserta, $fromBelumWawancara);
+            if ($isLastSesi) {
+                // On last sesi, take ALL remaining (overflow into last rooms)
+                $wawancaraPeserta = array_merge($sudahCbt, $belumWawancara);
+                $sudahCbt = [];
+                $belumWawancara = [];
+            } else {
+                // First: from sudahCbt (already did CBT, need wawancara)
+                $fromSudahCbt = array_slice($sudahCbt, 0, $kapasitasWawancara);
+                $sudahCbt = array_slice($sudahCbt, count($fromSudahCbt));
+                $wawancaraPeserta = array_merge($wawancaraPeserta, $fromSudahCbt);
+                
+                // If still have space: from belumWawancara
+                $remainingWawancaraSlots = $kapasitasWawancara - count($wawancaraPeserta);
+                if ($remainingWawancaraSlots > 0 && count($belumWawancara) > 0) {
+                    $fromBelumWawancara = array_slice($belumWawancara, 0, $remainingWawancaraSlots);
+                    $belumWawancara = array_slice($belumWawancara, count($fromBelumWawancara));
+                    $wawancaraPeserta = array_merge($wawancaraPeserta, $fromBelumWawancara);
+                }
             }
 
             // Get nomor_tes for display
@@ -972,8 +1305,8 @@ class PenjadwalanUjianController extends Controller
                 $schedule['peserta'][$pesertaId]['ruang_cbt_idx'] = $ruangIdx;
             }
 
-            // Wawancara: sequential-even (bagi rata, peserta berurutan per ruang)
-            $perRoomWawancara = max(1, ceil(count($wawancaraPeserta) / $jumlahRuangWawancara));
+            // Wawancara: sequential fill (room 1 penuh dulu, lalu room 2, dst. Room terakhir sisanya)
+            $kapasitasWaw = (int) $settings['kapasitas_wawancara'];
             foreach ($wawancaraPeserta as $idx => $pesertaId) {
                 if (!isset($schedule['peserta'][$pesertaId])) {
                     $schedule['peserta'][$pesertaId] = [
@@ -981,9 +1314,9 @@ class PenjadwalanUjianController extends Controller
                         'gelombang' => 1,
                     ];
                 }
-                $ruangIdx = min(floor($idx / $perRoomWawancara), $jumlahRuangWawancara - 1);
+                $ruangIdx = min(floor($idx / $kapasitasWaw), $jumlahRuangWawancara - 1);
                 $schedule['peserta'][$pesertaId]['sesi_wawancara'] = $sesiCounter;
-                $schedule['peserta'][$pesertaId]['urut_wawancara'] = $idx - ($ruangIdx * $perRoomWawancara) + 1;
+                $schedule['peserta'][$pesertaId]['urut_wawancara'] = $idx - ($ruangIdx * $kapasitasWaw) + 1;
                 $schedule['peserta'][$pesertaId]['ruang_wawancara_idx'] = $ruangIdx;
             }
 

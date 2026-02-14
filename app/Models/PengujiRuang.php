@@ -17,6 +17,7 @@ class PengujiRuang extends Model
         'sesi_ujian_id',
         'ruang_ujian_id',
         'user_id',
+        'peran',
         'is_ketua',
         'is_active',
     ];
@@ -72,5 +73,37 @@ class PengujiRuang extends Model
     public function scopeKetua($query)
     {
         return $query->where('is_ketua', true);
+    }
+
+    /**
+     * Scope by peran
+     */
+    public function scopePeran($query, string $peran)
+    {
+        return $query->where('peran', $peran);
+    }
+
+    /**
+     * Scope pengawas
+     */
+    public function scopePengawas($query)
+    {
+        return $query->where('peran', 'pengawas');
+    }
+
+    /**
+     * Scope proktor
+     */
+    public function scopeProktor($query)
+    {
+        return $query->where('peran', 'proktor');
+    }
+
+    /**
+     * Scope penguji
+     */
+    public function scopePenguji($query)
+    {
+        return $query->where('peran', 'penguji');
     }
 }

@@ -407,35 +407,42 @@ class CalonSiswa extends Model
     /**
      * Generate nomor tes setelah verifikasi dokumen lengkap
      * dan kirim notifikasi WA ke pendaftar
+     * 
+     * Menggunakan DB::transaction + lockForUpdate untuk mencegah race condition
+     * yang menyebabkan nomor_tes loncat (gap) ketika 2 request bersamaan.
      */
     protected function generateNomorTesAfterVerification(): void
     {
-        $settings = \App\Models\PpdbSettings::first();
-        $tahun = $this->tahunPelajaran->tahun_mulai ?? date('Y');
-        $jalurCode = strtoupper(substr($this->jalurPendaftaran->nama ?? 'REG', 0, 3));
-        
-        // Get and update counter for this jalur
-        $counters = $settings->nomor_tes_counter ?? [];
-        $jalurKey = (string) $this->jalur_pendaftaran_id;
-        $counter = ($counters[$jalurKey] ?? 0) + 1;
-        
-        // Update counter atomically
-        $counters[$jalurKey] = $counter;
-        $settings->update(['nomor_tes_counter' => $counters]);
-        
-        // Generate nomor using format template
-        $format = $settings->nomor_tes_format ?? '{PREFIX}-{TAHUN}-{JALUR}-{NOMOR}';
-        $nomor = str_pad($counter, $settings->nomor_tes_digit ?? 4, '0', STR_PAD_LEFT);
-        
-        $nomorTes = str_replace(
-            ['{PREFIX}', '{TAHUN}', '{JALUR}', '{NOMOR}'],
-            [$settings->nomor_tes_prefix ?? 'NTS', $tahun, $jalurCode, $nomor],
-            $format
-        );
+        $nomorTes = \Illuminate\Support\Facades\DB::transaction(function () {
+            // Lock the settings row to prevent concurrent reads
+            $settings = \App\Models\PpdbSettings::lockForUpdate()->first();
+            $tahun = $this->tahunPelajaran->tahun_mulai ?? date('Y');
+            $jalurCode = strtoupper(substr($this->jalurPendaftaran->nama ?? 'REG', 0, 3));
+            
+            // Get and update counter for this jalur (now safe with row lock)
+            $counters = $settings->nomor_tes_counter ?? [];
+            $jalurKey = (string) $this->jalur_pendaftaran_id;
+            $counter = ($counters[$jalurKey] ?? 0) + 1;
+            
+            $counters[$jalurKey] = $counter;
+            $settings->update(['nomor_tes_counter' => $counters]);
+            
+            // Generate nomor using format template
+            $format = $settings->nomor_tes_format ?? '{PREFIX}-{TAHUN}-{JALUR}-{NOMOR}';
+            $nomor = str_pad($counter, $settings->nomor_tes_digit ?? 4, '0', STR_PAD_LEFT);
+            
+            $nomorTes = str_replace(
+                ['{PREFIX}', '{TAHUN}', '{JALUR}', '{NOMOR}'],
+                [$settings->nomor_tes_prefix ?? 'NTS', $tahun, $jalurCode, $nomor],
+                $format
+            );
 
-        $this->update(['nomor_tes' => $nomorTes]);
+            $this->update(['nomor_tes' => $nomorTes]);
 
-        // Kirim notifikasi WA ke pendaftar
+            return $nomorTes;
+        });
+
+        // Kirim notifikasi WA ke pendaftar (outside transaction)
         $this->sendVerificationNotification($nomorTes);
     }
 

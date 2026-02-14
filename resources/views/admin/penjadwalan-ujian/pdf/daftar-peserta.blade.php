@@ -145,6 +145,8 @@
             width: 25px; 
             text-align: center;
             font-weight: bold;
+        }
+        table.peserta td.col-no {
             background: #f0f0f0;
         }
         table.peserta .col-nomor-tes { 
@@ -153,6 +155,8 @@
             font-family: 'Courier New', monospace;
             font-size: 9px;
             font-weight: bold;
+        }
+        table.peserta td.col-nomor-tes {
             background: #e8f8f5;
         }
         table.peserta .col-nama { 

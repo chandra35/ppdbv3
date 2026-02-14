@@ -280,6 +280,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/{jadwalUjian}/pdf/nama-ruang', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'pdfNamaRuang'])->name('pdf.nama-ruang');
         Route::get('/{jadwalUjian}/pdf/daftar-peserta', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'pdfDaftarPeserta'])->name('pdf.daftar-peserta');
         Route::post('/{jadwalUjian}/update-ketua-panitia', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'updateKetuaPanitia'])->name('update-ketua-panitia');
+        Route::post('/{jadwalUjian}/assign-petugas', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'assignPetugas'])->name('assign-petugas');
+        Route::get('/{jadwalUjian}/get-petugas-ruang', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'getPetugasRuang'])->name('get-petugas-ruang');
     });
 
     // ---- MANAJEMEN PENGUJI ----
@@ -641,4 +643,8 @@ Route::middleware(['auth'])->prefix('penguji')->name('penguji.')->group(function
     Route::get('/ruangan/{ruangUjian}', [\App\Http\Controllers\Penguji\DashboardController::class, 'ruangan'])->name('ruangan');
     Route::get('/ruangan/{ruangUjian}/peserta/{pesertaRuang}', [\App\Http\Controllers\Penguji\DashboardController::class, 'inputNilai'])->name('input-nilai');
     Route::post('/ruangan/{ruangUjian}/peserta/{pesertaRuang}', [\App\Http\Controllers\Penguji\DashboardController::class, 'saveNilai'])->name('save-nilai');
+    
+    // Peserta Susulan
+    Route::get('/ruangan/{ruangUjian}/cari-peserta', [\App\Http\Controllers\Penguji\DashboardController::class, 'cariPeserta'])->name('cari-peserta');
+    Route::post('/ruangan/{ruangUjian}/tambah-peserta', [\App\Http\Controllers\Penguji\DashboardController::class, 'tambahPeserta'])->name('tambah-peserta');
 });

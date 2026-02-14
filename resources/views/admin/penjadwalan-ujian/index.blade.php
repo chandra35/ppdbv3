@@ -15,6 +15,12 @@
     .capacity-warning { background-color: #fff3cd; border-left: 4px solid #ffc107; }
     .stats-mini { font-size: 0.85rem; }
     .stats-mini .value { font-size: 1.2rem; font-weight: bold; }
+    .calc-metric { padding: 8px 4px; }
+    .calc-metric small { font-size: 0.75rem; }
+    .calc-metric strong { font-size: 1.15rem; display: block; margin-top: 2px; }
+    .calc-warning { color: #dc3545; }
+    .calc-ok { color: #28a745; }
+    #calcPanel .card-body { background: #f8f9fa; }
 </style>
 @stop
 
@@ -129,6 +135,43 @@
     @csrf
     <input type="hidden" name="tahun_pelajaran_id" value="{{ $tahunAktif?->id }}">
 
+    {{-- Mode & Sesi Limit (above config cards so calculation uses these values) --}}
+    <div class="row mb-3">
+        <div class="col-lg-6">
+            <div class="card card-outline card-primary mb-0">
+                <div class="card-body py-2">
+                    <div class="form-group mb-0">
+                        <label><i class="fas fa-exchange-alt mr-1 text-primary"></i>Mode Penjadwalan <span class="text-danger">*</span></label>
+                        <select name="mode" class="form-control" id="modeSelect" required>
+                            <option value="swap" {{ ($settings['mode'] ?? 'swap') == 'swap' ? 'selected' : '' }}>
+                                🔄 Swap (Grup A↔B bertukar)
+                            </option>
+                            <option value="queue" {{ ($settings['mode'] ?? 'swap') == 'queue' ? 'selected' : '' }}>
+                                📋 Queue (CBT dulu, sisa langsung wawancara)
+                            </option>
+                        </select>
+                        <small class="text-muted">
+                            <strong>Swap:</strong> Grup A CBT, Grup B Wawancara, lalu tukar.
+                            <strong>Queue:</strong> CBT penuh dulu, sisanya langsung wawancara.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card card-outline card-primary mb-0">
+                <div class="card-body py-2">
+                    <div class="form-group mb-0">
+                        <label><i class="fas fa-layer-group mr-1 text-primary"></i>Maksimum Sesi <i class="fas fa-info-circle text-muted" title="Batasi jumlah sesi agar ujian tidak terlalu sore. Kosongkan untuk otomatis."></i></label>
+                        <input type="number" name="max_sesi" class="form-control" 
+                               value="{{ $settings['max_sesi'] ?? '' }}" min="2" max="50" placeholder="Otomatis (tanpa batas)">
+                        <small class="text-muted">Kosongkan untuk otomatis. Mode Swap: kelipatan 2 (tiap putaran = 2 sesi).</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
         {{-- Left: CBT Config --}}
         <div class="col-lg-4">
@@ -230,20 +273,19 @@
                         <input type="number" name="jeda_sesi" class="form-control" 
                                value="{{ $settings['jeda_sesi'] ?? 30 }}" min="5" max="120" required>
                     </div>
+
+                    <hr>
                     <div class="form-group">
-                        <label>Mode Penjadwalan <span class="text-danger">*</span></label>
-                        <select name="mode" class="form-control" required>
-                            <option value="swap" {{ ($settings['mode'] ?? 'swap') == 'swap' ? 'selected' : '' }}>
-                                🔄 Swap (Grup A↔B bertukar)
+                        <label><i class="fas fa-user-shield mr-1"></i>Ketua Panitia</label>
+                        <select name="ketua_panitia_id" class="form-control">
+                            <option value="">-- Pilih Ketua Panitia --</option>
+                            @foreach($pengujiList as $user)
+                            <option value="{{ $user->id }}" {{ ($settings['ketua_panitia_id'] ?? '') == $user->id ? 'selected' : '' }}>
+                                {{ $user->name }} ({{ $user->roles->pluck('display_name')->join(', ') }})
                             </option>
-                            <option value="queue" {{ ($settings['mode'] ?? 'swap') == 'queue' ? 'selected' : '' }}>
-                                📋 Queue (CBT dulu, sisa langsung wawancara)
-                            </option>
+                            @endforeach
                         </select>
-                        <small class="text-muted">
-                            <strong>Swap:</strong> Grup A CBT, Grup B Wawancara, lalu tukar.<br>
-                            <strong>Queue:</strong> CBT penuh dulu, sisanya langsung wawancara.
-                        </small>
+                        <small class="text-muted">Dipilih sekarang, bisa diubah nanti di halaman detail.</small>
                     </div>
                     <hr>
                     <div class="form-group">
@@ -267,6 +309,65 @@
                             </option>
                             @endforeach
                         </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Realtime Calculation Panel --}}
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card card-outline card-info mb-0" id="calcPanel">
+                <div class="card-header py-2">
+                    <h3 class="card-title"><i class="fas fa-calculator mr-2"></i>Estimasi Perhitungan Realtime</h3>
+                </div>
+                <div class="card-body py-3">
+                    <div class="row text-center">
+                        <div class="col calc-metric">
+                            <small class="text-muted d-block">Kap. CBT/Sesi</small>
+                            <strong class="text-success" id="calcKapCbt">-</strong>
+                        </div>
+                        <div class="col calc-metric">
+                            <small class="text-muted d-block">Kap. Wawancara/Sesi</small>
+                            <strong class="text-warning" id="calcKapWaw">-</strong>
+                        </div>
+                        <div class="col calc-metric" id="calcParalelCol">
+                            <small class="text-muted d-block">Kap. Paralel</small>
+                            <strong class="text-info" id="calcParalel">-</strong>
+                        </div>
+                        <div class="col calc-metric">
+                            <small class="text-muted d-block">Jml Sesi</small>
+                            <strong class="text-primary" id="calcSesi">-</strong>
+                        </div>
+                        <div class="col calc-metric">
+                            <small class="text-muted d-block">Terjadwalkan</small>
+                            <strong id="calcTerjadwal">-</strong>
+                        </div>
+                        <div class="col calc-metric">
+                            <small class="text-muted d-block">Ruang Akhir CBT</small>
+                            <strong id="calcOverflowCbt">-</strong>
+                        </div>
+                        <div class="col calc-metric">
+                            <small class="text-muted d-block">Ruang Akhir Waw</small>
+                            <strong id="calcOverflowWaw">-</strong>
+                        </div>
+                        <div class="col calc-metric">
+                            <small class="text-muted d-block">Total Durasi</small>
+                            <strong id="calcDurasi">-</strong>
+                        </div>
+                        <div class="col calc-metric">
+                            <small class="text-muted d-block">Est. Selesai</small>
+                            <strong class="text-danger" id="calcSelesai">-</strong>
+                        </div>
+                    </div>
+                    <div class="mt-2" id="calcRecommendation" style="display:none;">
+                        <div class="alert alert-warning alert-sm mb-0 py-2 px-3">
+                            <i class="fas fa-lightbulb mr-1"></i><span id="calcRecommendationText"></span>
+                        </div>
+                    </div>
+                    <div class="text-center mt-2" id="calcNote" style="display:none;">
+                        <small class="text-muted"><i class="fas fa-info-circle mr-1"></i><span id="calcNoteText"></span></small>
                     </div>
                 </div>
             </div>
@@ -316,7 +417,14 @@
                             </tr>
                             <tr>
                                 <td>Total Peserta</td>
-                                <td class="text-right"><strong>{{ $totalPeserta }}</strong></td>
+                                <td class="text-right">
+                                    <strong>{{ count($schedule['peserta'] ?? []) }}</strong>
+                                    @if(count($schedule['peserta'] ?? []) < $totalPeserta)
+                                    <small class="text-danger">/ {{ $totalPeserta }} eligible</small>
+                                    @else
+                                    <small class="text-muted">/ {{ $totalPeserta }}</small>
+                                    @endif
+                                </td>
                             </tr>
                             <tr>
                                 <td>Kapasitas CBT/Sesi</td>
@@ -328,12 +436,25 @@
                             </tr>
                             <tr>
                                 <td>Jumlah Sesi</td>
-                                <td class="text-right"><strong>{{ count($schedule['sesi']) }}</strong></td>
+                                <td class="text-right">
+                                    <strong>{{ count($schedule['sesi']) }}</strong>
+                                    @if($settings['max_sesi'] ?? null)
+                                    <small class="text-muted">(maks: {{ $settings['max_sesi'] }})</small>
+                                    @endif
+                                </td>
                             </tr>
                             <tr>
                                 <td>Estimasi Selesai</td>
                                 <td class="text-right"><strong>{{ $schedule['estimasi_selesai'] }}</strong></td>
                             </tr>
+                            @if($settings['ketua_panitia_id'] ?? null)
+                            <tr>
+                                <td>Ketua Panitia</td>
+                                <td class="text-right">
+                                    <strong><i class="fas fa-user-shield text-primary mr-1"></i>{{ $pengujiList->firstWhere('id', $settings['ketua_panitia_id'])?->name ?? '-' }}</strong>
+                                </td>
+                            </tr>
+                            @endif
                         </table>
                     </div>
                 </div>
@@ -376,15 +497,27 @@
                 </thead>
                 <tbody>
                     @foreach($schedule['sesi'] as $nomorSesi => $sesi)
+                    @php
+                        $normalCbt = ($settings['jumlah_ruang_cbt'] ?? 1) * ($settings['kapasitas_cbt'] ?? 30);
+                        $normalWaw = ($settings['jumlah_ruang_wawancara'] ?? 1) * ($settings['kapasitas_wawancara'] ?? 15);
+                        $cbtOverflow = $sesi['cbt']['jumlah'] > $normalCbt;
+                        $wawOverflow = $sesi['wawancara']['jumlah'] > $normalWaw;
+                    @endphp
                     <tr class="sesi-row">
                         <td class="text-center"><strong>Sesi {{ $nomorSesi }}</strong></td>
                         <td class="text-center">{{ $sesi['waktu_mulai'] }} - {{ $sesi['waktu_selesai'] }}</td>
                         <td>
                             <span class="badge badge-success">{{ $sesi['cbt']['jumlah'] }} peserta</span>
+                            @if($cbtOverflow)
+                            <span class="badge badge-danger" title="Melebihi kapasitas normal {{ $normalCbt }}">+{{ $sesi['cbt']['jumlah'] - $normalCbt }} overflow</span>
+                            @endif
                             <br><small class="text-muted">No Tes: {{ $sesi['cbt']['range'] }}</small>
                         </td>
                         <td>
                             <span class="badge badge-warning text-dark">{{ $sesi['wawancara']['jumlah'] }} peserta</span>
+                            @if($wawOverflow)
+                            <span class="badge badge-danger" title="Melebihi kapasitas normal {{ $normalWaw }}">+{{ $sesi['wawancara']['jumlah'] - $normalWaw }} overflow</span>
+                            @endif
                             <br><small class="text-muted">No Tes: {{ $sesi['wawancara']['range'] }}</small>
                         </td>
                     </tr>
@@ -393,41 +526,17 @@
             </table>
         </div>
 
-        {{-- Gelombang Detail (only for Swap mode) --}}
-        @if(($settings['mode'] ?? 'swap') == 'swap')
-        <h5 class="mt-4"><i class="fas fa-layer-group mr-2"></i>Detail per Gelombang</h5>
-        <div class="row">
-            @foreach($schedule['gelombang'] as $nomorGelombang => $gelombang)
-            <div class="col-md-4 mb-3">
-                <div class="card">
-                    <div class="card-header py-2">
-                        <strong>Gelombang {{ $nomorGelombang }}</strong>
-                    </div>
-                    <div class="card-body py-2">
-                        <table class="table table-sm table-borderless mb-0">
-                            <tr>
-                                <td><span class="badge badge-primary grup-badge">Grup A</span></td>
-                                <td>{{ $gelombang['grup_a'] }} peserta</td>
-                                <td><small>CBT → Wawancara</small></td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge badge-secondary grup-badge">Grup B</span></td>
-                                <td>{{ $gelombang['grup_b'] }} peserta</td>
-                                <td><small>Wawancara → CBT</small></td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            @endforeach
-        </div>
-        @else
-        <div class="alert alert-info mt-4">
+        {{-- Mode Info --}}
+        <div class="alert alert-{{ ($settings['mode'] ?? 'swap') == 'swap' ? 'primary' : 'info' }} mt-3">
             <i class="fas fa-info-circle mr-2"></i>
-            <strong>Mode Queue:</strong> Peserta mengikuti CBT dan Wawancara secara mengalir. 
+            @if(($settings['mode'] ?? 'swap') == 'swap')
+            <strong>Mode Swap:</strong> Setiap putaran terdiri dari 2 sesi. Sesi ganjil: Grup A → CBT, Grup B → Wawancara. Sesi genap: bertukar.
+            Sisa peserta yang tidak memenuhi kapasitas penuh ditempatkan di ruang terakhir.
+            @else
+            <strong>Mode Queue:</strong> Peserta mengikuti CBT dan Wawancara secara mengalir.
             Yang belum dapat giliran CBT bisa langsung wawancara dulu, begitu pula sebaliknya.
+            @endif
         </div>
-        @endif
     </div>
     <div class="card-footer">
         <form id="storeForm" method="POST" action="{{ route('admin.penjadwalan-ujian.store') }}">
@@ -492,18 +601,235 @@
 @section('js')
 <script>
 $(document).ready(function() {
-    // Auto-calculate capacities
-    function updateCapacities() {
-        var cbtRuang = parseInt($('input[name="jumlah_ruang_cbt"]').val()) || 0;
-        var cbtKapasitas = parseInt($('input[name="kapasitas_cbt"]').val()) || 0;
-        var wawancaraRuang = parseInt($('input[name="jumlah_ruang_wawancara"]').val()) || 0;
-        var wawancaraKapasitas = parseInt($('input[name="kapasitas_wawancara"]').val()) || 0;
+    var totalPeserta = {{ $totalPeserta ?? 0 }};
 
-        $('#totalCbt').text(cbtRuang * cbtKapasitas);
-        $('#totalWawancara').text(wawancaraRuang * wawancaraKapasitas);
+    function updateCalc() {
+        // Read all inputs
+        var cbtRuang = parseInt($('input[name="jumlah_ruang_cbt"]').val()) || 0;
+        var cbtKap = parseInt($('input[name="kapasitas_cbt"]').val()) || 0;
+        var wawRuang = parseInt($('input[name="jumlah_ruang_wawancara"]').val()) || 0;
+        var wawKap = parseInt($('input[name="kapasitas_wawancara"]').val()) || 0;
+        var durasiCbt = parseInt($('input[name="durasi_cbt"]').val()) || 0;
+        var durasiWaw = parseInt($('input[name="durasi_wawancara"]').val()) || 0;
+        var jedaSesi = parseInt($('input[name="jeda_sesi"]').val()) || 0;
+        var maxSesi = parseInt($('input[name="max_sesi"]').val()) || 0;
+        var mode = $('select[name="mode"]').val();
+        var jamMulai = $('input[name="jam_mulai"]').val() || '08:00';
+
+        var kapCbt = cbtRuang * cbtKap;
+        var kapWaw = wawRuang * wawKap;
+
+        // Update card inline stats
+        $('#totalCbt').text(kapCbt);
+        $('#totalWawancara').text(kapWaw);
+
+        // Update calc panel: capacities
+        $('#calcKapCbt').text(kapCbt);
+        $('#calcKapWaw').text(kapWaw);
+
+        var jumlahSesi = 0;
+        var pesertaTerjadwal = totalPeserta;
+        var kapParalel = 0;
+        var noteText = '';
+        var recommendations = [];
+
+        if (mode === 'swap') {
+            // --- SWAP MODE ---
+            kapParalel = Math.min(kapCbt, kapWaw);
+            var pesertaPerPutaran = kapParalel * 2; // Grup A + Grup B
+            var jumlahPutaran = 0;
+            if (pesertaPerPutaran > 0) {
+                jumlahPutaran = Math.ceil(totalPeserta / pesertaPerPutaran);
+            }
+            jumlahSesi = jumlahPutaran * 2; // setiap putaran = 2 sesi
+
+            // Apply max_sesi limit
+            if (maxSesi > 0 && jumlahSesi > maxSesi) {
+                var maxPut = Math.floor(maxSesi / 2);
+                if (maxPut < 1) maxPut = 1;
+                jumlahPutaran = maxPut;
+                jumlahSesi = jumlahPutaran * 2;
+                pesertaTerjadwal = Math.min(totalPeserta, jumlahPutaran * pesertaPerPutaran);
+            }
+
+            if (kapCbt !== kapWaw && kapCbt > 0 && kapWaw > 0) {
+                var diff = Math.abs(kapCbt - kapWaw);
+                var persen = Math.round((diff / Math.max(kapCbt, kapWaw)) * 100);
+                noteText = 'Kapasitas CBT & Wawancara tidak seimbang (beda ' + persen + '%). Pertimbangkan mode Queue.';
+            }
+
+            // Show swap-specific column (paralel)
+            $('#calcParalelCol').show();
+            $('#calcParalel').text(kapParalel);
+            $('#calcSesi').text(jumlahSesi);
+
+        } else {
+            // --- QUEUE MODE ---
+            $('#calcParalelCol').hide();
+
+            if (kapCbt > 0 && kapWaw > 0) {
+                var sesiCbtEst = Math.ceil(totalPeserta / kapCbt);
+                var sesiWawEst = Math.ceil(totalPeserta / kapWaw) + 1;
+                jumlahSesi = Math.max(sesiCbtEst, sesiWawEst);
+
+                if (maxSesi > 0 && jumlahSesi > maxSesi) {
+                    jumlahSesi = maxSesi;
+                    var doneCbt = Math.min(totalPeserta, kapCbt * jumlahSesi);
+                    var doneWaw = Math.min(doneCbt, kapWaw * Math.max(0, jumlahSesi - 1));
+                    pesertaTerjadwal = Math.min(totalPeserta, doneWaw);
+                }
+
+                noteText = 'Mode Queue: perhitungan sesi adalah estimasi (~). Hasil aktual bisa sedikit berbeda.';
+            }
+            $('#calcSesi').text(jumlahSesi > 0 ? '~' + jumlahSesi : '-');
+        }
+
+        // Peserta terjadwalkan
+        if (pesertaTerjadwal < totalPeserta && totalPeserta > 0) {
+            $('#calcTerjadwal').html('<span class="calc-warning">' + pesertaTerjadwal + '/' + totalPeserta + '</span>');
+        } else {
+            $('#calcTerjadwal').html('<span class="calc-ok">' + pesertaTerjadwal + '/' + totalPeserta + '</span>');
+        }
+
+        // --- Overflow Ruang Akhir ---
+        // Hitung peserta per sesi terakhir (sisa yang tidak bagi rata)
+        if (jumlahSesi > 0 && totalPeserta > 0) {
+            var pesertaSesiTerakhirCbt = 0;
+            var pesertaSesiTerakhirWaw = 0;
+
+            if (mode === 'swap' && kapParalel > 0) {
+                var pesertaPerPut = kapParalel * 2;
+                var jumlahPut = Math.ceil(pesertaTerjadwal / pesertaPerPut);
+                var sisaPutTerakhir = pesertaTerjadwal - (jumlahPut - 1) * pesertaPerPut;
+                // Putaran terakhir: setengah ke CBT, setengah ke Wawancara
+                pesertaSesiTerakhirCbt = Math.ceil(sisaPutTerakhir / 2);
+                pesertaSesiTerakhirWaw = sisaPutTerakhir - pesertaSesiTerakhirCbt;
+            } else if (mode === 'queue') {
+                // Queue: sesi terakhir CBT
+                var sisaCbt = pesertaTerjadwal % kapCbt;
+                pesertaSesiTerakhirCbt = sisaCbt > 0 ? sisaCbt : kapCbt;
+                var sisaWaw = pesertaTerjadwal % kapWaw;
+                pesertaSesiTerakhirWaw = sisaWaw > 0 ? sisaWaw : kapWaw;
+            }
+
+            // CBT overflow: isi ruang dari pertama, sisa ke ruang terakhir
+            if (pesertaSesiTerakhirCbt > 0 && cbtRuang > 0) {
+                var fullCbtRooms = Math.min(Math.floor(pesertaSesiTerakhirCbt / cbtKap), cbtRuang - 1);
+                var lastRoomCbt = pesertaSesiTerakhirCbt - (fullCbtRooms * cbtKap);
+                var pctCbt = Math.round((lastRoomCbt / cbtKap) * 100);
+                if (pctCbt > 120) {
+                    $('#calcOverflowCbt').html('<span class="calc-warning">' + lastRoomCbt + '/' + cbtKap + ' (' + pctCbt + '%)</span>');
+                } else {
+                    $('#calcOverflowCbt').text(lastRoomCbt + '/' + cbtKap + ' (' + pctCbt + '%)');
+                }
+            } else {
+                $('#calcOverflowCbt').text('-');
+            }
+
+            // Wawancara overflow
+            if (pesertaSesiTerakhirWaw > 0 && wawRuang > 0) {
+                var perRoomWaw = Math.ceil(pesertaSesiTerakhirWaw / wawRuang);
+                var pctWaw = Math.round((perRoomWaw / wawKap) * 100);
+                if (pctWaw > 120) {
+                    $('#calcOverflowWaw').html('<span class="calc-warning">' + perRoomWaw + '/' + wawKap + ' (' + pctWaw + '%)</span>');
+                } else {
+                    $('#calcOverflowWaw').text(perRoomWaw + '/' + wawKap + ' (' + pctWaw + '%)');
+                }
+            } else {
+                $('#calcOverflowWaw').text('-');
+            }
+        } else {
+            $('#calcOverflowCbt, #calcOverflowWaw').text('-');
+        }
+
+        // --- Rekomendasi Ruang Tambahan ---
+        if (pesertaTerjadwal < totalPeserta && totalPeserta > 0) {
+            var kekurangan = totalPeserta - pesertaTerjadwal;
+            if (mode === 'swap') {
+                // Saran 1: tambah sesi
+                var neededPutExtra = Math.ceil(kekurangan / (kapParalel * 2 || 1));
+                var sesiExtra = neededPutExtra * 2;
+                recommendations.push('Tambah ' + sesiExtra + ' sesi (naikkan maks sesi menjadi ' + (jumlahSesi + sesiExtra) + ')');
+
+                // Saran 2: tambah ruang bottleneck
+                if (kapCbt <= kapWaw) {
+                    var extraRoomCbt = Math.ceil(kekurangan / ((jumlahSesi / 2) * cbtKap || 1));
+                    recommendations.push('Atau tambah ' + extraRoomCbt + ' ruang CBT (total: ' + (cbtRuang + extraRoomCbt) + ')');
+                } else {
+                    var extraRoomWaw = Math.ceil(kekurangan / ((jumlahSesi / 2) * wawKap || 1));
+                    recommendations.push('Atau tambah ' + extraRoomWaw + ' ruang Wawancara (total: ' + (wawRuang + extraRoomWaw) + ')');
+                }
+            } else {
+                // Queue mode
+                var bottleneck = kapCbt < kapWaw ? 'CBT' : 'Wawancara';
+                var bottleneckKap = kapCbt < kapWaw ? kapCbt : kapWaw;
+                var extraSesi = Math.ceil(kekurangan / (bottleneckKap || 1));
+                recommendations.push('Tambah ~' + extraSesi + ' sesi (naikkan maks sesi)');
+                if (kapCbt < kapWaw) {
+                    var extraR = Math.ceil(kekurangan / (jumlahSesi * cbtKap || 1));
+                    recommendations.push('Atau tambah ' + extraR + ' ruang CBT (total: ' + (cbtRuang + extraR) + ')');
+                } else {
+                    var extraR = Math.ceil(kekurangan / (jumlahSesi * wawKap || 1));
+                    recommendations.push('Atau tambah ' + extraR + ' ruang Wawancara (total: ' + (wawRuang + extraR) + ')');
+                }
+            }
+        }
+
+        // Show recommendation
+        if (recommendations.length > 0) {
+            var recHtml = '<strong>' + (totalPeserta - pesertaTerjadwal) + ' peserta tidak terjadwalkan.</strong> Saran:<br>';
+            recommendations.forEach(function(r) { recHtml += '• ' + r + '<br>'; });
+            $('#calcRecommendation').show();
+            $('#calcRecommendationText').html(recHtml);
+        } else {
+            $('#calcRecommendation').hide();
+        }
+
+        // Estimasi waktu
+        var durasiMax = Math.max(durasiCbt, durasiWaw);
+        var totalMenit = jumlahSesi > 0 ? (jumlahSesi * durasiMax + Math.max(0, jumlahSesi - 1) * jedaSesi) : 0;
+
+        // Format durasi
+        var totalJam = Math.floor(totalMenit / 60);
+        var sisaMenit = totalMenit % 60;
+        var durasiText = '';
+        if (totalJam > 0) durasiText += totalJam + 'j ';
+        durasiText += sisaMenit + 'm';
+        $('#calcDurasi').text(jumlahSesi > 0 ? durasiText : '-');
+
+        // Hitung jam selesai
+        if (jumlahSesi > 0 && jamMulai) {
+            var parts = jamMulai.split(':');
+            var startMin = parseInt(parts[0]) * 60 + parseInt(parts[1] || 0);
+            var endMin = startMin + totalMenit;
+            var endH = Math.floor(endMin / 60);
+            var endM = endMin % 60;
+            var prefix = mode === 'queue' ? '~' : '';
+            $('#calcSelesai').text(prefix + (endH < 10 ? '0' : '') + endH + ':' + (endM < 10 ? '0' : '') + endM);
+        } else {
+            $('#calcSelesai').text('-');
+        }
+
+        // Note
+        if (noteText) {
+            $('#calcNote').show();
+            $('#calcNoteText').text(noteText);
+        } else {
+            $('#calcNote').hide();
+        }
     }
 
-    $('input[name="jumlah_ruang_cbt"], input[name="kapasitas_cbt"], input[name="jumlah_ruang_wawancara"], input[name="kapasitas_wawancara"]').on('input', updateCapacities);
+    // Bind to all relevant inputs
+    var calcInputs = 'input[name="jumlah_ruang_cbt"], input[name="kapasitas_cbt"], ' +
+        'input[name="jumlah_ruang_wawancara"], input[name="kapasitas_wawancara"], ' +
+        'input[name="durasi_cbt"], input[name="durasi_wawancara"], ' +
+        'input[name="jeda_sesi"], input[name="max_sesi"], input[name="jam_mulai"]';
+
+    $(calcInputs).on('input change', updateCalc);
+    $('select[name="mode"]').on('change', updateCalc);
+
+    // Initial calculation on page load
+    updateCalc();
 });
 </script>
 @endsection

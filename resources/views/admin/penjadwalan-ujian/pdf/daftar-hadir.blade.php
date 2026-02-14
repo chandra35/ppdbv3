@@ -136,21 +136,20 @@
         table.attendance .col-ttd-left { 
             width: 30px;
             text-align: center;
-            vertical-align: middle;
+            vertical-align: top;
             border: 1px solid #333;
+            padding: 0;
         }
         table.attendance .col-ttd-right { 
             width: 30px;
             text-align: center;
-            vertical-align: middle;
+            vertical-align: top;
             border: 1px solid #333;
+            padding: 0;
         }
         /* Zigzag merged cell with rowspan */
         table.attendance .ttd-merged {
-            background: #f8f8f8;
-            font-weight: bold;
-            font-size: 10px;
-            color: #555;
+            background: #fff;
         }
         table.attendance .ttd-empty {
             background: #fff;
@@ -303,14 +302,14 @@
                     {{-- TTD Zigzag dengan rowspan=2: ganjil di kiri, genap di kanan --}}
                     @if($isGanjil)
                         {{-- Baris ganjil: TTD di KIRI dengan rowspan --}}
-                        <td class="col-ttd-left ttd-merged" @if(!$isLast) rowspan="2" @endif>{{ $nomor }}</td>
+                        <td class="col-ttd-left ttd-merged" @if(!$isLast) rowspan="2" @endif style="vertical-align: top; text-align: left; padding: 1px 0 0 1px;"><span style="font-size: 10px; color: #bbb;">{{ $nomor }}</span></td>
                         @if($isFirst)
                             {{-- Baris pertama: TTD kanan kosong --}}
                             <td class="col-ttd-right"></td>
                         @endif
                     @else
                         {{-- Baris genap: TTD di KANAN dengan rowspan --}}
-                        <td class="col-ttd-right ttd-merged" @if(!$isLast) rowspan="2" @endif>{{ $nomor }}</td>
+                        <td class="col-ttd-right ttd-merged" @if(!$isLast) rowspan="2" @endif style="vertical-align: top; text-align: right; padding: 1px 1px 0 0;"><span style="font-size: 10px; color: #bbb;">{{ $nomor }}</span></td>
                         @if($isLast && $total % 2 == 0)
                             {{-- Baris terakhir genap: TTD kiri kosong di bawahnya --}}
                         @endif
@@ -329,21 +328,38 @@
 
         {{-- Signature --}}
         @php
-            $pengujiList = $room['penguji'] ?? collect();
-            $penguji1 = $pengujiList->first();
-            $penguji2 = $pengujiList->skip(1)->first();
+            $petugasList = $room['penguji'] ?? collect();
+            if ($room['jenis'] === 'cbt') {
+                $pengawas = $petugasList->where('peran', 'pengawas')->first();
+                $proktor = $petugasList->where('peran', 'proktor')->first();
+            } else {
+                $pengujiWaw = $petugasList->where('peran', 'penguji')->first();
+                // Fallback: if no peran set, use first entry
+                if (!$pengujiWaw) $pengujiWaw = $petugasList->first();
+            }
         @endphp
         <div class="signature-box">
+            @if($room['jenis'] === 'cbt')
             <div class="signature-cell">
-                <div class="signature-title">{{ $room['jenis'] === 'cbt' ? 'Pengawas 1' : 'Penguji 1' }}</div>
+                <div class="signature-title">Pengawas</div>
                 <div class="signature-line"></div>
-                <div class="signature-note">{{ $penguji1->user->name ?? '........................' }}</div>
+                <div class="signature-note">{{ $pengawas->user->name ?? '........................' }}</div>
             </div>
             <div class="signature-cell">
-                <div class="signature-title">{{ $room['jenis'] === 'cbt' ? 'Pengawas 2' : 'Penguji 2' }}</div>
+                <div class="signature-title">Proktor</div>
                 <div class="signature-line"></div>
-                <div class="signature-note">{{ $penguji2->user->name ?? '........................' }}</div>
+                <div class="signature-note">{{ $proktor->user->name ?? '........................' }}</div>
             </div>
+            @else
+            <div class="signature-cell">
+                <div class="signature-title">Penguji</div>
+                <div class="signature-line"></div>
+                <div class="signature-note">{{ $pengujiWaw->user->name ?? '........................' }}</div>
+            </div>
+            <div class="signature-cell">
+                {{-- Empty cell for alignment --}}
+            </div>
+            @endif
             <div class="signature-cell">
                 <div class="signature-title">Mengetahui,<br>Ketua Panitia</div>
                 <div class="signature-line"></div>

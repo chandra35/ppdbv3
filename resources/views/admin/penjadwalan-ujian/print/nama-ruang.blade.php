@@ -130,25 +130,35 @@
     <button class="btn-print no-print" onclick="window.print()">🖨️ Cetak Label Ruang</button>
 
     {{-- CBT Rooms --}}
-    @for($i = 1; $i <= $jadwal->jumlah_ruang_cbt; $i++)
+    @foreach($cbtRooms as $room)
     <div class="room-label cbt">
         <div class="room-type cbt">TES CBT</div>
-        <div class="room-name">{{ $jadwal->prefix_ruang_cbt }} {{ $i }}</div>
-        <div class="room-capacity">Kapasitas: {{ $jadwal->kapasitas_cbt }} Peserta</div>
+        <div class="room-name">{{ $room['nama_ruang'] }}</div>
+        <div class="room-capacity">
+            Peserta: {{ $room['jumlah_peserta'] }} / {{ $room['kapasitas'] }}
+            @if($room['overflow'])
+                <span style="color: #dc3545; font-weight: bold;"> (+{{ $room['jumlah_peserta'] - $room['kapasitas'] }} overflow)</span>
+            @endif
+        </div>
         <div class="room-info">Durasi: {{ $jadwal->durasi_cbt }} menit</div>
         <div class="exam-date">{{ $jadwal->tanggal_ujian->isoFormat('dddd, D MMMM Y') }}</div>
     </div>
-    @endfor
+    @endforeach
 
     {{-- Wawancara Rooms --}}
-    @for($i = 1; $i <= $jadwal->jumlah_ruang_wawancara; $i++)
+    @foreach($wawancaraRooms as $room)
     <div class="room-label wawancara">
         <div class="room-type wawancara">WAWANCARA</div>
-        <div class="room-name">{{ $jadwal->prefix_ruang_wawancara }} {{ $i }}</div>
-        <div class="room-capacity">Kapasitas: {{ $jadwal->kapasitas_wawancara }} Peserta</div>
+        <div class="room-name">{{ $room['nama_ruang'] }}</div>
+        <div class="room-capacity">
+            Peserta: {{ $room['jumlah_peserta'] }} / {{ $room['kapasitas'] }}
+            @if($room['overflow'])
+                <span style="color: #dc3545; font-weight: bold;"> (+{{ $room['jumlah_peserta'] - $room['kapasitas'] }} overflow)</span>
+            @endif
+        </div>
         <div class="room-info">Durasi: {{ $jadwal->durasi_wawancara }} menit</div>
         <div class="exam-date">{{ $jadwal->tanggal_ujian->isoFormat('dddd, D MMMM Y') }}</div>
     </div>
-    @endfor
+    @endforeach
 </body>
 </html>

@@ -164,21 +164,30 @@ class SesiUjianController extends Controller
 
             $ruangId = $request->ruang_ujian_id;
 
-            // Check for duplicate penguji in other rooms of the same sesi
-            $duplicates = PengujiRuang::where('sesi_ujian_id', $sesiUjian->id)
-                ->where('ruang_ujian_id', '!=', $ruangId)
+            // Check for duplicate penguji across ALL sesi in the same jadwal
+            // A penguji can only be assigned to ONE room in the entire jadwal
+            $jadwalUjianId = $sesiUjian->jadwal_ujian_id;
+            $allSesiIds = SesiUjian::where('jadwal_ujian_id', $jadwalUjianId)->pluck('id')->toArray();
+
+            $duplicates = PengujiRuang::whereIn('sesi_ujian_id', $allSesiIds)
+                ->where(function($q) use ($sesiUjian, $ruangId) {
+                    // Exclude current room in current sesi (we'll replace those)
+                    $q->where('sesi_ujian_id', '!=', $sesiUjian->id)
+                      ->orWhere('ruang_ujian_id', '!=', $ruangId);
+                })
                 ->whereIn('user_id', $request->penguji_ids)
-                ->with(['user', 'ruangUjian'])
+                ->with(['user', 'ruangUjian', 'sesiUjian'])
                 ->get();
 
             if ($duplicates->isNotEmpty()) {
                 $dupNames = $duplicates->map(function ($d) {
-                    return ($d->user->name ?? 'Unknown') . ' (sudah di ' . ($d->ruangUjian->nama_ruang ?? '-') . ')';
+                    $sesiInfo = $d->sesiUjian ? ' Sesi ' . $d->sesiUjian->nomor_sesi . ' ' . strtoupper($d->sesiUjian->jenis_ujian ?? '') : '';
+                    return ($d->user->name ?? 'Unknown') . ' (sudah di ' . ($d->ruangUjian->nama_ruang ?? '-') . $sesiInfo . ')';
                 })->join(', ');
 
                 return response()->json([
                     'success' => false,
-                    'message' => 'Gagal assign: ' . $dupNames . '. Satu penguji hanya boleh di satu ruangan dalam sesi yang sama.',
+                    'message' => 'Gagal assign: ' . $dupNames . '. Satu penguji hanya boleh di satu ruangan dalam jadwal yang sama.',
                 ], 422);
             }
 

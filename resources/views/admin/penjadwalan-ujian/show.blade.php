@@ -278,7 +278,44 @@
     </div>
 </div>
 
-{{-- Room Distribution --}}
+{{-- Room Distribution (actual data from DB per sesi) --}}
+@php
+    // Collect unique rooms across all sesi with actual occupancy
+    $cbtRooms = collect();
+    $wawancaraRooms = collect();
+    $cbtRoomNames = collect(); // Unique room names for assignment
+    $wawancaraRoomNames = collect();
+    foreach ($sesiGrouped as $nSesi => $sesiList) {
+        foreach ($sesiList as $sesi) {
+            foreach ($sesi->ruangUjian as $ruang) {
+                $key = $ruang->nama_ruang . '-' . $sesi->nomor_sesi;
+                if ($sesi->jenis_ujian === 'cbt') {
+                    $cbtRooms->push([
+                        'nama' => $ruang->nama_ruang,
+                        'sesi' => $sesi->nomor_sesi,
+                        'kapasitas' => $ruang->kapasitas,
+                        'jumlah_peserta' => $ruang->jumlah_peserta,
+                        'overflow' => $ruang->jumlah_peserta > $ruang->kapasitas,
+                    ]);
+                    if (!$cbtRoomNames->contains($ruang->nama_ruang)) {
+                        $cbtRoomNames->push($ruang->nama_ruang);
+                    }
+                } else {
+                    $wawancaraRooms->push([
+                        'nama' => $ruang->nama_ruang,
+                        'sesi' => $sesi->nomor_sesi,
+                        'kapasitas' => $ruang->kapasitas,
+                        'jumlah_peserta' => $ruang->jumlah_peserta,
+                        'overflow' => $ruang->jumlah_peserta > $ruang->kapasitas,
+                    ]);
+                    if (!$wawancaraRoomNames->contains($ruang->nama_ruang)) {
+                        $wawancaraRoomNames->push($ruang->nama_ruang);
+                    }
+                }
+            }
+        }
+    }
+@endphp
 <div class="row">
     {{-- CBT Rooms --}}
     <div class="col-lg-6">
@@ -292,16 +329,25 @@
                         <thead class="thead-light">
                             <tr>
                                 <th>Nama Ruang</th>
-                                <th class="text-center">Kapasitas</th>
+                                <th class="text-center">Sesi</th>
+                                <th class="text-center">Peserta / Kapasitas</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @for($i = 1; $i <= $jadwal->jumlah_ruang_cbt; $i++)
-                            <tr>
-                                <td><i class="fas fa-door-open text-success mr-2"></i>{{ $jadwal->prefix_ruang_cbt }} {{ $i }}</td>
-                                <td class="text-center">{{ $jadwal->kapasitas_cbt }}</td>
+                            @forelse($cbtRooms->sortBy(['sesi', 'nama']) as $room)
+                            <tr class="{{ $room['overflow'] ? 'table-danger' : '' }}">
+                                <td><i class="fas fa-door-open text-success mr-2"></i>{{ $room['nama'] }}</td>
+                                <td class="text-center">{{ $room['sesi'] }}</td>
+                                <td class="text-center">
+                                    {{ $room['jumlah_peserta'] }} / {{ $room['kapasitas'] }}
+                                    @if($room['overflow'])
+                                        <span class="badge badge-danger ml-1">+{{ $room['jumlah_peserta'] - $room['kapasitas'] }} overflow</span>
+                                    @endif
+                                </td>
                             </tr>
-                            @endfor
+                            @empty
+                            <tr><td colspan="3" class="text-center text-muted">Belum ada ruang</td></tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
@@ -321,22 +367,133 @@
                         <thead class="thead-light">
                             <tr>
                                 <th>Nama Ruang</th>
-                                <th class="text-center">Kapasitas</th>
+                                <th class="text-center">Sesi</th>
+                                <th class="text-center">Peserta / Kapasitas</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @for($i = 1; $i <= $jadwal->jumlah_ruang_wawancara; $i++)
-                            <tr>
-                                <td><i class="fas fa-door-open text-warning mr-2"></i>{{ $jadwal->prefix_ruang_wawancara }} {{ $i }}</td>
-                                <td class="text-center">{{ $jadwal->kapasitas_wawancara }}</td>
+                            @forelse($wawancaraRooms->sortBy(['sesi', 'nama']) as $room)
+                            <tr class="{{ $room['overflow'] ? 'table-danger' : '' }}">
+                                <td><i class="fas fa-door-open text-warning mr-2"></i>{{ $room['nama'] }}</td>
+                                <td class="text-center">{{ $room['sesi'] }}</td>
+                                <td class="text-center">
+                                    {{ $room['jumlah_peserta'] }} / {{ $room['kapasitas'] }}
+                                    @if($room['overflow'])
+                                        <span class="badge badge-danger ml-1">+{{ $room['jumlah_peserta'] - $room['kapasitas'] }} overflow</span>
+                                    @endif
+                                </td>
                             </tr>
-                            @endfor
+                            @empty
+                            <tr><td colspan="3" class="text-center text-muted">Belum ada ruang</td></tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
+</div>
+
+{{-- Assign Petugas per Ruang --}}
+<div class="row">
+    {{-- CBT: Pengawas & Proktor --}}
+    @if($cbtRoomNames->isNotEmpty())
+    <div class="col-lg-6">
+        <div class="card card-success card-outline">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-user-shield mr-2"></i>Pengawas & Proktor CBT</h3>
+                <div class="card-tools">
+                    <small class="text-muted">1 Pengawas + 1 Proktor per ruang</small>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-bordered mb-0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th width="25%">Ruang</th>
+                            <th width="35%">Pengawas</th>
+                            <th width="35%">Proktor</th>
+                            <th width="5%"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($cbtRoomNames->sort() as $roomName)
+                        <tr data-room="{{ $roomName }}" data-jenis="cbt">
+                            <td class="align-middle"><strong>{{ $roomName }}</strong></td>
+                            <td>
+                                <select class="form-control form-control-sm select-pengawas" data-room="{{ $roomName }}">
+                                    <option value="">-- Pengawas --</option>
+                                    @foreach($pengujiList as $user)
+                                    <option value="{{ $user->id }}">{{ $user->name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-control form-control-sm select-proktor" data-room="{{ $roomName }}">
+                                    <option value="">-- Proktor --</option>
+                                    @foreach($pengujiList as $user)
+                                    <option value="{{ $user->id }}">{{ $user->name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td class="text-center align-middle">
+                                <button type="button" class="btn btn-xs btn-success btn-save-cbt" data-room="{{ $roomName }}" title="Simpan">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- Wawancara: Penguji --}}
+    @if($wawancaraRoomNames->isNotEmpty())
+    <div class="col-lg-6">
+        <div class="card card-warning card-outline">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-user-tie mr-2"></i>Penguji Wawancara</h3>
+                <div class="card-tools">
+                    <small class="text-muted">1 Penguji per ruang</small>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-bordered mb-0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th width="30%">Ruang</th>
+                            <th width="60%">Penguji</th>
+                            <th width="10%"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($wawancaraRoomNames->sort() as $roomName)
+                        <tr data-room="{{ $roomName }}" data-jenis="wawancara">
+                            <td class="align-middle"><strong>{{ $roomName }}</strong></td>
+                            <td>
+                                <select class="form-control form-control-sm select-penguji" data-room="{{ $roomName }}">
+                                    <option value="">-- Penguji --</option>
+                                    @foreach($pengujiList as $user)
+                                    <option value="{{ $user->id }}">{{ $user->name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td class="text-center align-middle">
+                                <button type="button" class="btn btn-xs btn-warning btn-save-wawancara" data-room="{{ $roomName }}" title="Simpan">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>
 
 {{-- Peserta List --}}
@@ -553,6 +710,110 @@ $(document).ready(function() {
             },
             complete: function() {
                 btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i>Simpan');
+            }
+        });
+    });
+
+    // ============ ASSIGN PETUGAS ============
+
+    var assignUrl = '{{ route("admin.penjadwalan-ujian.assign-petugas", $jadwal->id) }}';
+    var getPetugasUrl = '{{ route("admin.penjadwalan-ujian.get-petugas-ruang", $jadwal->id) }}';
+
+    // Load existing assignments on page load
+    function loadPetugasAssignments() {
+        $.get(getPetugasUrl, function(response) {
+            if (response.success && response.data) {
+                response.data.forEach(function(item) {
+                    if (item.jenis_ujian === 'cbt') {
+                        var row = $('tr[data-room="' + item.nama_ruang + '"][data-jenis="cbt"]');
+                        if (item.pengawas) row.find('.select-pengawas').val(item.pengawas.id);
+                        if (item.proktor) row.find('.select-proktor').val(item.proktor.id);
+                    } else {
+                        var row = $('tr[data-room="' + item.nama_ruang + '"][data-jenis="wawancara"]');
+                        if (item.penguji) row.find('.select-penguji').val(item.penguji.id);
+                    }
+                });
+            }
+        });
+    }
+    loadPetugasAssignments();
+
+    // Save CBT assignment (Pengawas + Proktor)
+    $(document).on('click', '.btn-save-cbt', function() {
+        var btn = $(this);
+        var room = btn.data('room');
+        var row = $('tr[data-room="' + room + '"][data-jenis="cbt"]');
+        var pengawasId = row.find('.select-pengawas').val();
+        var proktorId = row.find('.select-proktor').val();
+
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+        $.ajax({
+            url: assignUrl,
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                nama_ruang: room,
+                jenis_ujian: 'cbt',
+                pengawas_id: pengawasId || null,
+                proktor_id: proktorId || null
+            },
+            success: function(response) {
+                if (response.success) {
+                    toastr.success(response.message);
+                    row.addClass('table-success').delay(1500).queue(function(next) {
+                        $(this).removeClass('table-success');
+                        next();
+                    });
+                } else {
+                    toastr.error(response.message);
+                }
+            },
+            error: function(xhr) {
+                var msg = xhr.responseJSON?.message || 'Gagal assign petugas.';
+                toastr.error(msg);
+            },
+            complete: function() {
+                btn.prop('disabled', false).html('<i class="fas fa-check"></i>');
+            }
+        });
+    });
+
+    // Save Wawancara assignment (Penguji)
+    $(document).on('click', '.btn-save-wawancara', function() {
+        var btn = $(this);
+        var room = btn.data('room');
+        var row = $('tr[data-room="' + room + '"][data-jenis="wawancara"]');
+        var pengujiId = row.find('.select-penguji').val();
+
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+        $.ajax({
+            url: assignUrl,
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                nama_ruang: room,
+                jenis_ujian: 'wawancara',
+                penguji_id: pengujiId || null
+            },
+            success: function(response) {
+                if (response.success) {
+                    toastr.success(response.message);
+                    row.addClass('table-success').delay(1500).queue(function(next) {
+                        $(this).removeClass('table-success');
+                        next();
+                    });
+                } else {
+                    toastr.error(response.message);
+                }
+            },
+            error: function(xhr) {
+                var msg = xhr.responseJSON?.message || 'Gagal assign petugas.';
+                toastr.error(msg);
+            },
+            complete: function() {
+                btn.prop('disabled', false).html('<i class="fas fa-check"></i>');
             }
         });
     });

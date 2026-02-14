@@ -292,6 +292,17 @@
         </div>
     </div>
 
+    {{-- Ketua Panitia Signature --}}
+    <div style="margin-top: 10mm; display: flex; justify-content: flex-end;">
+        <div style="text-align: center; width: 70mm;">
+            <div style="font-size: 9pt; margin-bottom: 2mm;">Mengetahui,</div>
+            <div style="font-size: 10pt; font-weight: bold; margin-bottom: 20mm;">Ketua Panitia</div>
+            <div style="border-top: 1px solid #333; padding-top: 2mm;">
+                <strong>{{ (isset($ketuaPanitia) && $ketuaPanitia) ? $ketuaPanitia->name : '........................' }}</strong>
+            </div>
+        </div>
+    </div>
+
     <div class="footer">
         Dicetak: {{ now()->isoFormat('D MMMM Y, HH:mm') }} | 
         PPDB {{ $jadwal->tahunPelajaran->nama ?? '-' }}
