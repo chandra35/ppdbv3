@@ -43,42 +43,36 @@
         
         /* Kop Surat */
         .kop-wrapper {
-            margin-bottom: 15px;
+            margin-bottom: 8px;
         }
         
         /* Room Banner */
         .room-banner {
             text-align: center;
-            padding: 10px 0;
-            margin-bottom: 10px;
+            padding: 6px 0;
+            margin-bottom: 6px;
             border: 2px solid #333;
             border-radius: 8px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: #fff;
             position: relative;
         }
-        .room-banner .room-badge {
-            position: absolute;
-            top: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #e74c3c;
-            color: white;
-            padding: 3px 15px;
-            font-size: 8px;
-            font-weight: bold;
-            border-radius: 10px;
-            letter-spacing: 1px;
-        }
+
         .room-banner h2 {
-            font-size: 32px;
-            margin: 5px 0 3px;
+            font-size: 26px;
+            margin: 2px 0 2px;
             letter-spacing: 3px;
         }
-        .room-banner .exam-type {
-            font-size: 14px;
+        .room-banner .sesi-label {
+            font-size: 11px;
             font-weight: bold;
-            margin-bottom: 3px;
+            margin-bottom: 1px;
+            opacity: 0.9;
+        }
+        .room-banner .exam-type {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 2px;
         }
         .room-banner .exam-type.cbt { color: #90EE90; }
         .room-banner .exam-type.wawancara { color: #FFD700; }
@@ -90,13 +84,13 @@
         /* Stats Box */
         .stat-box {
             text-align: center;
-            padding: 8px;
+            padding: 5px;
             background: #f8f9fa;
             border: 1px solid #dee2e6;
             border-radius: 5px;
         }
         .stat-value {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
             color: #2c3e50;
         }
@@ -110,10 +104,10 @@
         .instruction {
             background: #fff3cd;
             border: 1px solid #ffc107;
-            padding: 8px 12px;
+            padding: 5px 10px;
             border-radius: 5px;
-            font-size: 8px;
-            margin-bottom: 10px;
+            font-size: 7px;
+            margin-bottom: 6px;
             text-align: center;
         }
         
@@ -198,14 +192,14 @@
 
         {{-- Room Banner --}}
         <div class="room-banner">
-            <div class="room-badge">📌 TEMPEL DI DEPAN RUANG</div>
+            <div class="sesi-label">RUANG SESI {{ $room['sesi'] }}</div>
             <h2>{{ strtoupper($room['nama']) }}</h2>
-            <div class="exam-type {{ $room['jenis'] }}">{{ strtoupper($room['jenis']) }} - SESI {{ $room['sesi'] }}</div>
+            <div class="exam-type {{ $room['jenis'] }}">{{ strtoupper($room['jenis']) }}</div>
             <p>{{ $jadwal->tanggal_ujian->translatedFormat('l, d F Y') }} | {{ $room['waktu'] }}</p>
         </div>
 
         {{-- Room Stats --}}
-        <table style="width: 100%; margin-bottom: 10px; border-collapse: separate; border-spacing: 5px 0;">
+        <table style="width: 100%; margin-bottom: 6px; border-collapse: separate; border-spacing: 5px 0;">
             <tr>
                 <td class="stat-box">
                     <div class="stat-value">{{ $room['jumlah_peserta'] }}</div>
