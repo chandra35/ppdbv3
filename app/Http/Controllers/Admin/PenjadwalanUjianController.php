@@ -1107,7 +1107,11 @@ class PenjadwalanUjianController extends Controller
             }
 
             // Determine max cohort columns
-            $maxCohorts = max(1, ...array_map(fn($s) => count($s['cohorts']), $students ?: [['cohorts' => []]]));
+            $maxCohorts = 1;
+            if (!empty($students)) {
+                $counts = array_map(fn($s) => count($s['cohorts']), $students);
+                $maxCohorts = max(1, max($counts));
+            }
 
             // CSV header
             $header = ['firstname', 'lastname', 'username', 'password', 'email'];

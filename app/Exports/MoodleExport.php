@@ -112,7 +112,8 @@ class MoodleExport implements FromArray, WithHeadings, WithStyles, WithColumnWid
 
         // Determine max cohort count
         if (!empty($students)) {
-            $this->cohortCount = max(1, ...array_map(fn($s) => count($s['cohorts']), $students));
+            $counts = array_map(fn($s) => count($s['cohorts']), $students);
+            $this->cohortCount = max(1, max($counts));
         }
 
         return array_values($students);
