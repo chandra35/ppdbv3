@@ -62,6 +62,8 @@ class AdminNilaiController extends Controller
             ? route('admin.sesi-ujian.admin-input-nilai', [$sesiUjian->id, $ruangUjian->id, $nextPeserta]) 
             : null;
 
+        $autoSaveRoute = route('admin.sesi-ujian.admin-auto-save-nilai', [$sesiUjian->id, $ruangUjian->id, $pesertaRuang->id]);
+
         // Reuse same view as penguji
         return view('penguji.input-nilai', compact(
             'ruangUjian',
@@ -77,7 +79,8 @@ class AdminNilaiController extends Controller
             'saveRoute',
             'backRoute',
             'prevRoute',
-            'nextRoute'
+            'nextRoute',
+            'autoSaveRoute'
         ));
     }
 
@@ -144,5 +147,66 @@ class AdminNilaiController extends Controller
         return redirect()
             ->route('admin.sesi-ujian.peserta-ruang', [$sesiUjian->id, $ruangUjian->id])
             ->with('success', $message);
+    }
+
+    /**
+     * Auto-save nilai (AJAX) - admin version
+     */
+    public function autoSaveNilai(Request $request, SesiUjian $sesiUjian, RuangUjian $ruangUjian, PesertaRuang $pesertaRuang)
+    {
+        $user = Auth::user();
+
+        $allowedFields = [
+            'nilai_wawancara', 'nilai_tajwid', 'nilai_makhroj', 'nilai_kelancaran',
+            'nilai_tulis_quran', 'nilai_hafalan', 'jumlah_juz_hafalan', 'catatan_penguji',
+        ];
+
+        $field = $request->input('field');
+        $value = $request->input('value');
+
+        if (!in_array($field, $allowedFields)) {
+            return response()->json(['success' => false, 'message' => 'Field tidak valid.'], 422);
+        }
+
+        if (in_array($field, ['nilai_wawancara', 'nilai_tajwid', 'nilai_makhroj', 'nilai_kelancaran', 'nilai_tulis_quran', 'nilai_hafalan'])) {
+            if ($value !== null && $value !== '') {
+                if (!is_numeric($value) || $value < 0 || $value > 100) {
+                    return response()->json(['success' => false, 'message' => 'Nilai harus 0-100.'], 422);
+                }
+            } else {
+                $value = null;
+            }
+        } elseif ($field === 'jumlah_juz_hafalan') {
+            $value = $value !== null && $value !== '' ? (int) $value : null;
+        }
+
+        $calonSiswa = $pesertaRuang->calonSiswa;
+
+        $nilai = NilaiSeleksi::firstOrNew([
+            'sesi_ujian_id' => $sesiUjian->id,
+            'calon_siswa_id' => $calonSiswa->id,
+            'penguji_id' => $user->id,
+        ], [
+            'ruang_ujian_id' => $ruangUjian->id,
+            'status' => NilaiSeleksi::STATUS_DRAFT,
+        ]);
+
+        if ($nilai->exists && !$nilai->isEditable()) {
+            return response()->json(['success' => false, 'message' => 'Nilai sudah disubmit.'], 422);
+        }
+
+        $nilai->ruang_ujian_id = $ruangUjian->id;
+        $nilai->$field = $value;
+        $nilai->status = NilaiSeleksi::STATUS_DRAFT;
+        $nilai->save();
+        $nilai->updateTotalNilai();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tersimpan otomatis.',
+            'saved_at' => now()->format('H:i:s'),
+            'field' => $field,
+            'total_nilai' => $nilai->fresh()->total_nilai,
+        ]);
     }
 }

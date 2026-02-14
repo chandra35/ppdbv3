@@ -277,6 +277,58 @@
     /* ===== Rubrik Legend ===== */
     .rubrik-table { font-size: 11px; }
     .rubrik-table td, .rubrik-table th { padding: 3px 8px; }
+
+    /* ===== Auto-Save Indicator ===== */
+    .autosave-status {
+        position: fixed;
+        top: 70px;
+        right: 20px;
+        z-index: 1050;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        transition: all 0.3s ease;
+        opacity: 0;
+        transform: translateX(20px);
+        pointer-events: none;
+    }
+    .autosave-status.show {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    .autosave-status.saving {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffc107;
+    }
+    .autosave-status.saved {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #28a745;
+    }
+    .autosave-status.error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #dc3545;
+    }
+    .autosave-status .spinner-border {
+        width: 14px;
+        height: 14px;
+        border-width: 2px;
+    }
+    .input-saved {
+        animation: savedPulse 0.5s ease;
+    }
+    @keyframes savedPulse {
+        0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4); }
+        50% { box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.2); }
+        100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+    }
 </style>
 @stop
 
@@ -297,6 +349,12 @@
 
 @section('content')
 <div class="container-fluid main-content">
+    {{-- Auto-save status indicator --}}
+    <div class="autosave-status" id="autosaveStatus">
+        <span class="autosave-icon"></span>
+        <span class="autosave-text"></span>
+    </div>
+
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show">
             <button type="button" class="close" data-dismiss="alert">&times;</button>
@@ -1043,6 +1101,117 @@ function docDownload() {
         a.target = '_blank';
         a.click();
     }
+}
+
+// ==========================================
+// Auto-Save System
+// ==========================================
+var autoSaveUrl = '{{ $autoSaveRoute ?? route("penguji.auto-save-nilai", [$ruangUjian->id, $pesertaRuang->id]) }}';
+var autoSaveTimers = {};
+var autoSaveDelay = 800; // ms debounce
+var hideStatusTimer = null;
+var isNilaiEditable = {{ (!$nilai || !$nilai->exists || $nilai->isEditable()) ? 'true' : 'false' }};
+
+function showAutoSaveStatus(state, text) {
+    var el = $('#autosaveStatus');
+    el.removeClass('saving saved error').addClass(state + ' show');
+    
+    if (state === 'saving') {
+        el.find('.autosave-icon').html('<span class="spinner-border spinner-border-sm"></span>');
+    } else if (state === 'saved') {
+        el.find('.autosave-icon').html('<i class="fas fa-check-circle"></i>');
+    } else {
+        el.find('.autosave-icon').html('<i class="fas fa-exclamation-triangle"></i>');
+    }
+    el.find('.autosave-text').text(text);
+    
+    // Clear any existing hide timer
+    if (hideStatusTimer) clearTimeout(hideStatusTimer);
+    
+    // Auto-hide after 3s for saved/error states
+    if (state !== 'saving') {
+        hideStatusTimer = setTimeout(function() {
+            el.removeClass('show');
+        }, 3000);
+    }
+}
+
+function doAutoSave(field, value, inputEl) {
+    if (!isNilaiEditable) return;
+    
+    showAutoSaveStatus('saving', 'Menyimpan...');
+    
+    $.ajax({
+        url: autoSaveUrl,
+        method: 'POST',
+        data: {
+            _token: '{{ csrf_token() }}',
+            field: field,
+            value: value
+        },
+        success: function(res) {
+            if (res.success) {
+                showAutoSaveStatus('saved', 'Tersimpan ' + res.saved_at);
+                if (inputEl) {
+                    $(inputEl).addClass('input-saved');
+                    setTimeout(function() { $(inputEl).removeClass('input-saved'); }, 600);
+                }
+            } else {
+                showAutoSaveStatus('error', res.message || 'Gagal menyimpan');
+            }
+        },
+        error: function(xhr) {
+            var msg = 'Gagal menyimpan';
+            if (xhr.status === 0) {
+                msg = 'Tidak ada koneksi internet';
+            } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                msg = xhr.responseJSON.message;
+            }
+            showAutoSaveStatus('error', msg);
+            
+            // Retry after 5 seconds on connection error
+            if (xhr.status === 0) {
+                setTimeout(function() {
+                    doAutoSave(field, value, inputEl);
+                }, 5000);
+            }
+        }
+    });
+}
+
+if (isNilaiEditable) {
+    // Auto-save for nilai inputs
+    $(document).on('input', '.nilai-input', function() {
+        var input = this;
+        var field = $(input).attr('name');
+        var value = $(input).val();
+        
+        // Clear previous timer for this field
+        if (autoSaveTimers[field]) clearTimeout(autoSaveTimers[field]);
+        
+        autoSaveTimers[field] = setTimeout(function() {
+            doAutoSave(field, value, input);
+        }, autoSaveDelay);
+    });
+    
+    // Auto-save for catatan (longer debounce)
+    $(document).on('input', 'textarea[name="catatan_penguji"]', function() {
+        var input = this;
+        var field = 'catatan_penguji';
+        var value = $(input).val();
+        
+        if (autoSaveTimers[field]) clearTimeout(autoSaveTimers[field]);
+        
+        autoSaveTimers[field] = setTimeout(function() {
+            doAutoSave(field, value, input);
+        }, 1500);
+    });
+    
+    // Auto-save for juz selector
+    $(document).on('click', '.juz-btn', function() {
+        var value = $(this).data('juz');
+        doAutoSave('jumlah_juz_hafalan', value, this);
+    });
 }
 </script>
 @stop

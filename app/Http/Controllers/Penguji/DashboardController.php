@@ -170,6 +170,8 @@ class DashboardController extends Controller
             $pesertaRuang->update(['status' => PesertaRuang::STATUS_IN_PROGRESS]);
         }
 
+        $autoSaveRoute = route('penguji.auto-save-nilai', [$ruangUjian->id, $pesertaRuang->id]);
+
         return view('penguji.input-nilai', compact(
             'ruangUjian',
             'sesiUjian',
@@ -182,7 +184,8 @@ class DashboardController extends Controller
             'dokumenList',
             'dokumenLabels',
             'dokumenTambahan',
-            'dokumenTambahanLabels'
+            'dokumenTambahanLabels',
+            'autoSaveRoute'
         ));
     }
 
@@ -260,6 +263,88 @@ class DashboardController extends Controller
         return redirect()
             ->route('penguji.ruangan', $ruangUjian->id)
             ->with('success', $message);
+    }
+
+    /**
+     * Auto-save nilai (AJAX) - saves individual field changes as draft
+     * Called automatically when penguji changes any input value
+     */
+    public function autoSaveNilai(Request $request, RuangUjian $ruangUjian, PesertaRuang $pesertaRuang)
+    {
+        $user = Auth::user();
+
+        // Check if penguji is assigned
+        $isAssigned = PengujiRuang::where('user_id', $user->id)
+            ->where('ruang_ujian_id', $ruangUjian->id)
+            ->where('is_active', true)
+            ->exists();
+
+        if (!$isAssigned) {
+            return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
+        }
+
+        // Allowed fields
+        $allowedFields = [
+            'nilai_wawancara', 'nilai_tajwid', 'nilai_makhroj', 'nilai_kelancaran',
+            'nilai_tulis_quran', 'nilai_hafalan', 'jumlah_juz_hafalan', 'catatan_penguji',
+        ];
+
+        $field = $request->input('field');
+        $value = $request->input('value');
+
+        if (!in_array($field, $allowedFields)) {
+            return response()->json(['success' => false, 'message' => 'Field tidak valid.'], 422);
+        }
+
+        // Validate value
+        if (in_array($field, ['nilai_wawancara', 'nilai_tajwid', 'nilai_makhroj', 'nilai_kelancaran', 'nilai_tulis_quran', 'nilai_hafalan'])) {
+            if ($value !== null && $value !== '') {
+                if (!is_numeric($value) || $value < 0 || $value > 100) {
+                    return response()->json(['success' => false, 'message' => 'Nilai harus 0-100.'], 422);
+                }
+            } else {
+                $value = null;
+            }
+        } elseif ($field === 'jumlah_juz_hafalan') {
+            $value = $value !== null && $value !== '' ? (int) $value : null;
+        }
+
+        $sesiUjian = $ruangUjian->sesiUjian;
+        $calonSiswa = $pesertaRuang->calonSiswa;
+
+        // Get or create nilai
+        $nilai = NilaiSeleksi::firstOrNew([
+            'sesi_ujian_id' => $sesiUjian->id,
+            'calon_siswa_id' => $calonSiswa->id,
+            'penguji_id' => $user->id,
+        ], [
+            'ruang_ujian_id' => $ruangUjian->id,
+            'status' => NilaiSeleksi::STATUS_DRAFT,
+        ]);
+
+        // Check if editable
+        if ($nilai->exists && !$nilai->isEditable()) {
+            return response()->json(['success' => false, 'message' => 'Nilai sudah disubmit.'], 422);
+        }
+
+        $nilai->ruang_ujian_id = $ruangUjian->id;
+        $nilai->$field = $value;
+        $nilai->status = NilaiSeleksi::STATUS_DRAFT;
+        $nilai->save();
+        $nilai->updateTotalNilai();
+
+        // Mark peserta as in_progress if still waiting
+        if ($pesertaRuang->status === PesertaRuang::STATUS_WAITING) {
+            $pesertaRuang->update(['status' => PesertaRuang::STATUS_IN_PROGRESS]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tersimpan otomatis.',
+            'saved_at' => now()->format('H:i:s'),
+            'field' => $field,
+            'total_nilai' => $nilai->fresh()->total_nilai,
+        ]);
     }
 
     /**
