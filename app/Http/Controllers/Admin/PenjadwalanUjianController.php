@@ -1030,6 +1030,82 @@ class PenjadwalanUjianController extends Controller
     }
 
     /**
+     * Export Moodle CSV (user upload format)
+     * Columns: firstname,lastname,username,password,email,cohort1
+     */
+    public function exportMoodle(JadwalUjian $jadwalUjian)
+    {
+        $jadwalUjian->load(['tahunPelajaran', 'sesiUjian']);
+        $tahun = $jadwalUjian->tahunPelajaran->nama ?? date('Y');
+        // Extract year from tahun pelajaran name (e.g. "2025/2026" -> "2026")
+        $tahunShort = preg_match('/\d{4}\/(\d{4})/', $tahun, $m) ? $m[1] : date('Y');
+
+        $filename = 'moodle-import-' . $jadwalUjian->tanggal_ujian->format('Y-m-d') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+        ];
+
+        $callback = function () use ($jadwalUjian, $tahunShort) {
+            $file = fopen('php://output', 'w');
+            // BOM for Excel UTF-8 compatibility
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            // Moodle standard CSV header
+            fputcsv($file, [
+                'firstname',
+                'lastname',
+                'username',
+                'password',
+                'email',
+                'cohort1',
+            ]);
+
+            $processedUsers = []; // avoid duplicates (same student in multiple sesi)
+
+            foreach ($jadwalUjian->sesiUjian as $sesi) {
+                $cohort = 'ppdb' . $tahunShort . '_s' . $sesi->nomor_sesi;
+
+                $ruangList = RuangUjian::where('sesi_ujian_id', $sesi->id)->get();
+
+                foreach ($ruangList as $ruang) {
+                    $pesertaList = PesertaRuang::with(['calonSiswa.user'])
+                        ->where('ruang_ujian_id', $ruang->id)
+                        ->orderBy('nomor_urut')
+                        ->get();
+
+                    foreach ($pesertaList as $pr) {
+                        $cs = $pr->calonSiswa;
+                        if (!$cs) continue;
+
+                        // Skip if already exported (student may be in CBT + Wawancara sesi)
+                        $key = $cs->id . '_' . $sesi->nomor_sesi;
+                        if (isset($processedUsers[$key])) continue;
+                        $processedUsers[$key] = true;
+
+                        $user = $cs->user;
+                        $password = $user?->readable_password ?? ($cs->nisn ?? 'ppdb' . $tahunShort);
+
+                        fputcsv($file, [
+                            $cs->nama_lengkap ?? '',                    // firstname
+                            'PPDB ' . $tahunShort,                     // lastname
+                            $cs->nisn ?? '',                           // username
+                            $password,                                 // password
+                            $cs->email ?? ($cs->nisn . '@ppdb.local'), // email
+                            $cohort,                                   // cohort1
+                        ]);
+                    }
+                }
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
      * PDF Lembar Penilaian (per ruang)
      */
     public function pdfLembarPenilaian(JadwalUjian $jadwalUjian)

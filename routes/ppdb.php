@@ -276,6 +276,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/{jadwalUjian}/print/jadwal-sesi', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'printJadwalSesi'])->name('print.jadwal-sesi');
         Route::get('/{jadwalUjian}/export/excel', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'exportExcel'])->name('export.excel');
         Route::get('/{jadwalUjian}/export/lembar-penilaian', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'exportLembarPenilaian'])->name('export.lembar-penilaian');
+        Route::get('/{jadwalUjian}/export/moodle', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'exportMoodle'])->name('export.moodle');
         // PDF routes
         Route::get('/{jadwalUjian}/pdf/daftar-hadir', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'pdfDaftarHadir'])->name('pdf.daftar-hadir');
         Route::get('/{jadwalUjian}/pdf/nama-ruang', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'pdfNamaRuang'])->name('pdf.nama-ruang');

@@ -183,6 +183,12 @@
                     <i class="fas fa-file-pdf mr-2"></i>Lembar Penilaian
                 </a>
             </div>
+            <div class="col-md-3 col-sm-6 mb-2">
+                <a href="{{ route('admin.penjadwalan-ujian.export.moodle', $jadwal) }}" 
+                   target="_blank" class="btn btn-warning btn-block btn-print">
+                    <i class="fas fa-graduation-cap mr-2"></i>Export Moodle
+                </a>
+            </div>
         </div>
     </div>
 </div>
