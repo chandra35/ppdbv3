@@ -216,25 +216,35 @@
 
         {{-- Room Info Box --}}
         <div class="room-info">
-            <div class="room-info-cell" style="width: 22%;">
+            <div class="room-info-cell" style="width: 18%;">
                 <div class="room-info-label">Nama Ruang</div>
                 <div class="room-info-value">{{ $room['nama'] }}</div>
             </div>
-            <div class="room-info-cell" style="width: 10%;">
+            <div class="room-info-cell" style="width: 8%;">
                 <div class="room-info-label">Sesi</div>
                 <div class="room-info-value">{{ $room['sesi'] }}</div>
             </div>
-            <div class="room-info-cell" style="width: 28%;">
+            <div class="room-info-cell" style="width: 18%;">
                 <div class="room-info-label">Tanggal</div>
                 <div class="room-info-value">{{ $jadwal->tanggal_ujian->translatedFormat('d F Y') }}</div>
             </div>
-            <div class="room-info-cell" style="width: 20%;">
+            <div class="room-info-cell" style="width: 16%;">
                 <div class="room-info-label">Waktu</div>
                 <div class="room-info-value">{{ $room['waktu'] }}</div>
             </div>
-            <div class="room-info-cell" style="width: 20%;">
+            <div class="room-info-cell" style="width: 15%;">
                 <div class="room-info-label">Jumlah Peserta</div>
                 <div class="room-info-value">{{ count($room['peserta']) }} Orang</div>
+            </div>
+            <div class="room-info-cell" style="width: 25%;">
+                <div class="room-info-label">Penguji</div>
+                <div class="room-info-value" style="font-size: 8px;">
+                    @if(!empty($room['penguji']) && count($room['penguji']) > 0)
+                        {{ $room['penguji']->pluck('user.name')->filter()->join(', ') }}
+                    @else
+                        <span style="color: #999;">-</span>
+                    @endif
+                </div>
             </div>
         </div>
 
@@ -330,12 +340,32 @@
                     </div>
                 </td>
                 <td style="width: 40%; vertical-align: top; border: none; padding: 0;">
-                    <div class="signature-cell">
-                        <div style="font-size: 9px;">Metro, {{ $jadwal->tanggal_ujian?->translatedFormat('d F Y') ?? now()->format('d F Y') }}</div>
-                        <div class="signature-title">PENGUJI</div>
-                        <div class="signature-line">&nbsp;</div>
-                        <div class="signature-nip">NIP.</div>
-                    </div>
+                    @if(!empty($room['penguji']) && count($room['penguji']) > 0)
+                        @foreach($room['penguji'] as $pgj)
+                        <div class="signature-cell" style="margin-bottom: 5px;">
+                            @if($loop->first)
+                            <div style="font-size: 9px;">Metro, {{ $jadwal->tanggal_ujian?->translatedFormat('d F Y') ?? now()->format('d F Y') }}</div>
+                            @endif
+                            <div class="signature-title">{{ $pgj->is_ketua ? 'KETUA PENGUJI' : 'PENGUJI' }}</div>
+                            <div class="signature-line">&nbsp;</div>
+                            <div style="font-size: 9px; font-weight: bold;">{{ $pgj->user->name ?? '-' }}</div>
+                            @php
+                                $nip = '';
+                                if ($pgj->user && is_numeric($pgj->user->username)) {
+                                    $nip = $pgj->user->username;
+                                }
+                            @endphp
+                            <div class="signature-nip">NIP. {{ $nip ?: '................................' }}</div>
+                        </div>
+                        @endforeach
+                    @else
+                        <div class="signature-cell">
+                            <div style="font-size: 9px;">Metro, {{ $jadwal->tanggal_ujian?->translatedFormat('d F Y') ?? now()->format('d F Y') }}</div>
+                            <div class="signature-title">PENGUJI</div>
+                            <div class="signature-line">&nbsp;</div>
+                            <div class="signature-nip">NIP.</div>
+                        </div>
+                    @endif
                 </td>
             </tr>
         </table>

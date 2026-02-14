@@ -485,15 +485,41 @@ class LembarPenilaianSheet implements FromArray, WithTitle, WithStyles, WithEven
         $tanggal = $this->jadwal->tanggal_ujian?->translatedFormat('d F Y') ?? now()->format('d F Y');
         $sheet->setCellValue("{$sigCol}{$sigRow}", "Metro, " . $tanggal);
         $sheet->getStyle("{$sigCol}{$sigRow}")->getFont()->setSize(10);
-        $sigRow++;
-        $sheet->setCellValue("{$sigCol}{$sigRow}", "PENGUJI");
-        $sheet->getStyle("{$sigCol}{$sigRow}")->getFont()->setBold(true)->setSize(10);
-        $sigRow += 4;
-        $sheet->setCellValue("{$sigCol}{$sigRow}", "...................................");
-        $sheet->getStyle("{$sigCol}{$sigRow}")->getFont()->setSize(10);
-        $sigRow++;
-        $sheet->setCellValue("{$sigCol}{$sigRow}", "NIP.");
-        $sheet->getStyle("{$sigCol}{$sigRow}")->getFont()->setSize(10);
+
+        // Get penguji for this ruang
+        $pengujiList = \App\Models\PengujiRuang::with('user')
+            ->where('ruang_ujian_id', $this->ruang->id)
+            ->where('is_active', true)
+            ->orderByDesc('is_ketua')
+            ->get();
+
+        if ($pengujiList->count() > 0) {
+            foreach ($pengujiList as $pIdx => $pgj) {
+                $sigRow++;
+                $label = $pgj->is_ketua ? 'KETUA PENGUJI' : 'PENGUJI';
+                $sheet->setCellValue("{$sigCol}{$sigRow}", $label);
+                $sheet->getStyle("{$sigCol}{$sigRow}")->getFont()->setBold(true)->setSize(10);
+                $sigRow += 4;
+                $nama = $pgj->user->name ?? '...................................';
+                $sheet->setCellValue("{$sigCol}{$sigRow}", $nama);
+                $sheet->getStyle("{$sigCol}{$sigRow}")->getFont()->setBold(true)->setSize(10);
+                $sigRow++;
+                $nip = ($pgj->user && is_numeric($pgj->user->username)) ? $pgj->user->username : '';
+                $sheet->setCellValue("{$sigCol}{$sigRow}", "NIP. " . $nip);
+                $sheet->getStyle("{$sigCol}{$sigRow}")->getFont()->setSize(10);
+                $sigRow++;
+            }
+        } else {
+            $sigRow++;
+            $sheet->setCellValue("{$sigCol}{$sigRow}", "PENGUJI");
+            $sheet->getStyle("{$sigCol}{$sigRow}")->getFont()->setBold(true)->setSize(10);
+            $sigRow += 4;
+            $sheet->setCellValue("{$sigCol}{$sigRow}", "...................................");
+            $sheet->getStyle("{$sigCol}{$sigRow}")->getFont()->setSize(10);
+            $sigRow++;
+            $sheet->setCellValue("{$sigCol}{$sigRow}", "NIP.");
+            $sheet->getStyle("{$sigCol}{$sigRow}")->getFont()->setSize(10);
+        }
     }
 
     /**

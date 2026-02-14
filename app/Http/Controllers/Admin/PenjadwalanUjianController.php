@@ -1188,12 +1188,20 @@ class PenjadwalanUjianController extends Controller
                     ->get()
                     ->keyBy('calon_siswa_id');
 
+                // Get penguji for this ruang
+                $pengujiList = \App\Models\PengujiRuang::with('user')
+                    ->where('ruang_ujian_id', $ruang->id)
+                    ->where('is_active', true)
+                    ->orderByDesc('is_ketua')
+                    ->get();
+
                 $ruangList[] = [
                     'nama' => $ruang->nama_ruang,
                     'sesi' => $sesi->nomor_sesi,
                     'waktu' => $sesi->waktu_mulai?->format('H:i') . ' - ' . $sesi->waktu_selesai?->format('H:i'),
                     'peserta' => $pesertaRuang,
                     'nilaiMap' => $nilaiMap,
+                    'penguji' => $pengujiList,
                 ];
             }
         }
