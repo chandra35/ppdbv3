@@ -411,9 +411,8 @@
                     <thead class="thead-light">
                         <tr>
                             <th width="25%">Ruang</th>
-                            <th width="35%">Pengawas</th>
-                            <th width="35%">Proktor</th>
-                            <th width="5%"></th>
+                            <th width="37%">Pengawas</th>
+                            <th width="38%">Proktor</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -435,11 +434,6 @@
                                     <option value="{{ $user->id }}">{{ $user->name }}</option>
                                     @endforeach
                                 </select>
-                            </td>
-                            <td class="text-center align-middle">
-                                <button type="button" class="btn btn-xs btn-success btn-save-cbt" data-room="{{ $roomName }}" title="Simpan">
-                                    <i class="fas fa-check"></i>
-                                </button>
                             </td>
                         </tr>
                         @endforeach
@@ -464,9 +458,8 @@
                 <table class="table table-sm table-bordered mb-0">
                     <thead class="thead-light">
                         <tr>
-                            <th width="30%">Ruang</th>
-                            <th width="60%">Penguji</th>
-                            <th width="10%"></th>
+                            <th width="35%">Ruang</th>
+                            <th width="65%">Penguji</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -480,11 +473,6 @@
                                     <option value="{{ $user->id }}">{{ $user->name }}</option>
                                     @endforeach
                                 </select>
-                            </td>
-                            <td class="text-center align-middle">
-                                <button type="button" class="btn btn-xs btn-warning btn-save-wawancara" data-room="{{ $roomName }}" title="Simpan">
-                                    <i class="fas fa-check"></i>
-                                </button>
                             </td>
                         </tr>
                         @endforeach
@@ -738,15 +726,15 @@ $(document).ready(function() {
     }
     loadPetugasAssignments();
 
-    // Save CBT assignment (Pengawas + Proktor)
-    $(document).on('click', '.btn-save-cbt', function() {
-        var btn = $(this);
-        var room = btn.data('room');
-        var row = $('tr[data-room="' + room + '"][data-jenis="cbt"]');
+    // Auto-save CBT assignment on select change (Pengawas / Proktor)
+    $(document).on('change', '.select-pengawas, .select-proktor', function() {
+        var select = $(this);
+        var row = select.closest('tr');
+        var room = row.data('room');
         var pengawasId = row.find('.select-pengawas').val();
         var proktorId = row.find('.select-proktor').val();
 
-        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+        select.prop('disabled', true);
 
         $.ajax({
             url: assignUrl,
@@ -774,19 +762,19 @@ $(document).ready(function() {
                 toastr.error(msg);
             },
             complete: function() {
-                btn.prop('disabled', false).html('<i class="fas fa-check"></i>');
+                select.prop('disabled', false);
             }
         });
     });
 
-    // Save Wawancara assignment (Penguji)
-    $(document).on('click', '.btn-save-wawancara', function() {
-        var btn = $(this);
-        var room = btn.data('room');
-        var row = $('tr[data-room="' + room + '"][data-jenis="wawancara"]');
-        var pengujiId = row.find('.select-penguji').val();
+    // Auto-save Wawancara assignment on select change (Penguji)
+    $(document).on('change', '.select-penguji', function() {
+        var select = $(this);
+        var row = select.closest('tr');
+        var room = row.data('room');
+        var pengujiId = select.val();
 
-        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+        select.prop('disabled', true);
 
         $.ajax({
             url: assignUrl,
@@ -813,7 +801,7 @@ $(document).ready(function() {
                 toastr.error(msg);
             },
             complete: function() {
-                btn.prop('disabled', false).html('<i class="fas fa-check"></i>');
+                select.prop('disabled', false);
             }
         });
     });
