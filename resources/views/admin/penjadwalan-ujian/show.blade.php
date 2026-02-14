@@ -171,6 +171,18 @@
                     <i class="fas fa-file-excel mr-2"></i>Export Excel
                 </a>
             </div>
+            <div class="col-md-3 col-sm-6 mb-2">
+                <a href="{{ route('admin.penjadwalan-ujian.export.lembar-penilaian', $jadwal) }}" 
+                   target="_blank" class="btn btn-success btn-block btn-print">
+                    <i class="fas fa-file-excel mr-2"></i>Lembar Penilaian
+                </a>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-2">
+                <a href="{{ route('admin.penjadwalan-ujian.pdf.lembar-penilaian', $jadwal) }}" 
+                   target="_blank" class="btn btn-danger btn-block btn-print">
+                    <i class="fas fa-file-pdf mr-2"></i>Lembar Penilaian
+                </a>
+            </div>
         </div>
     </div>
 </div>

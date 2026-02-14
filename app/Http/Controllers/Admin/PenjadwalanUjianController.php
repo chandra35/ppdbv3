@@ -1016,6 +1016,88 @@ class PenjadwalanUjianController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
+    /**
+     * Export Lembar Penilaian Excel (per ruang)
+     */
+    public function exportLembarPenilaian(JadwalUjian $jadwalUjian)
+    {
+        $filename = 'lembar-penilaian-' . $jadwalUjian->tanggal_ujian->format('Y-m-d') . '.xlsx';
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\LembarPenilaianExport($jadwalUjian),
+            $filename
+        );
+    }
+
+    /**
+     * PDF Lembar Penilaian (per ruang)
+     */
+    public function pdfLembarPenilaian(JadwalUjian $jadwalUjian)
+    {
+        ini_set('memory_limit', '512M');
+        set_time_limit(300);
+
+        $jadwalUjian->load(['tahunPelajaran', 'sesiUjian']);
+        $sekolah = SekolahSettings::first();
+
+        $jenjangList = SekolahSettings::JENJANG_LIST ?? [];
+        $jenjangLabel = $jenjangList[$sekolah->jenjang ?? ''] ?? '';
+
+        // Get active bobot for this tahun pelajaran
+        $bobotList = \App\Models\BobotNilaiSeleksi::active()
+            ->forTahun($jadwalUjian->tahun_pelajaran_id)
+            ->orderBy('urutan')
+            ->get();
+
+        // Calculate colspan for NILAI header
+        $nilaiColSpan = 0;
+        foreach ($bobotList as $bobot) {
+            if ($bobot->komponen === 'baca_quran') {
+                $nilaiColSpan += 4;
+            } else {
+                $nilaiColSpan += 1;
+            }
+        }
+
+        // Build room list with peserta + nilai
+        $ruangList = [];
+        foreach ($jadwalUjian->sesiUjian as $sesi) {
+            $ruangUjianList = RuangUjian::where('sesi_ujian_id', $sesi->id)->orderBy('nama_ruang')->get();
+
+            foreach ($ruangUjianList as $ruang) {
+                $pesertaRuang = PesertaRuang::with('calonSiswa')
+                    ->where('ruang_ujian_id', $ruang->id)
+                    ->orderBy('nomor_urut')
+                    ->get();
+
+                if ($pesertaRuang->isEmpty()) continue;
+
+                $nilaiMap = \App\Models\NilaiSeleksi::where('ruang_ujian_id', $ruang->id)
+                    ->get()
+                    ->keyBy('calon_siswa_id');
+
+                $ruangList[] = [
+                    'nama' => $ruang->nama_ruang,
+                    'sesi' => $sesi->nomor_sesi,
+                    'waktu' => $sesi->waktu_mulai?->format('H:i') . ' - ' . $sesi->waktu_selesai?->format('H:i'),
+                    'peserta' => $pesertaRuang,
+                    'nilaiMap' => $nilaiMap,
+                ];
+            }
+        }
+
+        $jadwal = $jadwalUjian;
+        $kopSuratService = app(\App\Services\KopSuratService::class);
+        $kopSurat = $kopSuratService->renderKopHtml($sekolah, true);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.penjadwalan-ujian.pdf.lembar-penilaian', compact(
+            'jadwal', 'ruangList', 'sekolah', 'jenjangLabel', 'bobotList', 'nilaiColSpan', 'kopSurat'
+        ));
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf->stream('lembar-penilaian-' . $jadwalUjian->tanggal_ujian->format('Y-m-d') . '.pdf');
+    }
+
     // ================== HELPER METHODS ==================
 
     /**

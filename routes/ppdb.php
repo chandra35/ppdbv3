@@ -275,10 +275,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/{jadwalUjian}/print/nama-ruang', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'printNamaRuang'])->name('print.nama-ruang');
         Route::get('/{jadwalUjian}/print/jadwal-sesi', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'printJadwalSesi'])->name('print.jadwal-sesi');
         Route::get('/{jadwalUjian}/export/excel', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'exportExcel'])->name('export.excel');
+        Route::get('/{jadwalUjian}/export/lembar-penilaian', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'exportLembarPenilaian'])->name('export.lembar-penilaian');
         // PDF routes
         Route::get('/{jadwalUjian}/pdf/daftar-hadir', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'pdfDaftarHadir'])->name('pdf.daftar-hadir');
         Route::get('/{jadwalUjian}/pdf/nama-ruang', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'pdfNamaRuang'])->name('pdf.nama-ruang');
         Route::get('/{jadwalUjian}/pdf/daftar-peserta', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'pdfDaftarPeserta'])->name('pdf.daftar-peserta');
+        Route::get('/{jadwalUjian}/pdf/lembar-penilaian', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'pdfLembarPenilaian'])->name('pdf.lembar-penilaian');
         Route::post('/{jadwalUjian}/update-ketua-panitia', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'updateKetuaPanitia'])->name('update-ketua-panitia');
         Route::post('/{jadwalUjian}/assign-petugas', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'assignPetugas'])->name('assign-petugas');
         Route::get('/{jadwalUjian}/get-petugas-ruang', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'getPetugasRuang'])->name('get-petugas-ruang');
