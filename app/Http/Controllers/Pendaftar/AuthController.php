@@ -30,6 +30,24 @@ class AuthController extends Controller
     }
 
     /**
+     * Cek apakah pendaftaran sedang dibuka
+     */
+    protected function isPendaftaranOpen(): bool
+    {
+        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        if (!$tahunAktif) return false;
+
+        return GelombangPendaftaran::where('is_active', true)
+            ->where('tanggal_buka', '<=', today())
+            ->where('tanggal_tutup', '>=', today())
+            ->whereHas('jalur', function ($query) use ($tahunAktif) {
+                $query->where('tahun_pelajaran_id', $tahunAktif->id)
+                      ->where('is_active', true);
+            })
+            ->exists();
+    }
+
+    /**
      * Show landing page with NISN check
      */
     public function landing()
@@ -51,10 +69,11 @@ class AuthController extends Controller
         
         // Get active gelombang from the active tahun pelajaran only
         $gelombangAktif = GelombangPendaftaran::where('is_active', true)
-            ->where('tanggal_buka', '<=', now())
-            ->where('tanggal_tutup', '>=', now())
+            ->where('tanggal_buka', '<=', today())
+            ->where('tanggal_tutup', '>=', today())
             ->whereHas('jalur', function ($query) use ($tahunAktif) {
-                $query->where('tahun_pelajaran_id', $tahunAktif?->id);
+                $query->where('tahun_pelajaran_id', $tahunAktif?->id)
+                      ->where('is_active', true);
             })
             ->first();
         
@@ -70,6 +89,14 @@ class AuthController extends Controller
      */
     public function cekNisn(Request $request)
     {
+        // Block jika pendaftaran sudah tutup
+        if (!$this->isPendaftaranOpen()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pendaftaran sudah ditutup. Tidak dapat melakukan pengecekan NISN.',
+            ]);
+        }
+
         $request->validate([
             'nisn' => 'required|string|size:10',
         ]);
@@ -284,6 +311,12 @@ class AuthController extends Controller
      */
     public function showRegistrationForm(Request $request)
     {
+        // Block jika pendaftaran sudah tutup
+        if (!$this->isPendaftaranOpen()) {
+            return redirect()->route('pendaftar.landing')
+                ->with('error', 'Pendaftaran sudah ditutup. Tidak dapat melakukan registrasi baru.');
+        }
+
         // Redirect jika sudah login
         if (auth()->check()) {
             $user = auth()->user();
@@ -343,6 +376,18 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
+        // Block jika pendaftaran sudah tutup
+        if (!$this->isPendaftaranOpen()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pendaftaran sudah ditutup. Tidak dapat melakukan registrasi baru.'
+                ], 403);
+            }
+            return redirect()->route('pendaftar.landing')
+                ->with('error', 'Pendaftaran sudah ditutup. Tidak dapat melakukan registrasi baru.');
+        }
+
         Log::info('Registration attempt', [
             'nisn' => $request->nisn,
             'nama_lengkap' => $request->nama_lengkap,
@@ -423,10 +468,11 @@ class AuthController extends Controller
             
             // Get active gelombang from the active tahun pelajaran only
             $gelombangAktif = GelombangPendaftaran::where('is_active', true)
-                ->where('tanggal_buka', '<=', now())
-                ->where('tanggal_tutup', '>=', now())
+                ->where('tanggal_buka', '<=', today())
+                ->where('tanggal_tutup', '>=', today())
                 ->whereHas('jalur', function ($query) use ($tahunAktif) {
-                    $query->where('tahun_pelajaran_id', $tahunAktif?->id);
+                    $query->where('tahun_pelajaran_id', $tahunAktif?->id)
+                          ->where('is_active', true);
                 })
                 ->first();
 

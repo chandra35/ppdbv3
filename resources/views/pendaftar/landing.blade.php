@@ -659,6 +659,7 @@
         <div class="container">
             <!-- Hero Content -->
             <div class="hero-content">
+                @if($gelombangAktif)
                 <h1>Pendaftaran Peserta Didik Baru</h1>
                 <p>Tahun Pelajaran {{ $tahunAktif->nama ?? date('Y') . '/' . (date('Y') + 1) }}</p>
                 
@@ -680,10 +681,15 @@
                         <span>Cetak Bukti Pendaftaran</span>
                     </div>
                 </div>
+                @else
+                <h1>Pendaftaran Ditutup</h1>
+                <p>Tahun Pelajaran {{ $tahunAktif->nama ?? date('Y') . '/' . (date('Y') + 1) }}</p>
+                @endif
             </div>
 
             <!-- Registration Card -->
             <div class="card" id="nisnCheckCard">
+                @if($gelombangAktif)
                 <h2 class="card-title">Mulai Pendaftaran</h2>
                 <p class="card-subtitle">Masukkan NISN untuk memulai</p>
 
@@ -710,7 +716,6 @@
                 <input type="hidden" id="landing_accuracy" name="landing_accuracy">
                 <input type="hidden" id="landing_location_source" name="landing_location_source" value="">
 
-                @if($gelombangAktif)
                 <div class="gelombang-info">
                     <h5><i class="fas fa-check-circle text-success"></i> Pendaftaran Dibuka</h5>
                     @if($gelombangAktif->tampil_nama_gelombang)
@@ -726,11 +731,6 @@
                     </div>
                     @endif
                 </div>
-                @else
-                <div class="info-box" style="background: #fff5f5; border-color: #feb2b2;">
-                    <p><i class="fas fa-exclamation-triangle"></i> Saat ini pendaftaran belum dibuka.</p>
-                </div>
-                @endif
 
                 <form id="cekNisnForm">
                     <div class="form-group">
@@ -738,8 +738,8 @@
                         <div class="input-group">
                             <input type="text" id="nisn" name="nisn" class="form-control" 
                                    placeholder="Contoh: 0012345678" maxlength="10" 
-                                   pattern="[0-9]{10}" required {{ !$gelombangAktif ? 'disabled' : '' }}>
-                            <button type="submit" class="btn btn-primary" id="cekNisnBtn" {{ !$gelombangAktif ? 'disabled' : '' }}>
+                                   pattern="[0-9]{10}" required>
+                            <button type="submit" class="btn btn-primary" id="cekNisnBtn">
                                 <span class="spinner"></span>
                                 <span class="btn-text">Cek NISN</span>
                             </button>
@@ -796,9 +796,61 @@
                         <i class="fas fa-sign-in-alt"></i> Login
                     </a>
                 @endauth
+
+                @else
+                {{-- ========== PENDAFTARAN DITUTUP ========== --}}
+                <div style="text-align: center; padding: 2rem 1rem;">
+                    <div style="width: 80px; height: 80px; border-radius: 50%; background: #fee2e2; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
+                        <i class="fas fa-door-closed" style="font-size: 2rem; color: #dc3545;"></i>
+                    </div>
+                    <h2 style="color: #dc3545; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Pendaftaran Telah Ditutup</h2>
+                    <p style="color: #666; margin-bottom: 1.5rem; font-size: 0.95rem;">
+                        Saat ini tidak ada gelombang pendaftaran yang sedang dibuka.<br>
+                        Silakan hubungi pihak sekolah untuk informasi lebih lanjut.
+                    </p>
+                    
+                    <div style="background: #f8f9fa; border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem; text-align: left;">
+                        <h6 style="color: #333; margin-bottom: 0.75rem; font-size: 0.9rem;"><i class="fas fa-info-circle text-primary me-1"></i> Informasi</h6>
+                        <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.88rem; color: #555;">
+                            <li style="margin-bottom: 0.4rem;"><i class="fas fa-check-circle text-success me-2" style="width: 16px;"></i> Pendaftaran dibuka sesuai jadwal yang ditentukan</li>
+                            <li style="margin-bottom: 0.4rem;"><i class="fas fa-check-circle text-success me-2" style="width: 16px;"></i> Peserta yang sudah terdaftar tetap bisa login</li>
+                            <li><i class="fas fa-check-circle text-success me-2" style="width: 16px;"></i> Pantau website ini untuk info gelombang berikutnya</li>
+                        </ul>
+                    </div>
+
+                    @auth
+                        <p style="color: #666; margin-bottom: 0.75rem; font-size: 0.9rem;">
+                            Anda login sebagai <strong>{{ Auth::user()->name }}</strong>
+                        </p>
+                        @if(Auth::user()->isAdmin())
+                            <a href="{{ route('admin.dashboard') }}" class="btn btn-success btn-block">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard Admin
+                            </a>
+                        @elseif(Auth::user()->hasAnyRole(['operator', 'verifikator']))
+                            <a href="{{ route('operator.dashboard') }}" class="btn btn-success btn-block">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard Operator
+                            </a>
+                        @else
+                            <a href="{{ route('pendaftar.dashboard') }}" class="btn btn-success btn-block">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard Saya
+                            </a>
+                        @endif
+                    @else
+                        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center;">
+                            <a href="{{ route('login') }}" class="btn btn-primary" style="min-width: 160px;">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </a>
+                            <a href="{{ url('/') }}" class="btn btn-outline-primary" style="min-width: 160px;">
+                                <i class="fas fa-home"></i> Halaman Utama
+                            </a>
+                        </div>
+                    @endauth
+                </div>
+                @endif
             </div>
 
-            <!-- Registration Form Card (Hidden initially) -->
+            <!-- Registration Form Card (Hidden initially, only when pendaftaran open) -->
+            @if($gelombangAktif)
             <div class="card" id="registrationFormCard" style="display: none;">
                 <h2 class="card-title">Lengkapi Data Pendaftaran</h2>
                 <p class="card-subtitle">Isi formulir di bawah untuk membuat akun PPDB Anda</p>
@@ -938,6 +990,7 @@
                     </div>
                 </form>
             </div>
+            @endif
         </div>
     </div>
 

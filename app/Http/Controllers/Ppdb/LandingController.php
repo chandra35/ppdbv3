@@ -41,19 +41,20 @@ class LandingController extends Controller
             })
             ->with(['gelombang' => function($q) {
                 $q->where('is_active', true)
-                  ->whereIn('status', ['open', 'upcoming'])
                   ->orderBy('urutan');
             }])
             ->orderBy('urutan')
             ->get();
         
         // Get gelombang aktif untuk countdown (dari jalur tahun pelajaran aktif)
+        // Gunakan filter tanggal, bukan kolom 'status' (karena status di-compute dari tanggal)
         $gelombangAktif = \App\Models\GelombangPendaftaran::with('jalur')
             ->where('is_active', true)
-            ->whereIn('status', ['open', 'upcoming'])
+            ->where('tanggal_tutup', '>=', today())
             ->when($tahunPelajaranAktif, function($q) use ($tahunPelajaranAktif) {
                 $q->whereHas('jalur', function($jq) use ($tahunPelajaranAktif) {
-                    $jq->where('tahun_pelajaran_id', $tahunPelajaranAktif->id);
+                    $jq->where('tahun_pelajaran_id', $tahunPelajaranAktif->id)
+                        ->where('is_active', true);
                 });
             })
             ->orderBy('tanggal_buka', 'asc')
@@ -61,7 +62,7 @@ class LandingController extends Controller
         
         // Tentukan status pendaftaran berdasarkan tanggal dan waktu
         $now = now();
-        $statusPendaftaran = null;
+        $statusPendaftaran = 'closed'; // Default: tutup jika tidak ada gelombang aktif
         $countdownTarget = null;
         
         if ($gelombangAktif) {

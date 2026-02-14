@@ -254,9 +254,15 @@ class JalurPendaftaranController extends Controller
             'status' => JalurPendaftaran::STATUS_CLOSED,
             'is_active' => false,
         ]);
+
+        // Cascade: tutup semua gelombang di bawah jalur ini
+        $jalur->gelombang()->where('is_active', true)->update([
+            'status' => GelombangPendaftaran::STATUS_CLOSED,
+            'is_active' => false,
+        ]);
         
         return redirect()->back()->with('success', 
-            "Jalur \"{$jalur->nama}\" berhasil ditutup sementara. Pendaftaran dihentikan."
+            "Jalur \"{$jalur->nama}\" beserta semua gelombangnya berhasil ditutup. Pendaftaran dihentikan."
         );
     }
 
@@ -269,9 +275,15 @@ class JalurPendaftaranController extends Controller
             'status' => JalurPendaftaran::STATUS_FINISHED,
             'is_active' => false,
         ]);
+
+        // Cascade: selesaikan semua gelombang di bawah jalur ini
+        $jalur->gelombang()->update([
+            'status' => GelombangPendaftaran::STATUS_FINISHED,
+            'is_active' => false,
+        ]);
         
         return redirect()->back()->with('success', 
-            "Jalur \"{$jalur->nama}\" telah diselesaikan. Anda dapat mengaktifkan jalur lain sekarang."
+            "Jalur \"{$jalur->nama}\" beserta semua gelombangnya telah diselesaikan. Anda dapat mengaktifkan jalur lain sekarang."
         );
     }
 

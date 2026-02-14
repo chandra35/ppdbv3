@@ -75,8 +75,8 @@ class GelombangPendaftaran extends Model
      */
     public function getComputedStatusAttribute(): string
     {
-        // Jika status draft atau finished, gunakan nilai database
-        if (in_array($this->attributes['status'] ?? '', [self::STATUS_DRAFT, self::STATUS_FINISHED])) {
+        // Jika status draft, closed, atau finished di-set manual, hormati nilai database
+        if (in_array($this->attributes['status'] ?? '', [self::STATUS_DRAFT, self::STATUS_CLOSED, self::STATUS_FINISHED])) {
             return $this->attributes['status'];
         }
         
@@ -139,6 +139,18 @@ class GelombangPendaftaran extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    /**
+     * Scope: Aktif dengan jalur aktif
+     * Memastikan gelombang DAN jalur induknya aktif
+     */
+    public function scopeActiveWithJalur($query)
+    {
+        return $query->where('is_active', true)
+            ->whereHas('jalur', function ($q) {
+                $q->where('is_active', true);
+            });
     }
 
     /**

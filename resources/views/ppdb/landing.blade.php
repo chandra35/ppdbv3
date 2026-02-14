@@ -760,8 +760,10 @@
                             @endif
                             @if($slider->link)
                                 <a href="{{ $slider->link }}" class="btn">Selengkapnya</a>
-                            @else
+                            @elseif(isset($statusPendaftaran) && $statusPendaftaran == 'open')
                                 <a href="{{ route('pendaftar.landing') }}" class="btn">Daftar Sekarang</a>
+                            @else
+                                <a href="{{ route('login') }}" class="btn">Login</a>
                             @endif
                         </div>
                     </div>
@@ -794,7 +796,7 @@
                         @endphp
                         
                         {{-- Status Pendaftaran dengan Countdown - Hidden saat open --}}
-                        @if($gelombangAktif && $statusPendaftaran != 'open')
+                        @if($statusPendaftaran != 'open')
                         <div class="countdown-wrapper text-white text-center mb-4">
                             <div class="countdown-status {{ $statusPendaftaran }}">
                                 @if($statusPendaftaran == 'upcoming')
@@ -806,7 +808,7 @@
                                 @endif
                             </div>
                             
-                            @if($countdownTarget && $statusPendaftaran == 'upcoming')
+                            @if($gelombangAktif && $countdownTarget && $statusPendaftaran == 'upcoming')
                             <p class="mb-3 opacity-90">
                                 <i class="fas fa-clock me-1"></i> Pendaftaran akan dibuka dalam:
                             </p>
@@ -897,14 +899,17 @@
                                 </div>
                             @endauth
                         @else
-                            {{-- Pendaftaran belum/sudah tutup - tombol sederhana --}}
+                            {{-- Pendaftaran belum/sudah tutup --}}
                             <div class="d-flex justify-content-center gap-3 flex-wrap">
-                                <a href="{{ route('pendaftar.landing') }}" class="btn btn-light btn-lg px-4">
-                                    <i class="fas fa-user-plus me-2"></i> Daftar Sekarang
-                                </a>
-                                <a href="{{ route('login') }}" class="btn btn-outline-light btn-lg px-4">
-                                    <i class="fas fa-sign-in-alt me-2"></i> Login
-                                </a>
+                                @auth
+                                    <a href="{{ Auth::user()->isAdmin() ? route('admin.dashboard') : route('pendaftar.dashboard') }}" class="btn btn-light btn-lg px-4">
+                                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                                    </a>
+                                @else
+                                    <a href="{{ route('login') }}" class="btn btn-outline-light btn-lg px-4">
+                                        <i class="fas fa-sign-in-alt me-2"></i> Login
+                                    </a>
+                                @endauth
                             </div>
                         @endif
                         
@@ -971,7 +976,7 @@
                     @endphp
                     
                     {{-- Status Pendaftaran dengan Countdown - Hidden saat open --}}
-                    @if($gelombangAktif && $statusPendaftaran != 'open')
+                    @if($statusPendaftaran != 'open')
                     <div class="countdown-wrapper text-white text-center mb-4">
                         <div class="countdown-status {{ $statusPendaftaran }}">
                             @if($statusPendaftaran == 'upcoming')
@@ -983,7 +988,7 @@
                             @endif
                         </div>
                         
-                        @if($countdownTarget && $statusPendaftaran == 'upcoming')
+                        @if($gelombangAktif && $countdownTarget && $statusPendaftaran == 'upcoming')
                         <p class="mb-3 opacity-90">
                             <i class="fas fa-clock me-1"></i> Pendaftaran akan dibuka dalam:
                         </p>
@@ -1073,6 +1078,19 @@
                                 </div>
                             </div>
                         @endauth
+                    @else
+                        {{-- Pendaftaran Ditutup --}}
+                        <div class="d-flex justify-content-center gap-3 flex-wrap mt-3">
+                            @auth
+                                <a href="{{ Auth::user()->isAdmin() ? route('admin.dashboard') : route('pendaftar.dashboard') }}" class="btn btn-light btn-lg px-4">
+                                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                                </a>
+                            @else
+                                <a href="{{ route('login') }}" class="btn btn-outline-light btn-lg px-4">
+                                    <i class="fas fa-sign-in-alt me-2"></i> Login
+                                </a>
+                            @endauth
+                        </div>
                     @endif
                 </div>
             </div>
