@@ -240,10 +240,10 @@ class NilaiSeleksiController extends Controller
     {
         $tahunAktif = TahunPelajaran::where('is_active', true)->first();
 
-        // Get jadwal ujian dengan sesi yang sudah locked/in_progress
+        // Get jadwal ujian untuk tahun aktif (semua status yang punya sesi)
         $jadwalList = JadwalUjian::with(['tahunPelajaran', 'jalurPendaftaran', 'gelombangPendaftaran'])
             ->where('tahun_pelajaran_id', $tahunAktif?->id)
-            ->whereIn('status', ['locked', 'preview'])
+            ->has('sesiUjian')
             ->orderBy('created_at', 'desc')
             ->get();
 
