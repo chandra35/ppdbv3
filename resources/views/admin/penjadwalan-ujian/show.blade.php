@@ -216,16 +216,6 @@
                 </div>
             </div>
         </div>
-
-        {{-- Link ke Upload Nilai --}}
-        <h6 class="mb-2 mt-3"><i class="fas fa-file-upload text-primary mr-2"></i>Import Data</h6>
-        <div class="row">
-            <div class="col-md-6">
-                <a href="{{ route('admin.nilai-seleksi.upload') }}" class="btn btn-primary btn-block btn-print">
-                    <i class="fas fa-file-upload mr-2"></i>Upload Nilai dari Excel Penilaian
-                </a>
-            </div>
-        </div>
     </div>
 </div>
 <div class="card">

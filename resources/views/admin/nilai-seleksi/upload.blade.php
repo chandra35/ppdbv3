@@ -221,10 +221,9 @@
                 </div>
                 <div class="card-body">
                     <ol class="pl-3">
-                        <li class="mb-2">Buka menu <strong>Penjadwalan Ujian → Detail Jadwal</strong></li>
-                        <li class="mb-2">Export <strong>Lembar Penilaian (Excel)</strong></li>
+                        <li class="mb-2">Download <strong>Lembar Penilaian (Excel)</strong> dari menu <a href="{{ route('admin.penjadwalan-ujian.index') }}">Penjadwalan Ujian</a> → Detail Jadwal → Export</li>
                         <li class="mb-2">Isi nilai pada kolom yang tersedia di setiap sheet ruangan</li>
-                        <li class="mb-2">Kembali ke halaman ini, pilih <strong>Jadwal Ujian</strong> yang sesuai</li>
+                        <li class="mb-2">Pilih <strong>Jadwal Ujian</strong> yang sesuai pada form di atas</li>
                         <li class="mb-2">Upload file Excel yang sudah diisi</li>
                         <li>Sistem akan otomatis mencocokkan berdasarkan <strong>Nomor Tes</strong> dan <strong>Sheet (Ruang)</strong></li>
                     </ol>
