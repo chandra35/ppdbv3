@@ -110,6 +110,9 @@
                         <a class="dropdown-item" href="{{ route('admin.pendaftar.export', ['type' => 'with_nomor_tes']) }}">
                             <i class="fas fa-id-card mr-2"></i> Peserta Ujian (Dengan Nomor Tes)
                         </a>
+                        <a class="dropdown-item" href="{{ route('admin.pendaftar.export-moodle') }}">
+                            <i class="fas fa-graduation-cap mr-2"></i> Export Moodle (Punya Nomor Tes)
+                        </a>
                         <div class="dropdown-divider"></div>
                         <a class="dropdown-item text-muted" href="#" data-toggle="modal" data-target="#exportFilterModal">
                             <i class="fas fa-filter mr-2"></i> Export dengan Filter...

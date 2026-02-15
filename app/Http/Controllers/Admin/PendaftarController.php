@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Models\Role;
 use App\Services\KopSuratService;
 use App\Exports\PendaftarExport;
+use App\Exports\MoodlePendaftarExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
@@ -197,6 +198,27 @@ class PendaftarController extends Controller
             : "Data_Pendaftar_PPDB_{$tahunLabel}.xlsx";
         
         return Excel::download(new PendaftarExport($type, $jalurId, $gelombangId), $filename);
+    }
+
+    /**
+     * Export Moodle-compatible XLSX for pendaftar with nomor tes
+     * For uploading to Moodle (students who got nomor tes on exam day)
+     */
+    public function exportMoodle(Request $request)
+    {
+        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        $tahunNama = $tahunAktif->nama ?? date('Y');
+        $tahunShort = preg_match('/(\d{4})\/\d{4}/', $tahunNama, $m) ? $m[1] : date('Y');
+
+        $jalurId = $request->get('jalur_id');
+        $gelombangId = $request->get('gelombang_id');
+
+        $filename = 'moodle-pendaftar-' . $tahunShort . '.xlsx';
+
+        return Excel::download(
+            new MoodlePendaftarExport($tahunShort, $jalurId, $gelombangId),
+            $filename
+        );
     }
 
     /**

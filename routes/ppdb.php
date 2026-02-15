@@ -194,6 +194,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // ---- PENDAFTAR (View) ----
     // ---- PENDAFTAR (Export) - harus sebelum route {id} ----
     Route::get('/pendaftar/export', [PendaftarController::class, 'export'])->middleware('permission:pendaftar.export')->name('pendaftar.export');
+    Route::get('/pendaftar/export-moodle', [PendaftarController::class, 'exportMoodle'])->middleware('permission:pendaftar.export')->name('pendaftar.export-moodle');
     
     Route::middleware(['permission:pendaftar.view'])->group(function () {
         Route::get('/pendaftar', [PendaftarController::class, 'index'])->name('pendaftar.index');
