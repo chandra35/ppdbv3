@@ -81,7 +81,7 @@ class LembarPenilaianSheet implements FromArray, WithTitle, WithStyles, WithEven
                 ];
             } elseif ($bobot->komponen === 'wawancara') {
                 $this->nilaiColumns[] = [
-                    'header' => 'Wawancara',
+                    'header' => 'Minat',
                     'sub' => null,
                     'komponen' => 'wawancara',
                     'fields' => ['nilai_wawancara'],
@@ -94,7 +94,7 @@ class LembarPenilaianSheet implements FromArray, WithTitle, WithStyles, WithEven
         foreach ($this->nilaiColumns as $nc) {
             $nilaiSubCount += $nc['sub'] ? count($nc['sub']) : 1;
         }
-        $this->totalCols = 3 + $nilaiSubCount + 1; // 3 fixed + nilai + sekolah asal
+        $this->totalCols = 4 + $nilaiSubCount + 1; // 3 fixed + pilihan program + nilai + sekolah asal
     }
 
     public function array(): array
@@ -258,6 +258,13 @@ class LembarPenilaianSheet implements FromArray, WithTitle, WithStyles, WithEven
         $sheet->setCellValue("{$namaCol}{$row1}", "N A M A");
         $col++;
 
+        // PILIHAN PROGRAM (spans 3 rows)
+        $programCol = $this->getColLetter($col);
+        $sheet->mergeCells("{$programCol}{$row1}:{$programCol}{$row3}");
+        $sheet->setCellValue("{$programCol}{$row1}", "Pilihan\nProgram");
+        $sheet->getStyle("{$programCol}{$row1}")->getAlignment()->setWrapText(true);
+        $col++;
+
         // NILAI group (spans all nilai sub-columns)
         $nilaiStart = $col;
         $nilaiSubCount = 0;
@@ -319,6 +326,7 @@ class LembarPenilaianSheet implements FromArray, WithTitle, WithStyles, WithEven
             $sheet->setCellValue($this->getColLetter($col++) . $currentRow, $index + 1);
             $sheet->setCellValue($this->getColLetter($col++) . $currentRow, $cs->nomor_tes ?? '');
             $sheet->setCellValue($this->getColLetter($col++) . $currentRow, $cs->nama_lengkap ?? '');
+            $sheet->setCellValue($this->getColLetter($col++) . $currentRow, $cs->pilihan_program ?? '-');
 
             // Nilai columns
             $nilai = $this->nilaiMap[$cs->id] ?? null;

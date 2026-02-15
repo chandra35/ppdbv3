@@ -128,6 +128,16 @@
             padding-left: 5px;
             font-size: 9px;
         }
+        table.penilaian .col-program {
+            width: 38px;
+            font-size: 7px;
+            text-align: center;
+        }
+        table.penilaian td.col-program {
+            font-size: 7px;
+            text-align: center;
+            font-weight: bold;
+        }
         table.penilaian .col-nilai {
             width: 42px;
         }
@@ -255,6 +265,7 @@
                 <tr>
                     <th colspan="2" style="border-bottom: 0;">NOMOR</th>
                     <th rowspan="3" class="col-nama">N A M A</th>
+                    <th rowspan="3" class="col-program">Pilihan<br>Program</th>
                     <th colspan="{{ $nilaiColSpan }}">NILAI</th>
                     <th rowspan="3" class="col-asal">SEKOLAH<br>ASAL</th>
                 </tr>
@@ -270,7 +281,7 @@
                         @elseif($bobot->komponen === 'tulis_quran')
                             <th rowspan="2" class="col-nilai">Tulis<br>Arab</th>
                         @elseif($bobot->komponen === 'wawancara')
-                            <th rowspan="2" class="col-nilai">Wwncr</th>
+                            <th rowspan="2" class="col-nilai">Minat</th>
                         @endif
                     @endforeach
                 </tr>
@@ -294,6 +305,7 @@
                     <td class="col-urut">{{ $index + 1 }}</td>
                     <td class="col-psrta">{{ $cs->nomor_tes ?? '' }}</td>
                     <td class="col-nama">{{ $cs->nama_lengkap ?? '' }}</td>
+                    <td class="col-program">{{ $cs->pilihan_program ?? '-' }}</td>
                     @php $nilai = $room['nilaiMap'][$cs->id] ?? null; @endphp
                     @foreach($bobotList as $bobot)
                         @if($bobot->komponen === 'baca_quran')
