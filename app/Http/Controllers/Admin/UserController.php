@@ -34,7 +34,7 @@ class UserController extends Controller
 
     public function index(Request $request)
     {
-        $query = User::with('roles')
+        $query = User::with(['roles', 'localGtk'])
             ->whereDoesntHave('roles', function ($q) {
                 $q->where('name', 'pendaftar');
             })
@@ -45,7 +45,10 @@ class UserController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhereHas('localGtk', function ($gq) use ($search) {
+                      $gq->where('nik', 'like', "%{$search}%");
+                  });
             });
         }
 

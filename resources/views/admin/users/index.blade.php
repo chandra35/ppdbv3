@@ -66,7 +66,7 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Cari</label>
-                        <input type="text" name="search" class="form-control" placeholder="Nama atau email..." value="{{ request('search') }}">
+                        <input type="text" name="search" class="form-control" placeholder="Nama, email, atau NIK..." value="{{ request('search') }}">
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -113,6 +113,7 @@
                 <thead>
                     <tr>
                         <th>Nama</th>
+                        <th>NIK</th>
                         <th>Email</th>
                         <th>Roles</th>
                         <th>Terdaftar</th>
@@ -127,6 +128,9 @@
                             @if($user->id === auth()->id())
                                 <span class="badge badge-info">Anda</span>
                             @endif
+                        </td>
+                        <td>
+                            <small class="text-muted">{{ $user->localGtk->nik ?? '-' }}</small>
                         </td>
                         <td>{{ $user->email }}</td>
                         <td>
@@ -159,7 +163,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="text-center text-muted py-4">Tidak ada user</td>
+                        <td colspan="6" class="text-center text-muted py-4">Tidak ada user</td>
                     </tr>
                     @endforelse
                 </tbody>
