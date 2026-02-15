@@ -160,14 +160,14 @@
                                 <option value="">-- Pilih Jadwal --</option>
                                 @foreach($jadwalList as $jd)
                                     <option value="{{ $jd->id }}">
-                                        {{ $jd->jalurPendaftaran->nama ?? 'Semua Jalur' }}
-                                        @if($jd->gelombangPendaftaran) - {{ $jd->gelombangPendaftaran->nama }} @endif
-                                        ({{ $jd->created_at->isoFormat('D MMM Y') }})
-                                        [{{ ucfirst($jd->status) }}]
+                                        {{ $jd->tanggal_ujian->isoFormat('D MMM Y') }}
+                                        — {{ $jd->jalurPendaftaran->nama ?? 'Semua Jalur' }}
+                                        @if($jd->gelombangPendaftaran) ({{ $jd->gelombangPendaftaran->nama }}) @endif
+                                        [{{ $jd->sesi_ujian_count }} sesi]
                                     </option>
                                 @endforeach
                             </select>
-                            <small class="form-text text-muted">Jadwal yang berisi sesi ujian & ruangan</small>
+                            <small class="form-text text-muted">Jadwal dari <a href="{{ route('admin.penjadwalan-ujian.list') }}">Penjadwalan Ujian</a></small>
                         </div>
 
                         <div class="form-group">
@@ -256,8 +256,8 @@
                                     <option value="">Semua Jadwal</option>
                                     @foreach($jadwalList as $jd)
                                         <option value="{{ $jd->id }}" {{ request('jadwal_id') == $jd->id ? 'selected' : '' }}>
-                                            {{ $jd->jalurPendaftaran->nama ?? 'Semua' }}
-                                            @if($jd->gelombangPendaftaran) - {{ $jd->gelombangPendaftaran->nama }} @endif
+                                            {{ $jd->tanggal_ujian->isoFormat('D MMM Y') }}
+                                            — {{ $jd->jalurPendaftaran->nama ?? 'Semua' }}
                                         </option>
                                     @endforeach
                                 </select>

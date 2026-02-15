@@ -242,9 +242,10 @@ class NilaiSeleksiController extends Controller
 
         // Get jadwal ujian untuk tahun aktif (semua status yang punya sesi)
         $jadwalList = JadwalUjian::with(['tahunPelajaran', 'jalurPendaftaran', 'gelombangPendaftaran'])
+            ->withCount('sesiUjian')
             ->where('tahun_pelajaran_id', $tahunAktif?->id)
             ->has('sesiUjian')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('tanggal_ujian', 'desc')
             ->get();
 
         // Bobot nilai aktif
