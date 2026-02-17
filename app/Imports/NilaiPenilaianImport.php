@@ -234,7 +234,7 @@ class NilaiPenilaianImport
             // Read nilai from columns
             $nilaiData = [];
             $hasAnyValue = false;
-            $hasInvalidValue = false;
+            $hasWarning = false;
 
             foreach ($fieldMap as $colOffset => $mapping) {
                 $colIndex = $nilaiStartCol + $colOffset;
@@ -249,36 +249,50 @@ class NilaiPenilaianImport
                     continue;
                 }
 
-                if ($cellValue !== null && $cellValue !== '' && is_numeric($cellValue)) {
+                $fieldLabel = ucwords(str_replace(['nilai_', '_'], ['', ' '], $mapping['field']));
+
+                if ($cellValue === null || $cellValue === '') {
+                    // Kosong
+                    $nilaiData[$mapping['field']] = null;
+                    if ($this->previewMode) {
+                        $previewRow['nilai_raw'][] = ['field' => $mapping['field'], 'raw' => '', 'parsed' => null, 'type' => 'empty'];
+                    }
+                } elseif (is_numeric($cellValue)) {
+                    // Angka murni
                     $parsedVal = round((float) $cellValue, 2);
-                    // Validate range 0-100
                     if ($parsedVal < 0 || $parsedVal > 100) {
+                        $hasWarning = true;
                         if ($this->previewMode) {
-                            $previewRow['issues'][] = ucwords(str_replace(['nilai_', '_'], ['', ' '], $mapping['field'])) . ": nilai {$parsedVal} di luar rentang 0-100";
+                            $previewRow['issues'][] = "{$fieldLabel}: nilai {$parsedVal} di luar rentang 0-100";
                             $previewRow['nilai_raw'][] = ['field' => $mapping['field'], 'raw' => $rawValue, 'parsed' => $parsedVal, 'type' => 'warning'];
-                            $hasInvalidValue = true;
+                        }
+                    } else {
+                        if ($this->previewMode) {
+                            $previewRow['nilai_raw'][] = ['field' => $mapping['field'], 'raw' => $rawValue, 'parsed' => $parsedVal, 'type' => 'valid'];
                         }
                     }
                     $nilaiData[$mapping['field']] = $parsedVal;
                     $hasAnyValue = true;
-                    if ($this->previewMode) {
-                        if (!$hasInvalidValue || end($previewRow['nilai_raw'])['field'] !== $mapping['field']) {
-                            $previewRow['nilai_raw'][] = ['field' => $mapping['field'], 'raw' => $rawValue, 'parsed' => $parsedVal, 'type' => 'valid'];
-                        }
-                    }
-                } elseif ($cellValue !== null && $cellValue !== '' && !is_numeric($cellValue)) {
-                    // Non-numeric value (text like "juz 30", "B", etc.)
-                    $nilaiData[$mapping['field']] = null;
-                    if ($this->previewMode) {
-                        $fieldLabel = ucwords(str_replace(['nilai_', '_'], ['', ' '], $mapping['field']));
-                        $previewRow['issues'][] = "{$fieldLabel}: isi \"{$rawValue}\" bukan angka, akan diabaikan";
-                        $previewRow['nilai_raw'][] = ['field' => $mapping['field'], 'raw' => $rawValue, 'parsed' => null, 'type' => 'invalid'];
-                        $hasInvalidValue = true;
-                    }
                 } else {
-                    $nilaiData[$mapping['field']] = null;
-                    if ($this->previewMode) {
-                        $previewRow['nilai_raw'][] = ['field' => $mapping['field'], 'raw' => '', 'parsed' => null, 'type' => 'empty'];
+                    // Non-numeric: coba ekstrak angka dari teks campuran (misal "70 (2 juz)", "85 bagus")
+                    $extracted = $this->extractNumber($cellValue);
+                    if ($extracted !== null) {
+                        $parsedVal = round($extracted, 2);
+                        $nilaiData[$mapping['field']] = $parsedVal;
+                        $hasAnyValue = true;
+                        $hasWarning = true;
+                        if ($this->previewMode) {
+                            $previewRow['issues'][] = "{$fieldLabel}: isi \"{$rawValue}\" → diambil angka {$parsedVal}";
+                            $previewRow['nilai_raw'][] = ['field' => $mapping['field'], 'raw' => $rawValue, 'parsed' => $parsedVal, 'type' => 'extracted'];
+                        }
+                    } else {
+                        // Tidak ada angka sama sekali (misal "B+", "bagus")
+                        $nilaiData[$mapping['field']] = null;
+                        $hasWarning = true;
+                        if ($this->previewMode) {
+                            $previewRow['issues'][] = "{$fieldLabel}: isi \"{$rawValue}\" tidak mengandung angka, diabaikan";
+                            $previewRow['nilai_raw'][] = ['field' => $mapping['field'], 'raw' => $rawValue, 'parsed' => null, 'type' => 'invalid'];
+                        }
                     }
                 }
             }
@@ -316,7 +330,7 @@ class NilaiPenilaianImport
             if ($this->previewMode) {
                 $previewRow['action'] = $isNew ? 'baru' : 'update';
                 $previewRow['nilai_parsed'] = $nilaiData;
-                if ($hasInvalidValue) {
+                if ($hasWarning) {
                     $previewRow['status'] = 'warning';
                 }
                 $this->previewRows[] = $previewRow;
@@ -344,6 +358,20 @@ class NilaiPenilaianImport
                 }
             }
         }
+    }
+
+    /**
+     * Ekstrak angka dari teks campuran
+     * "70 (2 juz)" → 70, "85 bagus" → 85, "B+" → null
+     */
+    protected function extractNumber($value): ?float
+    {
+        $str = trim((string) $value);
+        // Coba ambil angka (integer/desimal) di awal atau di dalam string
+        if (preg_match('/(\d+(?:[.,]\d+)?)/', $str, $matches)) {
+            return (float) str_replace(',', '.', $matches[1]);
+        }
+        return null;
     }
 
     /**

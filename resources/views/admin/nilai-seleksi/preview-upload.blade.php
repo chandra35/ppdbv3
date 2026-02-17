@@ -43,6 +43,10 @@
     .cell-empty {
         color: #ccc;
     }
+    .cell-extracted {
+        background-color: #dbeafe !important;
+        color: #1e40af;
+    }
     .cell-skip {
         color: #999;
         font-style: italic;
@@ -244,11 +248,16 @@
                                     @if($nv['type'] === 'skip')
                                         @continue
                                     @endif
-                                    <td class="text-center {{ $nv['type'] === 'valid' ? 'cell-valid' : ($nv['type'] === 'invalid' ? 'cell-invalid' : ($nv['type'] === 'warning' ? 'cell-warning' : ($nv['type'] === 'empty' ? 'cell-empty' : ''))) }}">
+                                    <td class="text-center {{ $nv['type'] === 'valid' ? 'cell-valid' : ($nv['type'] === 'invalid' ? 'cell-invalid' : ($nv['type'] === 'warning' ? 'cell-warning' : ($nv['type'] === 'extracted' ? 'cell-extracted' : ($nv['type'] === 'empty' ? 'cell-empty' : '')))) }}">
                                         @if($nv['type'] === 'valid')
                                             {{ $nv['parsed'] }}
+                                        @elseif($nv['type'] === 'extracted')
+                                            <span title="Asli: '{{ $nv['raw'] }}' → diambil {{ $nv['parsed'] }}">
+                                                {{ $nv['parsed'] }}
+                                                <i class="fas fa-magic text-primary" style="font-size: 0.7rem;"></i>
+                                            </span>
                                         @elseif($nv['type'] === 'invalid')
-                                            <span title="Bukan angka: {{ $nv['raw'] }}">
+                                            <span title="Tidak ada angka: {{ $nv['raw'] }}">
                                                 {{ $nv['raw'] }}
                                                 <i class="fas fa-exclamation-circle text-danger" style="font-size: 0.7rem;"></i>
                                             </span>
@@ -337,7 +346,8 @@
                 <small>
                     <strong>Keterangan Warna Nilai:</strong>&nbsp;
                     <span class="px-2 py-1 cell-valid">Angka valid</span>&nbsp;
-                    <span class="px-2 py-1 cell-invalid">Bukan angka (diabaikan)</span>&nbsp;
+                    <span class="px-2 py-1 cell-extracted">Angka diekstrak dari teks <i class="fas fa-magic" style="font-size: 0.7rem;"></i></span>&nbsp;
+                    <span class="px-2 py-1 cell-invalid">Tidak ada angka (diabaikan)</span>&nbsp;
                     <span class="px-2 py-1 cell-warning">Di luar rentang 0-100</span>&nbsp;
                     <span class="px-2 py-1 cell-empty text-muted border">Kosong</span>&nbsp;
                     &mdash;
