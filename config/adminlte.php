@@ -192,6 +192,16 @@ return [
                     'icon' => 'fas fa-fw fa-file-excel',
                 ],
                 [
+                    'text' => 'Nilai CBT',
+                    'route' => 'admin.nilai-cbt.index',
+                    'icon' => 'fas fa-fw fa-laptop',
+                ],
+                [
+                    'text' => 'Upload Nilai CBT',
+                    'route' => 'admin.nilai-cbt.upload',
+                    'icon' => 'fas fa-fw fa-cloud-upload-alt',
+                ],
+                [
                     'text' => 'Pengumuman',
                     'route' => 'admin.nilai-seleksi.pengumuman',
                     'icon' => 'fas fa-fw fa-bullhorn',

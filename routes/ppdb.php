@@ -350,6 +350,16 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/{sesiUjian}/bulk-verify', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'bulkVerify'])->name('bulk-verify');
     });
 
+    // ---- NILAI CBT ----
+    Route::prefix('nilai-cbt')->name('nilai-cbt.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'index'])->name('index');
+        Route::get('/upload', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'upload'])->name('upload');
+        Route::post('/upload', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'processUpload'])->name('upload.process');
+        Route::post('/upload/confirm', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'confirmUpload'])->name('upload.confirm');
+        Route::post('/upload/cancel', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'cancelUpload'])->name('upload.cancel');
+        Route::delete('/{nilaiCbt}', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'destroy'])->name('destroy');
+    });
+
     // ---- STATISTIK PENDAFTAR ----
     Route::prefix('statistik')->name('statistik.')->middleware('permission:statistik.view')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\StatistikController::class, 'index'])->name('index');

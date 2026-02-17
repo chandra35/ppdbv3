@@ -215,7 +215,14 @@ class NilaiSeleksiController extends Controller
             $query->where('status', $request->status);
         }
         
-        $rekapData = $query->orderBy('total_nilai', 'desc')->get();
+        $rekapData = $query->orderBy('total_nilai', 'desc')
+            ->orderBy('nilai_wawancara', 'desc') // Minat sebagai tiebreaker
+            ->get();
+
+        // Load CBT data indexed by calon_siswa_id
+        $cbtData = \App\Models\NilaiCbt::where('tahun_pelajaran_id', $selectedTahunId)
+            ->get()
+            ->keyBy('calon_siswa_id');
 
         $tahunPelajarans = TahunPelajaran::orderBy('is_active', 'desc')
             ->orderBy('nama', 'desc')
@@ -227,6 +234,7 @@ class NilaiSeleksiController extends Controller
 
         return view('admin.nilai-seleksi.rekap', compact(
             'rekapData',
+            'cbtData',
             'tahunAktif',
             'tahunPelajarans',
             'jalurs'

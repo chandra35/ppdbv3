@@ -141,7 +141,7 @@
                                 <td class="text-center">{{ $no++ }}</td>
                                 <td>
                                     <strong>{{ $nilai->calonSiswa->nama_lengkap ?? '-' }}</strong><br>
-                                    <small class="text-muted">{{ $nilai->calonSiswa->no_pendaftaran ?? '-' }}</small>
+                                    <small class="text-muted">{{ $nilai->calonSiswa->nomor_tes ?? '-' }}</small>
                                 </td>
                                 <td>{{ $nilai->ruangUjian->nama_ruang ?? '-' }}</td>
                                 <td class="text-center nilai-cell">{{ $nilai->nilai_wawancara ?? '-' }}</td>

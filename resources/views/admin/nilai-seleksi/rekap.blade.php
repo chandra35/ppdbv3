@@ -150,25 +150,34 @@
         <div class="card-header">
             <h3 class="card-title"><i class="fas fa-table mr-2"></i>Data Rekap Nilai</h3>
         </div>
-        <div class="card-body">
-            <table id="rekapTable" class="table table-bordered table-striped">
+        <div class="card-body" style="overflow-x: auto;">
+            <table id="rekapTable" class="table table-bordered table-striped" style="font-size: 0.85rem;">
                 <thead>
                     <tr>
-                        <th class="text-center" width="60">Rank</th>
-                        <th>No. Pendaftaran</th>
-                        <th>Nama Peserta</th>
-                        <th>Jalur</th>
-                        <th class="text-center">Wawancara</th>
-                        <th class="text-center">Baca</th>
-                        <th class="text-center">Tulis</th>
-                        <th class="text-center">Hafalan</th>
-                        <th class="text-center">Juz</th>
-                        <th class="text-center">Total</th>
-                        <th class="text-center">Status</th>
+                        <th class="text-center" width="50" rowspan="2">Rank</th>
+                        <th rowspan="2">No. Tes</th>
+                        <th rowspan="2">Nama Peserta</th>
+                        <th rowspan="2">Jalur</th>
+                        <th class="text-center" colspan="4" style="background: #e8f5e9;">Seleksi</th>
+                        <th class="text-center" colspan="4" style="background: #e3f2fd;">CBT</th>
+                        <th class="text-center" rowspan="2">Total Seleksi</th>
+                        <th class="text-center" rowspan="2" title="Minat terhadap pilihan program (tiebreaker)">Minat</th>
+                        <th class="text-center" rowspan="2">Status</th>
+                    </tr>
+                    <tr>
+                        <th class="text-center" style="background: #e8f5e9;">Baca</th>
+                        <th class="text-center" style="background: #e8f5e9;">Tulis</th>
+                        <th class="text-center" style="background: #e8f5e9;">Hafalan</th>
+                        <th class="text-center" style="background: #e8f5e9;">Juz</th>
+                        <th class="text-center" style="background: #e3f2fd;">MTK</th>
+                        <th class="text-center" style="background: #e3f2fd;">IPA</th>
+                        <th class="text-center" style="background: #e3f2fd;">IPS</th>
+                        <th class="text-center" style="background: #e3f2fd;">B.Ing</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($rekapData as $index => $nilai)
+                        @php $cbt = $cbtData[$nilai->calon_siswa_id] ?? null; @endphp
                         <tr>
                             <td class="text-center">
                                 @if($index < 3)
@@ -177,7 +186,7 @@
                                     {{ $index + 1 }}
                                 @endif
                             </td>
-                            <td>{{ $nilai->calonSiswa->no_pendaftaran ?? '-' }}</td>
+                            <td>{{ $nilai->calonSiswa->nomor_tes ?? '-' }}</td>
                             <td>
                                 <strong>{{ $nilai->calonSiswa->nama_lengkap ?? '-' }}</strong>
                                 @if($nilai->calonSiswa->jenis_kelamin == 'L')
@@ -186,16 +195,22 @@
                                     <i class="fas fa-venus text-danger"></i>
                                 @endif
                             </td>
-                            <td>{{ $nilai->sesiUjian->jalurPendaftaran->nama ?? '-' }}</td>
-                            <td class="text-center nilai-cell">{{ $nilai->nilai_wawancara ?? '-' }}</td>
+                            <td>{{ $nilai->sesiUjian->jalur->nama ?? '-' }}</td>
                             <td class="text-center nilai-cell">{{ $nilai->nilai_baca_quran ?? '-' }}</td>
                             <td class="text-center nilai-cell">{{ $nilai->nilai_tulis_quran ?? '-' }}</td>
                             <td class="text-center nilai-cell">{{ $nilai->nilai_hafalan ?? '-' }}</td>
                             <td class="text-center">{{ $nilai->jumlah_juz_hafalan ?? '-' }}</td>
+                            <td class="text-center">{{ $cbt ? $cbt->nilai_mtk : '-' }}</td>
+                            <td class="text-center">{{ $cbt ? $cbt->nilai_ipa : '-' }}</td>
+                            <td class="text-center">{{ $cbt ? $cbt->nilai_ips : '-' }}</td>
+                            <td class="text-center">{{ $cbt ? $cbt->nilai_bahasa_inggris : '-' }}</td>
                             <td class="text-center">
                                 <span class="badge badge-primary" style="font-size: 1rem;">
                                     {{ number_format($nilai->total_nilai, 2) }}
                                 </span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge badge-info">{{ $nilai->nilai_wawancara ?? '-' }}</span>
                             </td>
                             <td class="text-center">
                                 @if($nilai->status == 'verified')
@@ -231,6 +246,7 @@ $(document).ready(function() {
     // Initialize DataTable
     $('#rekapTable').DataTable({
         dom: 'Bfrtip',
+        orderCellsTop: true,
         buttons: [
             {
                 extend: 'excelHtml5',
@@ -248,7 +264,7 @@ $(document).ready(function() {
                 title: 'Rekap Nilai Seleksi PPDB'
             }
         ],
-        order: [[9, 'desc']], // Sort by total nilai descending
+        order: [[12, 'desc'], [13, 'desc']], // Sort by total seleksi desc, then minat desc
         pageLength: 25,
         language: {
             url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json'

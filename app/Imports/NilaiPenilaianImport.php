@@ -260,10 +260,12 @@ class NilaiPenilaianImport
                     // Angka murni
                     $parsedVal = round((float) $cellValue, 2);
                     if ($parsedVal < 0 || $parsedVal > 100) {
+                        $originalVal = $parsedVal;
+                        $parsedVal = max(0, min(100, $parsedVal)); // Cap ke 0-100
                         $hasWarning = true;
                         if ($this->previewMode) {
-                            $previewRow['issues'][] = "{$fieldLabel}: nilai {$parsedVal} di luar rentang 0-100";
-                            $previewRow['nilai_raw'][] = ['field' => $mapping['field'], 'raw' => $rawValue, 'parsed' => $parsedVal, 'type' => 'warning'];
+                            $previewRow['issues'][] = "{$fieldLabel}: nilai {$originalVal} di luar rentang 0-100, di-cap menjadi {$parsedVal}";
+                            $previewRow['nilai_raw'][] = ['field' => $mapping['field'], 'raw' => $rawValue, 'parsed' => $parsedVal, 'type' => 'warning', 'original' => $originalVal];
                         }
                     } else {
                         if ($this->previewMode) {
@@ -299,7 +301,7 @@ class NilaiPenilaianImport
                             // Fallback: coba ekstrak angka biasa
                             $extracted = $this->extractNumber($cellValue);
                             if ($extracted !== null) {
-                                $parsedVal = round($extracted, 2);
+                                $parsedVal = max(0, min(100, round($extracted, 2)));
                                 $nilaiData[$mapping['field']] = $parsedVal;
                                 $hasAnyValue = true;
                                 $hasWarning = true;
@@ -320,7 +322,7 @@ class NilaiPenilaianImport
                         // Non-hafalan: coba ekstrak angka dari teks campuran
                         $extracted = $this->extractNumber($cellValue);
                         if ($extracted !== null) {
-                            $parsedVal = round($extracted, 2);
+                            $parsedVal = max(0, min(100, round($extracted, 2)));
                             $nilaiData[$mapping['field']] = $parsedVal;
                             $hasAnyValue = true;
                             $hasWarning = true;

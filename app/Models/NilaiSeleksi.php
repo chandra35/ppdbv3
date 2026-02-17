@@ -124,8 +124,12 @@ class NilaiSeleksi extends Model
         $totalBobot = 0;
 
         foreach ($bobotList as $bobot) {
+            // Skip wawancara/minat - tidak masuk total, hanya sebagai sorting tiebreaker
+            if ($bobot->komponen === 'wawancara') {
+                continue;
+            }
+
             $nilai = match($bobot->komponen) {
-                'wawancara' => $this->nilai_wawancara,
                 'baca_quran' => $this->nilai_baca_quran,
                 'tulis_quran' => $this->nilai_tulis_quran,
                 'hafalan' => $this->nilai_hafalan,
