@@ -477,9 +477,9 @@ class NilaiPenilaianImport
         // Hitung detail surah & ayat
         $juzData = $this->getJuzInfo($jumlahJuz, $juzDetail);
 
-        // Formula skor: 60 + (jumlah_juz - 1) × 40/29
-        // 1 juz = 60, 30 juz = 100
-        $score = min(100, round(60 + ($jumlahJuz - 1) * (40 / 29), 2));
+        // Tabel skor hafalan berdasarkan breakpoint jumlah juz
+        // Interpolasi linear antara breakpoint
+        $score = $this->calculateHafalanScore($jumlahJuz);
 
         return [
             'score' => $score,
@@ -489,6 +489,59 @@ class NilaiPenilaianImport
             'total_ayat' => $juzData['total_ayat'],
             'juz_range' => $juzDetail,
         ];
+    }
+
+    /**
+     * Hitung skor hafalan berdasarkan tabel breakpoint
+     * Interpolasi linear antara breakpoint yang didefinisikan
+     *
+     * Tabel: 1 juz=65, 2=75, 3=80, 5=85, 10=90, 30=100
+     */
+    protected function calculateHafalanScore(int $jumlahJuz): float
+    {
+        // Breakpoint: [jumlah_juz => skor]
+        $breakpoints = [
+            1  => 65,
+            2  => 75,
+            3  => 80,
+            5  => 85,
+            10 => 90,
+            30 => 100,
+        ];
+
+        // Tepat di breakpoint
+        if (isset($breakpoints[$jumlahJuz])) {
+            return (float) $breakpoints[$jumlahJuz];
+        }
+
+        // Di bawah minimum
+        if ($jumlahJuz < 1) {
+            return 0;
+        }
+
+        // Di atas 30
+        if ($jumlahJuz > 30) {
+            return 100;
+        }
+
+        // Interpolasi linear antara dua breakpoint terdekat
+        $keys = array_keys($breakpoints);
+        $lower = $keys[0];
+        $upper = end($keys);
+
+        foreach ($keys as $i => $key) {
+            if ($key > $jumlahJuz) {
+                $upper = $key;
+                $lower = $keys[$i - 1];
+                break;
+            }
+        }
+
+        $lowerScore = $breakpoints[$lower];
+        $upperScore = $breakpoints[$upper];
+        $ratio = ($jumlahJuz - $lower) / ($upper - $lower);
+
+        return round($lowerScore + $ratio * ($upperScore - $lowerScore), 2);
     }
 
     /**
