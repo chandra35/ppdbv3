@@ -323,8 +323,52 @@ class NilaiSeleksiController extends Controller
         try {
             $jadwal = JadwalUjian::findOrFail($request->jadwal_id);
             $file = $request->file('file_nilai');
+
+            // Simpan file sementara untuk preview
+            $tempFileName = 'upload_nilai_' . auth()->id() . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $file->storeAs('temp', $tempFileName, 'local');
+            $tempPath = storage_path('app/temp/' . $tempFileName);
+
             $importer = new NilaiPenilaianImport($jadwal);
-            $result = $importer->import($file->getRealPath());
+            $preview = $importer->preview($tempPath);
+
+            return view('admin.nilai-seleksi.preview-upload', [
+                'preview' => $preview,
+                'jadwal' => $jadwal->load(['jalurPendaftaran', 'gelombangPendaftaran', 'tahunPelajaran']),
+                'tempFile' => $tempFileName,
+                'jadwalId' => $jadwal->id,
+                'originalFileName' => $file->getClientOriginalName(),
+            ]);
+        } catch (\Exception $e) {
+            return redirect()->route('admin.nilai-seleksi.upload')
+                ->with('error', 'Gagal memproses file: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Konfirmasi import setelah preview
+     */
+    public function confirmUpload(Request $request)
+    {
+        $request->validate([
+            'jadwal_id' => 'required|exists:jadwal_ujian,id',
+            'temp_file' => 'required|string',
+        ]);
+
+        $tempPath = storage_path('app/temp/' . $request->temp_file);
+
+        if (!file_exists($tempPath)) {
+            return redirect()->route('admin.nilai-seleksi.upload')
+                ->with('error', 'File sementara tidak ditemukan. Silakan upload ulang.');
+        }
+
+        try {
+            $jadwal = JadwalUjian::findOrFail($request->jadwal_id);
+            $importer = new NilaiPenilaianImport($jadwal);
+            $result = $importer->import($tempPath);
+
+            // Hapus file temp
+            @unlink($tempPath);
 
             $message = "Import selesai: <strong>{$result['imported']}</strong> baru, <strong>{$result['updated']}</strong> diupdate, <strong>{$result['skipped']}</strong> dilewati.";
 
@@ -337,9 +381,24 @@ class NilaiSeleksiController extends Controller
             return redirect()->route('admin.nilai-seleksi.upload')
                 ->with('success', $message);
         } catch (\Exception $e) {
+            @unlink($tempPath);
             return redirect()->route('admin.nilai-seleksi.upload')
                 ->with('error', 'Gagal import: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Batalkan upload - hapus file temp
+     */
+    public function cancelUpload(Request $request)
+    {
+        if ($request->temp_file) {
+            $tempPath = storage_path('app/temp/' . $request->temp_file);
+            @unlink($tempPath);
+        }
+
+        return redirect()->route('admin.nilai-seleksi.upload')
+            ->with('info', 'Upload dibatalkan.');
     }
 
     /**

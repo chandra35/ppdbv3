@@ -191,7 +191,9 @@
                             <small>
                                 <i class="fas fa-info-circle mr-1"></i>
                                 Upload file <strong>Lembar Penilaian Excel</strong> yang sudah diisi nilai penguji.
-                                Sistem akan mencocokkan data berdasarkan <strong>Nomor Tes</strong> peserta dan nama sheet/ruang.
+                                Sistem akan menampilkan <strong>preview data</strong> sebelum import.
+                                Data dicocokkan berdasarkan <strong>Nomor Tes</strong> peserta dan nama sheet/ruang.
+                                Nilai non-angka (huruf/teks) akan ditandai agar bisa diperiksa.
                             </small>
                         </div>
 
@@ -203,7 +205,7 @@
                         </div>
 
                         <button type="submit" class="btn btn-primary btn-block mt-3" id="btnUpload" disabled>
-                            <i class="fas fa-upload mr-1"></i>Upload & Import Nilai
+                            <i class="fas fa-search mr-1"></i>Preview & Periksa Data
                         </button>
                     </form>
                 </div>
@@ -422,7 +424,7 @@ $(document).ready(function() {
 
     // Form submit - loading state
     $('#formUploadNilai').on('submit', function() {
-        btnUpload.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Mengimport nilai...');
+        btnUpload.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Memproses file...');
     });
 });
 </script>

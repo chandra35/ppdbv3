@@ -337,6 +337,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'index'])->name('index');
         Route::get('/upload', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'uploadNilai'])->name('upload');
         Route::post('/upload', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'processUpload'])->name('upload.process');
+        Route::post('/upload/confirm', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'confirmUpload'])->name('upload.confirm');
+        Route::post('/upload/cancel', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'cancelUpload'])->name('upload.cancel');
         Route::get('/rekap', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'rekap'])->name('rekap');
         Route::get('/bobot', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'bobotIndex'])->name('bobot');
         Route::post('/bobot', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'bobotUpdate'])->name('bobot.update');
