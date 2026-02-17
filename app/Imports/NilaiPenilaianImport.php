@@ -118,17 +118,16 @@ class NilaiPenilaianImport
 
         foreach ($bobotList as $bobot) {
             if ($bobot->komponen === 'baca_quran') {
-                // 4 sub-columns: tajwid, makhroj, kelancaran, rata2 (rata2 is skipped on import)
-                $fields[] = ['field' => 'nilai_tajwid', 'type' => 'nilai'];
-                $fields[] = ['field' => 'nilai_makhroj', 'type' => 'nilai'];
-                $fields[] = ['field' => 'nilai_kelancaran', 'type' => 'nilai'];
-                $fields[] = ['field' => null, 'type' => 'skip']; // Rata-rata (auto-calculated)
+                $fields[] = ['field' => 'nilai_tajwid', 'type' => 'nilai', 'komponen' => 'baca_quran'];
+                $fields[] = ['field' => 'nilai_makhroj', 'type' => 'nilai', 'komponen' => 'baca_quran'];
+                $fields[] = ['field' => 'nilai_kelancaran', 'type' => 'nilai', 'komponen' => 'baca_quran'];
+                $fields[] = ['field' => null, 'type' => 'skip', 'komponen' => 'baca_quran'];
             } elseif ($bobot->komponen === 'hafalan') {
-                $fields[] = ['field' => 'nilai_hafalan', 'type' => 'nilai'];
+                $fields[] = ['field' => 'nilai_hafalan', 'type' => 'nilai', 'komponen' => 'hafalan'];
             } elseif ($bobot->komponen === 'tulis_quran') {
-                $fields[] = ['field' => 'nilai_tulis_quran', 'type' => 'nilai'];
+                $fields[] = ['field' => 'nilai_tulis_quran', 'type' => 'nilai', 'komponen' => 'tulis_quran'];
             } elseif ($bobot->komponen === 'wawancara') {
-                $fields[] = ['field' => 'nilai_wawancara', 'type' => 'nilai'];
+                $fields[] = ['field' => 'nilai_wawancara', 'type' => 'nilai', 'komponen' => 'wawancara'];
             }
         }
 
@@ -274,24 +273,68 @@ class NilaiPenilaianImport
                     $nilaiData[$mapping['field']] = $parsedVal;
                     $hasAnyValue = true;
                 } else {
-                    // Non-numeric: coba ekstrak angka dari teks campuran (misal "70 (2 juz)", "85 bagus")
-                    $extracted = $this->extractNumber($cellValue);
-                    if ($extracted !== null) {
-                        $parsedVal = round($extracted, 2);
-                        $nilaiData[$mapping['field']] = $parsedVal;
-                        $hasAnyValue = true;
-                        $hasWarning = true;
-                        if ($this->previewMode) {
-                            $previewRow['issues'][] = "{$fieldLabel}: isi \"{$rawValue}\" → diambil angka {$parsedVal}";
-                            $previewRow['nilai_raw'][] = ['field' => $mapping['field'], 'raw' => $rawValue, 'parsed' => $parsedVal, 'type' => 'extracted'];
+                    // Non-numeric: cek smart parsing khusus komponen
+                    $komponen = $mapping['komponen'] ?? null;
+
+                    if ($komponen === 'hafalan') {
+                        // Smart hafalan: parse "juz 30", "juz 29-30", "3 juz", dll
+                        $hafalanResult = $this->parseHafalanJuz($cellValue);
+                        if ($hafalanResult !== null) {
+                            $parsedVal = round($hafalanResult['score'], 2);
+                            $nilaiData[$mapping['field']] = $parsedVal;
+                            $hasAnyValue = true;
+                            $hasWarning = true;
+                            if ($this->previewMode) {
+                                $detail = $hafalanResult['detail'];
+                                $previewRow['issues'][] = "{$fieldLabel}: \"{$rawValue}\" → {$hafalanResult['jumlah_juz']} juz ({$detail}) → skor {$parsedVal}";
+                                $previewRow['nilai_raw'][] = [
+                                    'field' => $mapping['field'],
+                                    'raw' => $rawValue,
+                                    'parsed' => $parsedVal,
+                                    'type' => 'smart',
+                                    'smart_info' => $hafalanResult,
+                                ];
+                            }
+                        } else {
+                            // Fallback: coba ekstrak angka biasa
+                            $extracted = $this->extractNumber($cellValue);
+                            if ($extracted !== null) {
+                                $parsedVal = round($extracted, 2);
+                                $nilaiData[$mapping['field']] = $parsedVal;
+                                $hasAnyValue = true;
+                                $hasWarning = true;
+                                if ($this->previewMode) {
+                                    $previewRow['issues'][] = "{$fieldLabel}: isi \"{$rawValue}\" → diambil angka {$parsedVal}";
+                                    $previewRow['nilai_raw'][] = ['field' => $mapping['field'], 'raw' => $rawValue, 'parsed' => $parsedVal, 'type' => 'extracted'];
+                                }
+                            } else {
+                                $nilaiData[$mapping['field']] = null;
+                                $hasWarning = true;
+                                if ($this->previewMode) {
+                                    $previewRow['issues'][] = "{$fieldLabel}: isi \"{$rawValue}\" tidak dapat diproses";
+                                    $previewRow['nilai_raw'][] = ['field' => $mapping['field'], 'raw' => $rawValue, 'parsed' => null, 'type' => 'invalid'];
+                                }
+                            }
                         }
                     } else {
-                        // Tidak ada angka sama sekali (misal "B+", "bagus")
-                        $nilaiData[$mapping['field']] = null;
-                        $hasWarning = true;
-                        if ($this->previewMode) {
-                            $previewRow['issues'][] = "{$fieldLabel}: isi \"{$rawValue}\" tidak mengandung angka, diabaikan";
-                            $previewRow['nilai_raw'][] = ['field' => $mapping['field'], 'raw' => $rawValue, 'parsed' => null, 'type' => 'invalid'];
+                        // Non-hafalan: coba ekstrak angka dari teks campuran
+                        $extracted = $this->extractNumber($cellValue);
+                        if ($extracted !== null) {
+                            $parsedVal = round($extracted, 2);
+                            $nilaiData[$mapping['field']] = $parsedVal;
+                            $hasAnyValue = true;
+                            $hasWarning = true;
+                            if ($this->previewMode) {
+                                $previewRow['issues'][] = "{$fieldLabel}: isi \"{$rawValue}\" → diambil angka {$parsedVal}";
+                                $previewRow['nilai_raw'][] = ['field' => $mapping['field'], 'raw' => $rawValue, 'parsed' => $parsedVal, 'type' => 'extracted'];
+                            }
+                        } else {
+                            $nilaiData[$mapping['field']] = null;
+                            $hasWarning = true;
+                            if ($this->previewMode) {
+                                $previewRow['issues'][] = "{$fieldLabel}: isi \"{$rawValue}\" tidak mengandung angka, diabaikan";
+                                $previewRow['nilai_raw'][] = ['field' => $mapping['field'], 'raw' => $rawValue, 'parsed' => null, 'type' => 'invalid'];
+                            }
                         }
                     }
                 }
@@ -367,11 +410,158 @@ class NilaiPenilaianImport
     protected function extractNumber($value): ?float
     {
         $str = trim((string) $value);
-        // Coba ambil angka (integer/desimal) di awal atau di dalam string
         if (preg_match('/(\d+(?:[.,]\d+)?)/', $str, $matches)) {
             return (float) str_replace(',', '.', $matches[1]);
         }
         return null;
+    }
+
+    /**
+     * Smart parsing hafalan juz Al-Qur'an
+     * Mendeteksi format: "juz 30", "juz 29-30", "juz 28-30", "3 juz", "hafal 2 juz"
+     * Konversi ke skor 0-100 dengan formula linear: 60 + (jumlah_juz - 1) × 40/29
+     *
+     * @return array|null ['score' => float, 'jumlah_juz' => int, 'detail' => string, 'juz_list' => string]
+     */
+    protected function parseHafalanJuz($value): ?array
+    {
+        $str = strtolower(trim((string) $value));
+
+        // Hapus karakter khusus kecuali angka, huruf, spasi, dash
+        $str = preg_replace('/[^\w\s\-\/]/', ' ', $str);
+        $str = preg_replace('/\s+/', ' ', trim($str));
+
+        $jumlahJuz = null;
+        $juzDetail = '';
+
+        // Pattern 1: "juz 29-30", "juz 28 - 30", "juz28-30"
+        if (preg_match('/juz\s*(\d{1,2})\s*[-\/]\s*(\d{1,2})/i', $str, $m)) {
+            $from = (int) $m[1];
+            $to = (int) $m[2];
+            if ($from >= 1 && $from <= 30 && $to >= 1 && $to <= 30 && $from <= $to) {
+                $jumlahJuz = $to - $from + 1;
+                $juzDetail = "Juz {$from}-{$to}";
+            }
+        }
+        // Pattern 2: "juz 30" (single juz mentioned → 1 juz)
+        elseif (preg_match('/juz\s*(\d{1,2})\b/i', $str, $m)) {
+            $juzNum = (int) $m[1];
+            if ($juzNum >= 1 && $juzNum <= 30) {
+                $jumlahJuz = 1;
+                $juzDetail = "Juz {$juzNum}";
+            }
+        }
+        // Pattern 3: "3 juz", "2juz", "hafal 5 juz"
+        elseif (preg_match('/(\d{1,2})\s*juz/i', $str, $m)) {
+            $jumlahJuz = (int) $m[1];
+            if ($jumlahJuz >= 1 && $jumlahJuz <= 30) {
+                $juzDetail = "{$jumlahJuz} juz";
+            } else {
+                $jumlahJuz = null;
+            }
+        }
+        // Pattern 4: "hafal" atau "hafalan" + angka
+        elseif (preg_match('/haf(?:al|alan)\w*\s+(\d{1,2})/i', $str, $m)) {
+            $jumlahJuz = (int) $m[1];
+            if ($jumlahJuz >= 1 && $jumlahJuz <= 30) {
+                $juzDetail = "{$jumlahJuz} juz";
+            } else {
+                $jumlahJuz = null;
+            }
+        }
+
+        if ($jumlahJuz === null || $jumlahJuz < 1) {
+            return null;
+        }
+
+        // Hitung detail surah & ayat
+        $juzData = $this->getJuzInfo($jumlahJuz, $juzDetail);
+
+        // Formula skor: 60 + (jumlah_juz - 1) × 40/29
+        // 1 juz = 60, 30 juz = 100
+        $score = min(100, round(60 + ($jumlahJuz - 1) * (40 / 29), 2));
+
+        return [
+            'score' => $score,
+            'jumlah_juz' => $jumlahJuz,
+            'detail' => $juzData['detail'],
+            'total_surah' => $juzData['total_surah'],
+            'total_ayat' => $juzData['total_ayat'],
+            'juz_range' => $juzDetail,
+        ];
+    }
+
+    /**
+     * Referensi data Al-Qur'an per Juz
+     * Mengembalikan info surah dan ayat untuk sejumlah juz
+     */
+    protected function getJuzInfo(int $jumlahJuz, string $juzRange): array
+    {
+        // Data jumlah surah dan ayat per juz (referensi Mushaf Madinah)
+        // Format: [nomor_juz => ['surah_count' => n, 'ayat_count' => n, 'name' => 'nama populer']]
+        $juzReference = [
+            1  => ['surah_count' => 2, 'ayat_count' => 148, 'name' => 'Alif Lam Mim'],
+            2  => ['surah_count' => 1, 'ayat_count' => 111, 'name' => 'Sayaqul'],
+            3  => ['surah_count' => 2, 'ayat_count' => 126, 'name' => 'Tilkar Rusul'],
+            4  => ['surah_count' => 2, 'ayat_count' => 131, 'name' => 'Lan Tanalul'],
+            5  => ['surah_count' => 2, 'ayat_count' => 120, 'name' => 'Wal Muhshanat'],
+            6  => ['surah_count' => 2, 'ayat_count' => 110, 'name' => 'La Yuhibbullah'],
+            7  => ['surah_count' => 2, 'ayat_count' => 149, 'name' => 'Wa Idza Sami\'u'],
+            8  => ['surah_count' => 2, 'ayat_count' => 142, 'name' => 'Wa Lau Annana'],
+            9  => ['surah_count' => 2, 'ayat_count' => 159, 'name' => 'Qalal Mala\'u'],
+            10 => ['surah_count' => 2, 'ayat_count' => 127, 'name' => 'Wa\'lamu'],
+            11 => ['surah_count' => 2, 'ayat_count' => 151, 'name' => 'Ya\'tadziruna'],
+            12 => ['surah_count' => 2, 'ayat_count' => 170, 'name' => 'Wa Ma Min Dabbah'],
+            13 => ['surah_count' => 3, 'ayat_count' => 154, 'name' => 'Wa Ma Ubarri\'u'],
+            14 => ['surah_count' => 2, 'ayat_count' => 227, 'name' => 'Rubama'],
+            15 => ['surah_count' => 2, 'ayat_count' => 185, 'name' => 'Subhanallazi'],
+            16 => ['surah_count' => 3, 'ayat_count' => 269, 'name' => 'Qal Alam'],
+            17 => ['surah_count' => 3, 'ayat_count' => 190, 'name' => 'Iqtaraba'],
+            18 => ['surah_count' => 3, 'ayat_count' => 202, 'name' => 'Qad Aflaha'],
+            19 => ['surah_count' => 4, 'ayat_count' => 339, 'name' => 'Wa Qalalladzina'],
+            20 => ['surah_count' => 3, 'ayat_count' => 171, 'name' => 'A\'man Khalaq'],
+            21 => ['surah_count' => 3, 'ayat_count' => 178, 'name' => 'Utlu Ma Uhiya'],
+            22 => ['surah_count' => 4, 'ayat_count' => 169, 'name' => 'Wa Man Yaqnut'],
+            23 => ['surah_count' => 4, 'ayat_count' => 357, 'name' => 'Wa Mali'],
+            24 => ['surah_count' => 4, 'ayat_count' => 175, 'name' => 'Faman Azhlam'],
+            25 => ['surah_count' => 4, 'ayat_count' => 246, 'name' => 'Ilaihi Yuraddu'],
+            26 => ['surah_count' => 4, 'ayat_count' => 195, 'name' => 'Ha Mim'],
+            27 => ['surah_count' => 3, 'ayat_count' => 399, 'name' => 'Qala Fama Khatbukum'],
+            28 => ['surah_count' => 4, 'ayat_count' => 137, 'name' => 'Qad Sami\'a'],
+            29 => ['surah_count' => 11, 'ayat_count' => 431, 'name' => 'Tabarak'],
+            30 => ['surah_count' => 37, 'ayat_count' => 564, 'name' => 'Amma / Juz Amma'],
+        ];
+
+        $totalSurah = 0;
+        $totalAyat = 0;
+
+        // Untuk "juz X-Y", hitung dari juz X sampai juz Y
+        if (preg_match('/Juz\s+(\d+)-(\d+)/', $juzRange, $m)) {
+            $from = (int) $m[1];
+            $to = (int) $m[2];
+            for ($j = $from; $j <= $to; $j++) {
+                if (isset($juzReference[$j])) {
+                    $totalSurah += $juzReference[$j]['surah_count'];
+                    $totalAyat += $juzReference[$j]['ayat_count'];
+                }
+            }
+        } else {
+            // Hitung dari juz 30 ke bawah (konvensi umum: mulai hafalan dari juz 30)
+            for ($j = 30; $j > 30 - $jumlahJuz && $j >= 1; $j--) {
+                if (isset($juzReference[$j])) {
+                    $totalSurah += $juzReference[$j]['surah_count'];
+                    $totalAyat += $juzReference[$j]['ayat_count'];
+                }
+            }
+        }
+
+        $detail = "±{$totalSurah} surah, ±{$totalAyat} ayat";
+
+        return [
+            'total_surah' => $totalSurah,
+            'total_ayat' => $totalAyat,
+            'detail' => $detail,
+        ];
     }
 
     /**

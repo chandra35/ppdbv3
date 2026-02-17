@@ -47,6 +47,11 @@
         background-color: #dbeafe !important;
         color: #1e40af;
     }
+    .cell-smart {
+        background-color: #dcfce7 !important;
+        color: #166534;
+        font-weight: bold;
+    }
     .cell-skip {
         color: #999;
         font-style: italic;
@@ -248,9 +253,14 @@
                                     @if($nv['type'] === 'skip')
                                         @continue
                                     @endif
-                                    <td class="text-center {{ $nv['type'] === 'valid' ? 'cell-valid' : ($nv['type'] === 'invalid' ? 'cell-invalid' : ($nv['type'] === 'warning' ? 'cell-warning' : ($nv['type'] === 'extracted' ? 'cell-extracted' : ($nv['type'] === 'empty' ? 'cell-empty' : '')))) }}">
+                                    <td class="text-center {{ $nv['type'] === 'valid' ? 'cell-valid' : ($nv['type'] === 'invalid' ? 'cell-invalid' : ($nv['type'] === 'warning' ? 'cell-warning' : ($nv['type'] === 'extracted' ? 'cell-extracted' : ($nv['type'] === 'smart' ? 'cell-smart' : ($nv['type'] === 'empty' ? 'cell-empty' : ''))))) }}">
                                         @if($nv['type'] === 'valid')
                                             {{ $nv['parsed'] }}
+                                        @elseif($nv['type'] === 'smart')
+                                            <span title="{{ $nv['raw'] }} → {{ $nv['smart_info']['jumlah_juz'] }} juz ({{ $nv['smart_info']['detail'] }}) → skor {{ $nv['parsed'] }}">
+                                                {{ $nv['parsed'] }}
+                                                <i class="fas fa-quran text-success" style="font-size: 0.7rem;"></i>
+                                            </span>
                                         @elseif($nv['type'] === 'extracted')
                                             <span title="Asli: '{{ $nv['raw'] }}' → diambil {{ $nv['parsed'] }}">
                                                 {{ $nv['parsed'] }}
@@ -346,6 +356,7 @@
                 <small>
                     <strong>Keterangan Warna Nilai:</strong>&nbsp;
                     <span class="px-2 py-1 cell-valid">Angka valid</span>&nbsp;
+                    <span class="px-2 py-1 cell-smart">Smart Hafalan Juz <i class="fas fa-quran" style="font-size: 0.7rem;"></i></span>&nbsp;
                     <span class="px-2 py-1 cell-extracted">Angka diekstrak dari teks <i class="fas fa-magic" style="font-size: 0.7rem;"></i></span>&nbsp;
                     <span class="px-2 py-1 cell-invalid">Tidak ada angka (diabaikan)</span>&nbsp;
                     <span class="px-2 py-1 cell-warning">Di luar rentang 0-100</span>&nbsp;
