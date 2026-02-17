@@ -325,9 +325,17 @@ class NilaiSeleksiController extends Controller
             $file = $request->file('file_nilai');
 
             // Simpan file sementara untuk preview
+            $tempDir = storage_path('app/temp');
+            if (!is_dir($tempDir)) {
+                mkdir($tempDir, 0755, true);
+            }
             $tempFileName = 'upload_nilai_' . auth()->id() . '_' . time() . '.' . $file->getClientOriginalExtension();
-            $file->storeAs('temp', $tempFileName, 'local');
-            $tempPath = storage_path('app/temp/' . $tempFileName);
+            $tempPath = $tempDir . DIRECTORY_SEPARATOR . $tempFileName;
+            $file->move($tempDir, $tempFileName);
+
+            if (!file_exists($tempPath)) {
+                throw new \Exception('Gagal menyimpan file sementara.');
+            }
 
             $importer = new NilaiPenilaianImport($jadwal);
             $preview = $importer->preview($tempPath);
