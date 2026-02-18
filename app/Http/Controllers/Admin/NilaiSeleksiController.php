@@ -274,12 +274,18 @@ class NilaiSeleksiController extends Controller
             return [$item->nilai_akhir, (float) ($item->nilai_wawancara ?? 0)];
         })->values();
 
-        // Detail stats: jalur & gender breakdown
+        // Detail stats: jalur, minat & gender breakdown
         $detailStats = [
             'total' => $rekapData->count(),
             'laki_laki' => $rekapData->filter(fn($n) => $n->calonSiswa && $n->calonSiswa->jenis_kelamin === 'L')->count(),
             'perempuan' => $rekapData->filter(fn($n) => $n->calonSiswa && $n->calonSiswa->jenis_kelamin === 'P')->count(),
             'jalur' => $rekapData->groupBy(fn($n) => $n->calonSiswa?->jalurPendaftaran?->nama ?? 'Tidak Diketahui')
+                ->map(fn($group) => [
+                    'total' => $group->count(),
+                    'laki_laki' => $group->filter(fn($n) => $n->calonSiswa?->jenis_kelamin === 'L')->count(),
+                    'perempuan' => $group->filter(fn($n) => $n->calonSiswa?->jenis_kelamin === 'P')->count(),
+                ])->sortByDesc('total'),
+            'minat' => $rekapData->groupBy(fn($n) => $n->calonSiswa?->pilihan_program ?? 'Belum Memilih')
                 ->map(fn($group) => [
                     'total' => $group->count(),
                     'laki_laki' => $group->filter(fn($n) => $n->calonSiswa?->jenis_kelamin === 'L')->count(),

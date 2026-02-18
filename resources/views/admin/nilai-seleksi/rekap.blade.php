@@ -151,8 +151,9 @@
             <h3 class="card-title"><i class="fas fa-chart-pie mr-2"></i>Detail Pendaftar</h3>
         </div>
         <div class="card-body">
-            <div class="row">
-                {{-- Per Jalur --}}
+            {{-- Jalur Pendaftaran --}}
+            <h6 class="text-muted text-uppercase mb-3"><i class="fas fa-road mr-1"></i> Jalur Pendaftaran</h6>
+            <div class="row mb-3">
                 @foreach($detailStats['jalur'] as $namaJalur => $stat)
                     <div class="col-md-4 col-6 mb-3">
                         <div class="info-box mb-0">
@@ -171,9 +172,39 @@
                         </div>
                     </div>
                 @endforeach
+            </div>
 
-                {{-- Total Gender --}}
-                <div class="col-md-4 col-6 mb-3">
+            {{-- Minat Program --}}
+            <h6 class="text-muted text-uppercase mb-3"><i class="fas fa-heart mr-1"></i> Minat Program (Pilihan Pendaftar)</h6>
+            <div class="row mb-3">
+                @foreach($detailStats['minat'] as $namaMinat => $stat)
+                    <div class="col-md-4 col-6 mb-3">
+                        <div class="info-box mb-0">
+                            @php
+                                $isAsrama = str_contains(strtolower($namaMinat), 'asrama');
+                                $isReguler = str_contains(strtolower($namaMinat), 'reguler');
+                            @endphp
+                            <span class="info-box-icon {{ $isAsrama ? 'bg-purple' : ($isReguler ? 'bg-teal' : 'bg-gray') }}">
+                                <i class="fas {{ $isAsrama ? 'fa-home' : ($isReguler ? 'fa-school' : 'fa-question') }}"></i>
+                            </span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Minat {{ $namaMinat }}</span>
+                                <span class="info-box-number">{{ $stat['total'] }} pendaftar</span>
+                                <small class="text-muted">
+                                    <i class="fas fa-mars text-primary"></i> {{ $stat['laki_laki'] }} L
+                                    &nbsp;|&nbsp;
+                                    <i class="fas fa-venus text-danger"></i> {{ $stat['perempuan'] }} P
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <hr>
+            {{-- Total Gender --}}
+            <div class="row">
+                <div class="col-md-4 col-6">
                     <div class="info-box mb-0">
                         <span class="info-box-icon bg-secondary">
                             <i class="fas fa-venus-mars"></i>
