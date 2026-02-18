@@ -224,31 +224,12 @@
 
         {{-- Status Cards --}}
         <div class="row">
-            <div class="col-md-6 col-12 mb-3">
+            <div class="col-12 mb-3">
                 <div class="info-box-custom bg-gradient-success">
                     <div class="info-box-content p-3 text-white text-center">
                         <i class="fas fa-id-card fa-2x mb-2"></i>
                         <h5 class="mb-1">Status Registrasi</h5>
                         <h3 class="mb-0">Terdaftar</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 col-12 mb-3">
-                <div class="info-box-custom bg-gradient-info">
-                    <div class="info-box-content p-3 text-white text-center">
-                        <i class="fas fa-clipboard-check fa-2x mb-2"></i>
-                        <h5 class="mb-1">Status Admisi</h5>
-                        <h3 class="mb-0">
-                            @if($calonSiswa->status_admisi === 'diterima')
-                                Diterima
-                            @elseif($calonSiswa->status_admisi === 'cadangan')
-                                Cadangan
-                            @elseif($calonSiswa->status_admisi === 'ditolak')
-                                Ditolak
-                            @else
-                                Belum Diproses
-                            @endif
-                        </h3>
                     </div>
                 </div>
             </div>
@@ -266,7 +247,7 @@
                     <li class="mb-2"><i class="fas fa-lock text-warning mr-2"></i>Data Anda telah dikunci dan tidak dapat diubah lagi</li>
                     <li class="mb-2"><i class="fas fa-save text-primary mr-2"></i>Simpan nomor tes Anda dengan baik</li>
                     <li class="mb-2"><i class="fas fa-print text-info mr-2"></i>Cetak kartu ujian untuk keperluan tes</li>
-                    <li class="mb-2"><i class="fas fa-chart-line text-success mr-2"></i>Pantau status admisi Anda secara berkala</li>
+                    <li class="mb-2"><i class="fas fa-graduation-cap text-success mr-2"></i>Cek info kelulusan di menu <strong>Info Kelulusan</strong></li>
                 </ul>
             </div>
         </div>
