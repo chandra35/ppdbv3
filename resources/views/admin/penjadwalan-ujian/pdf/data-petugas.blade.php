@@ -237,10 +237,10 @@
             </table>
         </div>
 
-        {{-- Penguji Wawancara --}}
+        {{-- Penguji TBQ --}}
         @if($pengujiWawancara->isNotEmpty())
-        <div class="section-header">
-            <i>★</i> PENGUJI WAWANCARA ({{ $pengujiWawancara->count() }} orang)
+        <div class="section">
+            <i>★</i> PENGUJI TBQ ({{ $pengujiWawancara->count() }} orang)
         </div>
         <table class="petugas">
             <thead>
@@ -361,7 +361,7 @@
                 <div class="card-header-petugas">
                     @if($p['peran'] === 'penguji')
                         @if($p['is_ketua']) <span class="badge badge-ketua">Ketua</span> @endif
-                        <span class="badge badge-penguji">Penguji Wawancara</span>
+                        <span class="badge badge-penguji">Penguji TBQ</span>
                     @elseif($p['peran'] === 'pengawas')
                         <span class="badge badge-pengawas">Pengawas CBT</span>
                     @elseif($p['peran'] === 'proktor')

@@ -1,12 +1,12 @@
 @extends('adminlte::page')
 
-@section('title', 'Penjadwalan Ujian CBT & Wawancara')
+@section('title', 'Penjadwalan Ujian CBT & TBQ')
 
 @section('css')
 <style>
     .config-card { border-left: 4px solid #007bff; }
     .config-card.cbt { border-left-color: #28a745; }
-    .config-card.wawancara { border-left-color: #ffc107; }
+    .config-card.wawancara { border-left-color: #ffc107; } /* TBQ */
     .preview-card { border: 2px dashed #dee2e6; }
     .preview-card.has-data { border: 2px solid #28a745; }
     .sesi-row { transition: all 0.2s; }
@@ -28,7 +28,7 @@
 <div class="row align-items-center">
     <div class="col-sm-6">
         <h1><i class="fas fa-calendar-alt"></i> Penjadwalan Ujian</h1>
-        <p class="text-muted mb-0">Atur jadwal CBT & Wawancara secara paralel</p>
+        <p class="text-muted mb-0">Atur jadwal CBT & TBQ secara paralel</p>
     </div>
     <div class="col-sm-6">
         <form class="form-inline justify-content-sm-end" method="GET">
@@ -147,12 +147,12 @@
                                 🔄 Swap (Grup A↔B bertukar)
                             </option>
                             <option value="queue" {{ ($settings['mode'] ?? 'swap') == 'queue' ? 'selected' : '' }}>
-                                📋 Queue (CBT dulu, sisa langsung wawancara)
+                                📋 Queue (CBT dulu, sisa langsung TBQ)
                             </option>
                         </select>
                         <small class="text-muted">
-                            <strong>Swap:</strong> Grup A CBT, Grup B Wawancara, lalu tukar.
-                            <strong>Queue:</strong> CBT penuh dulu, sisanya langsung wawancara.
+                            <strong>Swap:</strong> Grup A CBT, Grup B TBQ, lalu tukar.
+                            <strong>Queue:</strong> CBT penuh dulu, sisanya langsung TBQ.
                         </small>
                     </div>
                 </div>
@@ -216,11 +216,11 @@
         <div class="col-lg-4">
             <div class="card config-card wawancara">
                 <div class="card-header bg-warning">
-                    <h3 class="card-title"><i class="fas fa-microphone mr-2"></i>Konfigurasi Wawancara</h3>
+                    <h3 class="card-title"><i class="fas fa-microphone mr-2"></i>Konfigurasi TBQ</h3>
                 </div>
                 <div class="card-body">
                     <div class="form-group">
-                        <label>Jumlah Ruang Wawancara <span class="text-danger">*</span></label>
+                        <label>Jumlah Ruang TBQ <span class="text-danger">*</span></label>
                         <input type="number" name="jumlah_ruang_wawancara" class="form-control" 
                                value="{{ $settings['jumlah_ruang_wawancara'] ?? 4 }}" min="1" max="50" required>
                     </div>
@@ -230,14 +230,14 @@
                                value="{{ $settings['kapasitas_wawancara'] ?? 15 }}" min="1" max="50" required>
                     </div>
                     <div class="form-group">
-                        <label>Durasi Wawancara (menit) <span class="text-danger">*</span></label>
+                        <label>Durasi TBQ (menit) <span class="text-danger">*</span></label>
                         <input type="number" name="durasi_wawancara" class="form-control" 
                                value="{{ $settings['durasi_wawancara'] ?? 60 }}" min="15" max="240" required>
                     </div>
                     <div class="form-group mb-0">
                         <label>Prefix Nama Ruang</label>
                         <input type="text" name="prefix_ruang_wawancara" class="form-control" 
-                               value="{{ $settings['prefix_ruang_wawancara'] ?? 'Ruang Wawancara' }}" maxlength="50">
+                               value="{{ $settings['prefix_ruang_wawancara'] ?? 'Ruang TBQ' }}" maxlength="50">
                     </div>
                     <hr>
                     <div class="stats-mini text-center">
@@ -329,7 +329,7 @@
                             <strong class="text-success" id="calcKapCbt">-</strong>
                         </div>
                         <div class="col calc-metric">
-                            <small class="text-muted d-block">Kap. Wawancara/Sesi</small>
+                            <small class="text-muted d-block">Kap. TBQ/Sesi</small>
                             <strong class="text-warning" id="calcKapWaw">-</strong>
                         </div>
                         <div class="col calc-metric" id="calcParalelCol">
@@ -431,7 +431,7 @@
                                 <td class="text-right"><strong class="text-success">{{ $kapasitasCbt }}</strong> ({{ $settings['jumlah_ruang_cbt'] }} × {{ $settings['kapasitas_cbt'] }})</td>
                             </tr>
                             <tr>
-                                <td>Kapasitas Wawancara/Sesi</td>
+                                <td>Kapasitas TBQ/Sesi</td>
                                 <td class="text-right"><strong class="text-warning">{{ $kapasitasWawancara }}</strong> ({{ $settings['jumlah_ruang_wawancara'] }} × {{ $settings['kapasitas_wawancara'] }})</td>
                             </tr>
                             <tr>
@@ -466,15 +466,15 @@
                         @if(($settings['mode'] ?? 'swap') == 'queue')
                         <ul class="mb-0 pl-3">
                             <li>CBT diisi penuh terlebih dahulu ({{ $kapasitasCbt }} orang)</li>
-                            <li>Peserta yang belum CBT langsung <strong>wawancara</strong> sambil menunggu</li>
-                            <li>Setelah CBT selesai, peserta langsung pindah ke wawancara</li>
-                            <li>Efisien jika kapasitas wawancara > CBT</li>
+                            <li>Peserta yang belum CBT langsung <strong>TBQ</strong> sambil menunggu</li>
+                            <li>Setelah CBT selesai, peserta langsung pindah ke TBQ</li>
+                            <li>Efisien jika kapasitas TBQ > CBT</li>
                         </ul>
                         @else
                         <ul class="mb-0 pl-3">
-                            <li><strong>Grup A</strong>: CBT dulu → lalu Wawancara</li>
-                            <li><strong>Grup B</strong>: Wawancara dulu → lalu CBT</li>
-                            <li>Setiap peserta mengikuti <strong>2 sesi</strong> (CBT + Wawancara)</li>
+                            <li><strong>Grup A</strong>: CBT dulu → lalu TBQ</li>
+                            <li><strong>Grup B</strong>: TBQ dulu → lalu CBT</li>
+                            <li>Setiap peserta mengikuti <strong>2 sesi</strong> (CBT + TBQ)</li>
                             <li>Distribusi berdasarkan <strong>Nomor Tes</strong></li>
                         </ul>
                         @endif
@@ -492,7 +492,7 @@
                         <th width="80">Sesi</th>
                         <th width="150">Waktu</th>
                         <th class="bg-success text-white">CBT</th>
-                        <th class="bg-warning">Wawancara</th>
+                        <th class="bg-warning">TBQ</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -530,11 +530,11 @@
         <div class="alert alert-{{ ($settings['mode'] ?? 'swap') == 'swap' ? 'primary' : 'info' }} mt-3">
             <i class="fas fa-info-circle mr-2"></i>
             @if(($settings['mode'] ?? 'swap') == 'swap')
-            <strong>Mode Swap:</strong> Setiap putaran terdiri dari 2 sesi. Sesi ganjil: Grup A → CBT, Grup B → Wawancara. Sesi genap: bertukar.
+            <strong>Mode Swap:</strong> Setiap putaran terdiri dari 2 sesi. Sesi ganjil: Grup A → CBT, Grup B → TBQ. Sesi genap: bertukar.
             Sisa peserta yang tidak memenuhi kapasitas penuh ditempatkan di ruang terakhir.
             @else
-            <strong>Mode Queue:</strong> Peserta mengikuti CBT dan Wawancara secara mengalir.
-            Yang belum dapat giliran CBT bisa langsung wawancara dulu, begitu pula sebaliknya.
+            <strong>Mode Queue:</strong> Peserta mengikuti CBT dan TBQ secara mengalir.
+            Yang belum dapat giliran CBT bisa langsung TBQ dulu, begitu pula sebaliknya.
             @endif
         </div>
     </div>
@@ -655,7 +655,7 @@ $(document).ready(function() {
             if (kapCbt !== kapWaw && kapCbt > 0 && kapWaw > 0) {
                 var diff = Math.abs(kapCbt - kapWaw);
                 var persen = Math.round((diff / Math.max(kapCbt, kapWaw)) * 100);
-                noteText = 'Kapasitas CBT & Wawancara tidak seimbang (beda ' + persen + '%). Pertimbangkan mode Queue.';
+                noteText = 'Kapasitas CBT & TBQ tidak seimbang (beda ' + persen + '%). Pertimbangkan mode Queue.';
             }
 
             // Show swap-specific column (paralel)
@@ -701,7 +701,7 @@ $(document).ready(function() {
                 var pesertaPerPut = kapParalel * 2;
                 var jumlahPut = Math.ceil(pesertaTerjadwal / pesertaPerPut);
                 var sisaPutTerakhir = pesertaTerjadwal - (jumlahPut - 1) * pesertaPerPut;
-                // Putaran terakhir: setengah ke CBT, setengah ke Wawancara
+                // Putaran terakhir: setengah ke CBT, setengah ke TBQ
                 pesertaSesiTerakhirCbt = Math.ceil(sisaPutTerakhir / 2);
                 pesertaSesiTerakhirWaw = sisaPutTerakhir - pesertaSesiTerakhirCbt;
             } else if (mode === 'queue') {
@@ -726,7 +726,7 @@ $(document).ready(function() {
                 $('#calcOverflowCbt').text('-');
             }
 
-            // Wawancara overflow
+            // TBQ overflow
             if (pesertaSesiTerakhirWaw > 0 && wawRuang > 0) {
                 var perRoomWaw = Math.ceil(pesertaSesiTerakhirWaw / wawRuang);
                 var pctWaw = Math.round((perRoomWaw / wawKap) * 100);
@@ -757,11 +757,11 @@ $(document).ready(function() {
                     recommendations.push('Atau tambah ' + extraRoomCbt + ' ruang CBT (total: ' + (cbtRuang + extraRoomCbt) + ')');
                 } else {
                     var extraRoomWaw = Math.ceil(kekurangan / ((jumlahSesi / 2) * wawKap || 1));
-                    recommendations.push('Atau tambah ' + extraRoomWaw + ' ruang Wawancara (total: ' + (wawRuang + extraRoomWaw) + ')');
+                    recommendations.push('Atau tambah ' + extraRoomWaw + ' ruang TBQ (total: ' + (wawRuang + extraRoomWaw) + ')');
                 }
             } else {
                 // Queue mode
-                var bottleneck = kapCbt < kapWaw ? 'CBT' : 'Wawancara';
+                var bottleneck = kapCbt < kapWaw ? 'CBT' : 'TBQ';
                 var bottleneckKap = kapCbt < kapWaw ? kapCbt : kapWaw;
                 var extraSesi = Math.ceil(kekurangan / (bottleneckKap || 1));
                 recommendations.push('Tambah ~' + extraSesi + ' sesi (naikkan maks sesi)');
@@ -770,7 +770,7 @@ $(document).ready(function() {
                     recommendations.push('Atau tambah ' + extraR + ' ruang CBT (total: ' + (cbtRuang + extraR) + ')');
                 } else {
                     var extraR = Math.ceil(kekurangan / (jumlahSesi * wawKap || 1));
-                    recommendations.push('Atau tambah ' + extraR + ' ruang Wawancara (total: ' + (wawRuang + extraR) + ')');
+                    recommendations.push('Atau tambah ' + extraR + ' ruang TBQ (total: ' + (wawRuang + extraR) + ')');
                 }
             }
         }

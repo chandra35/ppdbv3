@@ -335,7 +335,7 @@
 @section('content_header')
     <div class="row mb-2">
         <div class="col-sm-6">
-            <h1 class="m-0"><i class="fas fa-edit mr-2"></i>Input Nilai Seleksi</h1>
+            <h1 class="m-0"><i class="fas fa-edit mr-2"></i>Input Nilai TBQ</h1>
         </div>
         <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
@@ -666,7 +666,7 @@
                         <div class="card-body">
                             @if($bobot->komponen == 'wawancara')
                                 <div class="form-group mb-0">
-                                    <label class="mb-1">Nilai Wawancara <span class="text-danger">*</span></label>
+                                    <label class="mb-1">Nilai TBQ <span class="text-danger">*</span></label>
                                     <input type="number" name="nilai_wawancara" 
                                            class="form-control nilai-input grade-input" 
                                            value="{{ old('nilai_wawancara', $nilai->nilai_wawancara ?? '') }}"

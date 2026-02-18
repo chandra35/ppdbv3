@@ -261,7 +261,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/batch-kartu-tes', [\App\Http\Controllers\Admin\CetakDokumenController::class, 'batchCetakKartuTes'])->name('batch-kartu-tes');
     });
 
-    // ---- PENJADWALAN UJIAN (CBT + WAWANCARA PARALEL) ----
+    // ---- PENJADWALAN UJIAN (CBT + TBQ PARALEL) ----
     Route::prefix('penjadwalan-ujian')->name('penjadwalan-ujian.')->middleware('permission:verifikasi.cetak')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'index'])->name('index');
         Route::post('/preview', [\App\Http\Controllers\Admin\PenjadwalanUjianController::class, 'preview'])->name('preview');
@@ -290,7 +290,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     });
 
     // ---- MANAJEMEN PENGUJI ----
-    // Penguji adalah GTK yang di-assign langsung dengan role "Penguji TES Wawancara"
+    // Penguji adalah GTK yang di-assign langsung dengan role "Penguji TES TBQ"
     // Interface dual-listbox: GTK di kiri, Penguji di kanan
     Route::prefix('penguji')->name('penguji.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\PengujiController::class, 'index'])->name('index');

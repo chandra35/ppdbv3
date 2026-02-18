@@ -162,7 +162,7 @@ class PendaftarExport implements FromCollection, WithHeadings, WithMapping, With
             
             // Nilai Akhir
             'Nilai CBT',
-            'Nilai Wawancara',
+            'Nilai TBQ',
             'Nilai Akhir',
             'Ranking',
         ];

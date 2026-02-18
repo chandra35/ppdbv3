@@ -111,7 +111,7 @@
     <div class="col-sm-6">
         <ol class="breadcrumb float-sm-right">
             <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="{{ route('admin.nilai-seleksi.upload') }}">Upload Nilai</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('admin.nilai-seleksi.upload') }}">Upload Nilai TBQ</a></li>
             <li class="breadcrumb-item active">Preview</li>
         </ol>
     </div>

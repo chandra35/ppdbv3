@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'Rekap Nilai Seleksi')
+@section('title', 'Rekap Nilai TBQ & CBT')
 
 @section('css')
 <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap4.min.css">
@@ -28,13 +28,13 @@
 <div class="row mb-2">
     <div class="col-sm-6">
         <h1 class="m-0">
-            <i class="fas fa-trophy mr-2"></i>Rekap Nilai Seleksi
+            <i class="fas fa-trophy mr-2"></i>Rekap Nilai TBQ & CBT
         </h1>
     </div>
     <div class="col-sm-6">
         <ol class="breadcrumb float-sm-right">
             <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="{{ route('admin.nilai-seleksi.index') }}">Nilai Seleksi</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('admin.nilai-seleksi.index') }}">Nilai TBQ</a></li>
             <li class="breadcrumb-item active">Rekap</li>
         </ol>
     </div>
@@ -167,7 +167,7 @@
     <div class="callout callout-info">
         <h5><i class="fas fa-info-circle mr-1"></i> Formula Nilai Akhir</h5>
         <p class="mb-0">
-            <strong>Nilai Akhir</strong> = (CBT × <strong>50%</strong>) + (Rapor × <strong>10%</strong>) + (Seleksi × <strong>40%</strong>)
+            <strong>Nilai Akhir</strong> = (CBT × <strong>50%</strong>) + (Rapor × <strong>10%</strong>) + (TBQ × <strong>40%</strong>)
             &nbsp;|&nbsp; <em>Minat</em> sebagai tiebreaker &nbsp;|&nbsp; <em>Sertifikat</em> sebagai referensi tambahan
         </p>
     </div>
@@ -215,7 +215,7 @@
                         <label class="mb-1 small">Jenis Tes</label>
                         <select name="jenis_tes" class="form-control form-control-sm">
                             <option value="">-- Semua --</option>
-                            <option value="wawancara" {{ request('jenis_tes') == 'wawancara' ? 'selected' : '' }}>Wawancara</option>
+                            <option value="tbq" {{ request('jenis_tes') == 'tbq' ? 'selected' : '' }}>TBQ</option>
                             <option value="cbt" {{ request('jenis_tes') == 'cbt' ? 'selected' : '' }}>CBT</option>
                         </select>
                     </div>
@@ -240,12 +240,12 @@
                         <th rowspan="2">JK</th>
                         <th rowspan="2">Jalur</th>
                         <th rowspan="2" title="Minat/Pilihan Program">Pilihan</th>
-                        <th class="text-center" colspan="4" style="background: #e8f5e9;">Seleksi (40%)</th>
-                        <th class="text-center" rowspan="2" style="background: #e8f5e9;">T. Seleksi</th>
+                        <th class="text-center" colspan="4" style="background: #e8f5e9;">TBQ (40%)</th>
+                        <th class="text-center" rowspan="2" style="background: #e8f5e9;">T. TBQ</th>
                         <th class="text-center" colspan="4" style="background: #e3f2fd;">CBT (50%)</th>
                         <th class="text-center" rowspan="2" style="background: #e3f2fd;">Rata CBT</th>
                         <th class="text-center" rowspan="2" style="background: #fff3e0;">Rapor (10%)</th>
-                        <th class="text-center" rowspan="2" style="background: #fce4ec;" title="Nilai Akhir = CBT×50% + Rapor×10% + Seleksi×40%">Nilai Akhir</th>
+                        <th class="text-center" rowspan="2" style="background: #fce4ec;" title="Nilai Akhir = CBT×50% + Rapor×10% + TBQ×40%">Nilai Akhir</th>
                         <th class="text-center" rowspan="2" title="Minat terhadap pilihan program (tiebreaker)">Minat</th>
                         <th class="text-center" rowspan="2" title="Hafalan Juz (rekomendasi)">Rekomendasi</th>
                         <th class="text-center" rowspan="2" title="Sertifikat/Piagam prestasi (referensi)">Sertifikat</th>
@@ -286,7 +286,7 @@
                                     <span class="text-danger"><i class="fas fa-venus"></i> P</span>
                                 @endif
                             </td>
-                            <td>{{ $nilai->sesiUjian->jalur->nama ?? '-' }}</td>
+                            <td>{{ $nilai->sesiUjian->jalur->nama ?? ($nilai->calonSiswa?->jalurPendaftaran?->nama ?? '-') }}</td>
                             {{-- Pilihan Program --}}
                             <td class="text-center">
                                 @if($nilai->calonSiswa?->pilihan_program === 'Asrama')
@@ -297,15 +297,19 @@
                                     <span class="text-muted">-</span>
                                 @endif
                             </td>
-                            {{-- Seleksi --}}
+                            {{-- TBQ --}}
                             <td class="text-center nilai-cell">{{ $nilai->nilai_baca_quran ?? '-' }}</td>
                             <td class="text-center nilai-cell">{{ $nilai->nilai_tulis_quran ?? '-' }}</td>
                             <td class="text-center nilai-cell">{{ $nilai->nilai_hafalan ?? '-' }}</td>
                             <td class="text-center">{{ $nilai->jumlah_juz_hafalan ?? '-' }}</td>
                             <td class="text-center">
-                                <span class="badge badge-success" style="font-size: 0.85rem;">
-                                    {{ number_format($nilai->total_nilai, 2) }}
-                                </span>
+                                @if(($nilai->total_nilai ?? 0) > 0)
+                                    <span class="badge badge-success" style="font-size: 0.85rem;">
+                                        {{ number_format($nilai->total_nilai, 2) }}
+                                    </span>
+                                @else
+                                    -
+                                @endif
                             </td>
                             {{-- CBT --}}
                             <td class="text-center">{{ $cbt ? $cbt->nilai_mtk : '-' }}</td>
@@ -368,8 +372,10 @@
                             <td class="text-center">
                                 @if($nilai->status == 'verified')
                                     <span class="badge badge-success">Verified</span>
+                                @elseif($nilai->status == 'cbt_only')
+                                    <span class="badge badge-info">CBT Only</span>
                                 @else
-                                    <span class="badge badge-warning">{{ ucfirst($nilai->status) }}</span>
+                                    <span class="badge badge-warning">{{ ucfirst($nilai->status ?? '-') }}</span>
                                 @endif
                             </td>
                         </tr>
@@ -489,7 +495,7 @@ $(document).ready(function() {
                 extend: 'excelHtml5',
                 text: '<i class="fas fa-file-excel mr-1"></i> Export Excel',
                 className: 'btn btn-success btn-sm',
-                title: 'Rekap Nilai Seleksi PPDB',
+                title: 'Rekap Nilai TBQ & CBT PPDB',
                 exportOptions: {
                     columns: ':visible'
                 }
@@ -498,7 +504,7 @@ $(document).ready(function() {
                 extend: 'print',
                 text: '<i class="fas fa-print mr-1"></i> Print',
                 className: 'btn btn-info btn-sm',
-                title: 'Rekap Nilai Seleksi PPDB'
+                title: 'Rekap Nilai TBQ & CBT PPDB'
             }
         ],
         order: [[18, 'desc'], [19, 'desc']], // Sort by nilai akhir desc, then minat desc

@@ -182,7 +182,7 @@
     <button class="btn-print no-print" onclick="window.print()">🖨️ Cetak Jadwal Sesi</button>
 
     <div class="header">
-        <h1>JADWAL SESI UJIAN CBT & WAWANCARA</h1>
+        <h1>JADWAL SESI UJIAN CBT & TBQ</h1>
         <h2>{{ $jadwal->tanggal_ujian->isoFormat('dddd, D MMMM Y') }}</h2>
         <div class="header-info">
             Tahun Pelajaran: {{ $jadwal->tahunPelajaran->nama ?? '-' }} | 
@@ -206,7 +206,7 @@
         </div>
         <div class="summary-item">
             <div class="summary-value" style="color: #ffc107;">{{ $jadwal->jumlah_ruang_wawancara }}</div>
-            <div class="summary-label">Ruang Wawancara</div>
+            <div class="summary-label">Ruang TBQ</div>
         </div>
         <div class="summary-item">
             <div class="summary-value">{{ $jadwal->jumlah_ruang_cbt * $jadwal->kapasitas_cbt }}</div>
@@ -214,7 +214,7 @@
         </div>
         <div class="summary-item">
             <div class="summary-value">{{ $jadwal->jumlah_ruang_wawancara * $jadwal->kapasitas_wawancara }}</div>
-            <div class="summary-label">Kapasitas Wawancara/Sesi</div>
+            <div class="summary-label">Kapasitas TBQ/Sesi</div>
         </div>
     </div>
 
@@ -224,7 +224,7 @@
                 <th class="th-sesi">Sesi</th>
                 <th class="th-waktu">Waktu</th>
                 <th class="th-cbt">CBT ({{ $jadwal->durasi_cbt }} menit)</th>
-                <th class="th-wawancara">Wawancara ({{ $jadwal->durasi_wawancara }} menit)</th>
+                <th class="th-wawancara">TBQ ({{ $jadwal->durasi_wawancara }} menit)</th>
             </tr>
         </thead>
         <tbody>
@@ -273,8 +273,8 @@
     <div class="grup-info">
         <h4>Keterangan Grup</h4>
         <p>
-            <strong>Grup A:</strong> Peserta mengikuti CBT terlebih dahulu, kemudian Wawancara (CBT → Wawancara)<br>
-            <strong>Grup B:</strong> Peserta mengikuti Wawancara terlebih dahulu, kemudian CBT (Wawancara → CBT)
+            <strong>Grup A:</strong> Peserta mengikuti CBT terlebih dahulu, kemudian TBQ (CBT → TBQ)<br>
+            <strong>Grup B:</strong> Peserta mengikuti TBQ terlebih dahulu, kemudian CBT (TBQ → CBT)
         </p>
         <p style="margin-top: 2mm; font-size: 9pt; color: #666;">
             Pembagian grup dilakukan secara otomatis untuk memaksimalkan penggunaan ruang secara paralel.
@@ -288,7 +288,7 @@
         </div>
         <div class="legend-item">
             <div class="legend-color wawancara"></div>
-            <span>Wawancara ({{ $jadwal->durasi_wawancara }} menit)</span>
+            <span>TBQ ({{ $jadwal->durasi_wawancara }} menit)</span>
         </div>
     </div>
 

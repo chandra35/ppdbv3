@@ -172,12 +172,12 @@ return [
                     'icon' => 'fas fa-fw fa-user-tie',
                 ],
                 [
-                    'text' => 'Nilai Seleksi',
+                    'text' => 'Nilai TBQ',
                     'route' => 'admin.nilai-seleksi.index',
                     'icon' => 'fas fa-fw fa-chart-bar',
                 ],
                 [
-                    'text' => 'Upload Nilai',
+                    'text' => 'Upload Nilai TBQ',
                     'route' => 'admin.nilai-seleksi.upload',
                     'icon' => 'fas fa-fw fa-file-upload',
                 ],

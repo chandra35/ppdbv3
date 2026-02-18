@@ -179,7 +179,7 @@
                 <div class="col-md-6">
                     <h6><i class="fas fa-star mr-2 text-warning"></i>Komponen Penilaian:</h6>
                     <ul>
-                        <li><strong>Wawancara</strong> - Penilaian dari sesi wawancara</li>
+                        <li><strong>Minat (TBQ)</strong> - Penilaian minat terhadap program</li>
                         <li><strong>Baca Al-Qur'an</strong> - Kemampuan membaca Al-Qur'an</li>
                         <li><strong>Tulis Al-Qur'an</strong> - Kemampuan menulis huruf Arab</li>
                         <li><strong>Hafalan</strong> - Penilaian hafalan Al-Qur'an</li>

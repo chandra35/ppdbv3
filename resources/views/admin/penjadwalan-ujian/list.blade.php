@@ -145,7 +145,7 @@
                     <div class="col-6">
                         <div class="info-box bg-warning mb-0 py-1 px-2">
                             <div class="info-box-content">
-                                <span class="info-box-text small">Wawancara</span>
+                                <span class="info-box-text small">TBQ</span>
                                 <span class="info-box-number">{{ $jadwal->jumlah_ruang_wawancara }} × {{ $jadwal->kapasitas_wawancara }}</span>
                             </div>
                         </div>

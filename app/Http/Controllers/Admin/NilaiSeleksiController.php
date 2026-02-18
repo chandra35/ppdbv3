@@ -185,81 +185,112 @@ class NilaiSeleksiController extends Controller
     }
 
     /**
-     * Rekap nilai per sesi
+     * Rekap nilai per sesi - includes TBQ + CBT-only participants
      */
     public function rekap(Request $request)
     {
         $tahunAktif = TahunPelajaran::where('is_active', true)->first();
         
-        // Build query for rekapData
-        $query = NilaiSeleksi::with(['calonSiswa.jalurPendaftaran', 'ruangUjian', 'sesiUjian.jalur'])
-            ->whereIn('status', ['submitted', 'verified']);
-            
         // Filter by tahun pelajaran
         $selectedTahunId = $request->tahun_pelajaran_id ?: $tahunAktif?->id;
+
+        // Filter by jenis tes
+        $jenisTes = $request->jenis_tes;
+
+        // ---- 1. Load NilaiSeleksi (TBQ) data ----
+        $seleksiQuery = NilaiSeleksi::with(['calonSiswa.jalurPendaftaran', 'ruangUjian', 'sesiUjian.jalur'])
+            ->whereIn('status', ['submitted', 'verified']);
+            
         if ($selectedTahunId) {
-            $query->whereHas('sesiUjian', function($q) use ($selectedTahunId) {
+            $seleksiQuery->whereHas('sesiUjian', function($q) use ($selectedTahunId) {
                 $q->where('tahun_pelajaran_id', $selectedTahunId);
             });
         }
         
-        // Filter by jalur
+        // Filter by jalur (for TBQ records via sesiUjian)
         if ($request->jalur_id) {
-            $query->whereHas('sesiUjian', function($q) use ($request) {
+            $seleksiQuery->whereHas('sesiUjian', function($q) use ($request) {
                 $q->where('jalur_id', $request->jalur_id);
             });
         }
         
         // Filter by status
         if ($request->status) {
-            $query->where('status', $request->status);
+            $seleksiQuery->where('status', $request->status);
         }
-
-        // Filter by jenis tes
-        $jenisTes = $request->jenis_tes;
         
-        $rekapData = $query->orderBy('total_nilai', 'desc')
+        $rekapData = $seleksiQuery->orderBy('total_nilai', 'desc')
             ->orderBy('nilai_wawancara', 'desc') // Minat sebagai tiebreaker
             ->get();
 
-        // Filter berdasarkan jenis tes setelah load
-        if ($jenisTes === 'wawancara') {
-            // Hanya yang punya nilai seleksi/wawancara
-            $rekapData = $rekapData->filter(fn($n) => $n->total_nilai > 0)->values();
-        } elseif ($jenisTes === 'cbt') {
-            // Hanya yang punya data CBT
-            $cbtCalonIds = \App\Models\NilaiCbt::where('tahun_pelajaran_id', $selectedTahunId)
-                ->pluck('calon_siswa_id');
-            $rekapData = $rekapData->filter(fn($n) => $cbtCalonIds->contains($n->calon_siswa_id))->values();
-        }
-
-        // Load CBT data indexed by calon_siswa_id
+        // ---- 2. Load CBT data ----
         $cbtData = \App\Models\NilaiCbt::where('tahun_pelajaran_id', $selectedTahunId)
             ->get()
             ->keyBy('calon_siswa_id');
 
-        // Load Rapor: rata-rata semua semester per calon_siswa_id
+        // ---- 3. Include CBT-only participants (no TBQ record) ----
+        $seleksiCalonIds = $rekapData->pluck('calon_siswa_id');
+        $cbtOnlyCalonIds = $cbtData->keys()->diff($seleksiCalonIds);
+
+        if ($cbtOnlyCalonIds->isNotEmpty()) {
+            $cbtOnlySiswa = CalonSiswa::with(['jalurPendaftaran'])
+                ->whereIn('id', $cbtOnlyCalonIds);
+            
+            // Filter by jalur for CBT-only
+            if ($request->jalur_id) {
+                $cbtOnlySiswa->where('jalur_pendaftaran_id', $request->jalur_id);
+            }
+            
+            $cbtOnlySiswa = $cbtOnlySiswa->get();
+
+            foreach ($cbtOnlySiswa as $siswa) {
+                $virtual = new \stdClass();
+                $virtual->calon_siswa_id = $siswa->id;
+                $virtual->calonSiswa = $siswa;
+                $virtual->nilai_baca_quran = null;
+                $virtual->nilai_tulis_quran = null;
+                $virtual->nilai_hafalan = null;
+                $virtual->jumlah_juz_hafalan = null;
+                $virtual->nilai_wawancara = null;
+                $virtual->total_nilai = 0;
+                $virtual->status = 'cbt_only';
+                $virtual->sesiUjian = null;
+                $rekapData->push($virtual);
+            }
+        }
+
+        // ---- 4. Filter by jenis tes ----
+        if ($jenisTes === 'tbq') {
+            // Hanya yang punya nilai TBQ/seleksi
+            $rekapData = $rekapData->filter(fn($n) => ($n->total_nilai ?? 0) > 0)->values();
+        } elseif ($jenisTes === 'cbt') {
+            // Hanya yang punya data CBT
+            $rekapData = $rekapData->filter(fn($n) => $cbtData->has($n->calon_siswa_id))->values();
+        }
+
+        // ---- 5. Load Rapor data ----
+        $allCalonIds = $rekapData->pluck('calon_siswa_id');
         $raporData = \App\Models\NilaiRapor::selectRaw('calon_siswa_id, AVG(rata_rata) as avg_rapor')
-            ->whereIn('calon_siswa_id', $rekapData->pluck('calon_siswa_id'))
+            ->whereIn('calon_siswa_id', $allCalonIds)
             ->groupBy('calon_siswa_id')
             ->pluck('avg_rapor', 'calon_siswa_id')
             ->map(fn($v) => round((float) $v, 2));
 
         // Load Sertifikat/Prestasi
-        $sertifikatData = \App\Models\CalonDokumen::whereIn('calon_siswa_id', $rekapData->pluck('calon_siswa_id'))
+        $sertifikatData = \App\Models\CalonDokumen::whereIn('calon_siswa_id', $allCalonIds)
             ->whereIn('jenis_dokumen', ['sertifikat_prestasi', 'piagam'])
             ->where('status_verifikasi', '!=', 'rejected')
             ->get()
             ->groupBy('calon_siswa_id');
 
-        // Hitung nilai akhir: CBT 50% + Rapor 10% + Seleksi 40%
+        // ---- 6. Hitung nilai akhir: CBT 50% + Rapor 10% + TBQ/Seleksi 40% ----
         $rekapData->each(function ($nilai) use ($cbtData, $raporData) {
             $cbt = $cbtData[$nilai->calon_siswa_id] ?? null;
             $avgRapor = $raporData[$nilai->calon_siswa_id] ?? null;
 
             $nilaiCbt = $cbt ? (float) $cbt->rata_rata : null;
             $nilaiRapor = $avgRapor ? (float) $avgRapor : null;
-            $nilaiSeleksi = $nilai->total_nilai ? (float) $nilai->total_nilai : null;
+            $nilaiSeleksi = ($nilai->total_nilai ?? 0) > 0 ? (float) $nilai->total_nilai : null;
 
             // Hitung dengan bobot proporsional dari komponen yang tersedia
             $totalBobot = 0;

@@ -231,9 +231,9 @@
                     <span class="info-label">Grup</span>
                     <span class="info-value">: <span class="grup-badge {{ strtolower($jp->grup) }}">Grup {{ $jp->grup }}</span>
                         @if($jp->grup === 'A')
-                        <small>(CBT → Wawancara)</small>
+                        <small>(CBT → TBQ)</small>
                         @else
-                        <small>(Wawancara → CBT)</small>
+                        <small>(TBQ → CBT)</small>
                         @endif
                     </span>
                 </div>
@@ -255,7 +255,7 @@
                     </div>
                     <div class="jadwal-item wawancara">
                         <div class="jadwal-item-header">
-                            <span>2. Wawancara</span>
+                            <span>2. TBQ</span>
                             <span>Sesi {{ $jp->sesiWawancara->nomor_sesi ?? '-' }}</span>
                         </div>
                         <div class="jadwal-item-body">

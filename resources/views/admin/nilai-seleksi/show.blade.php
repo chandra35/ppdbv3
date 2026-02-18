@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'Nilai Seleksi - ' . $sesiUjian->nama)
+@section('title', 'Nilai TBQ - ' . $sesiUjian->nama)
 
 @section('css')
 <style>
@@ -25,14 +25,14 @@
 <div class="row mb-2">
     <div class="col-sm-6">
         <h1 class="m-0">
-            <i class="fas fa-chart-bar mr-2"></i>Nilai Seleksi
+            <i class="fas fa-chart-bar mr-2"></i>Nilai TBQ
         </h1>
         <small class="text-muted">{{ $sesiUjian->nama }}</small>
     </div>
     <div class="col-sm-6">
         <ol class="breadcrumb float-sm-right">
             <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="{{ route('admin.nilai-seleksi.index') }}">Nilai Seleksi</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('admin.nilai-seleksi.index') }}">Nilai TBQ</a></li>
             <li class="breadcrumb-item active">{{ $sesiUjian->nama }}</li>
         </ol>
     </div>
@@ -124,7 +124,7 @@
                             <th class="text-center" width="50">No</th>
                             <th>Peserta</th>
                             <th>Ruangan</th>
-                            <th class="text-center">Wawancara</th>
+                            <th class="text-center">Minat</th>
                             <th class="text-center">Baca Qur'an</th>
                             <th class="text-center">Tulis Qur'an</th>
                             <th class="text-center">Hafalan</th>

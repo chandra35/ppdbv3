@@ -96,7 +96,7 @@
         <div class="info-box bg-gradient-warning">
             <span class="info-box-icon"><i class="fas fa-microphone"></i></span>
             <div class="info-box-content">
-                <span class="info-box-text">Ruang Wawancara</span>
+                <span class="info-box-text">Ruang TBQ</span>
                 <span class="info-box-number">{{ $jadwal->jumlah_ruang_wawancara }} ruang × {{ $jadwal->kapasitas_wawancara }}</span>
             </div>
         </div>
@@ -270,7 +270,7 @@
                         <th width="80" class="text-center">Sesi</th>
                         <th width="150" class="text-center">Waktu</th>
                         <th class="text-center bg-success text-white">CBT ({{ $jadwal->durasi_cbt }} menit)</th>
-                        <th class="text-center bg-warning">Wawancara ({{ $jadwal->durasi_wawancara }} menit)</th>
+                        <th class="text-center bg-warning">TBQ ({{ $jadwal->durasi_wawancara }} menit)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -397,11 +397,11 @@
         </div>
     </div>
 
-    {{-- Wawancara Rooms --}}
+    {{-- TBQ Rooms --}}
     <div class="col-lg-6">
         <div class="card">
             <div class="card-header bg-warning">
-                <h3 class="card-title"><i class="fas fa-microphone mr-2"></i>Ruang Wawancara</h3>
+                <h3 class="card-title"><i class="fas fa-microphone mr-2"></i>Ruang TBQ</h3>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -486,12 +486,12 @@
     </div>
     @endif
 
-    {{-- Wawancara: Penguji --}}
+    {{-- TBQ: Penguji --}}
     @if($wawancaraRoomNames->isNotEmpty())
     <div class="col-lg-6">
         <div class="card card-warning card-outline">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-user-tie mr-2"></i>Penguji Wawancara</h3>
+                <h3 class="card-title"><i class="fas fa-user-tie mr-2"></i>Penguji TBQ</h3>
                 <div class="card-tools">
                     <small class="text-muted">1 Penguji per ruang</small>
                 </div>
@@ -546,7 +546,7 @@
                         <th>Nama</th>
                         <th width="60" class="text-center">Grup</th>
                         <th class="text-center bg-success text-white">CBT</th>
-                        <th class="text-center bg-warning">Wawancara</th>
+                        <th class="text-center bg-warning">TBQ</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -809,7 +809,7 @@ $(document).ready(function() {
         });
     });
 
-    // Auto-save Wawancara assignment on select change (Penguji)
+    // Auto-save TBQ assignment on select change (Penguji)
     $(document).on('change', '.select-penguji', function() {
         var select = $(this);
         var row = select.closest('tr');

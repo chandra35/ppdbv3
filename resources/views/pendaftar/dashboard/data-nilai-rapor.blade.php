@@ -582,7 +582,7 @@
                         <div class="small-box bg-gradient-warning">
                             <div class="inner">
                                 <h3>30%</h3>
-                                <p>Wawancara</p>
+                                <p>TBQ</p>
                             </div>
                             <div class="icon">
                                 <i class="fas fa-comments"></i>
@@ -592,7 +592,7 @@
                 </div>
                 <p class="text-muted mb-0">
                     <i class="fas fa-info-circle mr-1"></i>
-                    Nilai akhir = (Rata-rata Rapor × 30%) + (Nilai CBT × 40%) + (Nilai Wawancara × 30%)
+                    Nilai akhir = (Rata-rata Rapor × 30%) + (Nilai CBT × 40%) + (Nilai TBQ × 30%)
                 </p>
             </div>
         </div>

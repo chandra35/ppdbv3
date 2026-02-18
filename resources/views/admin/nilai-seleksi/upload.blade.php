@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'Upload & Pengolahan Nilai')
+@section('title', 'Upload & Pengolahan Nilai TBQ')
 
 @section('css')
 <style>
@@ -54,14 +54,14 @@
 <div class="row mb-2">
     <div class="col-sm-6">
         <h1 class="m-0">
-            <i class="fas fa-file-upload mr-2"></i>Upload & Pengolahan Nilai
+            <i class="fas fa-file-upload mr-2"></i>Upload & Pengolahan Nilai TBQ TBQ
         </h1>
     </div>
     <div class="col-sm-6">
         <ol class="breadcrumb float-sm-right">
             <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="{{ route('admin.nilai-seleksi.index') }}">Nilai Seleksi</a></li>
-            <li class="breadcrumb-item active">Upload Nilai</li>
+            <li class="breadcrumb-item"><a href="{{ route('admin.nilai-seleksi.index') }}">Nilai TBQ</a></li>
+            <li class="breadcrumb-item active">Upload Nilai TBQ</li>
         </ol>
     </div>
 </div>
@@ -244,7 +244,7 @@
         <div class="col-lg-7">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title"><i class="fas fa-list-ol mr-2"></i>Daftar Nilai Seleksi</h3>
+                    <h3 class="card-title"><i class="fas fa-list-ol mr-2"></i>Daftar Nilai TBQ</h3>
                     <div class="card-tools">
                         <span class="badge badge-primary">{{ $nilaiList->total() }} data</span>
                     </div>

@@ -12,7 +12,7 @@
     <div class="col-sm-6">
         <ol class="breadcrumb float-sm-right">
             <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="{{ route('admin.nilai-seleksi.index') }}">Nilai Seleksi</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('admin.nilai-seleksi.index') }}">Nilai TBQ</a></li>
             <li class="breadcrumb-item active">Bobot Nilai</li>
         </ol>
     </div>
@@ -151,7 +151,7 @@
                     
                     <p><strong>Contoh:</strong></p>
                     <ul class="list-unstyled">
-                        <li>Wawancara: 80 × 25% = 20</li>
+                        <li>TBQ: 80 × 25% = 20</li>
                         <li>Baca Qur'an: 85 × 25% = 21.25</li>
                         <li>Tulis Qur'an: 75 × 25% = 18.75</li>
                         <li>Hafalan: 90 × 25% = 22.5</li>

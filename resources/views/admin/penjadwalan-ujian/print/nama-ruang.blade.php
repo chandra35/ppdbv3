@@ -145,10 +145,10 @@
     </div>
     @endforeach
 
-    {{-- Wawancara Rooms --}}
+    {{-- TBQ Rooms --}}
     @foreach($wawancaraRooms as $room)
     <div class="room-label wawancara">
-        <div class="room-type wawancara">WAWANCARA</div>
+        <div class="room-type wawancara">TBQ</div>
         <div class="room-name">{{ $room['nama_ruang'] }}</div>
         <div class="room-capacity">
             Peserta: {{ $room['jumlah_peserta'] }} / {{ $room['kapasitas'] }}

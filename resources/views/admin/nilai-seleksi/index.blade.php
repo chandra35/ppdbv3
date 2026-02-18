@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'Nilai Seleksi')
+@section('title', 'Nilai TBQ')
 
 @section('css')
 <style>
@@ -23,13 +23,13 @@
 <div class="row mb-2">
     <div class="col-sm-6">
         <h1 class="m-0">
-            <i class="fas fa-chart-bar mr-2"></i>Nilai Seleksi
+            <i class="fas fa-chart-bar mr-2"></i>Nilai TBQ
         </h1>
     </div>
     <div class="col-sm-6">
         <ol class="breadcrumb float-sm-right">
             <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-            <li class="breadcrumb-item active">Nilai Seleksi</li>
+            <li class="breadcrumb-item active">Nilai TBQ</li>
         </ol>
     </div>
 </div>
@@ -103,7 +103,7 @@
                 <div class="card bg-gradient-light">
                     <div class="card-body text-center py-4">
                         <i class="fas fa-file-upload fa-3x text-warning mb-3"></i>
-                        <h5>Upload Nilai</h5>
+                        <h5>Upload Nilai TBQ</h5>
                         <p class="text-muted mb-0">Upload nilai dari Excel Lembar Penilaian</p>
                     </div>
                 </div>
