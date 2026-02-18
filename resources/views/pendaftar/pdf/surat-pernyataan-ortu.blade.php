@@ -6,7 +6,7 @@
     <style>
         @page {
             size: A4;
-            margin: 18mm 35mm 15mm 35mm;
+            margin: 18mm 40mm 15mm 40mm;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
