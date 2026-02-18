@@ -43,77 +43,6 @@
 
 @section('content')
 <div class="container-fluid">
-    <!-- Filter -->
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title"><i class="fas fa-filter mr-2"></i>Filter</h3>
-        </div>
-        <div class="card-body">
-            <form method="GET" action="{{ route('admin.nilai-seleksi.rekap') }}">
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label>Tahun Pelajaran</label>
-                            <select name="tahun_pelajaran_id" class="form-control select2">
-                                <option value="">-- Semua --</option>
-                                @foreach($tahunPelajarans as $tp)
-                                    <option value="{{ $tp->id }}" {{ request('tahun_pelajaran_id') == $tp->id ? 'selected' : '' }}>
-                                        {{ $tp->nama }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label>Jalur Pendaftaran</label>
-                            <select name="jalur_id" class="form-control select2">
-                                <option value="">-- Semua --</option>
-                                @foreach($jalurs as $jalur)
-                                    <option value="{{ $jalur->id }}" {{ request('jalur_id') == $jalur->id ? 'selected' : '' }}>
-                                        {{ $jalur->nama }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="form-group">
-                            <label>Status Nilai</label>
-                            <select name="status" class="form-control">
-                                <option value="">-- Semua --</option>
-                                <option value="verified" {{ request('status') == 'verified' ? 'selected' : '' }}>Verified</option>
-                                <option value="submitted" {{ request('status') == 'submitted' ? 'selected' : '' }}>Submitted</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="form-group">
-                            <label>Jenis Tes</label>
-                            <select name="jenis_tes" class="form-control">
-                                <option value="">-- Semua --</option>
-                                <option value="wawancara" {{ request('jenis_tes') == 'wawancara' ? 'selected' : '' }}>Wawancara</option>
-                                <option value="cbt" {{ request('jenis_tes') == 'cbt' ? 'selected' : '' }}>CBT</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="form-group">
-                            <label>&nbsp;</label>
-                            <div>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-search mr-1"></i> Filter
-                                </button>
-                                <a href="{{ route('admin.nilai-seleksi.rekap') }}" class="btn btn-secondary">
-                                    <i class="fas fa-sync mr-1"></i> Reset
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <!-- Summary -->
     <div class="row">
@@ -248,7 +177,59 @@
         <div class="card-header">
             <h3 class="card-title"><i class="fas fa-table mr-2"></i>Data Rekap Nilai</h3>
         </div>
-        <div class="card-body" style="overflow-x: auto;">
+        <div class="card-body">
+            {{-- Filter inline --}}
+            <form method="GET" action="{{ route('admin.nilai-seleksi.rekap') }}" class="mb-3">
+                <div class="row align-items-end">
+                    <div class="col-md-3">
+                        <label class="mb-1 small">Tahun Pelajaran</label>
+                        <select name="tahun_pelajaran_id" class="form-control form-control-sm select2">
+                            <option value="">-- Semua --</option>
+                            @foreach($tahunPelajarans as $tp)
+                                <option value="{{ $tp->id }}" {{ request('tahun_pelajaran_id') == $tp->id ? 'selected' : '' }}>
+                                    {{ $tp->nama }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="mb-1 small">Jalur</label>
+                        <select name="jalur_id" class="form-control form-control-sm select2">
+                            <option value="">-- Semua --</option>
+                            @foreach($jalurs as $jalur)
+                                <option value="{{ $jalur->id }}" {{ request('jalur_id') == $jalur->id ? 'selected' : '' }}>
+                                    {{ $jalur->nama }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="mb-1 small">Status</label>
+                        <select name="status" class="form-control form-control-sm">
+                            <option value="">-- Semua --</option>
+                            <option value="verified" {{ request('status') == 'verified' ? 'selected' : '' }}>Verified</option>
+                            <option value="submitted" {{ request('status') == 'submitted' ? 'selected' : '' }}>Submitted</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="mb-1 small">Jenis Tes</label>
+                        <select name="jenis_tes" class="form-control form-control-sm">
+                            <option value="">-- Semua --</option>
+                            <option value="wawancara" {{ request('jenis_tes') == 'wawancara' ? 'selected' : '' }}>Wawancara</option>
+                            <option value="cbt" {{ request('jenis_tes') == 'cbt' ? 'selected' : '' }}>CBT</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="fas fa-search mr-1"></i> Filter
+                        </button>
+                        <a href="{{ route('admin.nilai-seleksi.rekap') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-sync mr-1"></i> Reset
+                        </a>
+                    </div>
+                </div>
+            </form>
+            <div style="overflow-x: auto;">
             <table id="rekapTable" class="table table-bordered table-striped" style="font-size: 0.8rem;">
                 <thead>
                     <tr>
@@ -394,6 +375,7 @@
                     @endforeach
                 </tbody>
             </table>
+            </div>{{-- overflow-x --}}
         </div>
     </div>
 </div>
