@@ -3,6 +3,293 @@
 @section('title', 'Dashboard')
 @section('page-title', 'Dashboard')
 
+@section('css')
+@if($kelulusanData)
+<style>
+/* ========== ENVELOPE ANIMATION ========== */
+.kelulusan-envelope-wrapper {
+    perspective: 1000px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem 0;
+}
+
+.envelope-container {
+    position: relative;
+    width: 280px;
+    height: 200px;
+    cursor: pointer;
+    transform-style: preserve-3d;
+}
+
+.envelope {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 0 0 12px 12px;
+    background: linear-gradient(145deg, #f0e6d3, #e8dcc8);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    overflow: visible;
+    transition: transform 0.3s ease;
+}
+
+.envelope:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+}
+
+.envelope-body {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(145deg, #f0e6d3, #e8dcc8);
+    border-radius: 0 0 12px 12px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.envelope-body::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, transparent 49.5%, #d4c5a9 49.5%, #d4c5a9 50.5%, transparent 50.5%),
+                linear-gradient(225deg, transparent 49.5%, #d4c5a9 49.5%, #d4c5a9 50.5%, transparent 50.5%);
+    z-index: 1;
+}
+
+.envelope-seal {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(145deg, #c0392b, #e74c3c);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+    box-shadow: 0 2px 8px rgba(192,57,43,0.4);
+    transition: all 0.3s ease;
+}
+
+.envelope-seal i {
+    color: #fff;
+    font-size: 1.2rem;
+}
+
+.envelope-flap {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 4;
+    transform-origin: top center;
+    transition: transform 0.6s ease;
+}
+
+.envelope-flap-inner {
+    width: 0;
+    height: 0;
+    border-left: 140px solid transparent;
+    border-right: 140px solid transparent;
+    border-top: 110px solid #ddd0b8;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.1));
+}
+
+/* Letter inside */
+.letter {
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(0);
+    width: 240px;
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem 1rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    z-index: 1;
+    opacity: 0;
+    transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    text-align: center;
+}
+
+.letter .letter-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.letter .letter-status {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+}
+
+.letter .letter-msg {
+    font-size: 0.78rem;
+    color: #666;
+    line-height: 1.4;
+}
+
+/* Opened state */
+.envelope-container.opened .envelope-flap {
+    transform: rotateX(180deg);
+}
+
+.envelope-container.opened .letter {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-140px);
+}
+
+.envelope-container.opened .envelope-seal {
+    opacity: 0;
+    transform: scale(0);
+}
+
+/* Pulse on seal before open */
+.envelope-seal {
+    animation: sealPulse 2s infinite;
+}
+
+.envelope-container.opened .envelope-seal {
+    animation: none;
+}
+
+@keyframes sealPulse {
+    0%, 100% { box-shadow: 0 2px 8px rgba(192,57,43,0.4); }
+    50% { box-shadow: 0 2px 20px rgba(192,57,43,0.8), 0 0 40px rgba(231,76,60,0.3); }
+}
+
+/* Tap hint */
+.tap-hint {
+    text-align: center;
+    margin-top: 1rem;
+    color: #999;
+    font-size: 0.85rem;
+    animation: tapBounce 1.5s infinite;
+}
+
+.envelope-container.opened ~ .tap-hint {
+    display: none;
+}
+
+@keyframes tapBounce {
+    0%, 100% { transform: translateY(0); opacity: 0.6; }
+    50% { transform: translateY(-5px); opacity: 1; }
+}
+
+/* Result card after envelope */
+.kelulusan-result-card {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition-delay: 0.8s;
+}
+
+.kelulusan-result-card.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Sparkle particles */
+.sparkle-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    overflow: hidden;
+}
+
+.sparkle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: sparkleFloat 2s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes sparkleFloat {
+    0% { 
+        opacity: 1; 
+        transform: translateY(0) scale(1) rotate(0deg); 
+    }
+    50% { 
+        opacity: 0.8; 
+    }
+    100% { 
+        opacity: 0; 
+        transform: translateY(-200px) scale(0) rotate(360deg); 
+    }
+}
+
+/* Confetti rain for lulus */
+.confetti-piece {
+    position: fixed;
+    width: 10px;
+    height: 20px;
+    top: -20px;
+    z-index: 9998;
+    animation: confettiFall linear forwards;
+    pointer-events: none;
+}
+
+@keyframes confettiFall {
+    0% { 
+        top: -20px; 
+        opacity: 1;
+        transform: rotateZ(0deg) rotateY(0deg); 
+    }
+    75% { opacity: 1; }
+    100% { 
+        top: 105vh; 
+        opacity: 0;
+        transform: rotateZ(720deg) rotateY(360deg); 
+    }
+}
+
+/* Jadwal info banner */
+.kelulusan-jadwal-banner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 1.2rem 1.5rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.kelulusan-jadwal-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 200px;
+    height: 200px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 50%;
+}
+
+.kelulusan-jadwal-banner::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -10%;
+    width: 150px;
+    height: 150px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+}
+</style>
+@endif
+@endsection
+
 @section('content')
 <div class="row">
     <!-- Welcome Card -->
@@ -87,6 +374,123 @@
         </div>
     </div>
 </div>
+
+{{-- ========== KELULUSAN INFO ON DASHBOARD ========== --}}
+@if($kelulusanData)
+<div class="row" id="kelulusan-section">
+    <div class="col-12">
+        @if($kelulusanData['kelulusan'])
+            {{-- Pendaftar sudah punya status kelulusan → tampilkan amplop --}}
+            @php
+                $kStatus = $kelulusanData['kelulusan']->status;
+                $kSetting = $kelulusanData['setting'];
+                $isLulus = $kStatus === 'lulus';
+                $isCadangan = $kStatus === 'cadangan';
+                $statusLabel = $isLulus ? 'LULUS' : ($isCadangan ? 'CADANGAN' : 'TIDAK LULUS');
+                $statusColor = $isLulus ? '#27ae60' : ($isCadangan ? '#f39c12' : '#e74c3c');
+                $statusIcon = $isLulus ? '🎉' : ($isCadangan ? '⏳' : '😔');
+                $statusMsg = $isLulus 
+                    ? ($kSetting->pesan_lulus ?? 'Selamat! Anda dinyatakan LULUS seleksi PPDB.')
+                    : ($isCadangan 
+                        ? 'Anda masuk dalam daftar CADANGAN. Silakan pantau informasi lebih lanjut.'
+                        : ($kSetting->pesan_tidak_lulus ?? 'Mohon maaf, Anda belum dinyatakan lulus pada seleksi PPDB tahun ini.'));
+            @endphp
+            <div class="card" style="border: 2px solid {{ $statusColor }}; border-radius: 16px; overflow: hidden;">
+                <div class="card-body p-4">
+                    <div class="text-center mb-3">
+                        <h5 class="font-weight-bold" style="color: {{ $statusColor }};">
+                            <i class="fas fa-graduation-cap mr-2"></i>{{ $kSetting->judul_pengumuman ?? 'Pengumuman Kelulusan' }}
+                        </h5>
+                    </div>
+
+                    {{-- Envelope Animation --}}
+                    <div class="kelulusan-envelope-wrapper">
+                        <div>
+                            <div class="envelope-container" id="envelopeContainer" onclick="openEnvelope()">
+                                {{-- Letter (behind envelope) --}}
+                                <div class="letter" id="envelopeLetter">
+                                    <div class="letter-icon">{{ $statusIcon }}</div>
+                                    <div class="letter-status" style="color: {{ $statusColor }};">{{ $statusLabel }}</div>
+                                    <div class="letter-msg">{{ Str::limit($statusMsg, 80) }}</div>
+                                </div>
+                                
+                                {{-- Envelope --}}
+                                <div class="envelope">
+                                    <div class="envelope-body">
+                                        <div class="envelope-seal">
+                                            <i class="fas fa-graduation-cap"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {{-- Flap --}}
+                                <div class="envelope-flap">
+                                    <div class="envelope-flap-inner"></div>
+                                </div>
+                            </div>
+                            <div class="tap-hint" id="tapHint">
+                                <i class="fas fa-hand-pointer mr-1"></i> Ketuk amplop untuk membuka
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Result card (appears after envelope opens) --}}
+                    <div class="kelulusan-result-card" id="kelulusanResultCard">
+                        <div class="text-center p-3" style="background: {{ $statusColor }}10; border-radius: 12px; border: 1px solid {{ $statusColor }}30;">
+                            <h4 class="font-weight-bold mb-2" style="color: {{ $statusColor }};">
+                                {{ $statusIcon }} Anda Dinyatakan {{ $statusLabel }}
+                            </h4>
+                            <p class="mb-3 text-muted" style="max-width: 500px; margin: 0 auto;">{{ $statusMsg }}</p>
+                            <a href="{{ route('pendaftar.kelulusan') }}" class="btn btn-sm text-white px-4 py-2" style="background: {{ $statusColor }}; border-radius: 25px;">
+                                <i class="fas fa-arrow-right mr-1"></i> Lihat Detail Kelulusan
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        @else
+            {{-- Belum ada status kelulusan, tapi pengumuman aktif → tampilkan jadwal info --}}
+            @php $kSetting = $kelulusanData['setting']; @endphp
+            @if($kSetting->tanggal_daftar_ulang_mulai || $kSetting->tanggal_daftar_ulang_selesai)
+            <div class="kelulusan-jadwal-banner mb-3">
+                <div class="d-flex align-items-center" style="position: relative; z-index: 1;">
+                    <div class="mr-3">
+                        <div style="width: 50px; height: 50px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-calendar-check" style="font-size: 1.4rem;"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1 font-weight-bold">
+                            <i class="fas fa-bullhorn mr-1"></i> Info Kelulusan PPDB
+                        </h6>
+                        <p class="mb-0" style="font-size: 0.9rem; opacity: 0.95;">
+                            Pengumuman kelulusan sudah tersedia! Silakan cek halaman 
+                            <a href="{{ route('pendaftar.kelulusan') }}" class="text-white font-weight-bold" style="text-decoration: underline;">
+                                Info Kelulusan
+                            </a>
+                            untuk melihat hasil seleksi Anda.
+                        </p>
+                        @if($kSetting->tanggal_daftar_ulang_mulai && $kSetting->tanggal_daftar_ulang_selesai)
+                        <small style="opacity: 0.8;">
+                            <i class="fas fa-clock mr-1"></i> Jadwal Daftar Ulang: 
+                            {{ \Carbon\Carbon::parse($kSetting->tanggal_daftar_ulang_mulai)->format('d M Y') }} - 
+                            {{ \Carbon\Carbon::parse($kSetting->tanggal_daftar_ulang_selesai)->format('d M Y') }}
+                        </small>
+                        @endif
+                    </div>
+                    <div class="ml-3 d-none d-md-block">
+                        <a href="{{ route('pendaftar.kelulusan') }}" class="btn btn-light btn-sm px-3" style="border-radius: 20px;">
+                            <i class="fas fa-arrow-right mr-1"></i> Cek Sekarang
+                        </a>
+                    </div>
+                </div>
+            </div>
+            @endif
+        @endif
+    </div>
+</div>
+@endif
 
 {{-- Compact Checklist Status --}}
 @if(!$kelengkapan['finalisasi'])
@@ -657,6 +1061,102 @@ function resetLocationCard(message) {
     $(function() {
         $('#modalInfoPendaftar').modal('show');
     });
+</script>
+@endif
+
+@if($kelulusanData && $kelulusanData['kelulusan'])
+<script>
+let envelopeOpened = false;
+
+function openEnvelope() {
+    if (envelopeOpened) return;
+    envelopeOpened = true;
+
+    const container = document.getElementById('envelopeContainer');
+    const hint = document.getElementById('tapHint');
+    const resultCard = document.getElementById('kelulusanResultCard');
+
+    // Open envelope
+    container.classList.add('opened');
+    hint.style.display = 'none';
+
+    // Show sparkles from envelope
+    createSparkles(container);
+
+    // Show result card after delay
+    setTimeout(() => {
+        resultCard.classList.add('show');
+    }, 400);
+
+    @if($kelulusanData['kelulusan']->status === 'lulus')
+    // Confetti rain for lulus!
+    setTimeout(() => {
+        createConfettiRain();
+    }, 600);
+    @endif
+}
+
+function createSparkles(origin) {
+    const rect = origin.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+
+    const sparkleContainer = document.createElement('div');
+    sparkleContainer.className = 'sparkle-container';
+    document.body.appendChild(sparkleContainer);
+
+    const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'];
+
+    for (let i = 0; i < 40; i++) {
+        setTimeout(() => {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            sparkle.style.background = color;
+            sparkle.style.boxShadow = `0 0 6px ${color}`;
+            sparkle.style.left = (cx + (Math.random() - 0.5) * 200) + 'px';
+            sparkle.style.top = (cy + (Math.random() - 0.5) * 100) + 'px';
+            sparkle.style.width = (4 + Math.random() * 8) + 'px';
+            sparkle.style.height = sparkle.style.width;
+            sparkle.style.animationDuration = (1 + Math.random() * 1.5) + 's';
+            sparkleContainer.appendChild(sparkle);
+        }, i * 30);
+    }
+
+    setTimeout(() => sparkleContainer.remove(), 3500);
+}
+
+function createConfettiRain() {
+    const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e67e22', '#1abc9c', '#ff6b81'];
+
+    for (let i = 0; i < 80; i++) {
+        setTimeout(() => {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti-piece';
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.width = (6 + Math.random() * 8) + 'px';
+            confetti.style.height = (12 + Math.random() * 12) + 'px';
+            confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+            confetti.style.animationDuration = (2 + Math.random() * 3) + 's';
+            confetti.style.animationDelay = '0s';
+            confetti.style.opacity = 0.9;
+            document.body.appendChild(confetti);
+
+            setTimeout(() => confetti.remove(), 5500);
+        }, i * 40);
+    }
+}
+
+// Auto-scroll to kelulusan section on load
+$(function() {
+    const section = document.getElementById('kelulusan-section');
+    if (section) {
+        setTimeout(() => {
+            section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 500);
+    }
+});
 </script>
 @endif
 @endsection

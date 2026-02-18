@@ -31,7 +31,7 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         $calonSiswa = CalonSiswa::where('user_id', $user->id)
-            ->with(['jalurPendaftaran', 'gelombangPendaftaran', 'tahunPelajaran', 'ortu', 'dokumen', 'nilaiRapor'])
+            ->with(['jalurPendaftaran', 'gelombangPendaftaran', 'tahunPelajaran', 'ortu', 'dokumen', 'nilaiRapor', 'kelulusan'])
             ->first();
 
         if (!$calonSiswa) {
@@ -61,7 +61,17 @@ class DashboardController extends Controller
             $infoList = InformasiPendaftar::getModalInfo();
         }
 
-        return view('pendaftar.dashboard.index', compact('calonSiswa', 'progress', 'wajibLokasi', 'dokumenBermasalah', 'kelengkapan', 'showInfoModal', 'infoList'));
+        // Kelulusan info for dashboard
+        $kelulusanSetting = \App\Models\KelulusanSetting::getActive();
+        $kelulusanData = null;
+        if ($kelulusanSetting && $kelulusanSetting->tampilkan_pengumuman) {
+            $kelulusanData = [
+                'setting' => $kelulusanSetting,
+                'kelulusan' => $calonSiswa->kelulusan,
+            ];
+        }
+
+        return view('pendaftar.dashboard.index', compact('calonSiswa', 'progress', 'wajibLokasi', 'dokumenBermasalah', 'kelengkapan', 'showInfoModal', 'infoList', 'kelulusanData'));
     }
 
     /**
