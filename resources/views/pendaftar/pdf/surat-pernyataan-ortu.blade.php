@@ -6,7 +6,7 @@
     <style>
         @page {
             size: A4;
-            margin: 18mm 40mm 15mm 40mm;
+            margin: 10mm;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -14,6 +14,7 @@
             font-size: 11pt;
             line-height: 1.3;
             color: #000;
+            padding: 8mm 28mm 5mm 28mm;
         }
 
         .kop-wrapper { margin-bottom: 0; }
