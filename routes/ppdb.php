@@ -25,6 +25,8 @@ use App\Http\Controllers\Admin\PengaturanWaController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\VisitorLogController;
 use App\Http\Controllers\Admin\EmailLogController;
+use App\Http\Controllers\Admin\KelulusanController;
+use App\Http\Controllers\Admin\KelulusanSettingController;
 use App\Http\Controllers\Operator\DashboardController as OperatorDashboardController;
 use App\Http\Controllers\Operator\PendaftarController as OperatorPendaftarController;
 use App\Http\Controllers\Pendaftar\AuthController as PendaftarAuthController;
@@ -121,6 +123,9 @@ Route::middleware(['auth'])->prefix('pendaftar')->name('pendaftar.')->group(func
     Route::get('/cetak-bukti-registrasi', [PendaftarDashboardController::class, 'cetakBuktiRegistrasi'])->name('cetak-bukti-registrasi');
     Route::get('/cetak-kartu-ujian/preview', [PendaftarDashboardController::class, 'previewKartuUjian'])->name('cetak-kartu-ujian.preview');
     Route::get('/cetak-kartu-ujian', [PendaftarDashboardController::class, 'cetakKartuUjian'])->name('cetak-kartu-ujian');
+    
+    // Info Kelulusan
+    Route::get('/kelulusan', [PendaftarDashboardController::class, 'kelulusan'])->name('kelulusan');
 });
 
 // ============================================
@@ -374,6 +379,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::prefix('report')->name('report.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('index');
         Route::get('/pdf', [\App\Http\Controllers\Admin\ReportController::class, 'exportPdf'])->name('pdf');
+    });
+
+    // ---- KELULUSAN ----
+    Route::prefix('kelulusan')->name('kelulusan.')->group(function () {
+        Route::get('/', [KelulusanController::class, 'index'])->name('index');
+        Route::post('/luluskan', [KelulusanController::class, 'luluskan'])->name('luluskan');
+        Route::post('/batalkan', [KelulusanController::class, 'batalkan'])->name('batalkan');
+        Route::get('/setting', [KelulusanSettingController::class, 'index'])->name('setting');
+        Route::put('/setting', [KelulusanSettingController::class, 'update'])->name('setting.update');
     });
 
     // ============================================

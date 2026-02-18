@@ -165,6 +165,11 @@ class CalonSiswa extends Model
         return $this->hasMany(NilaiRapor::class, 'calon_siswa_id');
     }
 
+    public function kelulusan(): HasOne
+    {
+        return $this->hasOne(Kelulusan::class, 'calon_siswa_id');
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

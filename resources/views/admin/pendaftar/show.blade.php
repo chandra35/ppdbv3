@@ -492,9 +492,19 @@ dl.row dt {
                             <i class="fas fa-envelope"></i> Kirim Email
                         </button>
                         @if($pendaftar->is_finalisasi)
-                        <button type="button" class="btn btn-danger btn-sm" onclick="batalFinalisasi()">
-                            <i class="fas fa-unlock"></i> Batal Finalisasi
-                        </button>
+                            @php
+                                $gelombangClosed = $pendaftar->gelombangPendaftaran 
+                                    && in_array($pendaftar->gelombangPendaftaran->computed_status, ['closed', 'finished']);
+                            @endphp
+                            @if($gelombangClosed)
+                                <button type="button" class="btn btn-secondary btn-sm" disabled title="Gelombang {{ $pendaftar->gelombangPendaftaran->nama }} sudah ditutup">
+                                    <i class="fas fa-lock"></i> Batal Finalisasi <small>(Gelombang Ditutup)</small>
+                                </button>
+                            @else
+                                <button type="button" class="btn btn-danger btn-sm" onclick="batalFinalisasi()">
+                                    <i class="fas fa-unlock"></i> Batal Finalisasi
+                                </button>
+                            @endif
                         @endif
                     </div>
                     

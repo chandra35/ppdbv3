@@ -1882,4 +1882,33 @@ class DashboardController extends Controller
             ]
         ]);
     }
+
+    /**
+     * Halaman info kelulusan pendaftar
+     */
+    public function kelulusan()
+    {
+        $user = Auth::user();
+        $calonSiswa = CalonSiswa::where('user_id', $user->id)
+            ->with(['jalurPendaftaran', 'gelombangPendaftaran', 'tahunPelajaran', 'kelulusan'])
+            ->first();
+
+        if (!$calonSiswa) {
+            return redirect()->route('pendaftar.dashboard')
+                ->with('error', 'Data pendaftaran tidak ditemukan');
+        }
+
+        // Get kelulusan setting
+        $setting = \App\Models\KelulusanSetting::where('tahun_pelajaran_id', $calonSiswa->tahun_pelajaran_id)->first();
+
+        // Check if pengumuman is enabled
+        if (!$setting || !$setting->tampilkan_pengumuman) {
+            return redirect()->route('pendaftar.dashboard')
+                ->with('info', 'Pengumuman kelulusan belum tersedia');
+        }
+
+        $kelulusan = $calonSiswa->kelulusan;
+
+        return view('pendaftar.dashboard.kelulusan', compact('calonSiswa', 'kelulusan', 'setting'));
+    }
 }

@@ -214,6 +214,23 @@ return [
             'icon' => 'fas fa-fw fa-file-alt',
             'can' => 'admin',
         ],
+        [
+            'text' => 'Kelulusan',
+            'icon' => 'fas fa-fw fa-graduation-cap',
+            'can' => 'admin',
+            'submenu' => [
+                [
+                    'text' => 'Data Kelulusan',
+                    'route' => 'admin.kelulusan.index',
+                    'icon' => 'fas fa-fw fa-check-double',
+                ],
+                [
+                    'text' => 'Pengaturan Kelulusan',
+                    'route' => 'admin.kelulusan.setting',
+                    'icon' => 'fas fa-fw fa-cogs',
+                ],
+            ],
+        ],
 
         [
             'header' => 'PENGATURAN',

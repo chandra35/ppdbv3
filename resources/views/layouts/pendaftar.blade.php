@@ -370,6 +370,13 @@
                         </a>
                     </li>
                     
+                    <li class="nav-item">
+                        <a href="{{ route('pendaftar.kelulusan') }}" class="nav-link {{ request()->routeIs('pendaftar.kelulusan') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-graduation-cap"></i>
+                            <p>Info Kelulusan</p>
+                        </a>
+                    </li>
+                    
                     @if($calonSiswaForMenu && $calonSiswaForMenu->is_finalisasi)
                     <li class="nav-item">
                         <a href="{{ route('pendaftar.cetak-bukti-registrasi.preview') }}" target="_blank" class="nav-link">
