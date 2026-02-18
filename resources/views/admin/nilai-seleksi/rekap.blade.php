@@ -356,9 +356,10 @@
                             {{-- Sertifikat --}}
                             <td class="text-center">
                                 @if($sertifikats->count() > 0)
-                                    <span class="badge badge-secondary" title="{{ $sertifikats->pluck('nama_dokumen')->join(', ') }}" style="cursor: help;">
+                                    <a href="#" class="badge badge-secondary" style="cursor: pointer; text-decoration: none;"
+                                       data-toggle="modal" data-target="#sertifikatModal-{{ $nilai->calon_siswa_id }}">
                                         {{ $sertifikats->count() }} <i class="fas fa-certificate"></i>
-                                    </span>
+                                    </a>
                                 @else
                                     -
                                 @endif
@@ -379,6 +380,89 @@
         </div>
     </div>
 </div>
+
+{{-- Sertifikat Modals --}}
+@foreach($rekapData as $nilai)
+    @php $sertifikats = $sertifikatData[$nilai->calon_siswa_id] ?? collect(); @endphp
+    @if($sertifikats->count() > 0)
+    <div class="modal fade" id="sertifikatModal-{{ $nilai->calon_siswa_id }}" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-secondary">
+                    <h5 class="modal-title">
+                        <i class="fas fa-certificate mr-2"></i>Sertifikat & Piagam — {{ $nilai->calonSiswa->nama_lengkap ?? '-' }}
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        @foreach($sertifikats as $dok)
+                            <div class="col-md-6 mb-3">
+                                <div class="card card-outline card-info mb-0 h-100">
+                                    <div class="card-header py-2">
+                                        <h6 class="card-title mb-0">
+                                            <i class="fas {{ $dok->jenis_dokumen === 'piagam' ? 'fa-award' : 'fa-certificate' }} mr-1"></i>
+                                            {{ $dok->nama_dokumen ?? $dok->nama_dokumen_lengkap }}
+                                        </h6>
+                                    </div>
+                                    <div class="card-body p-2 text-center">
+                                        @if($dok->file_path)
+                                            @php
+                                                $fileUrl = asset('storage/' . $dok->file_path);
+                                                $isImage = in_array($dok->mime_type, ['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+                                                $isPdf = $dok->mime_type === 'application/pdf';
+                                            @endphp
+                                            @if($isImage)
+                                                <a href="{{ $fileUrl }}" target="_blank">
+                                                    <img src="{{ $fileUrl }}" class="img-fluid rounded" style="max-height: 200px; object-fit: contain;" alt="{{ $dok->nama_dokumen }}">
+                                                </a>
+                                            @elseif($isPdf)
+                                                <div class="py-3">
+                                                    <i class="fas fa-file-pdf fa-3x text-danger mb-2"></i>
+                                                    <br>
+                                                    <a href="{{ $fileUrl }}" target="_blank" class="btn btn-sm btn-outline-danger">
+                                                        <i class="fas fa-external-link-alt mr-1"></i> Buka PDF
+                                                    </a>
+                                                </div>
+                                            @else
+                                                <div class="py-3">
+                                                    <i class="fas fa-file fa-3x text-secondary mb-2"></i>
+                                                    <br>
+                                                    <a href="{{ $fileUrl }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-download mr-1"></i> Download
+                                                    </a>
+                                                </div>
+                                            @endif
+                                        @else
+                                            <div class="py-3 text-muted">
+                                                <i class="fas fa-image fa-3x mb-2"></i>
+                                                <br><small>File tidak tersedia</small>
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <div class="card-footer py-1 px-2">
+                                        <small class="text-muted">
+                                            {{ ucfirst(str_replace('_', ' ', $dok->jenis_dokumen)) }}
+                                            @if($dok->file_size)
+                                                &bull; {{ $dok->file_size_formatted }}
+                                            @endif
+                                            &bull; {!! $dok->status_badge !!}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+@endforeach
+
 @endsection
 
 @section('js')
