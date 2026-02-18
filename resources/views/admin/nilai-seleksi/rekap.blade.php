@@ -145,6 +145,54 @@
         </div>
     </div>
 
+    <!-- Detail Pendaftar -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-chart-pie mr-2"></i>Detail Pendaftar</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {{-- Per Jalur --}}
+                @foreach($detailStats['jalur'] as $namaJalur => $stat)
+                    <div class="col-md-4 col-6 mb-3">
+                        <div class="info-box mb-0">
+                            <span class="info-box-icon {{ str_contains(strtolower($namaJalur), 'asrama') ? 'bg-success' : 'bg-primary' }}">
+                                <i class="fas {{ str_contains(strtolower($namaJalur), 'asrama') ? 'fa-home' : 'fa-school' }}"></i>
+                            </span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">{{ $namaJalur }}</span>
+                                <span class="info-box-number">{{ $stat['total'] }} pendaftar</span>
+                                <small class="text-muted">
+                                    <i class="fas fa-mars text-primary"></i> {{ $stat['laki_laki'] }} L
+                                    &nbsp;|&nbsp;
+                                    <i class="fas fa-venus text-danger"></i> {{ $stat['perempuan'] }} P
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+
+                {{-- Total Gender --}}
+                <div class="col-md-4 col-6 mb-3">
+                    <div class="info-box mb-0">
+                        <span class="info-box-icon bg-secondary">
+                            <i class="fas fa-venus-mars"></i>
+                        </span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Total Keseluruhan</span>
+                            <span class="info-box-number">{{ $detailStats['total'] }} pendaftar</span>
+                            <small class="text-muted">
+                                <i class="fas fa-mars text-primary"></i> {{ $detailStats['laki_laki'] }} Laki-laki
+                                &nbsp;|&nbsp;
+                                <i class="fas fa-venus text-danger"></i> {{ $detailStats['perempuan'] }} Perempuan
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Keterangan Bobot -->
     <div class="callout callout-info">
         <h5><i class="fas fa-info-circle mr-1"></i> Formula Nilai Akhir</h5>

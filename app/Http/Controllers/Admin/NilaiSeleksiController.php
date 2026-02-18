@@ -192,7 +192,7 @@ class NilaiSeleksiController extends Controller
         $tahunAktif = TahunPelajaran::where('is_active', true)->first();
         
         // Build query for rekapData
-        $query = NilaiSeleksi::with(['calonSiswa', 'ruangUjian', 'sesiUjian.jalur'])
+        $query = NilaiSeleksi::with(['calonSiswa.jalurPendaftaran', 'ruangUjian', 'sesiUjian.jalur'])
             ->whereIn('status', ['submitted', 'verified']);
             
         // Filter by tahun pelajaran
@@ -274,6 +274,19 @@ class NilaiSeleksiController extends Controller
             return [$item->nilai_akhir, (float) ($item->nilai_wawancara ?? 0)];
         })->values();
 
+        // Detail stats: jalur & gender breakdown
+        $detailStats = [
+            'total' => $rekapData->count(),
+            'laki_laki' => $rekapData->filter(fn($n) => $n->calonSiswa && $n->calonSiswa->jenis_kelamin === 'L')->count(),
+            'perempuan' => $rekapData->filter(fn($n) => $n->calonSiswa && $n->calonSiswa->jenis_kelamin === 'P')->count(),
+            'jalur' => $rekapData->groupBy(fn($n) => $n->calonSiswa?->jalurPendaftaran?->nama ?? 'Tidak Diketahui')
+                ->map(fn($group) => [
+                    'total' => $group->count(),
+                    'laki_laki' => $group->filter(fn($n) => $n->calonSiswa?->jenis_kelamin === 'L')->count(),
+                    'perempuan' => $group->filter(fn($n) => $n->calonSiswa?->jenis_kelamin === 'P')->count(),
+                ])->sortByDesc('total'),
+        ];
+
         $tahunPelajarans = TahunPelajaran::orderBy('is_active', 'desc')
             ->orderBy('nama', 'desc')
             ->get();
@@ -287,6 +300,7 @@ class NilaiSeleksiController extends Controller
             'cbtData',
             'raporData',
             'sertifikatData',
+            'detailStats',
             'tahunAktif',
             'tahunPelajarans',
             'jalurs'
