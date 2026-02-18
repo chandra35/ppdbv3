@@ -81,17 +81,17 @@ class KopSuratService
         
         // Logo Kemenag (Left - Absolute)
         if ($logoKemenagSrc) {
-            $html .= '<div style="position: absolute; left: 20px; top: 0; width: 80px; text-align: center;">
+            $html .= '<div style="position: absolute; left: 0; top: 0; width: 75px; text-align: center;">
                         <img src="' . $logoKemenagSrc . '" alt="Logo Kemenag" style="height: ' . $logoKemenagHeight . 'px;">
                       </div>';
         }
         
         // Center Content (Centered with margin auto)
-        $html .= '<div style="margin: 0 110px; text-align: center;">' . $centerContent . '</div>';
+        $html .= '<div style="margin: 0 80px; text-align: center;">' . $centerContent . '</div>';
         
         // Logo Sekolah (Right - Absolute)
         if ($logoSekolahSrc) {
-            $html .= '<div style="position: absolute; right: 20px; top: 0; width: 80px; text-align: center;">
+            $html .= '<div style="position: absolute; right: 0; top: 0; width: 75px; text-align: center;">
                         <img src="' . $logoSekolahSrc . '" alt="Logo Sekolah" style="height: ' . $logoSekolahHeight . 'px;">
                       </div>';
         }
