@@ -1948,4 +1948,83 @@ class DashboardController extends Controller
 
         return view('pendaftar.dashboard.kelulusan', compact('calonSiswa', 'kelulusan', 'setting', 'namaSekolah'));
     }
+
+    /**
+     * Download Surat Pernyataan Orang Tua/Wali (PDF)
+     */
+    public function cetakSuratPernyataan()
+    {
+        ini_set('memory_limit', '256M');
+
+        $user = Auth::user();
+        $calonSiswa = CalonSiswa::where('user_id', $user->id)
+            ->with([
+                'jalurPendaftaran',
+                'gelombangPendaftaran',
+                'tahunPelajaran',
+                'ortu',
+                'kelulusan',
+            ])
+            ->first();
+
+        if (!$calonSiswa || !$calonSiswa->kelulusan || $calonSiswa->kelulusan->status !== 'lulus') {
+            return redirect()->route('pendaftar.kelulusan')
+                ->with('error', 'Surat pernyataan hanya tersedia untuk peserta yang dinyatakan lulus.');
+        }
+
+        $sekolahSettings = \App\Models\SekolahSettings::with(['province', 'city'])->first();
+
+        // Generate kop surat
+        $kopHtml = $this->kopSuratService->renderKopHtml($sekolahSettings, true);
+
+        // Data sekolah
+        $namaSekolah = $sekolahSettings->nama_sekolah ?? config('app.name', 'Sekolah');
+        $kota = $sekolahSettings->city->name ?? config('app.school_city', '............');
+        $kepalaSekolah = $sekolahSettings->nama_kepala_sekolah ?? null;
+        $nipKepalaSekolah = $sekolahSettings->nip_kepala_sekolah ?? null;
+
+        // Data orang tua / wali
+        $ortu = $calonSiswa->ortu;
+        if ($ortu && $ortu->tinggal_dengan_wali && $ortu->nama_wali) {
+            // Jika tinggal dengan wali, gunakan data wali
+            $namaOrtu = $ortu->nama_wali;
+            $pekerjaanOrtu = $ortu->pekerjaan_wali ? (CalonOrtu::PEKERJAAN[$ortu->pekerjaan_wali] ?? ucwords(str_replace('_', ' ', $ortu->pekerjaan_wali))) : '-';
+            $hpOrtu = $ortu->no_hp_wali ?? '-';
+            $hubunganOrtu = $ortu->hubungan_wali_label ?? 'Wali';
+        } else {
+            // Default: data ayah, fallback ke ibu
+            $namaOrtu = $ortu->nama_ayah ?? $ortu->nama_ibu ?? '-';
+            if ($ortu && $ortu->nama_ayah) {
+                $pekerjaanOrtu = $ortu->pekerjaan_ayah_label ?? '-';
+                $hpOrtu = $ortu->hp_ayah ?? $ortu->hp_ibu ?? '-';
+                $hubunganOrtu = 'Orang Tua (Ayah)';
+            } else {
+                $pekerjaanOrtu = $ortu ? ($ortu->pekerjaan_ibu_label ?? '-') : '-';
+                $hpOrtu = $ortu->hp_ibu ?? '-';
+                $hubunganOrtu = 'Orang Tua (Ibu)';
+            }
+        }
+
+        $alamatOrtu = $ortu ? $ortu->alamat_lengkap_ortu : '-';
+
+        $pdf = Pdf::loadView('pendaftar.pdf.surat-pernyataan-ortu', compact(
+            'calonSiswa',
+            'kopHtml',
+            'namaSekolah',
+            'kota',
+            'kepalaSekolah',
+            'nipKepalaSekolah',
+            'namaOrtu',
+            'pekerjaanOrtu',
+            'alamatOrtu',
+            'hpOrtu',
+            'hubunganOrtu'
+        ));
+
+        $pdf->setPaper('A4', 'portrait');
+
+        $filename = 'Surat_Pernyataan_Ortu_' . preg_replace('/[\/\\\:*?"<>|]/', '-', $calonSiswa->nama_lengkap) . '.pdf';
+
+        return $pdf->stream($filename);
+    }
 }

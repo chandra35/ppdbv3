@@ -253,6 +253,27 @@
             </div>
             @endif
 
+            {{-- Surat Pernyataan Orang Tua (hanya untuk yang lulus) --}}
+            @if($kelulusan->status === 'lulus')
+            <div class="card">
+                <div class="card-header bg-gradient-warning">
+                    <h3 class="card-title"><i class="fas fa-file-signature mr-2"></i>Surat Pernyataan Orang Tua/Wali</h3>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-file-pdf fa-3x text-danger"></i>
+                    </div>
+                    <p class="text-muted mb-3">
+                        Download dan cetak surat pernyataan orang tua/wali.<br>
+                        <strong>Wajib dibawa saat rapat wali dan daftar ulang.</strong>
+                    </p>
+                    <a href="{{ route('pendaftar.kelulusan.surat-pernyataan') }}" target="_blank" class="btn btn-danger btn-lg">
+                        <i class="fas fa-download mr-2"></i>Download Surat Pernyataan
+                    </a>
+                </div>
+            </div>
+            @endif
+
         @else
             {{-- Belum ada data kelulusan --}}
             <div class="kelulusan-hero belum">
