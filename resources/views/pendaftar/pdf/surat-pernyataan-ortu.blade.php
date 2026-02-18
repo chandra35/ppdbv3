@@ -6,7 +6,7 @@
     <style>
         @page {
             size: A4;
-            margin: 15mm 20mm 12mm 20mm;
+            margin: 18mm 25mm 15mm 25mm;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -22,10 +22,10 @@
         /* ── Judul ── */
         .judul {
             text-align: center;
-            font-size: 13pt;
+            font-size: 12pt;
             font-weight: bold;
             letter-spacing: 1px;
-            margin: 6px 0 1px 0;
+            margin: 4px 0 1px 0;
         }
         .judul-garis {
             width: 220px;
@@ -36,7 +36,7 @@
         .sub-judul {
             text-align: center;
             font-size: 10pt;
-            margin-bottom: 14px;
+            margin-bottom: 10px;
         }
 
         /* ── Paragraf ── */
@@ -70,7 +70,7 @@
             font-weight: bold;
             font-size: 11pt;
             letter-spacing: 2px;
-            margin: 10px 0 6px 0;
+            margin: 8px 0 4px 0;
         }
 
         /* ── Pernyataan ── */
@@ -103,7 +103,7 @@
         /* ── Tanda Tangan ── */
         .ttd-tbl {
             width: 100%;
-            margin-top: 16px;
+            margin-top: 12px;
         }
         .ttd-tbl td {
             vertical-align: top;
@@ -112,7 +112,7 @@
             padding: 0 5px;
             line-height: 1.45;
         }
-        .ttd-space { height: 60px; }
+        .ttd-space { height: 50px; }
         .ttd-name {
             font-weight: bold;
             border-bottom: 1px solid #000;
@@ -125,8 +125,8 @@
 
         /* ── Footer ── */
         .footer-strip {
-            margin-top: 12px;
-            padding-top: 5px;
+            margin-top: 8px;
+            padding-top: 4px;
             border-top: 0.5px solid #999;
             font-size: 8pt;
             color: #666;
