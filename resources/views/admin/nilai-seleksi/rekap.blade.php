@@ -246,6 +246,7 @@
                         <th rowspan="2">No. Tes</th>
                         <th rowspan="2">Nama Peserta</th>
                         <th rowspan="2">Jalur</th>
+                        <th rowspan="2" title="Minat/Pilihan Program">Pilihan</th>
                         <th class="text-center" colspan="4" style="background: #e8f5e9;">Seleksi (40%)</th>
                         <th class="text-center" rowspan="2" style="background: #e8f5e9;">T. Seleksi</th>
                         <th class="text-center" colspan="4" style="background: #e3f2fd;">CBT (50%)</th>
@@ -291,6 +292,16 @@
                                 @endif
                             </td>
                             <td>{{ $nilai->sesiUjian->jalur->nama ?? '-' }}</td>
+                            {{-- Pilihan Program --}}
+                            <td class="text-center">
+                                @if($nilai->calonSiswa?->pilihan_program === 'Asrama')
+                                    <span class="badge badge-purple" style="background:#6f42c1;color:#fff;">Asrama</span>
+                                @elseif($nilai->calonSiswa?->pilihan_program === 'Reguler')
+                                    <span class="badge badge-teal" style="background:#20c997;color:#fff;">Reguler</span>
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
+                            </td>
                             {{-- Seleksi --}}
                             <td class="text-center nilai-cell">{{ $nilai->nilai_baca_quran ?? '-' }}</td>
                             <td class="text-center nilai-cell">{{ $nilai->nilai_tulis_quran ?? '-' }}</td>
@@ -398,7 +409,7 @@ $(document).ready(function() {
                 title: 'Rekap Nilai Seleksi PPDB'
             }
         ],
-        order: [[15, 'desc'], [16, 'desc']], // Sort by nilai akhir desc, then minat desc
+        order: [[16, 'desc'], [17, 'desc']], // Sort by nilai akhir desc, then minat desc
         pageLength: 25,
         language: {
             url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json'
