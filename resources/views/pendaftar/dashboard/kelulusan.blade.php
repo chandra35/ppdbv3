@@ -211,8 +211,8 @@
                     <div class="flex-grow-1">
                         <h4 class="mb-1">Bergabung ke Grup WhatsApp</h4>
                         <p class="mb-2" style="opacity: 0.9;">{{ $setting->nama_grup_wa ?? 'Grup PPDB Siswa Baru' }}</p>
-                        <a href="{{ $setting->link_grup_wa }}" target="_blank" class="btn btn-light btn-lg">
-                            <i class="fab fa-whatsapp mr-2 text-success"></i>Gabung Sekarang
+                        <a href="{{ $setting->link_grup_wa }}" target="_blank" class="btn btn-lg" style="background: #fff; color: #128C7E; font-weight: 600;">
+                            <i class="fab fa-whatsapp mr-2" style="color: #25D366;"></i>Gabung Sekarang
                         </a>
                     </div>
                 </div>
