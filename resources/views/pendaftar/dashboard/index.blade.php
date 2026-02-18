@@ -1080,6 +1080,15 @@ function openEnvelope() {
     container.classList.add('opened');
     hint.style.display = 'none';
 
+    // Mark envelope as opened in session (AJAX)
+    fetch('{{ route("pendaftar.kelulusan.envelope-opened") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        }
+    });
+
     // Show sparkles from envelope
     createSparkles(container);
 

@@ -126,6 +126,7 @@ Route::middleware(['auth'])->prefix('pendaftar')->name('pendaftar.')->group(func
     
     // Info Kelulusan
     Route::get('/kelulusan', [PendaftarDashboardController::class, 'kelulusan'])->name('kelulusan');
+    Route::post('/kelulusan/envelope-opened', [PendaftarDashboardController::class, 'markEnvelopeOpened'])->name('kelulusan.envelope-opened');
 });
 
 // ============================================

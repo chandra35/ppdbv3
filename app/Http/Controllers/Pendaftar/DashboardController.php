@@ -710,10 +710,20 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         $calonSiswa = CalonSiswa::where('user_id', $user->id)
-            ->with(['jalurPendaftaran', 'gelombangPendaftaran', 'verifiedBy'])
+            ->with(['jalurPendaftaran', 'gelombangPendaftaran', 'verifiedBy', 'kelulusan'])
             ->first();
 
-        return view('pendaftar.dashboard.status', compact('calonSiswa'));
+        // Cek apakah ada kelulusan & pengumuman aktif tapi amplop belum dibuka
+        $kelulusanSetting = \App\Models\KelulusanSetting::getActive();
+        $sembunyikanAdmisi = false;
+        if ($calonSiswa->kelulusan 
+            && $kelulusanSetting 
+            && $kelulusanSetting->tampilkan_pengumuman 
+            && !session('kelulusan_envelope_opened')) {
+            $sembunyikanAdmisi = true;
+        }
+
+        return view('pendaftar.dashboard.status', compact('calonSiswa', 'sembunyikanAdmisi'));
     }
 
     /**
@@ -1894,6 +1904,15 @@ class DashboardController extends Controller
     }
 
     /**
+     * Mark envelope as opened (AJAX)
+     */
+    public function markEnvelopeOpened(Request $request)
+    {
+        session(['kelulusan_envelope_opened' => true]);
+        return response()->json(['success' => true]);
+    }
+
+    /**
      * Halaman info kelulusan pendaftar
      */
     public function kelulusan()
@@ -1918,6 +1937,12 @@ class DashboardController extends Controller
         }
 
         $kelulusan = $calonSiswa->kelulusan;
+
+        // Jika ada kelulusan tapi amplop belum dibuka → redirect ke dashboard
+        if ($kelulusan && !session('kelulusan_envelope_opened')) {
+            return redirect()->route('pendaftar.dashboard')
+                ->with('info', 'Silakan buka amplop pengumuman di dashboard terlebih dahulu! ✉️');
+        }
 
         return view('pendaftar.dashboard.kelulusan', compact('calonSiswa', 'kelulusan', 'setting'));
     }

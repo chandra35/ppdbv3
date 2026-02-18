@@ -13,7 +13,24 @@
         <!-- Status Card -->
         <div class="card">
             <div class="card-body text-center py-5">
-                @if($calonSiswa->status_admisi === 'diterima')
+                @if(isset($sembunyikanAdmisi) && $sembunyikanAdmisi)
+                    {{-- Amplop belum dibuka → sembunyikan status admisi --}}
+                    <div class="mb-4">
+                        <span class="bg-gradient-purple rounded-circle d-inline-flex align-items-center justify-content-center" 
+                              style="width: 100px; height: 100px;">
+                            <i class="fas fa-envelope fa-3x text-white"></i>
+                        </span>
+                    </div>
+                    <h2 class="text-purple">Hasil Seleksi Tersedia!</h2>
+                    <h4 class="mb-3 text-muted">Buka amplop di Dashboard untuk melihat hasilnya</h4>
+                    <p class="text-muted mb-4">
+                        Pengumuman kelulusan sudah tersedia. Silakan buka amplop pengumuman<br>
+                        di halaman Dashboard terlebih dahulu untuk pengalaman yang lebih seru! ✉️
+                    </p>
+                    <a href="{{ route('pendaftar.dashboard') }}" class="btn btn-primary btn-lg px-4">
+                        <i class="fas fa-home mr-2"></i> Ke Dashboard
+                    </a>
+                @elseif($calonSiswa->status_admisi === 'diterima')
                     <div class="mb-4">
                         <span class="bg-success rounded-circle d-inline-flex align-items-center justify-content-center" 
                               style="width: 100px; height: 100px;">
@@ -116,9 +133,13 @@
                     <tr>
                         <td>Status Admisi</td>
                         <td>
+                            @if(isset($sembunyikanAdmisi) && $sembunyikanAdmisi)
+                                <span class="badge badge-secondary px-2 py-1"><i class="fas fa-lock mr-1"></i> Buka amplop di Dashboard</span>
+                            @else
                             <span class="status-badge status-{{ $calonSiswa->status_admisi }}">
                                 {{ ucfirst($calonSiswa->status_admisi) }}
                             </span>
+                            @endif
                         </td>
                     </tr>
                     @if($calonSiswa->catatan_verifikasi)
@@ -130,7 +151,13 @@
                     @if($calonSiswa->catatan_admisi)
                     <tr>
                         <td>Catatan Admisi</td>
-                        <td>{{ $calonSiswa->catatan_admisi }}</td>
+                        <td>
+                            @if(isset($sembunyikanAdmisi) && $sembunyikanAdmisi)
+                                <span class="text-muted"><i class="fas fa-lock mr-1"></i> -</span>
+                            @else
+                                {{ $calonSiswa->catatan_admisi }}
+                            @endif
+                        </td>
                     </tr>
                     @endif
                 </table>
@@ -211,7 +238,9 @@
 
                     <!-- Step 4: Pengumuman -->
                     <div class="time-label">
-                        @if($calonSiswa->status_admisi !== 'pending')
+                        @if(isset($sembunyikanAdmisi) && $sembunyikanAdmisi)
+                            <span class="bg-purple"><i class="fas fa-envelope mr-1"></i> Tersedia</span>
+                        @elseif($calonSiswa->status_admisi !== 'pending')
                             <span class="bg-{{ $calonSiswa->status_admisi === 'diterima' ? 'success' : ($calonSiswa->status_admisi === 'ditolak' ? 'danger' : 'warning') }}">
                                 {{ ucfirst($calonSiswa->status_admisi) }}
                             </span>
@@ -220,11 +249,13 @@
                         @endif
                     </div>
                     <div>
-                        <i class="fas fa-bullhorn {{ $calonSiswa->status_admisi !== 'pending' ? 'bg-' . ($calonSiswa->status_admisi === 'diterima' ? 'success' : 'secondary') : 'bg-secondary' }}"></i>
+                        <i class="fas fa-bullhorn {{ (isset($sembunyikanAdmisi) && $sembunyikanAdmisi) ? 'bg-purple' : ($calonSiswa->status_admisi !== 'pending' ? 'bg-' . ($calonSiswa->status_admisi === 'diterima' ? 'success' : 'secondary') : 'bg-secondary') }}"></i>
                         <div class="timeline-item">
                             <h3 class="timeline-header">Pengumuman Hasil Seleksi</h3>
                             <div class="timeline-body text-muted">
-                                @if($calonSiswa->status_admisi !== 'pending')
+                                @if(isset($sembunyikanAdmisi) && $sembunyikanAdmisi)
+                                    <i class="fas fa-lock mr-1"></i> Buka amplop di <a href="{{ route('pendaftar.dashboard') }}">Dashboard</a> untuk melihat hasilnya
+                                @elseif($calonSiswa->status_admisi !== 'pending')
                                     Hasil seleksi telah diumumkan
                                 @else
                                     Menunggu pengumuman hasil seleksi
