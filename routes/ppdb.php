@@ -340,6 +340,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/upload/confirm', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'confirmUpload'])->name('upload.confirm');
         Route::post('/upload/cancel', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'cancelUpload'])->name('upload.cancel');
         Route::get('/rekap', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'rekap'])->name('rekap');
+        Route::get('/rekap/export', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'exportRekap'])->name('rekap.export');
         Route::get('/bobot', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'bobotIndex'])->name('bobot');
         Route::post('/bobot', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'bobotUpdate'])->name('bobot.update');
         Route::get('/pengumuman', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'pengumuman'])->name('pengumuman');
@@ -367,6 +368,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/asal-sekolah', [\App\Http\Controllers\Admin\StatistikController::class, 'asalSekolah'])->name('asal-sekolah');
         Route::get('/ekonomi', [\App\Http\Controllers\Admin\StatistikController::class, 'ekonomi'])->name('ekonomi');
         Route::get('/dokumen-prestasi', [\App\Http\Controllers\Admin\StatistikController::class, 'dokumenPrestasi'])->name('dokumen-prestasi');
+    });
+
+    // ---- LAPORAN PPDB ----
+    Route::prefix('report')->name('report.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('index');
+        Route::get('/pdf', [\App\Http\Controllers\Admin\ReportController::class, 'exportPdf'])->name('pdf');
     });
 
     // ============================================

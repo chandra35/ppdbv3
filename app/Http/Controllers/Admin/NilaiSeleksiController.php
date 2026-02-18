@@ -12,9 +12,11 @@ use App\Models\CalonSiswa;
 use App\Models\JadwalUjian;
 use App\Models\ActivityLog;
 use App\Imports\NilaiPenilaianImport;
+use App\Exports\RekapNilaiExport;
 use App\Services\EmailNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class NilaiSeleksiController extends Controller
 {
@@ -356,6 +358,25 @@ class NilaiSeleksiController extends Controller
             'tahunPelajarans',
             'jalurs'
         ));
+    }
+
+    /**
+     * Export rekap nilai seluruh pendaftar ke Excel (termasuk yang belum ada nilai)
+     */
+    public function exportRekap(Request $request)
+    {
+        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        $selectedTahunId = $request->tahun_pelajaran_id ?: $tahunAktif?->id;
+
+        $export = new RekapNilaiExport(
+            $selectedTahunId,
+            $request->jalur_id,
+            $request->gelombang_id
+        );
+
+        $filename = 'Rekap_Nilai_Lengkap_PPDB_' . date('Y-m-d_His') . '.xlsx';
+
+        return Excel::download($export, $filename);
     }
 
     /**

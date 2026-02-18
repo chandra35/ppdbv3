@@ -226,6 +226,9 @@
                         <a href="{{ route('admin.nilai-seleksi.rekap') }}" class="btn btn-secondary btn-sm">
                             <i class="fas fa-sync mr-1"></i> Reset
                         </a>
+                        <a href="{{ route('admin.nilai-seleksi.rekap.export', request()->query()) }}" class="btn btn-success btn-sm" title="Export seluruh pendaftar dengan semua nilai lengkap">
+                            <i class="fas fa-file-excel mr-1"></i> Export Lengkap
+                        </a>
                     </div>
                 </div>
             </form>

@@ -208,6 +208,12 @@ return [
                 ],
             ],
         ],
+        [
+            'text' => 'Laporan PPDB',
+            'route' => 'admin.report.index',
+            'icon' => 'fas fa-fw fa-file-alt',
+            'can' => 'admin',
+        ],
 
         [
             'header' => 'PENGATURAN',
