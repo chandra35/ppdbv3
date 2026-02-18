@@ -17,7 +17,7 @@
             padding: 8mm 28mm 5mm 28mm;
         }
 
-        .kop-wrapper { margin-bottom: 0; }
+        .kop-wrapper { margin: 0 -18mm 0 -18mm; }
 
         .judul {
             text-align: center;
