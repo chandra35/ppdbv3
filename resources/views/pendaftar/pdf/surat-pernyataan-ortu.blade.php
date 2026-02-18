@@ -6,122 +6,103 @@
     <style>
         @page {
             size: A4;
-            margin: 20mm 20mm 15mm 25mm;
+            margin: 15mm 18mm 12mm 22mm;
         }
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Times New Roman', Times, serif;
-            font-size: 12pt;
-            line-height: 1.6;
+            font-size: 11pt;
+            line-height: 1.35;
             color: #000;
         }
 
-        .page-wrapper {
-            width: 100%;
-            max-width: 100%;
-            overflow: hidden;
-        }
+        .kop-wrapper { margin-bottom: 2px; }
 
-        .title {
+        .judul {
             text-align: center;
-            margin: 15px 0 5px 0;
-            font-size: 14pt;
+            font-size: 12pt;
             font-weight: bold;
             text-decoration: underline;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
+            margin: 8px 0 2px 0;
         }
-        .subtitle {
+        .sub-judul {
             text-align: center;
-            margin-bottom: 20px;
-            font-size: 11pt;
-            font-style: italic;
-            color: #555;
+            font-size: 10pt;
+            margin-bottom: 12px;
         }
 
-        .isi-surat {
-            text-align: justify;
-            margin-bottom: 10px;
-        }
+        p { text-align: justify; margin-bottom: 6px; }
 
-        .data-table {
+        .data-tbl {
             width: 100%;
             border-collapse: collapse;
-            margin: 10px 0;
+            margin: 4px 0;
         }
-        .data-table td {
-            padding: 4px 5px;
-            font-size: 11pt;
+        .data-tbl td {
+            padding: 1.5px 4px;
+            font-size: 10.5pt;
             vertical-align: top;
             border: none;
         }
-        .data-table td:first-child {
-            width: 5%;
-        }
-        .data-table td:nth-child(2) {
-            width: 35%;
-        }
-        .data-table td:nth-child(3) {
-            width: 2%;
+        .col-no   { width: 4%; }
+        .col-lbl  { width: 33%; }
+        .col-sep  { width: 2%; text-align: center; }
+        .col-val  { width: 61%; }
+
+        .menyatakan {
             text-align: center;
-        }
-        .data-table td:last-child {
-            width: 58%;
+            font-weight: bold;
+            font-size: 11pt;
+            margin: 10px 0 6px 0;
         }
 
-        .pernyataan-list {
-            margin: 10px 0 15px 0;
+        .pernyataan { margin: 0 0 8px 0; }
+        .pernyataan ol {
+            margin-left: 18px;
+            padding-left: 0;
         }
-        .pernyataan-list ol {
-            margin-left: 20px;
-        }
-        .pernyataan-list li {
-            margin-bottom: 8px;
+        .pernyataan li {
+            margin-bottom: 3px;
             text-align: justify;
+            font-size: 10.5pt;
         }
 
-        .ttd-table {
-            width: 100%;
-            margin-top: 30px;
+        .penutup {
+            text-align: justify;
+            font-size: 10.5pt;
+            margin-bottom: 2px;
         }
-        .ttd-table td {
+
+        .ttd-tbl {
+            width: 100%;
+            margin-top: 14px;
+        }
+        .ttd-tbl td {
             vertical-align: top;
             text-align: center;
-            padding: 5px;
-            font-size: 11pt;
+            font-size: 10.5pt;
+            padding: 2px;
         }
-        .ttd-space {
-            height: 70px;
-        }
-        .ttd-name {
-            font-weight: bold;
-            text-decoration: underline;
-        }
+        .ttd-space { height: 55px; }
+        .ttd-name { font-weight: bold; text-decoration: underline; }
 
-        .catatan-section {
-            margin-top: 20px;
-            padding-top: 10px;
-            border-top: 1px dashed #999;
-            font-size: 9pt;
-            color: #666;
+        .footer-strip {
+            margin-top: 10px;
+            padding-top: 6px;
+            border-top: 1px solid #aaa;
+            font-size: 8pt;
+            color: #555;
         }
-
-        .kop-wrapper {
-            margin-bottom: 5px;
-        }
-
-        .nomor-surat {
-            text-align: center;
-            font-size: 10pt;
-            margin-bottom: 15px;
+        .footer-strip td {
+            border: none;
+            padding: 1px 3px;
+            font-size: 8pt;
+            color: #555;
         }
     </style>
 </head>
 <body>
-<div class="page-wrapper">
 
     {{-- Kop Surat --}}
     <div class="kop-wrapper">
@@ -129,130 +110,119 @@
     </div>
 
     {{-- Judul --}}
-    <div class="title">SURAT PERNYATAAN ORANG TUA / WALI</div>
-    <div class="subtitle">PESERTA DIDIK BARU TAHUN PELAJARAN {{ $calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y') }}/{{ ($calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y')) + 1 }}</div>
+    <div class="judul">SURAT PERNYATAAN ORANG TUA / WALI</div>
+    <div class="sub-judul">Peserta Didik Baru Tahun Pelajaran {{ $calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y') }}/{{ ($calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y')) + 1 }}</div>
 
     {{-- Pembuka --}}
-    <div class="isi-surat">
-        <p>Yang bertanda tangan di bawah ini:</p>
-    </div>
+    <p>Yang bertanda tangan di bawah ini:</p>
 
     {{-- Data Orang Tua --}}
-    <table class="data-table">
+    <table class="data-tbl">
         <tr>
-            <td>1.</td>
-            <td>Nama Orang Tua/Wali</td>
-            <td>:</td>
-            <td><strong>{{ $namaOrtu }}</strong></td>
+            <td class="col-no">1.</td>
+            <td class="col-lbl">Nama Orang Tua / Wali</td>
+            <td class="col-sep">:</td>
+            <td class="col-val"><strong>{{ $namaOrtu }}</strong></td>
         </tr>
         <tr>
-            <td>2.</td>
-            <td>Pekerjaan</td>
-            <td>:</td>
-            <td>{{ $pekerjaanOrtu }}</td>
+            <td class="col-no">2.</td>
+            <td class="col-lbl">Pekerjaan</td>
+            <td class="col-sep">:</td>
+            <td class="col-val">{{ $pekerjaanOrtu }}</td>
         </tr>
         <tr>
-            <td>3.</td>
-            <td>Alamat</td>
-            <td>:</td>
-            <td>{{ $alamatOrtu }}</td>
+            <td class="col-no">3.</td>
+            <td class="col-lbl">Alamat</td>
+            <td class="col-sep">:</td>
+            <td class="col-val">{{ $alamatOrtu }}</td>
         </tr>
         <tr>
-            <td>4.</td>
-            <td>No. Telepon/HP</td>
-            <td>:</td>
-            <td>{{ $hpOrtu }}</td>
+            <td class="col-no">4.</td>
+            <td class="col-lbl">No. Telepon / HP</td>
+            <td class="col-sep">:</td>
+            <td class="col-val">{{ $hpOrtu }}</td>
         </tr>
         <tr>
-            <td>5.</td>
-            <td>Hubungan dengan Peserta Didik</td>
-            <td>:</td>
-            <td>{{ $hubunganOrtu }}</td>
+            <td class="col-no">5.</td>
+            <td class="col-lbl">Hubungan dengan Peserta Didik</td>
+            <td class="col-sep">:</td>
+            <td class="col-val">{{ $hubunganOrtu }}</td>
         </tr>
     </table>
 
-    <div class="isi-surat" style="margin-top: 10px;">
-        <p>Adalah orang tua/wali dari peserta didik:</p>
-    </div>
+    <p style="margin-top: 6px;">Adalah orang tua / wali dari peserta didik:</p>
 
     {{-- Data Peserta Didik --}}
-    <table class="data-table">
+    <table class="data-tbl">
         <tr>
-            <td>1.</td>
-            <td>Nama Peserta Didik</td>
-            <td>:</td>
-            <td><strong>{{ $calonSiswa->nama_lengkap }}</strong></td>
+            <td class="col-no">1.</td>
+            <td class="col-lbl">Nama Peserta Didik</td>
+            <td class="col-sep">:</td>
+            <td class="col-val"><strong>{{ $calonSiswa->nama_lengkap }}</strong></td>
         </tr>
         <tr>
-            <td>2.</td>
-            <td>NISN</td>
-            <td>:</td>
-            <td>{{ $calonSiswa->nisn }}</td>
+            <td class="col-no">2.</td>
+            <td class="col-lbl">NISN</td>
+            <td class="col-sep">:</td>
+            <td class="col-val">{{ $calonSiswa->nisn }}</td>
         </tr>
         <tr>
-            <td>3.</td>
-            <td>Tempat, Tanggal Lahir</td>
-            <td>:</td>
-            <td>{{ $calonSiswa->tempat_lahir ?? '-' }}, {{ $calonSiswa->tanggal_lahir ? $calonSiswa->tanggal_lahir->translatedFormat('d F Y') : '-' }}</td>
+            <td class="col-no">3.</td>
+            <td class="col-lbl">Tempat, Tanggal Lahir</td>
+            <td class="col-sep">:</td>
+            <td class="col-val">{{ $calonSiswa->tempat_lahir ?? '-' }}, {{ $calonSiswa->tanggal_lahir ? $calonSiswa->tanggal_lahir->translatedFormat('d F Y') : '-' }}</td>
         </tr>
         <tr>
-            <td>4.</td>
-            <td>Jenis Kelamin</td>
-            <td>:</td>
-            <td>{{ $calonSiswa->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan' }}</td>
+            <td class="col-no">4.</td>
+            <td class="col-lbl">Jenis Kelamin</td>
+            <td class="col-sep">:</td>
+            <td class="col-val">{{ $calonSiswa->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan' }}</td>
         </tr>
         <tr>
-            <td>5.</td>
-            <td>Asal Sekolah</td>
-            <td>:</td>
-            <td>{{ $calonSiswa->nama_sekolah_asal ?? '-' }}</td>
+            <td class="col-no">5.</td>
+            <td class="col-lbl">Asal Sekolah</td>
+            <td class="col-sep">:</td>
+            <td class="col-val">{{ $calonSiswa->nama_sekolah_asal ?? '-' }}</td>
         </tr>
         <tr>
-            <td>6.</td>
-            <td>No. Registrasi PPDB</td>
-            <td>:</td>
-            <td>{{ $calonSiswa->nomor_registrasi }}</td>
+            <td class="col-no">6.</td>
+            <td class="col-lbl">No. Registrasi PPDB</td>
+            <td class="col-sep">:</td>
+            <td class="col-val">{{ $calonSiswa->nomor_registrasi }}</td>
         </tr>
         <tr>
-            <td>7.</td>
-            <td>Jalur Pendaftaran</td>
-            <td>:</td>
-            <td>{{ $calonSiswa->jalurPendaftaran->nama ?? '-' }}</td>
+            <td class="col-no">7.</td>
+            <td class="col-lbl">Jalur Pendaftaran</td>
+            <td class="col-sep">:</td>
+            <td class="col-val">{{ $calonSiswa->jalurPendaftaran->nama ?? '-' }}@if($calonSiswa->pilihan_program) &mdash; {{ $calonSiswa->pilihan_program }}@endif</td>
         </tr>
-        @if($calonSiswa->pilihan_program)
-        <tr>
-            <td>8.</td>
-            <td>Jalur Minat / Program</td>
-            <td>:</td>
-            <td>{{ $calonSiswa->pilihan_program }}</td>
-        </tr>
-        @endif
     </table>
 
-    {{-- MENYATAKAN --}}
-    <div style="text-align: center; margin: 20px 0 10px 0;">
-        <strong style="font-size: 13pt;">MENYATAKAN</strong>
-    </div>
+    {{-- Menyatakan --}}
+    <div class="menyatakan">MENYATAKAN</div>
 
-    <div class="pernyataan-list">
+    <div class="pernyataan">
         <ol>
-            <li>Bersedia membimbing dan mengawasi peserta didik tersebut di atas untuk mentaati tata tertib madrasah/sekolah selama menjadi siswa di <strong>{{ $namaSekolah }}</strong>.</li>
-            <li>Tidak keberatan apabila peserta didik di atas menerima sanksi sesuai dengan ketentuan dan peraturan yang berlaku di madrasah/sekolah.</li>
+            <li>Bersedia membimbing dan mengawasi peserta didik tersebut untuk mentaati tata tertib selama menjadi siswa di <strong>{{ $namaSekolah }}</strong>.</li>
+            <li>Tidak keberatan apabila peserta didik menerima sanksi sesuai dengan ketentuan dan peraturan yang berlaku.</li>
             <li>Bersedia memenuhi segala persyaratan administrasi yang ditetapkan oleh pihak madrasah/sekolah.</li>
             <li>Bersedia menghadiri setiap undangan rapat/pertemuan yang diselenggarakan oleh pihak madrasah/sekolah.</li>
-            <li>Turut bertanggung jawab atas segala tindakan dan perbuatan peserta didik tersebut selama menjadi siswa di <strong>{{ $namaSekolah }}</strong>.</li>
+            <li>Turut bertanggung jawab atas segala tindakan peserta didik selama menjadi siswa di <strong>{{ $namaSekolah }}</strong>.</li>
         </ol>
     </div>
 
-    <div class="isi-surat">
-        <p>Demikian surat pernyataan ini saya buat dengan sebenarnya dan penuh rasa tanggung jawab, tanpa ada paksaan dari pihak manapun.</p>
-    </div>
+    <p class="penutup">Demikian surat pernyataan ini dibuat dengan sebenarnya dan penuh tanggung jawab, tanpa ada paksaan dari pihak manapun.</p>
 
     {{-- Tanda Tangan --}}
-    <table class="ttd-table">
+    <table class="ttd-tbl">
         <tr>
-            <td width="50%">Mengetahui,<br>Kepala Madrasah/Sekolah</td>
-            <td width="50%">{{ $kota }}, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}<br>Yang membuat pernyataan,<br>Orang Tua/Wali</td>
+            <td width="50%">
+                Mengetahui,<br>Kepala Madrasah / Sekolah
+            </td>
+            <td width="50%">
+                {{ $kota }}, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}<br>
+                Yang membuat pernyataan,<br>Orang Tua / Wali
+            </td>
         </tr>
         <tr>
             <td class="ttd-space"></td>
@@ -261,12 +231,10 @@
         <tr>
             <td>
                 @if($kepalaSekolah)
-                <span class="ttd-name">{{ $kepalaSekolah }}</span>
-                    @if($nipKepalaSekolah)
-                    <br>NIP. {{ $nipKepalaSekolah }}
-                    @endif
+                    <span class="ttd-name">{{ $kepalaSekolah }}</span>
+                    @if($nipKepalaSekolah)<br><span style="font-size:9.5pt;">NIP. {{ $nipKepalaSekolah }}</span>@endif
                 @else
-                <span class="ttd-name">.................................</span>
+                    <span class="ttd-name">.................................</span>
                 @endif
             </td>
             <td>
@@ -275,30 +243,15 @@
         </tr>
     </table>
 
-    {{-- Catatan --}}
-    <div class="catatan-section">
-        <strong>Catatan:</strong><br>
-        Surat pernyataan ini dibawa pada saat daftar ulang / rapat wali calon peserta didik baru.
-        <br><br>
-        <table style="width: 100%; font-size: 9pt; border: none;">
+    {{-- Footer strip --}}
+    <div class="footer-strip">
+        <table style="width:100%;">
             <tr>
-                <td style="width: 15%; border: none; padding: 2px;">No. Registrasi</td>
-                <td style="width: 2%; border: none; padding: 2px;">:</td>
-                <td style="width: 33%; border: none; padding: 2px;">{{ $calonSiswa->nomor_registrasi }}</td>
-                <td style="width: 15%; border: none; padding: 2px;">No. HP Siswa</td>
-                <td style="width: 2%; border: none; padding: 2px;">:</td>
-                <td style="width: 33%; border: none; padding: 2px;">{{ $calonSiswa->nomor_hp ?? '-' }}</td>
-            </tr>
-            <tr>
-                <td style="border: none; padding: 2px;">Nama</td>
-                <td style="border: none; padding: 2px;">:</td>
-                <td style="border: none; padding: 2px;">{{ $calonSiswa->nama_lengkap }}</td>
-                <td style="border: none; padding: 2px;">No. HP Ortu</td>
-                <td style="border: none; padding: 2px;">:</td>
-                <td style="border: none; padding: 2px;">{{ $hpOrtu }}</td>
+                <td>*) Surat ini dibawa saat daftar ulang / rapat wali calon peserta didik baru</td>
+                <td style="text-align:right;">{{ $calonSiswa->nomor_registrasi }} | {{ $calonSiswa->nomor_hp ?? '-' }}</td>
             </tr>
         </table>
     </div>
-</div>
+
 </body>
 </html>
