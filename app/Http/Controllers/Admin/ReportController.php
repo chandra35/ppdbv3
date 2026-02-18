@@ -122,7 +122,8 @@ class ReportController extends Controller
 
         $pdf->setPaper('A4', 'portrait');
 
-        $filename = 'Laporan_PPDB_' . ($selectedTahun?->nama ?? date('Y')) . '_' . date('Y-m-d_His') . '.pdf';
+        $tahunNama = str_replace(['/', '\\'], '-', $selectedTahun?->nama ?? date('Y'));
+        $filename = 'Laporan_PPDB_' . $tahunNama . '_' . date('Y-m-d_His') . '.pdf';
 
         return $pdf->download($filename);
     }
