@@ -1944,6 +1944,8 @@ class DashboardController extends Controller
                 ->with('info', 'Silakan buka amplop pengumuman di dashboard terlebih dahulu! ✉️');
         }
 
-        return view('pendaftar.dashboard.kelulusan', compact('calonSiswa', 'kelulusan', 'setting'));
+        $namaSekolah = \App\Models\SekolahSettings::getNamaSekolah();
+
+        return view('pendaftar.dashboard.kelulusan', compact('calonSiswa', 'kelulusan', 'setting', 'namaSekolah'));
     }
 }

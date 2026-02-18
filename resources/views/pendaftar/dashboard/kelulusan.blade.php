@@ -68,6 +68,28 @@
         background: linear-gradient(135deg, #667eea, #764ba2);
         border-radius: 15px; padding: 24px; color: #fff;
     }
+    .info-penting-content {
+        line-height: 1.8;
+        font-size: 0.95rem;
+    }
+    .info-penting-content table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 1rem;
+    }
+    .info-penting-content table td,
+    .info-penting-content table th {
+        border: 1px solid #dee2e6;
+        padding: 8px 12px;
+    }
+    .info-penting-content ul, .info-penting-content ol {
+        padding-left: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    .info-penting-content a {
+        color: #007bff;
+        text-decoration: underline;
+    }
 </style>
 @endsection
 
@@ -98,7 +120,7 @@
                 </div>
                 <p style="font-size: 1.2rem; opacity: 0.9;">
                     @if($kelulusan->status === 'lulus')
-                        {{ $setting->pesan_lulus }}
+                        Selamat! Anda dinyatakan LULUS seleksi PPDB {{ $namaSekolah }}
                     @elseif($kelulusan->status === 'tidak_lulus')
                         {{ $setting->pesan_tidak_lulus }}
                     @else
@@ -133,6 +155,12 @@
                             <td><strong>No. Registrasi</strong></td>
                             <td>{{ $calonSiswa->nomor_registrasi }}</td>
                         </tr>
+                        @if($calonSiswa->nomor_tes)
+                        <tr>
+                            <td><strong>No. Peserta Tes</strong></td>
+                            <td>{{ $calonSiswa->nomor_tes }}</td>
+                        </tr>
+                        @endif
                         <tr>
                             <td><strong>Jalur Pendaftaran</strong></td>
                             <td>{{ $calonSiswa->jalurPendaftaran->nama ?? '-' }}</td>
@@ -141,6 +169,12 @@
                             <td><strong>Gelombang</strong></td>
                             <td>{{ $calonSiswa->gelombangPendaftaran->nama ?? '-' }}</td>
                         </tr>
+                        @if($calonSiswa->pilihan_program)
+                        <tr>
+                            <td><strong>Jalur Minat</strong></td>
+                            <td>{{ $calonSiswa->pilihan_program }}</td>
+                        </tr>
+                        @endif
                         <tr>
                             <td><strong>Status Kelulusan</strong></td>
                             <td>
@@ -185,32 +219,17 @@
             </div>
             @endif
 
-            {{-- Jadwal Daftar Ulang (hanya untuk yang lulus) --}}
-            @if($kelulusan->status === 'lulus' && ($setting->tanggal_daftar_ulang_mulai || $setting->catatan_daftar_ulang))
-            <div class="jadwal-card mb-4">
-                <h4 class="mb-3"><i class="fas fa-calendar-check mr-2"></i>Jadwal Daftar Ulang</h4>
-                @if($setting->tanggal_daftar_ulang_mulai && $setting->tanggal_daftar_ulang_selesai)
-                <div class="d-flex align-items-center mb-3">
-                    <div class="text-center mr-4" style="background:rgba(255,255,255,0.2); padding:15px 20px; border-radius:10px;">
-                        <div style="font-size: 2rem; font-weight: 700;">
-                            {{ $setting->tanggal_daftar_ulang_mulai->format('d') }}
-                        </div>
-                        <div>{{ $setting->tanggal_daftar_ulang_mulai->format('M Y') }}</div>
-                    </div>
-                    <div class="mx-3"><i class="fas fa-arrow-right fa-2x" style="opacity:0.5;"></i></div>
-                    <div class="text-center" style="background:rgba(255,255,255,0.2); padding:15px 20px; border-radius:10px;">
-                        <div style="font-size: 2rem; font-weight: 700;">
-                            {{ $setting->tanggal_daftar_ulang_selesai->format('d') }}
-                        </div>
-                        <div>{{ $setting->tanggal_daftar_ulang_selesai->format('M Y') }}</div>
+            {{-- Info Penting (hanya untuk yang lulus) --}}
+            @if($kelulusan->status === 'lulus' && $setting->catatan_daftar_ulang)
+            <div class="card">
+                <div class="card-header bg-gradient-info">
+                    <h3 class="card-title text-white"><i class="fas fa-exclamation-circle mr-2"></i>INFO PENTING</h3>
+                </div>
+                <div class="card-body">
+                    <div class="info-penting-content">
+                        {!! $setting->catatan_daftar_ulang !!}
                     </div>
                 </div>
-                @endif
-                @if($setting->catatan_daftar_ulang)
-                <div style="background:rgba(255,255,255,0.15); padding:15px; border-radius:10px;">
-                    {!! nl2br(e($setting->catatan_daftar_ulang)) !!}
-                </div>
-                @endif
             </div>
             @endif
 

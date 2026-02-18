@@ -2,6 +2,10 @@
 
 @section('title', 'Pengaturan Kelulusan')
 
+@section('css')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.css">
+@endsection
+
 @section('content_header')
 <div class="row mb-2">
     <div class="col-sm-6">
@@ -122,28 +126,13 @@
             <div class="col-lg-6">
                 <div class="card card-info card-outline">
                     <div class="card-header">
-                        <h3 class="card-title"><i class="fas fa-calendar-check mr-2"></i>Jadwal Daftar Ulang</h3>
+                        <h3 class="card-title"><i class="fas fa-exclamation-circle mr-2"></i>Info Penting (Ditampilkan ke Pendaftar Lulus)</h3>
                     </div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Tanggal Mulai</label>
-                                    <input type="date" name="tanggal_daftar_ulang_mulai" class="form-control"
-                                           value="{{ old('tanggal_daftar_ulang_mulai', $setting->tanggal_daftar_ulang_mulai?->format('Y-m-d')) }}">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Tanggal Selesai</label>
-                                    <input type="date" name="tanggal_daftar_ulang_selesai" class="form-control"
-                                           value="{{ old('tanggal_daftar_ulang_selesai', $setting->tanggal_daftar_ulang_selesai?->format('Y-m-d')) }}">
-                                </div>
-                            </div>
-                        </div>
                         <div class="form-group">
-                            <label>Catatan Daftar Ulang</label>
-                            <textarea name="catatan_daftar_ulang" class="form-control" rows="3" placeholder="Informasi jadwal, lokasi, dll">{{ old('catatan_daftar_ulang', $setting->catatan_daftar_ulang) }}</textarea>
+                            <label>Konten Info Penting</label>
+                            <textarea name="catatan_daftar_ulang" id="infoPentingEditor" class="form-control">{{ old('catatan_daftar_ulang', $setting->catatan_daftar_ulang) }}</textarea>
+                            <small class="text-muted mt-1">Gunakan editor untuk menulis informasi penting seperti jadwal daftar ulang, lokasi, persyaratan, dll.</small>
                         </div>
                     </div>
                 </div>
@@ -212,8 +201,31 @@
 @endsection
 
 @section('js')
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.js"></script>
 <script>
 $(document).ready(function() {
+    // Summernote editor for Info Penting
+    $('#infoPentingEditor').summernote({
+        height: 250,
+        placeholder: 'Tulis informasi penting untuk pendaftar yang lulus...',
+        toolbar: [
+            ['style', ['style']],
+            ['font', ['bold', 'underline', 'italic', 'strikethrough', 'clear']],
+            ['fontname', ['fontname']],
+            ['fontsize', ['fontsize']],
+            ['color', ['color']],
+            ['para', ['ul', 'ol', 'paragraph']],
+            ['table', ['table']],
+            ['insert', ['link', 'hr']],
+            ['view', ['fullscreen', 'codeview', 'help']]
+        ],
+        callbacks: {
+            onInit: function() {
+                // Set default font
+                $(this).summernote('fontName', 'Arial');
+            }
+        }
+    });
     // Add dokumen
     $('#addDokumen').click(function() {
         var html = `<div class="input-group mb-2 dokumen-item">
