@@ -28,22 +28,39 @@ class NilaiCbtController extends Controller
             ->orderBy('nama', 'desc')
             ->get();
 
+        // Hitung progress per mapel
+        $komponenList = NilaiCbt::komponenList();
+        $totalPeserta = $data->count();
+        $mapelProgress = [];
+        foreach ($komponenList as $field => $label) {
+            $filled = $data->whereNotNull($field)->count();
+            $mapelProgress[$field] = [
+                'label' => $label,
+                'filled' => $filled,
+                'total' => $totalPeserta,
+                'percent' => $totalPeserta > 0 ? round($filled / $totalPeserta * 100) : 0,
+            ];
+        }
+
         return view('admin.nilai-cbt.index', compact(
             'data',
             'tahunAktif',
             'tahunPelajarans',
-            'selectedTahunId'
+            'selectedTahunId',
+            'mapelProgress'
         ));
     }
 
     /**
-     * Upload form
+     * Upload form - pilih mapel dulu
      */
-    public function upload()
+    public function upload(Request $request)
     {
         $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        $komponenList = NilaiCbt::komponenList();
+        $selectedMapel = $request->mapel;
 
-        return view('admin.nilai-cbt.upload', compact('tahunAktif'));
+        return view('admin.nilai-cbt.upload', compact('tahunAktif', 'komponenList', 'selectedMapel'));
     }
 
     /**
@@ -53,12 +70,17 @@ class NilaiCbtController extends Controller
     {
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls|max:10240',
+            'mapel' => 'required|in:nilai_mtk,nilai_ipa,nilai_ips,nilai_bahasa_inggris',
         ]);
 
         $tahunAktif = TahunPelajaran::where('is_active', true)->first();
         if (!$tahunAktif) {
             return back()->with('error', 'Tahun pelajaran aktif tidak ditemukan.');
         }
+
+        $mapel = $request->mapel;
+        $komponenList = NilaiCbt::komponenList();
+        $mapelLabel = $komponenList[$mapel] ?? $mapel;
 
         $file = $request->file('file');
         $token = Str::random(32);
@@ -71,7 +93,7 @@ class NilaiCbtController extends Controller
         $file->move($tempDir, $tempName);
         $tempPath = $tempDir . DIRECTORY_SEPARATOR . $tempName;
 
-        $importer = new NilaiCbtImport($tahunAktif->id);
+        $importer = new NilaiCbtImport($tahunAktif->id, $mapel);
         $preview = $importer->preview($tempPath);
 
         return view('admin.nilai-cbt.preview-upload', [
@@ -79,6 +101,8 @@ class NilaiCbtController extends Controller
             'token' => $token,
             'extension' => $file->getClientOriginalExtension(),
             'originalName' => $file->getClientOriginalName(),
+            'mapel' => $mapel,
+            'mapelLabel' => $mapelLabel,
         ]);
     }
 
@@ -89,11 +113,18 @@ class NilaiCbtController extends Controller
     {
         $token = $request->input('token');
         $ext = $request->input('extension', 'xlsx');
+        $mapel = $request->input('mapel');
         $tempPath = storage_path("app/temp/cbt_{$token}.{$ext}");
 
         if (!file_exists($tempPath)) {
             return redirect()->route('admin.nilai-cbt.upload')
                 ->with('error', 'File temporary tidak ditemukan. Silakan upload ulang.');
+        }
+
+        if (!$mapel || !in_array($mapel, array_keys(NilaiCbt::komponenList()))) {
+            @unlink($tempPath);
+            return redirect()->route('admin.nilai-cbt.upload')
+                ->with('error', 'Mapel tidak valid.');
         }
 
         $tahunAktif = TahunPelajaran::where('is_active', true)->first();
@@ -103,12 +134,15 @@ class NilaiCbtController extends Controller
                 ->with('error', 'Tahun pelajaran aktif tidak ditemukan.');
         }
 
-        $importer = new NilaiCbtImport($tahunAktif->id);
+        $komponenList = NilaiCbt::komponenList();
+        $mapelLabel = $komponenList[$mapel] ?? $mapel;
+
+        $importer = new NilaiCbtImport($tahunAktif->id, $mapel);
         $result = $importer->import($tempPath);
 
         @unlink($tempPath);
 
-        $message = "Import berhasil! {$result['imported']} baru, {$result['updated']} diupdate.";
+        $message = "Import {$mapelLabel} berhasil! {$result['imported']} baru, {$result['updated']} diupdate.";
         if ($result['skipped'] > 0) {
             $message .= " {$result['skipped']} dilewati.";
         }

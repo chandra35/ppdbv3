@@ -224,6 +224,56 @@ class NilaiSeleksiController extends Controller
             ->get()
             ->keyBy('calon_siswa_id');
 
+        // Load Rapor: rata-rata semua semester per calon_siswa_id
+        $raporData = \App\Models\NilaiRapor::selectRaw('calon_siswa_id, AVG(rata_rata) as avg_rapor')
+            ->whereIn('calon_siswa_id', $rekapData->pluck('calon_siswa_id'))
+            ->groupBy('calon_siswa_id')
+            ->pluck('avg_rapor', 'calon_siswa_id')
+            ->map(fn($v) => round((float) $v, 2));
+
+        // Load Sertifikat/Prestasi
+        $sertifikatData = \App\Models\CalonDokumen::whereIn('calon_siswa_id', $rekapData->pluck('calon_siswa_id'))
+            ->whereIn('jenis_dokumen', ['sertifikat_prestasi', 'piagam'])
+            ->where('status_verifikasi', '!=', 'rejected')
+            ->get()
+            ->groupBy('calon_siswa_id');
+
+        // Hitung nilai akhir: CBT 50% + Rapor 10% + Seleksi 40%
+        $rekapData->each(function ($nilai) use ($cbtData, $raporData) {
+            $cbt = $cbtData[$nilai->calon_siswa_id] ?? null;
+            $avgRapor = $raporData[$nilai->calon_siswa_id] ?? null;
+
+            $nilaiCbt = $cbt ? (float) $cbt->rata_rata : null;
+            $nilaiRapor = $avgRapor ? (float) $avgRapor : null;
+            $nilaiSeleksi = $nilai->total_nilai ? (float) $nilai->total_nilai : null;
+
+            // Hitung dengan bobot proporsional dari komponen yang tersedia
+            $totalBobot = 0;
+            $totalNilai = 0;
+
+            if ($nilaiCbt !== null) {
+                $totalNilai += $nilaiCbt * 50;
+                $totalBobot += 50;
+            }
+            if ($nilaiRapor !== null) {
+                $totalNilai += $nilaiRapor * 10;
+                $totalBobot += 10;
+            }
+            if ($nilaiSeleksi !== null) {
+                $totalNilai += $nilaiSeleksi * 40;
+                $totalBobot += 40;
+            }
+
+            $nilai->nilai_akhir = $totalBobot > 0 ? round($totalNilai / $totalBobot, 2) : 0;
+            $nilai->nilai_cbt_rata = $nilaiCbt;
+            $nilai->nilai_rapor_rata = $nilaiRapor;
+        });
+
+        // Sort by nilai_akhir desc, then minat desc
+        $rekapData = $rekapData->sortByDesc(function ($item) {
+            return [$item->nilai_akhir, (float) ($item->nilai_wawancara ?? 0)];
+        })->values();
+
         $tahunPelajarans = TahunPelajaran::orderBy('is_active', 'desc')
             ->orderBy('nama', 'desc')
             ->get();
@@ -235,6 +285,8 @@ class NilaiSeleksiController extends Controller
         return view('admin.nilai-seleksi.rekap', compact(
             'rekapData',
             'cbtData',
+            'raporData',
+            'sertifikatData',
             'tahunAktif',
             'tahunPelajarans',
             'jalurs'

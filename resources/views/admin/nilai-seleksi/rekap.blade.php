@@ -119,8 +119,8 @@
         <div class="col-lg-3 col-6">
             <div class="small-box bg-success">
                 <div class="inner">
-                    <h3>{{ $rekapData->count() > 0 ? number_format($rekapData->avg('total_nilai') ?? 0, 2) : '0.00' }}</h3>
-                    <p>Rata-rata Nilai</p>
+                    <h3>{{ $rekapData->count() > 0 ? number_format($rekapData->avg('nilai_akhir') ?? 0, 2) : '0.00' }}</h3>
+                    <p>Rata-rata Nilai Akhir</p>
                 </div>
                 <div class="icon"><i class="fas fa-chart-line"></i></div>
             </div>
@@ -128,8 +128,8 @@
         <div class="col-lg-3 col-6">
             <div class="small-box bg-warning">
                 <div class="inner">
-                    <h3>{{ $rekapData->count() > 0 ? number_format($rekapData->max('total_nilai') ?? 0, 2) : '0.00' }}</h3>
-                    <p>Nilai Tertinggi</p>
+                    <h3>{{ $rekapData->count() > 0 ? number_format($rekapData->max('nilai_akhir') ?? 0, 2) : '0.00' }}</h3>
+                    <p>Nilai Akhir Tertinggi</p>
                 </div>
                 <div class="icon"><i class="fas fa-arrow-up"></i></div>
             </div>
@@ -137,12 +137,21 @@
         <div class="col-lg-3 col-6">
             <div class="small-box bg-danger">
                 <div class="inner">
-                    <h3>{{ $rekapData->count() > 0 ? number_format($rekapData->min('total_nilai') ?? 0, 2) : '0.00' }}</h3>
-                    <p>Nilai Terendah</p>
+                    <h3>{{ $rekapData->count() > 0 ? number_format($rekapData->min('nilai_akhir') ?? 0, 2) : '0.00' }}</h3>
+                    <p>Nilai Akhir Terendah</p>
                 </div>
                 <div class="icon"><i class="fas fa-arrow-down"></i></div>
             </div>
         </div>
+    </div>
+
+    <!-- Keterangan Bobot -->
+    <div class="callout callout-info">
+        <h5><i class="fas fa-info-circle mr-1"></i> Formula Nilai Akhir</h5>
+        <p class="mb-0">
+            <strong>Nilai Akhir</strong> = (CBT × <strong>50%</strong>) + (Rapor × <strong>10%</strong>) + (Seleksi × <strong>40%</strong>)
+            &nbsp;|&nbsp; <em>Minat</em> sebagai tiebreaker &nbsp;|&nbsp; <em>Sertifikat</em> sebagai referensi tambahan
+        </p>
     </div>
 
     <!-- Data Table -->
@@ -151,17 +160,21 @@
             <h3 class="card-title"><i class="fas fa-table mr-2"></i>Data Rekap Nilai</h3>
         </div>
         <div class="card-body" style="overflow-x: auto;">
-            <table id="rekapTable" class="table table-bordered table-striped" style="font-size: 0.85rem;">
+            <table id="rekapTable" class="table table-bordered table-striped" style="font-size: 0.8rem;">
                 <thead>
                     <tr>
-                        <th class="text-center" width="50" rowspan="2">Rank</th>
+                        <th class="text-center" width="40" rowspan="2">Rank</th>
                         <th rowspan="2">No. Tes</th>
                         <th rowspan="2">Nama Peserta</th>
                         <th rowspan="2">Jalur</th>
-                        <th class="text-center" colspan="4" style="background: #e8f5e9;">Seleksi</th>
-                        <th class="text-center" colspan="4" style="background: #e3f2fd;">CBT</th>
-                        <th class="text-center" rowspan="2">Total Seleksi</th>
+                        <th class="text-center" colspan="4" style="background: #e8f5e9;">Seleksi (40%)</th>
+                        <th class="text-center" rowspan="2" style="background: #e8f5e9;">T. Seleksi</th>
+                        <th class="text-center" colspan="4" style="background: #e3f2fd;">CBT (50%)</th>
+                        <th class="text-center" rowspan="2" style="background: #e3f2fd;">Rata CBT</th>
+                        <th class="text-center" rowspan="2" style="background: #fff3e0;">Rapor (10%)</th>
+                        <th class="text-center" rowspan="2" style="background: #fce4ec;" title="Nilai Akhir = CBT×50% + Rapor×10% + Seleksi×40%">Nilai Akhir</th>
                         <th class="text-center" rowspan="2" title="Minat terhadap pilihan program (tiebreaker)">Minat</th>
+                        <th class="text-center" rowspan="2" title="Sertifikat/Piagam prestasi (referensi)">Sertifikat</th>
                         <th class="text-center" rowspan="2">Status</th>
                     </tr>
                     <tr>
@@ -177,7 +190,10 @@
                 </thead>
                 <tbody>
                     @foreach($rekapData as $index => $nilai)
-                        @php $cbt = $cbtData[$nilai->calon_siswa_id] ?? null; @endphp
+                        @php
+                            $cbt = $cbtData[$nilai->calon_siswa_id] ?? null;
+                            $sertifikats = $sertifikatData[$nilai->calon_siswa_id] ?? collect();
+                        @endphp
                         <tr>
                             <td class="text-center">
                                 @if($index < 3)
@@ -196,22 +212,61 @@
                                 @endif
                             </td>
                             <td>{{ $nilai->sesiUjian->jalur->nama ?? '-' }}</td>
+                            {{-- Seleksi --}}
                             <td class="text-center nilai-cell">{{ $nilai->nilai_baca_quran ?? '-' }}</td>
                             <td class="text-center nilai-cell">{{ $nilai->nilai_tulis_quran ?? '-' }}</td>
                             <td class="text-center nilai-cell">{{ $nilai->nilai_hafalan ?? '-' }}</td>
                             <td class="text-center">{{ $nilai->jumlah_juz_hafalan ?? '-' }}</td>
+                            <td class="text-center">
+                                <span class="badge badge-success" style="font-size: 0.85rem;">
+                                    {{ number_format($nilai->total_nilai, 2) }}
+                                </span>
+                            </td>
+                            {{-- CBT --}}
                             <td class="text-center">{{ $cbt ? $cbt->nilai_mtk : '-' }}</td>
                             <td class="text-center">{{ $cbt ? $cbt->nilai_ipa : '-' }}</td>
                             <td class="text-center">{{ $cbt ? $cbt->nilai_ips : '-' }}</td>
                             <td class="text-center">{{ $cbt ? $cbt->nilai_bahasa_inggris : '-' }}</td>
                             <td class="text-center">
-                                <span class="badge badge-primary" style="font-size: 1rem;">
-                                    {{ number_format($nilai->total_nilai, 2) }}
+                                @if($cbt)
+                                    <span class="badge badge-info" style="font-size: 0.85rem;">
+                                        {{ number_format($cbt->rata_rata, 2) }}
+                                    </span>
+                                @else
+                                    -
+                                @endif
+                            </td>
+                            {{-- Rapor --}}
+                            <td class="text-center">
+                                @if($nilai->nilai_rapor_rata !== null)
+                                    <span class="badge badge-warning" style="font-size: 0.85rem;">
+                                        {{ number_format($nilai->nilai_rapor_rata, 2) }}
+                                    </span>
+                                @else
+                                    -
+                                @endif
+                            </td>
+                            {{-- Nilai Akhir --}}
+                            <td class="text-center">
+                                <span class="badge badge-danger" style="font-size: 1rem; font-weight: bold;">
+                                    {{ number_format($nilai->nilai_akhir, 2) }}
                                 </span>
                             </td>
+                            {{-- Minat --}}
                             <td class="text-center">
                                 <span class="badge badge-info">{{ $nilai->nilai_wawancara ?? '-' }}</span>
                             </td>
+                            {{-- Sertifikat --}}
+                            <td class="text-center">
+                                @if($sertifikats->count() > 0)
+                                    <span class="badge badge-secondary" title="{{ $sertifikats->pluck('nama_dokumen')->join(', ') }}" style="cursor: help;">
+                                        {{ $sertifikats->count() }} <i class="fas fa-certificate"></i>
+                                    </span>
+                                @else
+                                    -
+                                @endif
+                            </td>
+                            {{-- Status --}}
                             <td class="text-center">
                                 @if($nilai->status == 'verified')
                                     <span class="badge badge-success">Verified</span>
@@ -264,7 +319,7 @@ $(document).ready(function() {
                 title: 'Rekap Nilai Seleksi PPDB'
             }
         ],
-        order: [[12, 'desc'], [13, 'desc']], // Sort by total seleksi desc, then minat desc
+        order: [[15, 'desc'], [16, 'desc']], // Sort by nilai akhir desc, then minat desc
         pageLength: 25,
         language: {
             url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json'

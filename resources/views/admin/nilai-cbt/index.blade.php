@@ -29,11 +29,6 @@
     <div class="card">
         <div class="card-header">
             <h3 class="card-title"><i class="fas fa-filter mr-2"></i>Filter</h3>
-            <div class="card-tools">
-                <a href="{{ route('admin.nilai-cbt.upload') }}" class="btn btn-primary btn-sm">
-                    <i class="fas fa-file-upload mr-1"></i> Upload Nilai CBT
-                </a>
-            </div>
         </div>
         <div class="card-body">
             <form method="GET" action="{{ route('admin.nilai-cbt.index') }}">
@@ -92,6 +87,68 @@
                 </div>
                 <div class="icon"><i class="fas fa-arrow-down"></i></div>
             </div>
+        </div>
+    </div>
+
+    <!-- Progress Import per Mapel -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Progress Import per Mapel</h3>
+            <div class="card-tools">
+                <a href="{{ route('admin.nilai-cbt.upload') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-file-upload mr-1"></i> Upload Nilai CBT
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            @if($data->isEmpty())
+                <p class="text-muted text-center mb-0">Belum ada data. Upload nilai per mapel untuk memulai.</p>
+            @else
+                <div class="row">
+                    @php
+                        $progressColors = [
+                            'nilai_mtk' => 'primary',
+                            'nilai_ipa' => 'success',
+                            'nilai_ips' => 'warning',
+                            'nilai_bahasa_inggris' => 'info',
+                        ];
+                        $progressIcons = [
+                            'nilai_mtk' => 'fa-calculator',
+                            'nilai_ipa' => 'fa-flask',
+                            'nilai_ips' => 'fa-globe-asia',
+                            'nilai_bahasa_inggris' => 'fa-language',
+                        ];
+                    @endphp
+                    @foreach($mapelProgress as $field => $mp)
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="info-box mb-0">
+                                <span class="info-box-icon bg-{{ $progressColors[$field] ?? 'secondary' }}">
+                                    <i class="fas {{ $progressIcons[$field] ?? 'fa-book' }}"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">{{ $mp['label'] }}</span>
+                                    <span class="info-box-number">{{ $mp['filled'] }} / {{ $mp['total'] }}</span>
+                                    <div class="progress progress-sm">
+                                        <div class="progress-bar bg-{{ $progressColors[$field] ?? 'secondary' }}"
+                                             style="width: {{ $mp['percent'] }}%"></div>
+                                    </div>
+                                    <span class="progress-description">
+                                        @if($mp['percent'] == 100)
+                                            <i class="fas fa-check-circle text-success"></i> Lengkap
+                                        @elseif($mp['percent'] > 0)
+                                            {{ $mp['percent'] }}% terisi
+                                        @else
+                                            <a href="{{ route('admin.nilai-cbt.upload', ['mapel' => $field]) }}" class="text-primary">
+                                                <i class="fas fa-upload"></i> Upload
+                                            </a>
+                                        @endif
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
         </div>
     </div>
 

@@ -9,7 +9,6 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class NilaiCbtImport
 {
-    protected array $results = [];
     protected int $imported = 0;
     protected int $updated = 0;
     protected int $skipped = 0;
@@ -17,21 +16,17 @@ class NilaiCbtImport
     protected array $previewRows = [];
     protected bool $previewMode = false;
     protected string $tahunPelajaranId;
+    protected string $mapelField;
+    protected string $mapelLabel;
 
     /**
-     * Kolom CBT - urutan di Excel
-     * Excel format: A=No, B=NISN, C=Nama, D=MTK, E=IPA, F=IPS, G=B.Inggris
+     * Format Excel per-mapel: A=Nama, B=NISN, C=Nilai
      */
-    protected array $fieldMap = [
-        ['field' => 'nilai_mtk', 'label' => 'Matematika'],
-        ['field' => 'nilai_ipa', 'label' => 'IPA Terpadu'],
-        ['field' => 'nilai_ips', 'label' => 'IPS Terpadu'],
-        ['field' => 'nilai_bahasa_inggris', 'label' => 'Bahasa Inggris'],
-    ];
-
-    public function __construct(string $tahunPelajaranId)
+    public function __construct(string $tahunPelajaranId, string $mapelField)
     {
         $this->tahunPelajaranId = $tahunPelajaranId;
+        $this->mapelField = $mapelField;
+        $this->mapelLabel = NilaiCbt::komponenList()[$mapelField] ?? $mapelField;
     }
 
     /**
@@ -45,7 +40,8 @@ class NilaiCbtImport
 
         return [
             'rows' => $this->previewRows,
-            'field_map' => $this->fieldMap,
+            'mapel_field' => $this->mapelField,
+            'mapel_label' => $this->mapelLabel,
             'summary' => [
                 'total' => count($this->previewRows),
                 'valid' => collect($this->previewRows)->where('status', 'valid')->count(),
@@ -76,6 +72,7 @@ class NilaiCbtImport
 
     /**
      * Process Excel file
+     * Format: A=Nama, B=NISN, C=Nilai
      */
     protected function processFile(string $filePath): void
     {
@@ -83,29 +80,30 @@ class NilaiCbtImport
         $sheet = $spreadsheet->getActiveSheet();
         $highestRow = $sheet->getHighestRow();
 
-        // Find data start row
+        // Find data start row - cari baris pertama yang kolom B berisi NISN (angka panjang)
         $dataStartRow = null;
         for ($row = 1; $row <= min($highestRow, 20); $row++) {
-            $cellA = $sheet->getCell("A{$row}")->getValue();
-            $cellB = $sheet->getCell("B{$row}")->getValue();
-            if (is_numeric($cellA) && !empty($cellB)) {
+            $cellA = trim((string) $sheet->getCell("A{$row}")->getValue());
+            $cellB = trim((string) $sheet->getCell("B{$row}")->getValue());
+
+            // Data row: A=nama (non-empty text), B=NISN (numeric string)
+            if (!empty($cellA) && !empty($cellB) && is_numeric($cellB) && strlen($cellB) >= 6) {
                 $dataStartRow = $row;
                 break;
             }
         }
 
         if (!$dataStartRow) {
-            $this->errors[] = 'Tidak ditemukan data peserta. Pastikan kolom A=No, B=NISN, C=Nama, D-G=Nilai.';
+            $this->errors[] = 'Tidak ditemukan data peserta. Pastikan format: Kolom A=Nama, B=NISN, C=Nilai.';
             return;
         }
 
         $user = Auth::user();
-        $nilaiStartCol = 3; // Column D (0-indexed: A=0, B=1, C=2, D=3)
 
         for ($row = $dataStartRow; $row <= $highestRow; $row++) {
-            $nomorUrut = $sheet->getCell("A{$row}")->getValue();
+            $namaLengkap = trim((string) $sheet->getCell("A{$row}")->getValue());
             $nisn = trim((string) $sheet->getCell("B{$row}")->getValue());
-            $namaLengkap = trim((string) $sheet->getCell("C{$row}")->getValue());
+            $cellValue = $sheet->getCell("C{$row}")->getValue();
 
             // Stop if no more data
             if (empty($nisn) && empty($namaLengkap)) {
@@ -116,12 +114,16 @@ class NilaiCbtImport
             if ($this->previewMode) {
                 $previewRow = [
                     'baris' => $row,
+                    'nama_excel' => $namaLengkap,
                     'nisn' => $nisn,
                     'nama_lengkap' => $namaLengkap,
+                    'nomor_tes' => null,
+                    'nilai_raw' => $cellValue,
+                    'nilai_parsed' => null,
+                    'cell_type' => 'valid',
                     'status' => 'valid',
                     'action' => 'baru',
                     'issues' => [],
-                    'nilai_raw' => [],
                 ];
             }
 
@@ -143,78 +145,57 @@ class NilaiCbtImport
                 $this->skipped++;
                 if ($this->previewMode) {
                     $previewRow['status'] = 'error';
-                    $previewRow['issues'][] = "NISN '{$nisn}' tidak ditemukan di database";
+                    $previewRow['issues'][] = "NISN '{$nisn}' tidak terdaftar";
                     $this->previewRows[] = $previewRow;
                 }
                 continue;
             }
 
             if ($this->previewMode) {
-                $previewRow['nama_lengkap'] = $calonSiswa->nama_lengkap; // Use DB name
+                $previewRow['nama_lengkap'] = $calonSiswa->nama_lengkap;
                 $previewRow['nomor_tes'] = $calonSiswa->nomor_tes;
             }
 
-            // Read nilai from columns
-            $nilaiData = [];
-            $hasAnyValue = false;
-            $hasWarning = false;
+            // Parse nilai
+            $parsedVal = null;
+            $cellType = 'empty';
 
-            foreach ($this->fieldMap as $colOffset => $mapping) {
-                $colIndex = $nilaiStartCol + $colOffset;
-                $colLetter = chr(65 + $colIndex); // A=65
-                $cellValue = $sheet->getCell("{$colLetter}{$row}")->getValue();
-                $rawValue = $cellValue;
-
-                if ($cellValue === null || $cellValue === '') {
-                    $nilaiData[$mapping['field']] = null;
+            if ($cellValue === null || $cellValue === '') {
+                $cellType = 'empty';
+            } elseif (is_numeric($cellValue)) {
+                $parsedVal = round((float) $cellValue, 2);
+                if ($parsedVal < 0 || $parsedVal > 100) {
+                    $originalVal = $parsedVal;
+                    $parsedVal = max(0, min(100, $parsedVal));
+                    $cellType = 'warning';
                     if ($this->previewMode) {
-                        $previewRow['nilai_raw'][] = ['field' => $mapping['field'], 'raw' => '', 'parsed' => null, 'type' => 'empty'];
+                        $previewRow['issues'][] = "Nilai {$originalVal} di luar 0-100, di-cap menjadi {$parsedVal}";
                     }
-                } elseif (is_numeric($cellValue)) {
-                    $parsedVal = round((float) $cellValue, 2);
-                    if ($parsedVal < 0 || $parsedVal > 100) {
-                        $originalVal = $parsedVal;
-                        $parsedVal = max(0, min(100, $parsedVal));
-                        $hasWarning = true;
-                        if ($this->previewMode) {
-                            $previewRow['issues'][] = "{$mapping['label']}: nilai {$originalVal} di luar rentang 0-100, di-cap menjadi {$parsedVal}";
-                            $previewRow['nilai_raw'][] = ['field' => $mapping['field'], 'raw' => $rawValue, 'parsed' => $parsedVal, 'type' => 'warning'];
-                        }
-                    } else {
-                        if ($this->previewMode) {
-                            $previewRow['nilai_raw'][] = ['field' => $mapping['field'], 'raw' => $rawValue, 'parsed' => $parsedVal, 'type' => 'valid'];
-                        }
-                    }
-                    $nilaiData[$mapping['field']] = $parsedVal;
-                    $hasAnyValue = true;
                 } else {
-                    // Try extract number from text
-                    $extracted = $this->extractNumber($cellValue);
-                    if ($extracted !== null) {
-                        $parsedVal = max(0, min(100, round($extracted, 2)));
-                        $nilaiData[$mapping['field']] = $parsedVal;
-                        $hasAnyValue = true;
-                        $hasWarning = true;
-                        if ($this->previewMode) {
-                            $previewRow['issues'][] = "{$mapping['label']}: \"{$rawValue}\" → diambil angka {$parsedVal}";
-                            $previewRow['nilai_raw'][] = ['field' => $mapping['field'], 'raw' => $rawValue, 'parsed' => $parsedVal, 'type' => 'extracted'];
-                        }
-                    } else {
-                        $nilaiData[$mapping['field']] = null;
-                        $hasWarning = true;
-                        if ($this->previewMode) {
-                            $previewRow['issues'][] = "{$mapping['label']}: \"{$rawValue}\" tidak mengandung angka";
-                            $previewRow['nilai_raw'][] = ['field' => $mapping['field'], 'raw' => $rawValue, 'parsed' => null, 'type' => 'invalid'];
-                        }
+                    $cellType = 'valid';
+                }
+            } else {
+                $extracted = $this->extractNumber($cellValue);
+                if ($extracted !== null) {
+                    $parsedVal = max(0, min(100, round($extracted, 2)));
+                    $cellType = 'extracted';
+                    if ($this->previewMode) {
+                        $previewRow['issues'][] = "\"{$cellValue}\" → diambil angka {$parsedVal}";
+                    }
+                } else {
+                    $cellType = 'invalid';
+                    if ($this->previewMode) {
+                        $previewRow['issues'][] = "\"{$cellValue}\" tidak mengandung angka";
                     }
                 }
             }
 
-            if (!$hasAnyValue) {
+            if ($parsedVal === null) {
                 $this->skipped++;
                 if ($this->previewMode) {
-                    $previewRow['status'] = 'skip';
-                    $previewRow['issues'][] = 'Tidak ada nilai yang terisi';
+                    $previewRow['status'] = $cellType === 'empty' ? 'skip' : 'error';
+                    $previewRow['cell_type'] = $cellType;
+                    $previewRow['issues'][] = $cellType === 'empty' ? 'Nilai kosong' : 'Tidak bisa diambil nilainya';
                     $this->previewRows[] = $previewRow;
                 }
                 continue;
@@ -229,8 +210,15 @@ class NilaiCbtImport
 
             if ($this->previewMode) {
                 $previewRow['action'] = $isNew ? 'baru' : 'update';
-                if ($hasWarning) {
+                $previewRow['nilai_parsed'] = $parsedVal;
+                $previewRow['cell_type'] = $cellType;
+                if ($cellType === 'warning' || $cellType === 'extracted') {
                     $previewRow['status'] = 'warning';
+                }
+                // Jika update, tampilkan nilai lama
+                if (!$isNew && $nilaiCbt->{$this->mapelField} !== null) {
+                    $previewRow['nilai_lama'] = (float) $nilaiCbt->{$this->mapelField};
+                    $previewRow['issues'][] = "Nilai lama: {$previewRow['nilai_lama']} → {$parsedVal}";
                 }
                 $this->previewRows[] = $previewRow;
             } else {
@@ -241,7 +229,7 @@ class NilaiCbtImport
                 ]);
 
                 $nilaiCbt->uploaded_by = $user->id;
-                $nilaiCbt->fill($nilaiData);
+                $nilaiCbt->{$this->mapelField} = $parsedVal;
                 $nilaiCbt->calculateTotal();
                 $nilaiCbt->save();
 
