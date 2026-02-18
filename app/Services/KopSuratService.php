@@ -260,22 +260,22 @@ class KopSuratService
      */
     private function renderTextElement($content)
     {
-        $fontSize = $content['fontSize'] ?? 12;
+        $defaultFontSize = $content['fontSize'] ?? 12;
         $align = $content['align'] ?? 'center';
         $bold = $content['bold'] ?? true;
         $fontWeight = $bold ? 'bold' : 'normal';
 
         $html = '';
-        $style = "text-align: {$align}; font-size: {$fontSize}pt; font-weight: {$fontWeight}; margin: 1px 0; padding: 0; line-height: 1.2;";
 
-        if (!empty($content['line1'])) {
-            $html .= '<div style="' . $style . '">' . htmlspecialchars($content['line1']) . '</div>';
-        }
-        if (!empty($content['line2'])) {
-            $html .= '<div style="' . $style . '">' . htmlspecialchars($content['line2']) . '</div>';
-        }
-        if (!empty($content['line3'])) {
-            $html .= '<div style="' . $style . '">' . htmlspecialchars($content['line3']) . '</div>';
+        $lines = ['line1', 'line2', 'line3'];
+        foreach ($lines as $i => $lineKey) {
+            if (!empty($content[$lineKey])) {
+                // Support per-line font size: fontSize1, fontSize2, fontSize3
+                $sizeKey = 'fontSize' . ($i + 1);
+                $fontSize = $content[$sizeKey] ?? $defaultFontSize;
+                $style = "text-align: {$align}; font-size: {$fontSize}pt; font-weight: {$fontWeight}; margin: 1px 0; padding: 0; line-height: 1.2;";
+                $html .= '<div style="' . $style . '">' . htmlspecialchars($content[$lineKey]) . '</div>';
+            }
         }
 
         return $html;
