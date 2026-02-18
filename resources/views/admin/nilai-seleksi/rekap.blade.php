@@ -77,7 +77,7 @@
                             </select>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="form-group">
                             <label>Status Nilai</label>
                             <select name="status" class="form-control">
@@ -87,7 +87,17 @@
                             </select>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Jenis Tes</label>
+                            <select name="jenis_tes" class="form-control">
+                                <option value="">-- Semua --</option>
+                                <option value="wawancara" {{ request('jenis_tes') == 'wawancara' ? 'selected' : '' }}>Wawancara</option>
+                                <option value="cbt" {{ request('jenis_tes') == 'cbt' ? 'selected' : '' }}>CBT</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
                         <div class="form-group">
                             <label>&nbsp;</label>
                             <div>
@@ -244,7 +254,9 @@
                     <tr>
                         <th class="text-center" width="40" rowspan="2">Rank</th>
                         <th rowspan="2">No. Tes</th>
+                        <th rowspan="2">NISN</th>
                         <th rowspan="2">Nama Peserta</th>
+                        <th rowspan="2">JK</th>
                         <th rowspan="2">Jalur</th>
                         <th rowspan="2" title="Minat/Pilihan Program">Pilihan</th>
                         <th class="text-center" colspan="4" style="background: #e8f5e9;">Seleksi (40%)</th>
@@ -254,6 +266,7 @@
                         <th class="text-center" rowspan="2" style="background: #fff3e0;">Rapor (10%)</th>
                         <th class="text-center" rowspan="2" style="background: #fce4ec;" title="Nilai Akhir = CBT×50% + Rapor×10% + Seleksi×40%">Nilai Akhir</th>
                         <th class="text-center" rowspan="2" title="Minat terhadap pilihan program (tiebreaker)">Minat</th>
+                        <th class="text-center" rowspan="2" title="Hafalan Juz (rekomendasi)">Rekomendasi</th>
                         <th class="text-center" rowspan="2" title="Sertifikat/Piagam prestasi (referensi)">Sertifikat</th>
                         <th class="text-center" rowspan="2">Status</th>
                     </tr>
@@ -283,12 +296,13 @@
                                 @endif
                             </td>
                             <td>{{ $nilai->calonSiswa->nomor_tes ?? '-' }}</td>
-                            <td>
-                                <strong>{{ $nilai->calonSiswa->nama_lengkap ?? '-' }}</strong>
+                            <td><code>{{ $nilai->calonSiswa->nisn ?? '-' }}</code></td>
+                            <td><strong>{{ $nilai->calonSiswa->nama_lengkap ?? '-' }}</strong></td>
+                            <td class="text-center">
                                 @if($nilai->calonSiswa->jenis_kelamin == 'L')
-                                    <i class="fas fa-mars text-primary"></i>
+                                    <span class="text-primary"><i class="fas fa-mars"></i> L</span>
                                 @else
-                                    <i class="fas fa-venus text-danger"></i>
+                                    <span class="text-danger"><i class="fas fa-venus"></i> P</span>
                                 @endif
                             </td>
                             <td>{{ $nilai->sesiUjian->jalur->nama ?? '-' }}</td>
@@ -345,6 +359,18 @@
                             {{-- Minat --}}
                             <td class="text-center">
                                 <span class="badge badge-info">{{ $nilai->nilai_wawancara ?? '-' }}</span>
+                            </td>
+                            {{-- Rekomendasi (Hafalan Juz) --}}
+                            <td class="text-center">
+                                @if($nilai->jumlah_juz_hafalan && $nilai->jumlah_juz_hafalan >= 10)
+                                    <span class="badge badge-success" title="Hafalan {{ $nilai->jumlah_juz_hafalan }} Juz">{{ $nilai->jumlah_juz_hafalan }} Juz <i class="fas fa-star"></i></span>
+                                @elseif($nilai->jumlah_juz_hafalan && $nilai->jumlah_juz_hafalan >= 5)
+                                    <span class="badge badge-primary" title="Hafalan {{ $nilai->jumlah_juz_hafalan }} Juz">{{ $nilai->jumlah_juz_hafalan }} Juz</span>
+                                @elseif($nilai->jumlah_juz_hafalan)
+                                    <span class="badge badge-secondary" title="Hafalan {{ $nilai->jumlah_juz_hafalan }} Juz">{{ $nilai->jumlah_juz_hafalan }} Juz</span>
+                                @else
+                                    -
+                                @endif
                             </td>
                             {{-- Sertifikat --}}
                             <td class="text-center">
@@ -409,7 +435,7 @@ $(document).ready(function() {
                 title: 'Rekap Nilai Seleksi PPDB'
             }
         ],
-        order: [[16, 'desc'], [17, 'desc']], // Sort by nilai akhir desc, then minat desc
+        order: [[18, 'desc'], [19, 'desc']], // Sort by nilai akhir desc, then minat desc
         pageLength: 25,
         language: {
             url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json'

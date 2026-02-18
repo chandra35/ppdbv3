@@ -214,10 +214,24 @@ class NilaiSeleksiController extends Controller
         if ($request->status) {
             $query->where('status', $request->status);
         }
+
+        // Filter by jenis tes
+        $jenisTes = $request->jenis_tes;
         
         $rekapData = $query->orderBy('total_nilai', 'desc')
             ->orderBy('nilai_wawancara', 'desc') // Minat sebagai tiebreaker
             ->get();
+
+        // Filter berdasarkan jenis tes setelah load
+        if ($jenisTes === 'wawancara') {
+            // Hanya yang punya nilai seleksi/wawancara
+            $rekapData = $rekapData->filter(fn($n) => $n->total_nilai > 0)->values();
+        } elseif ($jenisTes === 'cbt') {
+            // Hanya yang punya data CBT
+            $cbtCalonIds = \App\Models\NilaiCbt::where('tahun_pelajaran_id', $selectedTahunId)
+                ->pluck('calon_siswa_id');
+            $rekapData = $rekapData->filter(fn($n) => $cbtCalonIds->contains($n->calon_siswa_id))->values();
+        }
 
         // Load CBT data indexed by calon_siswa_id
         $cbtData = \App\Models\NilaiCbt::where('tahun_pelajaran_id', $selectedTahunId)
