@@ -50,18 +50,21 @@
         .data-tbl {
             width: 100%;
             border-collapse: collapse;
-            margin: 2px 0 4px 10px;
+            margin: 2px 0 4px 8px;
+            table-layout: fixed;
         }
         .data-tbl td {
             padding: 1.5px 3px;
-            font-size: 11pt;
+            font-size: 10.5pt;
             vertical-align: top;
             border: none;
             line-height: 1.4;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
-        .col-no  { width: 22px; text-align: right; padding-right: 6px !important; }
-        .col-lbl { width: 190px; }
-        .col-sep { width: 12px; text-align: center; }
+        .col-no  { width: 20px; text-align: right; padding-right: 5px !important; }
+        .col-lbl { width: 170px; }
+        .col-sep { width: 10px; text-align: center; }
         .col-val { }
 
         /* ── Menyatakan ── */
@@ -77,20 +80,23 @@
         .pernyataan-tbl {
             width: 100%;
             border-collapse: collapse;
-            margin: 0 0 8px 0;
+            margin: 0 0 6px 0;
+            table-layout: fixed;
         }
         .pernyataan-tbl td {
-            padding: 2px 3px;
-            font-size: 11pt;
+            padding: 1.5px 3px;
+            font-size: 10.5pt;
             vertical-align: top;
             border: none;
             line-height: 1.4;
             text-align: justify;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
         .pernyataan-tbl td:first-child {
-            width: 22px;
+            width: 20px;
             text-align: right;
-            padding-right: 6px;
+            padding-right: 5px;
         }
 
         /* ── Penutup ── */
@@ -207,7 +213,7 @@
             <td class="col-no">3.</td>
             <td class="col-lbl">Tempat, Tanggal Lahir</td>
             <td class="col-sep">:</td>
-            <td class="col-val">{{ $calonSiswa->tempat_lahir ?? '-' }}, {{ $calonSiswa->tanggal_lahir ? $calonSiswa->tanggal_lahir->translatedFormat('d F Y') : '-' }}</td>
+            <td class="col-val">{{ $calonSiswa->tempat_lahir ?? '-' }}, {{ $calonSiswa->tanggal_lahir ? $calonSiswa->tanggal_lahir->locale('id')->isoFormat('D MMMM Y') : '-' }}</td>
         </tr>
         <tr>
             <td class="col-no">4.</td>
@@ -270,7 +276,7 @@
                 Mengetahui,<br>Kepala Madrasah / Sekolah
             </td>
             <td width="50%">
-                {{ $kota }}, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}<br>
+                {{ $kota }}, {{ \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y') }}<br>
                 Yang membuat pernyataan,<br>Orang Tua / Wali
             </td>
         </tr>
