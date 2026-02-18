@@ -6,7 +6,7 @@
     <style>
         @page {
             size: A4;
-            margin: 18mm 25mm 15mm 25mm;
+            margin: 18mm 30mm 15mm 30mm;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -54,7 +54,7 @@
             line-height: 1.3;
         }
 
-        .data-tbl { margin: 2px 0 3px 5px; }
+        .data-tbl { margin: 2px 0 3px 0; }
         .data-tbl td { padding: 1px 2px; }
 
         .pernyataan-tbl { margin: 0 0 5px 0; }
