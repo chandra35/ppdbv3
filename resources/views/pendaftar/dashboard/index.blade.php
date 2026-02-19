@@ -453,43 +453,30 @@
             </div>
 
         @else
-            {{-- Belum ada status kelulusan, tapi pengumuman aktif → tampilkan jadwal info --}}
+            {{-- Belum ada status kelulusan, tapi pengumuman aktif --}}
             @php $kSetting = $kelulusanData['setting']; @endphp
-            @if($kSetting->tanggal_daftar_ulang_mulai || $kSetting->tanggal_daftar_ulang_selesai)
-            <div class="kelulusan-jadwal-banner mb-3">
-                <div class="d-flex align-items-center" style="position: relative; z-index: 1;">
-                    <div class="mr-3">
-                        <div style="width: 50px; height: 50px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                            <i class="fas fa-calendar-check" style="font-size: 1.4rem;"></i>
+            <div class="card" style="border: 2px solid #6c757d; border-radius: 16px; overflow: hidden;">
+                <div class="card-body p-4">
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <span class="bg-secondary rounded-circle d-inline-flex align-items-center justify-content-center" 
+                                  style="width: 80px; height: 80px;">
+                                <i class="fas fa-user-slash fa-2x text-white"></i>
+                            </span>
                         </div>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h6 class="mb-1 font-weight-bold">
-                            <i class="fas fa-bullhorn mr-1"></i> Info Kelulusan PPDB
-                        </h6>
-                        <p class="mb-0" style="font-size: 0.9rem; opacity: 0.95;">
-                            Pengumuman kelulusan sudah tersedia! Silakan cek halaman 
-                            <a href="{{ route('pendaftar.kelulusan') }}" class="text-white font-weight-bold" style="text-decoration: underline;">
-                                Info Kelulusan
-                            </a>
-                            untuk melihat hasil seleksi Anda.
+                        <h5 class="font-weight-bold text-secondary">
+                            <i class="fas fa-info-circle mr-1"></i> Tidak Termasuk Dalam Pengumuman
+                        </h5>
+                        <p class="text-muted mb-3">
+                            Anda tidak terdaftar dalam pengumuman hasil seleksi PPDB.<br>
+                            Hal ini bisa terjadi karena tidak mengikuti tes atau tidak melengkapi persyaratan.
                         </p>
-                        @if($kSetting->tanggal_daftar_ulang_mulai && $kSetting->tanggal_daftar_ulang_selesai)
-                        <small style="opacity: 0.8;">
-                            <i class="fas fa-clock mr-1"></i> Jadwal Daftar Ulang: 
-                            {{ \Carbon\Carbon::parse($kSetting->tanggal_daftar_ulang_mulai)->format('d M Y') }} - 
-                            {{ \Carbon\Carbon::parse($kSetting->tanggal_daftar_ulang_selesai)->format('d M Y') }}
-                        </small>
-                        @endif
-                    </div>
-                    <div class="ml-3 d-none d-md-block">
-                        <a href="{{ route('pendaftar.kelulusan') }}" class="btn btn-light btn-sm px-3" style="border-radius: 20px;">
-                            <i class="fas fa-arrow-right mr-1"></i> Cek Sekarang
-                        </a>
+                        <p class="text-muted mb-0" style="font-size: 0.85rem;">
+                            <i class="fas fa-phone-alt mr-1"></i> Silakan hubungi panitia PPDB untuk informasi lebih lanjut.
+                        </p>
                     </div>
                 </div>
             </div>
-            @endif
         @endif
     </div>
 </div>

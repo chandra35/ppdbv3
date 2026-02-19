@@ -723,6 +723,7 @@ class DashboardController extends Controller
         $kelulusanSetting = \App\Models\KelulusanSetting::getActive();
         $sembunyikanAdmisi = false;
         $pengumumanBelumWaktunya = false;
+        $tidakAdaKelulusan = false;
         if ($calonSiswa->kelulusan && $kelulusanSetting) {
             if ($kelulusanSetting->isPengumumanAktif()) {
                 // Pengumuman sudah aktif, cek apakah amplop sudah dibuka
@@ -736,9 +737,14 @@ class DashboardController extends Controller
                 $sembunyikanAdmisi = true;
                 $pengumumanBelumWaktunya = true;
             }
+        } elseif (!$calonSiswa->kelulusan && $kelulusanSetting && $kelulusanSetting->isPengumumanAktif()) {
+            // Pengumuman aktif tapi pendaftar tidak punya record kelulusan
+            // (tidak mengikuti tes / dianggap mundur)
+            $tidakAdaKelulusan = true;
+            $sembunyikanAdmisi = true;
         }
 
-        return view('pendaftar.dashboard.status', compact('calonSiswa', 'sembunyikanAdmisi', 'pengumumanBelumWaktunya'));
+        return view('pendaftar.dashboard.status', compact('calonSiswa', 'sembunyikanAdmisi', 'pengumumanBelumWaktunya', 'tidakAdaKelulusan'));
     }
 
     /**

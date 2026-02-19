@@ -294,16 +294,20 @@
             @endif
 
         @else
-            {{-- Belum ada data kelulusan --}}
+            {{-- Tidak ada data kelulusan → pendaftar tidak mengikuti seleksi --}}
             <div class="kelulusan-hero belum">
                 <div class="kelulusan-icon">
-                    <i class="fas fa-hourglass-half fa-4x"></i>
+                    <i class="fas fa-user-slash fa-4x"></i>
                 </div>
                 <div class="kelulusan-status-text mb-3" style="font-size: 1.8rem;">
-                    MENUNGGU PENGUMUMAN
+                    TIDAK TERMASUK DALAM PENGUMUMAN
                 </div>
                 <p style="font-size: 1.1rem; opacity: 0.9;">
-                    Hasil kelulusan belum tersedia. Mohon periksa secara berkala.
+                    Anda tidak terdaftar dalam pengumuman hasil seleksi PPDB.<br>
+                    Hal ini bisa terjadi karena tidak mengikuti tes atau tidak melengkapi persyaratan.
+                </p>
+                <p style="font-size: 0.95rem; opacity: 0.8;">
+                    <i class="fas fa-phone-alt mr-1"></i> Silakan hubungi panitia PPDB untuk informasi lebih lanjut.
                 </p>
             </div>
         @endif
