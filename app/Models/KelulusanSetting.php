@@ -21,6 +21,7 @@ class KelulusanSetting extends Model
         'nama_grup_wa',
         'dokumen_persyaratan',
         'template_surat_pernyataan',
+        'file_konsider',
         'tampilkan_pengumuman',
         'tanggal_pengumuman',
         'tampilkan_link_wa',

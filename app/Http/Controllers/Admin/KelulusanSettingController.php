@@ -8,6 +8,7 @@ use App\Models\KelulusanSetting;
 use App\Models\EnvelopeOpenLog;
 use App\Models\TahunPelajaran;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class KelulusanSettingController extends Controller
 {
@@ -56,6 +57,7 @@ class KelulusanSettingController extends Controller
             'dokumen_persyaratan' => 'nullable|array',
             'dokumen_persyaratan.*' => 'nullable|string|max:255',
             'template_surat_pernyataan' => 'nullable|string',
+            'file_konsider' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
             'tanggal_pengumuman' => 'nullable|date',
             'tanggal_daftar_ulang_mulai' => 'nullable|date',
             'tanggal_daftar_ulang_selesai' => 'nullable|date|after_or_equal:tanggal_daftar_ulang_mulai',
@@ -67,6 +69,22 @@ class KelulusanSettingController extends Controller
         // Filter out empty dokumen_persyaratan entries
         $dokumen = $request->dokumen_persyaratan ? array_values(array_filter($request->dokumen_persyaratan)) : [];
 
+        // Handle file konsider upload
+        $fileKonsider = $setting->file_konsider;
+        if ($request->hasFile('file_konsider')) {
+            // Hapus file lama jika ada
+            if ($setting->file_konsider) {
+                Storage::disk('public')->delete($setting->file_konsider);
+            }
+            $fileKonsider = $request->file('file_konsider')->store('kelulusan/konsider', 'public');
+        }
+        if ($request->has('hapus_file_konsider') && $request->hapus_file_konsider) {
+            if ($setting->file_konsider) {
+                Storage::disk('public')->delete($setting->file_konsider);
+            }
+            $fileKonsider = null;
+        }
+
         $setting->update([
             'judul_pengumuman' => $request->judul_pengumuman,
             'pesan_lulus' => $request->pesan_lulus,
@@ -75,6 +93,7 @@ class KelulusanSettingController extends Controller
             'nama_grup_wa' => $request->nama_grup_wa,
             'dokumen_persyaratan' => $dokumen,
             'template_surat_pernyataan' => $request->template_surat_pernyataan,
+            'file_konsider' => $fileKonsider,
             'tampilkan_pengumuman' => $request->has('tampilkan_pengumuman'),
             'tanggal_pengumuman' => $request->tanggal_pengumuman,
             'tampilkan_link_wa' => $request->has('tampilkan_link_wa'),

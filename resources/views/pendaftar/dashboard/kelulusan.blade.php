@@ -291,6 +291,27 @@
                     </button>
                 </div>
             </div>
+
+            {{-- Lampiran File Konsider --}}
+            @if($setting->file_konsider)
+            <div class="card">
+                <div class="card-header bg-gradient-purple">
+                    <h3 class="card-title"><i class="fas fa-file-download mr-2"></i>Lampiran Konsider</h3>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-file-alt fa-3x text-purple"></i>
+                    </div>
+                    <p class="text-muted mb-3">
+                        Download lampiran file konsider.<br>
+                        <strong>Harap dibaca dan dipahami dengan baik.</strong>
+                    </p>
+                    <a href="{{ route('pendaftar.kelulusan.download-konsider') }}" class="btn btn-lg text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <i class="fas fa-download mr-2"></i>Download Lampiran Konsider
+                    </a>
+                </div>
+            </div>
+            @endif
             @endif
 
         @else

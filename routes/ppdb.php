@@ -129,6 +129,7 @@ Route::middleware(['auth'])->prefix('pendaftar')->name('pendaftar.')->group(func
     Route::post('/kelulusan/envelope-opened', [PendaftarDashboardController::class, 'markEnvelopeOpened'])->name('kelulusan.envelope-opened');
     Route::get('/kelulusan/surat-pernyataan', [PendaftarDashboardController::class, 'cetakSuratPernyataan'])->name('kelulusan.surat-pernyataan');
     Route::get('/kelulusan/surat-pernyataan-siswa', [PendaftarDashboardController::class, 'cetakSuratPernyataanSiswa'])->name('kelulusan.surat-pernyataan-siswa');
+    Route::get('/kelulusan/download-konsider', [PendaftarDashboardController::class, 'downloadKonsider'])->name('kelulusan.download-konsider');
 });
 
 // ============================================

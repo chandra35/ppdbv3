@@ -2147,4 +2147,36 @@ class DashboardController extends Controller
 
         return $pdf->stream($filename);
     }
+
+    /**
+     * Download file lampiran Konsider
+     */
+    public function downloadKonsider()
+    {
+        $user = Auth::user();
+        $calonSiswa = CalonSiswa::where('user_id', $user->id)
+            ->with('kelulusan')
+            ->first();
+
+        if (!$calonSiswa || !$calonSiswa->kelulusan || $calonSiswa->kelulusan->status !== 'lulus') {
+            return redirect()->route('pendaftar.kelulusan')
+                ->with('error', 'File konsider hanya tersedia untuk peserta yang dinyatakan lulus.');
+        }
+
+        $setting = \App\Models\KelulusanSetting::where('tahun_pelajaran_id', $calonSiswa->tahun_pelajaran_id)->first();
+
+        if (!$setting || !$setting->file_konsider) {
+            return redirect()->route('pendaftar.kelulusan')
+                ->with('error', 'File konsider tidak tersedia.');
+        }
+
+        $filePath = storage_path('app/public/' . $setting->file_konsider);
+
+        if (!file_exists($filePath)) {
+            return redirect()->route('pendaftar.kelulusan')
+                ->with('error', 'File konsider tidak ditemukan.');
+        }
+
+        return response()->download($filePath, 'Lampiran Konsider.' . pathinfo($filePath, PATHINFO_EXTENSION));
+    }
 }

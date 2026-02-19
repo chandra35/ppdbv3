@@ -67,7 +67,7 @@
         </div>
     </div>
 
-    <form action="{{ route('admin.kelulusan.setting.update') }}" method="POST">
+    <form action="{{ route('admin.kelulusan.setting.update') }}" method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
 
@@ -218,6 +218,40 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- File Lampiran Konsider --}}
+                <div class="card card-purple card-outline">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-file-download mr-2"></i>Lampiran File Konsider</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label><i class="fas fa-upload mr-1"></i>Upload File Konsider</label>
+                            <div class="custom-file">
+                                <input type="file" name="file_konsider" class="custom-file-input" id="fileKonsider" accept=".pdf,.doc,.docx">
+                                <label class="custom-file-label" for="fileKonsider" data-browse="Pilih File">Pilih file...</label>
+                            </div>
+                            <small class="text-muted mt-1 d-block">Format: PDF, DOC, DOCX. Maksimal 10MB. File ini akan bisa didownload oleh pendaftar yang lulus.</small>
+                        </div>
+                        @if($setting->file_konsider)
+                        <div class="alert alert-info py-2 d-flex align-items-center justify-content-between">
+                            <div>
+                                <i class="fas fa-file-pdf text-danger mr-2"></i>
+                                <strong>File saat ini:</strong> {{ basename($setting->file_konsider) }}
+                            </div>
+                            <div>
+                                <a href="{{ asset('storage/' . $setting->file_konsider) }}" target="_blank" class="btn btn-sm btn-info mr-1">
+                                    <i class="fas fa-eye mr-1"></i>Lihat
+                                </a>
+                                <label class="btn btn-sm btn-danger mb-0">
+                                    <input type="checkbox" name="hapus_file_konsider" value="1" class="d-none" onchange="if(this.checked && !confirm('Yakin hapus file konsider?')) this.checked=false;">
+                                    <i class="fas fa-trash mr-1"></i>Hapus
+                                </label>
+                            </div>
+                        </div>
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -288,6 +322,12 @@ $(document).ready(function() {
     }
     toggleTanggalPengumuman();
     $('#tampilkanPengumuman').on('change', toggleTanggalPengumuman);
+
+    // Custom file input label
+    $('#fileKonsider').on('change', function() {
+        var fileName = $(this).val().split('\\\\').pop();
+        $(this).next('.custom-file-label').text(fileName || 'Pilih file...');
+    });
 });
 </script>
 @stop
