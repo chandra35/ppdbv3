@@ -177,8 +177,7 @@ class KelulusanSettingController extends Controller
         }
 
         $query = EnvelopeOpenLog::with(['calonSiswa.jalurPendaftaran', 'calonSiswa.kelulusan'])
-            ->where('tahun_pelajaran_id', $tahunAktif->id)
-            ->orderBy('opened_at', 'desc');
+            ->where('tahun_pelajaran_id', $tahunAktif->id);
 
         // Filter pencarian
         if ($request->search) {
@@ -188,6 +187,26 @@ class KelulusanSettingController extends Controller
                   ->orWhere('nisn', 'like', "%{$search}%")
                   ->orWhere('nomor_registrasi', 'like', "%{$search}%");
             });
+        }
+
+        // Sorting
+        $sortBy = $request->input('sort', 'opened_at');
+        $sortDir = $request->input('dir', 'desc');
+        $allowedSorts = ['opened_at', 'ip_address', 'location_name', 'created_at'];
+        $allowedRelationSorts = ['nama_lengkap', 'nisn', 'nomor_registrasi'];
+
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $sortDir === 'asc' ? 'asc' : 'desc');
+        } elseif (in_array($sortBy, $allowedRelationSorts)) {
+            // Sort by related calon_siswa columns via subquery
+            $query->orderBy(
+                \App\Models\CalonSiswa::select($sortBy)
+                    ->whereColumn('calon_siswas.id', 'envelope_open_logs.calon_siswa_id')
+                    ->limit(1),
+                $sortDir === 'asc' ? 'asc' : 'desc'
+            );
+        } else {
+            $query->orderBy('opened_at', 'desc');
         }
 
         $logs = $query->paginate(25)->withQueryString();

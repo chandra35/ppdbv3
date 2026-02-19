@@ -17,6 +17,26 @@
 </div>
 @endsection
 
+@php
+    $currentSort = request('sort', 'opened_at');
+    $currentDir  = request('dir', 'desc');
+
+    $sortUrl = function($column) {
+        $dir = (request('sort') === $column && request('dir', 'desc') === 'asc') ? 'desc' : 'asc';
+        return request()->fullUrlWithQuery(['sort' => $column, 'dir' => $dir, 'page' => 1]);
+    };
+
+    $sortIcon = function($column) {
+        if (request('sort') !== $column && !($column === 'opened_at' && !request('sort'))) {
+            return '<i class="fas fa-sort text-muted ml-1"></i>';
+        }
+        $dir = request('dir', 'desc');
+        return $dir === 'asc'
+            ? '<i class="fas fa-sort-up text-primary ml-1"></i>'
+            : '<i class="fas fa-sort-down text-primary ml-1"></i>';
+    };
+@endphp
+
 @section('content')
 <div class="container-fluid">
 
@@ -77,13 +97,38 @@
                     <thead class="thead-light">
                         <tr>
                             <th width="40">#</th>
-                            <th>Nama Pendaftar</th>
-                            <th>NISN</th>
-                            <th>No. Registrasi</th>
+                            <th>
+                                <a href="{{ $sortUrl('nama_lengkap') }}" class="text-dark text-decoration-none">
+                                    Nama Pendaftar {!! $sortIcon('nama_lengkap') !!}
+                                </a>
+                            </th>
+                            <th>
+                                <a href="{{ $sortUrl('nisn') }}" class="text-dark text-decoration-none">
+                                    NISN {!! $sortIcon('nisn') !!}
+                                </a>
+                            </th>
+                            <th>
+                                <a href="{{ $sortUrl('nomor_registrasi') }}" class="text-dark text-decoration-none">
+                                    No. Registrasi {!! $sortIcon('nomor_registrasi') !!}
+                                </a>
+                            </th>
                             <th>Jalur</th>
                             <th>Status Kelulusan</th>
-                            <th>Waktu Buka</th>
-                            <th>IP Address</th>
+                            <th>
+                                <a href="{{ $sortUrl('opened_at') }}" class="text-dark text-decoration-none">
+                                    Waktu Buka {!! $sortIcon('opened_at') !!}
+                                </a>
+                            </th>
+                            <th>
+                                <a href="{{ $sortUrl('ip_address') }}" class="text-dark text-decoration-none">
+                                    IP Address {!! $sortIcon('ip_address') !!}
+                                </a>
+                            </th>
+                            <th>
+                                <a href="{{ $sortUrl('location_name') }}" class="text-dark text-decoration-none">
+                                    Lokasi {!! $sortIcon('location_name') !!}
+                                </a>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -122,10 +167,24 @@
                             <td>
                                 <small class="text-muted" title="{{ $log->user_agent }}">{{ $log->ip_address }}</small>
                             </td>
+                            <td>
+                                @if($log->latitude && $log->longitude)
+                                    <a href="https://www.google.com/maps?q={{ $log->latitude }},{{ $log->longitude }}" target="_blank" title="Buka di Google Maps" class="text-primary">
+                                        <i class="fas fa-map-marker-alt mr-1"></i>
+                                        @if($log->location_name)
+                                            {{ $log->location_name }}
+                                        @else
+                                            {{ number_format($log->latitude, 4) }}, {{ number_format($log->longitude, 4) }}
+                                        @endif
+                                    </a>
+                                @else
+                                    <small class="text-muted">-</small>
+                                @endif
+                            </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="8" class="text-center py-4 text-muted">
+                            <td colspan="9" class="text-center py-4 text-muted">
                                 <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
                                 Belum ada pendaftar yang membuka amplop
                             </td>
@@ -150,3 +209,15 @@
     </div>
 </div>
 @endsection
+
+@push('css')
+<style>
+    .table thead th a {
+        white-space: nowrap;
+    }
+    .table thead th a:hover {
+        text-decoration: none !important;
+        color: #007bff !important;
+    }
+</style>
+@endpush

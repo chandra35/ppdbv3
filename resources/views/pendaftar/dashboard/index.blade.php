@@ -1081,14 +1081,36 @@ function openEnvelope() {
     container.classList.add('opened');
     hint.style.display = 'none';
 
-    // Mark envelope as opened in session (AJAX)
-    fetch('{{ route("pendaftar.kelulusan.envelope-opened") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        }
-    });
+    // Collect location data then send AJAX
+    function sendEnvelopeLog(locationData) {
+        fetch('{{ route("pendaftar.kelulusan.envelope-opened") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify(locationData || {})
+        });
+    }
+
+    // Try to get geolocation
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                sendEnvelopeLog({
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                });
+            },
+            function() {
+                // Permission denied or error, send without location
+                sendEnvelopeLog({});
+            },
+            { timeout: 5000, maximumAge: 300000 }
+        );
+    } else {
+        sendEnvelopeLog({});
+    }
 
     // Show sparkles from envelope
     createSparkles(container);

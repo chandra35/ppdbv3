@@ -1950,7 +1950,7 @@ class DashboardController extends Controller
 
         if ($calonSiswa) {
             // Log ke database (hanya sekali per pendaftar per tahun pelajaran)
-            EnvelopeOpenLog::firstOrCreate(
+            $log = EnvelopeOpenLog::firstOrCreate(
                 [
                     'calon_siswa_id' => $calonSiswa->id,
                     'tahun_pelajaran_id' => $calonSiswa->tahun_pelajaran_id,
@@ -1959,9 +1959,21 @@ class DashboardController extends Controller
                     'user_id' => $user->id,
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->userAgent(),
+                    'latitude' => $request->input('latitude'),
+                    'longitude' => $request->input('longitude'),
+                    'location_name' => $request->input('location_name'),
                     'opened_at' => now(),
                 ]
             );
+
+            // Update lokasi jika belum ada dan sekarang dikirim
+            if ($log->wasRecentlyCreated === false && !$log->latitude && $request->input('latitude')) {
+                $log->update([
+                    'latitude' => $request->input('latitude'),
+                    'longitude' => $request->input('longitude'),
+                    'location_name' => $request->input('location_name'),
+                ]);
+            }
         }
 
         session(['kelulusan_envelope_opened' => true]);

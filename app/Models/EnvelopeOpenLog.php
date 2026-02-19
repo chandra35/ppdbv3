@@ -18,6 +18,9 @@ class EnvelopeOpenLog extends Model
         'tahun_pelajaran_id',
         'ip_address',
         'user_agent',
+        'latitude',
+        'longitude',
+        'location_name',
         'opened_at',
     ];
 
