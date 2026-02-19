@@ -219,37 +219,62 @@
                     </div>
                 </div>
 
-                {{-- File Lampiran Konsider --}}
-                <div class="card card-purple card-outline">
+                {{-- File Lampiran Konsider (AJAX Upload) --}}
+                <div class="card card-purple card-outline" id="konsiderCard">
                     <div class="card-header">
                         <h3 class="card-title"><i class="fas fa-file-download mr-2"></i>Lampiran File Konsider</h3>
                     </div>
                     <div class="card-body">
-                        <div class="form-group">
-                            <label><i class="fas fa-upload mr-1"></i>Upload File Konsider</label>
-                            <div class="custom-file">
-                                <input type="file" name="file_konsider" class="custom-file-input" id="fileKonsider" accept=".pdf,.doc,.docx">
-                                <label class="custom-file-label" for="fileKonsider" data-browse="Pilih File">Pilih file...</label>
+                        {{-- Drop Zone --}}
+                        <div id="konsiderDropZone" class="border border-dashed rounded p-4 text-center mb-3" style="border-color: #6f42c1 !important; cursor: pointer; transition: all 0.3s; background: #faf8ff;">
+                            <div id="konsiderDropContent">
+                                <i class="fas fa-cloud-upload-alt fa-3x text-purple mb-2"></i>
+                                <p class="mb-1 font-weight-bold">Drag & drop file di sini</p>
+                                <p class="text-muted mb-2"><small>atau klik untuk memilih file</small></p>
+                                <span class="badge badge-light"><i class="fas fa-info-circle mr-1"></i>PDF, DOC, DOCX — Maks. 10MB</span>
                             </div>
-                            <small class="text-muted mt-1 d-block">Format: PDF, DOC, DOCX. Maksimal 10MB. File ini akan bisa didownload oleh pendaftar yang lulus.</small>
+                            <input type="file" id="fileKonsider" accept=".pdf,.doc,.docx" class="d-none">
                         </div>
-                        @if($setting->file_konsider)
-                        <div class="alert alert-info py-2 d-flex align-items-center justify-content-between">
-                            <div>
-                                <i class="fas fa-file-pdf text-danger mr-2"></i>
-                                <strong>File saat ini:</strong> {{ basename($setting->file_konsider) }}
+
+                        {{-- Progress Bar --}}
+                        <div id="konsiderProgress" class="mb-3" style="display: none;">
+                            <div class="d-flex justify-content-between mb-1">
+                                <small class="font-weight-bold" id="konsiderProgressLabel">Mengupload...</small>
+                                <small id="konsiderProgressPercent">0%</small>
                             </div>
-                            <div>
-                                <a href="{{ asset('storage/' . $setting->file_konsider) }}" target="_blank" class="btn btn-sm btn-info mr-1">
-                                    <i class="fas fa-eye mr-1"></i>Lihat
-                                </a>
-                                <label class="btn btn-sm btn-danger mb-0">
-                                    <input type="checkbox" name="hapus_file_konsider" value="1" class="d-none" onchange="if(this.checked && !confirm('Yakin hapus file konsider?')) this.checked=false;">
-                                    <i class="fas fa-trash mr-1"></i>Hapus
-                                </label>
+                            <div class="progress" style="height: 8px; border-radius: 4px;">
+                                <div id="konsiderProgressBar" class="progress-bar bg-purple progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%; transition: width 0.2s;"></div>
+                            </div>
+                            <small class="text-muted" id="konsiderProgressInfo"></small>
+                        </div>
+
+                        {{-- Upload Result / Current File --}}
+                        <div id="konsiderFileInfo" style="{{ $setting->file_konsider ? '' : 'display: none;' }}">
+                            <div class="alert mb-0 py-2 px-3" style="background: linear-gradient(135deg, #f0e6ff 0%, #e8f4fd 100%); border: 1px solid #d4b5ff; border-radius: 8px;">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <div class="mr-3" style="width: 40px; height: 40px; border-radius: 8px; background: linear-gradient(135deg, #6f42c1, #764ba2); display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-file-alt text-white"></i>
+                                        </div>
+                                        <div>
+                                            <strong id="konsiderFileName">{{ $setting->file_konsider ? basename($setting->file_konsider) : '' }}</strong>
+                                            <br><small class="text-muted" id="konsiderFileSize">File tersimpan</small>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <a href="{{ $setting->file_konsider ? asset('storage/' . $setting->file_konsider) : '#' }}" target="_blank" class="btn btn-sm btn-info mr-1" id="konsiderViewBtn">
+                                            <i class="fas fa-eye mr-1"></i>Lihat
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-danger" id="konsiderDeleteBtn">
+                                            <i class="fas fa-trash mr-1"></i>Hapus
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        @endif
+
+                        {{-- Feedback Alert --}}
+                        <div id="konsiderAlert" class="mt-2" style="display: none;"></div>
                     </div>
                 </div>
             </div>
@@ -323,10 +348,172 @@ $(document).ready(function() {
     toggleTanggalPengumuman();
     $('#tampilkanPengumuman').on('change', toggleTanggalPengumuman);
 
-    // Custom file input label
-    $('#fileKonsider').on('change', function() {
-        var fileName = $(this).val().split('\\\\').pop();
-        $(this).next('.custom-file-label').text(fileName || 'Pilih file...');
+    // ============================================
+    // AJAX Upload File Konsider with Progress
+    // ============================================
+    var dropZone = document.getElementById('konsiderDropZone');
+    var fileInput = document.getElementById('fileKonsider');
+
+    // Click to select file
+    dropZone.addEventListener('click', function() {
+        fileInput.click();
+    });
+
+    // Drag & Drop events
+    ['dragenter', 'dragover'].forEach(function(evt) {
+        dropZone.addEventListener(evt, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.style.background = '#ede0ff';
+            dropZone.style.borderColor = '#6f42c1';
+        });
+    });
+    ['dragleave', 'drop'].forEach(function(evt) {
+        dropZone.addEventListener(evt, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.style.background = '#faf8ff';
+        });
+    });
+    dropZone.addEventListener('drop', function(e) {
+        var files = e.dataTransfer.files;
+        if (files.length > 0) uploadKonsider(files[0]);
+    });
+
+    // File input change
+    fileInput.addEventListener('change', function() {
+        if (this.files.length > 0) uploadKonsider(this.files[0]);
+    });
+
+    function showKonsiderAlert(type, message) {
+        var icons = { success: 'check-circle', danger: 'exclamation-triangle', warning: 'exclamation-circle', info: 'info-circle' };
+        var alertHtml = '<div class="alert alert-' + type + ' alert-dismissible fade show py-2 mb-0" style="border-radius: 8px;">' +
+            '<i class="fas fa-' + (icons[type] || 'info-circle') + ' mr-2"></i>' + message +
+            '<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button></div>';
+        $('#konsiderAlert').html(alertHtml).show();
+        setTimeout(function() { $('#konsiderAlert .alert').alert('close'); }, 6000);
+    }
+
+    function formatBytes(bytes) {
+        if (bytes >= 1048576) return (bytes / 1048576).toFixed(2) + ' MB';
+        if (bytes >= 1024) return (bytes / 1024).toFixed(2) + ' KB';
+        return bytes + ' bytes';
+    }
+
+    function uploadKonsider(file) {
+        // Validate client-side
+        var allowed = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+        if (allowed.indexOf(file.type) === -1) {
+            showKonsiderAlert('danger', 'Format file tidak valid! Hanya PDF, DOC, DOCX yang diperbolehkan.');
+            return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            showKonsiderAlert('danger', 'Ukuran file terlalu besar! Maksimal 10MB. File Anda: ' + formatBytes(file.size));
+            return;
+        }
+
+        var formData = new FormData();
+        formData.append('file_konsider', file);
+        formData.append('_token', '{{ csrf_token() }}');
+
+        // Show progress
+        $('#konsiderProgress').show();
+        $('#konsiderProgressBar').css('width', '0%').removeClass('bg-success bg-danger').addClass('bg-purple progress-bar-striped progress-bar-animated');
+        $('#konsiderProgressPercent').text('0%');
+        $('#konsiderProgressLabel').text('Mengupload: ' + file.name);
+        $('#konsiderProgressInfo').text('0 / ' + formatBytes(file.size));
+        $('#konsiderAlert').hide();
+        dropZone.style.pointerEvents = 'none';
+        dropZone.style.opacity = '0.5';
+
+        $.ajax({
+            url: '{{ route("admin.kelulusan.setting.upload-konsider") }}',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            xhr: function() {
+                var xhr = new window.XMLHttpRequest();
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        var pct = Math.round((e.loaded / e.total) * 100);
+                        $('#konsiderProgressBar').css('width', pct + '%');
+                        $('#konsiderProgressPercent').text(pct + '%');
+                        $('#konsiderProgressInfo').text(formatBytes(e.loaded) + ' / ' + formatBytes(e.total));
+                    }
+                });
+                return xhr;
+            },
+            success: function(res) {
+                // Complete progress
+                $('#konsiderProgressBar').css('width', '100%').removeClass('progress-bar-striped progress-bar-animated bg-purple').addClass('bg-success');
+                $('#konsiderProgressLabel').text('Upload selesai!');
+                $('#konsiderProgressPercent').text('100%');
+
+                setTimeout(function() {
+                    $('#konsiderProgress').slideUp(300);
+                }, 1500);
+
+                // Update file info
+                $('#konsiderFileName').text(res.filename);
+                $('#konsiderFileSize').text(res.filesize);
+                $('#konsiderViewBtn').attr('href', res.view_url);
+                $('#konsiderFileInfo').slideDown(300);
+
+                showKonsiderAlert('success', '<strong>Berhasil!</strong> File "' + res.filename + '" (' + res.filesize + ') berhasil diupload.');
+
+                // Reset
+                dropZone.style.pointerEvents = '';
+                dropZone.style.opacity = '';
+                fileInput.value = '';
+            },
+            error: function(xhr) {
+                $('#konsiderProgressBar').css('width', '100%').removeClass('progress-bar-striped progress-bar-animated bg-purple').addClass('bg-danger');
+                $('#konsiderProgressLabel').text('Upload gagal!');
+
+                setTimeout(function() {
+                    $('#konsiderProgress').slideUp(300);
+                }, 2000);
+
+                var msg = 'Terjadi kesalahan saat upload.';
+                if (xhr.responseJSON) {
+                    if (xhr.responseJSON.errors && xhr.responseJSON.errors.file_konsider) {
+                        msg = xhr.responseJSON.errors.file_konsider[0];
+                    } else if (xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                }
+                showKonsiderAlert('danger', '<strong>Gagal!</strong> ' + msg);
+
+                dropZone.style.pointerEvents = '';
+                dropZone.style.opacity = '';
+                fileInput.value = '';
+            }
+        });
+    }
+
+    // Delete file konsider via AJAX
+    $(document).on('click', '#konsiderDeleteBtn', function() {
+        if (!confirm('Yakin ingin menghapus file konsider?')) return;
+
+        var btn = $(this);
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Menghapus...');
+
+        $.ajax({
+            url: '{{ route("admin.kelulusan.setting.delete-konsider") }}',
+            type: 'DELETE',
+            data: { _token: '{{ csrf_token() }}' },
+            success: function(res) {
+                $('#konsiderFileInfo').slideUp(300);
+                showKonsiderAlert('success', '<strong>Berhasil!</strong> File konsider telah dihapus.');
+                btn.prop('disabled', false).html('<i class="fas fa-trash mr-1"></i>Hapus');
+            },
+            error: function(xhr) {
+                var msg = xhr.responseJSON ? xhr.responseJSON.message : 'Gagal menghapus file.';
+                showKonsiderAlert('danger', '<strong>Gagal!</strong> ' + msg);
+                btn.prop('disabled', false).html('<i class="fas fa-trash mr-1"></i>Hapus');
+            }
+        });
     });
 });
 </script>

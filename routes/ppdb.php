@@ -392,6 +392,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/batalkan', [KelulusanController::class, 'batalkan'])->name('batalkan');
         Route::get('/setting', [KelulusanSettingController::class, 'index'])->name('setting');
         Route::put('/setting', [KelulusanSettingController::class, 'update'])->name('setting.update');
+        Route::post('/setting/upload-konsider', [KelulusanSettingController::class, 'uploadKonsider'])->name('setting.upload-konsider');
+        Route::delete('/setting/delete-konsider', [KelulusanSettingController::class, 'deleteKonsider'])->name('setting.delete-konsider');
         Route::get('/envelope-logs', [KelulusanSettingController::class, 'envelopeLogs'])->name('envelope-logs');
     });
 
