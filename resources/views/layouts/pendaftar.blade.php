@@ -180,6 +180,11 @@
     @yield('css')
 </head>
 <body class="hold-transition sidebar-mini layout-fixed">
+@php
+    $calonSiswaForPhoto = \App\Models\CalonSiswa::where('user_id', auth()->id())->first();
+    $fotoProfile = $calonSiswaForPhoto ? $calonSiswaForPhoto->dokumen()->where('jenis_dokumen', 'foto')->first() : null;
+    $fotoProfileUrl = $fotoProfile ? asset('storage/' . $fotoProfile->file_path) : null;
+@endphp
 <div class="wrapper">
 
     <!-- Navbar -->
@@ -201,7 +206,16 @@
         <ul class="navbar-nav ml-auto">
             <li class="nav-item dropdown">
                 <a class="nav-link" data-toggle="dropdown" href="#">
-                    <i class="far fa-user"></i> {{ Auth::user()->name }}
+                    @if($fotoProfileUrl)
+                        <img src="{{ $fotoProfileUrl }}" 
+                             class="img-circle" alt="" 
+                             style="width: 22px; height: 22px; object-fit: cover; margin-top: -2px;"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+                        <i class="far fa-user" style="display: none;"></i>
+                    @else
+                        <i class="far fa-user"></i>
+                    @endif
+                    {{ Auth::user()->name }}
                 </a>
                 <div class="dropdown-menu dropdown-menu-right">
                     <a href="{{ route('pendaftar.dashboard') }}" class="dropdown-item">
@@ -232,11 +246,6 @@
 
         <!-- Sidebar -->
         <div class="sidebar">
-            @php
-                $calonSiswaForPhoto = \App\Models\CalonSiswa::where('user_id', auth()->id())->first();
-                $fotoProfile = $calonSiswaForPhoto ? $calonSiswaForPhoto->dokumen()->where('jenis_dokumen', 'foto')->first() : null;
-                $fotoProfileUrl = $fotoProfile ? asset('storage/' . $fotoProfile->file_path) : null;
-            @endphp
             <!-- Sidebar user panel -->
             <div class="user-panel mt-3 pb-3 mb-3 d-flex">
                 <div class="image">

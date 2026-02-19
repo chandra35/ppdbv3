@@ -37,6 +37,11 @@
     </style>
 </head>
 <body class="hold-transition sidebar-mini layout-fixed">
+@php
+    $calonSiswaProfile = Auth::user()->calonSiswa;
+    $fotoProfileAlt = $calonSiswaProfile ? $calonSiswaProfile->dokumen()->where('jenis_dokumen', 'foto')->first() : null;
+    $fotoProfileAltUrl = $fotoProfileAlt ? asset('storage/' . $fotoProfileAlt->file_path) : null;
+@endphp
 <div class="wrapper">
 
     <!-- Navbar -->
@@ -56,7 +61,15 @@
             <!-- User Menu -->
             <li class="nav-item dropdown">
                 <a class="nav-link" data-toggle="dropdown" href="#">
-                    <i class="far fa-user"></i>
+                    @if($fotoProfileAltUrl)
+                        <img src="{{ $fotoProfileAltUrl }}" 
+                             class="img-circle" alt="" 
+                             style="width: 22px; height: 22px; object-fit: cover; margin-top: -2px;"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+                        <i class="far fa-user" style="display: none;"></i>
+                    @else
+                        <i class="far fa-user"></i>
+                    @endif
                     <span class="d-none d-md-inline ml-1">{{ Auth::user()->name }}</span>
                 </a>
                 <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
@@ -89,11 +102,6 @@
 
         <!-- Sidebar -->
         <div class="sidebar">
-            @php
-                $calonSiswaProfile = Auth::user()->calonSiswa;
-                $fotoProfileAlt = $calonSiswaProfile ? $calonSiswaProfile->dokumen()->where('jenis_dokumen', 'foto')->first() : null;
-                $fotoProfileAltUrl = $fotoProfileAlt ? asset('storage/' . $fotoProfileAlt->file_path) : null;
-            @endphp
             <!-- Sidebar user panel -->
             <div class="user-panel mt-3 pb-3 mb-3 d-flex">
                 <div class="image">
