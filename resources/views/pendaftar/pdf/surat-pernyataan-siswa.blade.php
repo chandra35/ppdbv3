@@ -238,9 +238,9 @@
             <td width="50%">{{ $kota }}, {{ \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y') }}<br>Yang membuat pernyataan,</td>
         </tr>
         <tr>
-            <td style="height: 55px;"></td>
-            <td style="height: 55px; position: relative;">
-                <div style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); font-size: 9pt; font-style: italic; color: #666;">Materai Rp 10.000</div>
+            <td style="height: 75px;"></td>
+            <td style="height: 75px; position: relative;">
+                <div style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); font-size: 9pt; font-style: italic; color: #666;">Materai Rp 10.000</div>
             </td>
         </tr>
         <tr>
