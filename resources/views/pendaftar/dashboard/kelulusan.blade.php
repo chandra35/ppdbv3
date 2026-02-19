@@ -267,7 +267,7 @@
                         Download dan cetak surat pernyataan orang tua/wali.<br>
                         <strong>Wajib dibawa saat rapat wali dan daftar ulang.</strong>
                     </p>
-                    <button type="button" class="btn btn-danger btn-lg" onclick="previewPDF('{{ route('pendaftar.kelulusan.surat-pernyataan') }}', 'Surat Pernyataan Ortu {{ $calonSiswa->nama_lengkap }}')">
+                    <button type="button" class="btn btn-danger btn-lg" onclick="previewPDF('{{ route('pendaftar.kelulusan.surat-pernyataan') }}', 'Surat Pernyataan Ortu ' + {{ Js::from($calonSiswa->nama_lengkap) }})">
                         <i class="fas fa-eye mr-2"></i>Lihat & Download Surat Pernyataan
                     </button>
                 </div>
@@ -286,7 +286,7 @@
                         Download dan cetak surat pernyataan peserta didik baru.<br>
                         <strong>Wajib ditempel materai Rp 10.000 dan dibawa saat daftar ulang.</strong>
                     </p>
-                    <button type="button" class="btn btn-primary btn-lg" onclick="previewPDF('{{ route('pendaftar.kelulusan.surat-pernyataan-siswa') }}', 'Surat Pernyataan Siswa {{ $calonSiswa->nama_lengkap }}')">
+                    <button type="button" class="btn btn-primary btn-lg" onclick="previewPDF('{{ route('pendaftar.kelulusan.surat-pernyataan-siswa') }}', 'Surat Pernyataan Siswa ' + {{ Js::from($calonSiswa->nama_lengkap) }})">
                         <i class="fas fa-eye mr-2"></i>Lihat & Download Surat Pernyataan Siswa
                     </button>
                 </div>
