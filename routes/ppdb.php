@@ -64,9 +64,11 @@ Route::prefix('pendaftar')->name('pendaftar.')->group(function () {
     Route::get('/login', [PendaftarAuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [PendaftarAuthController::class, 'login'])->name('login.post');
     
-    // Forgot Password (via WhatsApp)
+    // Forgot Password (via Email)
     Route::get('/forgot-password', [\App\Http\Controllers\Ppdb\ForgotPasswordController::class, 'showForm'])->name('forgot-password');
     Route::post('/forgot-password', [\App\Http\Controllers\Ppdb\ForgotPasswordController::class, 'sendReset'])->name('forgot-password.send');
+    Route::get('/reset-password/{token}', [\App\Http\Controllers\Ppdb\ForgotPasswordController::class, 'showResetForm'])->name('reset-password');
+    Route::post('/reset-password', [\App\Http\Controllers\Ppdb\ForgotPasswordController::class, 'resetPassword'])->name('reset-password.post');
 });
 
 // Dashboard Pendaftar (Auth Required)

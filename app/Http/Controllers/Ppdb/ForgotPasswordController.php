@@ -4,12 +4,17 @@ namespace App\Http\Controllers\Ppdb;
 
 use App\Http\Controllers\Controller;
 use App\Models\CalonSiswa;
-use App\Models\PengaturanWa;
+use App\Models\EmailLog;
+use App\Models\PengaturanEmail;
 use App\Models\PpdbSettings;
-use App\Services\WhatsAppService;
+use App\Mail\PasswordResetNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class ForgotPasswordController extends Controller
 {
@@ -19,131 +24,188 @@ class ForgotPasswordController extends Controller
     public function showForm()
     {
         $settings = PpdbSettings::getActive();
-        $waSettings = PengaturanWa::first();
-        $waActive = $waSettings && $waSettings->is_active && $waSettings->api_key;
+        $emailActive = PengaturanEmail::isActive();
         
-        return view('ppdb.forgot-password', compact('settings', 'waActive'));
+        return view('ppdb.forgot-password', compact('settings', 'emailActive'));
     }
 
     /**
-     * Process forgot password request
+     * Process forgot password - send reset link via email
      */
     public function sendReset(Request $request)
     {
         $request->validate([
-            'nisn' => 'required|string|max:20',
+            'email' => 'required|email|max:255',
         ], [
-            'nisn.required' => 'NISN wajib diisi',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
         ]);
 
-        // Check if WhatsApp service is active
-        $waService = new WhatsAppService();
-        if (!$waService->isActive()) {
-            return back()->with('error', 'Layanan reset password via WhatsApp tidak tersedia saat ini. Silakan hubungi admin.');
-        }
+        // Find user by email
+        $user = \App\Models\User::where('email', $request->email)->first();
 
-        // Find calon siswa by NISN
-        $calonSiswa = CalonSiswa::where('nisn', $request->nisn)->first();
-
-        if (!$calonSiswa) {
-            return back()
-                ->withInput()
-                ->with('error', 'NISN tidak ditemukan dalam sistem.');
-        }
-
-        // Check if has phone number
-        $phone = $calonSiswa->nomor_hp ?? $calonSiswa->ortu?->hp_ayah ?? $calonSiswa->ortu?->hp_ibu ?? $calonSiswa->ortu?->hp_wali;
-        
-        if (!$phone) {
-            return back()
-                ->withInput()
-                ->with('error', 'Nomor WhatsApp tidak ditemukan. Silakan hubungi admin untuk reset password.');
-        }
-
-        // Check if user exists
-        $user = $calonSiswa->user;
         if (!$user) {
-            return back()
-                ->withInput()
-                ->with('error', 'Akun tidak ditemukan. Silakan hubungi admin.');
+            // Security: don't reveal if email exists
+            return back()->with('success', 'Jika email terdaftar dalam sistem, kami telah mengirimkan link reset password. Silakan cek inbox atau folder spam Anda.');
         }
 
-        // Generate new password
-        $newPassword = $this->generateSecurePassword(8);
+        // Check if user is a pendaftar (has calon_siswa)
+        $calonSiswa = CalonSiswa::where('user_id', $user->id)->first();
+        if (!$calonSiswa) {
+            return back()->with('success', 'Jika email terdaftar dalam sistem, kami telah mengirimkan link reset password. Silakan cek inbox atau folder spam Anda.');
+        }
 
-        // Update user password
-        $user->password = Hash::make($newPassword);
-        $user->readable_password = $newPassword; // Store encrypted for reference
+        // Rate limiting: check if token was generated recently (within 2 minutes)
+        $recentToken = DB::table('password_reset_tokens')
+            ->where('email', $user->email)
+            ->where('created_at', '>', Carbon::now()->subMinutes(2))
+            ->first();
+
+        if ($recentToken) {
+            return back()
+                ->withInput()
+                ->with('error', 'Link reset password sudah dikirim. Silakan tunggu 2 menit sebelum meminta ulang.');
+        }
+
+        // Generate token
+        $token = Str::random(64);
+
+        // Delete old tokens
+        DB::table('password_reset_tokens')->where('email', $user->email)->delete();
+
+        // Insert new token
+        DB::table('password_reset_tokens')->insert([
+            'email' => $user->email,
+            'token' => Hash::make($token),
+            'created_at' => Carbon::now(),
+        ]);
+
+        // Build reset link
+        $resetLink = route('pendaftar.reset-password', ['token' => $token, 'email' => $user->email]);
+
+        try {
+            $mailable = new PasswordResetNotification($calonSiswa, $resetLink);
+            Mail::to($user->email)->send($mailable);
+
+            EmailLog::logSent(
+                toEmail: $user->email,
+                subject: $mailable->envelope()->subject,
+                type: EmailLog::TYPE_GENERAL,
+                calonSiswaId: $calonSiswa->id,
+                toName: $calonSiswa->nama_lengkap,
+                messagePreview: $mailable->getRenderedBody()
+            );
+
+            Log::info("Password reset email sent to {$user->email} for calon_siswa {$calonSiswa->id}");
+
+            // Mask email for display
+            $maskedEmail = $this->maskEmail($user->email);
+            
+            return back()->with('success', "Link reset password telah dikirim ke {$maskedEmail}. Silakan cek inbox atau folder spam Anda. Link berlaku selama 60 menit.");
+
+        } catch (\Exception $e) {
+            EmailLog::logFailed(
+                toEmail: $user->email,
+                subject: 'Reset Password PPDB',
+                type: EmailLog::TYPE_GENERAL,
+                errorMessage: $e->getMessage(),
+                calonSiswaId: $calonSiswa->id,
+                toName: $calonSiswa->nama_lengkap
+            );
+
+            Log::error("Failed to send password reset email: " . $e->getMessage());
+
+            return back()
+                ->withInput()
+                ->with('error', 'Gagal mengirim email. Silakan coba lagi nanti atau hubungi panitia PPDB.');
+        }
+    }
+
+    /**
+     * Show reset password form
+     */
+    public function showResetForm(Request $request, $token = null)
+    {
+        $settings = PpdbSettings::getActive();
+        
+        return view('ppdb.reset-password', [
+            'token' => $token,
+            'email' => $request->email,
+            'settings' => $settings,
+        ]);
+    }
+
+    /**
+     * Process reset password
+     */
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => 'required|min:6|confirmed',
+        ], [
+            'password.required' => 'Password baru wajib diisi.',
+            'password.min' => 'Password minimal 6 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.',
+        ]);
+
+        // Check token
+        $tokenRecord = DB::table('password_reset_tokens')
+            ->where('email', $request->email)
+            ->first();
+
+        if (!$tokenRecord) {
+            return back()->withErrors(['email' => 'Token tidak valid atau sudah expired. Silakan request ulang.']);
+        }
+
+        // Check if token expired (60 minutes)
+        $createdAt = Carbon::parse($tokenRecord->created_at);
+        if (Carbon::now()->diffInMinutes($createdAt) > 60) {
+            DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+            return back()->withErrors(['email' => 'Token sudah expired (lebih dari 60 menit). Silakan request ulang.']);
+        }
+
+        // Verify token hash
+        if (!Hash::check($request->token, $tokenRecord->token)) {
+            return back()->withErrors(['email' => 'Token tidak valid.']);
+        }
+
+        // Find user
+        $user = \App\Models\User::where('email', $request->email)->first();
+        if (!$user) {
+            return back()->withErrors(['email' => 'Email tidak ditemukan dalam sistem.']);
+        }
+
+        // Update password
+        $user->password = Hash::make($request->password);
+        $user->readable_password = $request->password;
         $user->save();
 
-        // Get settings for message
-        $settings = PpdbSettings::getActive();
+        // Delete token
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
 
-        // Send WhatsApp notification
-        $result = $waService->sendPasswordResetNotification([
-            'phone' => $phone,
-            'nama_siswa' => $calonSiswa->nama_lengkap,
-            'nama_sekolah' => \App\Models\SekolahSettings::getNamaSekolah(),
-            'username' => $user->username,
-            'password' => $newPassword,
-            'url_login' => route('pendaftar.login'),
-        ]);
+        Log::info("Password reset completed for user {$user->id} ({$user->email})");
 
-        if ($result['success']) {
-            // Mask phone number for display
-            $maskedPhone = $this->maskPhoneNumber($phone);
-            
-            return back()->with('success', "Password baru telah dikirim ke WhatsApp ({$maskedPhone}). Silakan cek pesan Anda.");
+        return redirect()->route('pendaftar.login')
+            ->with('success', 'Password berhasil diubah! Silakan login menggunakan password baru Anda.');
+    }
+
+    /**
+     * Mask email for display (e.g., user@example.com -> us***@example.com)
+     */
+    private function maskEmail(string $email): string
+    {
+        $parts = explode('@', $email);
+        $name = $parts[0];
+        $domain = $parts[1] ?? '';
+
+        if (strlen($name) <= 2) {
+            $masked = $name[0] . '***';
         } else {
-            return back()
-                ->withInput()
-                ->with('error', 'Gagal mengirim pesan WhatsApp. Silakan coba lagi atau hubungi admin.');
+            $masked = substr($name, 0, 2) . str_repeat('*', min(strlen($name) - 2, 5));
         }
-    }
 
-    /**
-     * Mask phone number for display (e.g., 628123456789 -> 6281****6789)
-     */
-    private function maskPhoneNumber(string $phone): string
-    {
-        $length = strlen($phone);
-        if ($length <= 8) {
-            return $phone;
-        }
-        
-        $start = substr($phone, 0, 4);
-        $end = substr($phone, -4);
-        $masked = str_repeat('*', $length - 8);
-        
-        return $start . $masked . $end;
-    }
-    
-    /**
-     * Generate secure password
-     * Format: Huruf kapital + Huruf kecil + Angka (tanpa karakter spesial untuk kemudahan input)
-     * Excluded: I, O, Q (mirip angka), 1, 0 (mirip huruf)
-     */
-    protected function generateSecurePassword(int $length = 8): string
-    {
-        $uppercase = 'ABCDEFGHJKLMNPRSTUVWXYZ'; // tanpa I, O, Q
-        $numbers = '23456789'; // tanpa 1, 0
-        
-        // Minimal 4 huruf kapital dan 4 angka
-        $password = '';
-        $password .= $uppercase[random_int(0, strlen($uppercase) - 1)];
-        $password .= $uppercase[random_int(0, strlen($uppercase) - 1)];
-        $password .= $uppercase[random_int(0, strlen($uppercase) - 1)];
-        $password .= $uppercase[random_int(0, strlen($uppercase) - 1)];
-        $password .= $numbers[random_int(0, strlen($numbers) - 1)];
-        $password .= $numbers[random_int(0, strlen($numbers) - 1)];
-        $password .= $numbers[random_int(0, strlen($numbers) - 1)];
-        $password .= $numbers[random_int(0, strlen($numbers) - 1)];
-        
-        $allChars = $uppercase . $numbers;
-        for ($i = strlen($password); $i < $length; $i++) {
-            $password .= $allChars[random_int(0, strlen($allChars) - 1)];
-        }
-        
-        return str_shuffle($password);
+        return $masked . '@' . $domain;
     }
 }

@@ -102,6 +102,7 @@
             border-radius: 10px;
             font-size: 1rem;
             transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
         }
         
         .form-control:focus {
@@ -123,6 +124,7 @@
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
+            font-family: 'Poppins', sans-serif;
         }
         
         .btn-primary {
@@ -133,6 +135,13 @@
         .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
         
         .alert {
@@ -156,25 +165,16 @@
             border: 1px solid #fca5a5;
         }
         
-        .alert-info {
-            background: #dbeafe;
-            color: #1e40af;
-            border: 1px solid #93c5fd;
-        }
-        
-        .alert-warning {
-            background: #fef3c7;
-            color: #92400e;
-            border: 1px solid #fcd34d;
-        }
-        
         .alert i {
             font-size: 1.25rem;
             flex-shrink: 0;
+            margin-top: 2px;
         }
         
         .alert-content {
             flex: 1;
+            font-size: 0.9rem;
+            line-height: 1.5;
         }
         
         .info-box {
@@ -198,6 +198,14 @@
             color: #6b7280;
             line-height: 1.5;
         }
+
+        .info-box ol {
+            font-size: 0.8rem;
+            color: #6b7280;
+            line-height: 1.8;
+            padding-left: 1.25rem;
+            margin: 0;
+        }
         
         .back-link {
             text-align: center;
@@ -217,48 +225,19 @@
         .back-link a:hover {
             color: #764ba2;
         }
-        
-        .whatsapp-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            background: #25d366;
-            color: white;
-            padding: 0.25rem 0.5rem;
-            border-radius: 5px;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-        
-        .wa-not-active {
-            text-align: center;
-            padding: 2rem;
-        }
-        
-        .wa-not-active .icon-large {
-            width: 80px;
-            height: 80px;
-            background: #f3f4f6;
+
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1rem;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
         }
-        
-        .wa-not-active .icon-large i {
-            font-size: 2rem;
-            color: #9ca3af;
-        }
-        
-        .wa-not-active h3 {
-            color: #374151;
-            margin-bottom: 0.5rem;
-        }
-        
-        .wa-not-active p {
-            color: #6b7280;
-            font-size: 0.875rem;
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -270,13 +249,13 @@
                     <i class="fas fa-key"></i>
                 </div>
                 <h1>Lupa Password</h1>
-                <p>Reset password via WhatsApp</p>
+                <p>Reset password via Email</p>
             </div>
 
             @if(session('success'))
             <div class="alert alert-success">
                 <i class="fas fa-check-circle"></i>
-                <div class="alert-content">{{ session('success') }}</div>
+                <div class="alert-content">{!! session('success') !!}</div>
             </div>
             @endif
 
@@ -287,53 +266,41 @@
             </div>
             @endif
 
-            @if($waActive)
-                <div class="info-box">
-                    <h4>
-                        <i class="fab fa-whatsapp" style="color: #25d366;"></i>
-                        Cara Reset Password
-                    </h4>
-                    <p>
-                        Masukkan NISN Anda. Password baru akan dikirim ke nomor WhatsApp 
-                        yang terdaftar pada saat pendaftaran PPDB.
-                    </p>
+            <div class="info-box">
+                <h4>
+                    <i class="fas fa-envelope" style="color: #f59e0b;"></i>
+                    Cara Reset Password
+                </h4>
+                <ol>
+                    <li>Masukkan alamat email yang terdaftar saat pendaftaran PPDB.</li>
+                    <li>Link reset password akan dikirim ke email Anda.</li>
+                    <li>Buka link tersebut dan buat password baru.</li>
+                </ol>
+            </div>
+
+            <form action="{{ route('pendaftar.forgot-password.send') }}" method="POST" id="forgotForm">
+                @csrf
+                
+                <div class="form-group">
+                    <label class="form-label">Alamat Email</label>
+                    <div class="input-icon-wrapper">
+                        <i class="fas fa-envelope icon"></i>
+                        <input type="email" name="email" class="form-control" 
+                               placeholder="Masukkan email Anda"
+                               value="{{ old('email') }}"
+                               required
+                               maxlength="255"
+                               autofocus>
+                    </div>
+                    @error('email')
+                    <small style="color: #dc2626; margin-top: 0.25rem; display: block;">{{ $message }}</small>
+                    @enderror
                 </div>
 
-                <form action="{{ route('pendaftar.forgot-password.send') }}" method="POST">
-                    @csrf
-                    
-                    <div class="form-group">
-                        <label class="form-label">NISN</label>
-                        <div class="input-icon-wrapper">
-                            <i class="fas fa-id-card icon"></i>
-                            <input type="text" name="nisn" class="form-control" 
-                                   placeholder="Masukkan NISN Anda"
-                                   value="{{ old('nisn') }}"
-                                   required
-                                   maxlength="20"
-                                   autofocus>
-                        </div>
-                        @error('nisn')
-                        <small style="color: #dc2626; margin-top: 0.25rem; display: block;">{{ $message }}</small>
-                        @enderror
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fab fa-whatsapp"></i> Kirim Password Baru
-                    </button>
-                </form>
-            @else
-                <div class="wa-not-active">
-                    <div class="icon-large">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <h3>Layanan Tidak Tersedia</h3>
-                    <p>
-                        Fitur reset password via WhatsApp sedang tidak aktif. 
-                        Silakan hubungi admin atau panitia PPDB untuk bantuan reset password.
-                    </p>
-                </div>
-            @endif
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <i class="fas fa-paper-plane"></i> Kirim Link Reset Password
+                </button>
+            </form>
 
             <div class="back-link">
                 <a href="{{ route('pendaftar.login') }}">
@@ -342,5 +309,13 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.getElementById('forgotForm').addEventListener('submit', function() {
+            var btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Mengirim...';
+        });
+    </script>
 </body>
 </html>
