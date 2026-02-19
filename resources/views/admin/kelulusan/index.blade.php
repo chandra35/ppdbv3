@@ -318,6 +318,9 @@ $(document).ready(function() {
     // Select2
     $('.select2').select2({ theme: 'bootstrap4' });
 
+    // Persistent selection store
+    var selectedIds = new Set();
+
     // DataTable
     var table = $('#kelulusanTable').DataTable({
         orderCellsTop: true,
@@ -329,14 +332,37 @@ $(document).ready(function() {
         ]
     });
 
-    // Select All - only visible rows (filtered)
+    // Restore checkbox state after draw (page change, search, sort)
+    table.on('draw', function() {
+        // Restore individual checkboxes
+        table.rows({ page: 'current' }).nodes().each(function(row) {
+            var id = $(row).data('calon-id');
+            var cb = $(row).find('.row-check');
+            if (selectedIds.has(id)) {
+                cb.prop('checked', true);
+                $(row).addClass('selected-row');
+            } else {
+                cb.prop('checked', false);
+                $(row).removeClass('selected-row');
+            }
+        });
+        // Update select-all checkbox state
+        updateSelectAllState();
+        updateFloatingBar();
+    });
+
+    // Select All - all filtered rows across ALL pages
     $('#selectAll').on('change', function() {
         var checked = this.checked;
         table.rows({ search: 'applied' }).nodes().each(function(row) {
-            $(row).find('.row-check').prop('checked', checked);
+            var id = $(row).data('calon-id');
+            var cb = $(row).find('.row-check');
+            cb.prop('checked', checked);
             if (checked) {
+                selectedIds.add(id);
                 $(row).addClass('selected-row');
             } else {
+                selectedIds.delete(id);
                 $(row).removeClass('selected-row');
             }
         });
@@ -346,33 +372,47 @@ $(document).ready(function() {
     // Single checkbox
     $(document).on('change', '.row-check', function() {
         var row = $(this).closest('tr');
+        var id = row.data('calon-id');
         if (this.checked) {
+            selectedIds.add(id);
             row.addClass('selected-row');
         } else {
+            selectedIds.delete(id);
             row.removeClass('selected-row');
-            $('#selectAll').prop('checked', false);
         }
+        updateSelectAllState();
         updateFloatingBar();
     });
-});
 
-function getSelectedIds() {
-    var ids = [];
-    $('.row-check:checked').each(function() {
-        ids.push($(this).val());
-    });
-    return ids;
-}
-
-function updateFloatingBar() {
-    var count = getSelectedIds().length;
-    $('#selectedCount').text(count);
-    if (count > 0) {
-        $('#floatingBar').fadeIn(300);
-    } else {
-        $('#floatingBar').fadeOut(200);
+    // Check if all visible filtered rows are selected
+    function updateSelectAllState() {
+        var allChecked = true;
+        var visibleCount = 0;
+        table.rows({ search: 'applied', page: 'current' }).nodes().each(function(row) {
+            visibleCount++;
+            var id = $(row).data('calon-id');
+            if (!selectedIds.has(id)) {
+                allChecked = false;
+            }
+        });
+        $('#selectAll').prop('checked', visibleCount > 0 && allChecked);
     }
-}
+
+    // Override getSelectedIds to use persistent store
+    window.getSelectedIds = function() {
+        return Array.from(selectedIds);
+    };
+
+    window.updateFloatingBar = function() {
+        var count = selectedIds.size;
+        $('#selectedCount').text(count);
+        if (count > 0) {
+            $('#floatingBar').fadeIn(300);
+        } else {
+            $('#floatingBar').fadeOut(200);
+        }
+    };
+});
 
 function showKelulusanModal(status) {
     var ids = getSelectedIds();
