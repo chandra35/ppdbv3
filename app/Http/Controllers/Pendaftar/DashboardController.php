@@ -2054,7 +2054,7 @@ class DashboardController extends Controller
 
         $pdf->setPaper('A4', 'portrait');
 
-        $filename = 'Surat_Pernyataan_Ortu_' . preg_replace('/[\/\\\:*?"<>|]/', '-', $calonSiswa->nama_lengkap) . '.pdf';
+        $filename = 'Surat Pernyataan Ortu ' . preg_replace('/[\/\\\:*?"<>|]/', '-', $calonSiswa->nama_lengkap) . '.pdf';
 
         return $pdf->stream($filename);
     }
@@ -2116,7 +2116,7 @@ class DashboardController extends Controller
 
         $pdf->setPaper('A4', 'portrait');
 
-        $filename = 'Surat_Pernyataan_Siswa_' . preg_replace('/[\/\\\:*?"<>|]/', '-', $calonSiswa->nama_lengkap) . '.pdf';
+        $filename = 'Surat Pernyataan Siswa ' . preg_replace('/[\/\\\:*?"<>|]/', '-', $calonSiswa->nama_lengkap) . '.pdf';
 
         return $pdf->stream($filename);
     }

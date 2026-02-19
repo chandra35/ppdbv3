@@ -267,9 +267,9 @@
                         Download dan cetak surat pernyataan orang tua/wali.<br>
                         <strong>Wajib dibawa saat rapat wali dan daftar ulang.</strong>
                     </p>
-                    <a href="{{ route('pendaftar.kelulusan.surat-pernyataan') }}" target="_blank" class="btn btn-danger btn-lg">
-                        <i class="fas fa-download mr-2"></i>Download Surat Pernyataan
-                    </a>
+                    <button type="button" class="btn btn-danger btn-lg" onclick="previewPDF('{{ route('pendaftar.kelulusan.surat-pernyataan') }}', 'Surat Pernyataan Ortu {{ $calonSiswa->nama_lengkap }}')">
+                        <i class="fas fa-eye mr-2"></i>Lihat & Download Surat Pernyataan
+                    </button>
                 </div>
             </div>
 
@@ -286,9 +286,9 @@
                         Download dan cetak surat pernyataan peserta didik baru.<br>
                         <strong>Wajib ditempel materai Rp 10.000 dan dibawa saat daftar ulang.</strong>
                     </p>
-                    <a href="{{ route('pendaftar.kelulusan.surat-pernyataan-siswa') }}" target="_blank" class="btn btn-primary btn-lg">
-                        <i class="fas fa-download mr-2"></i>Download Surat Pernyataan Siswa
-                    </a>
+                    <button type="button" class="btn btn-primary btn-lg" onclick="previewPDF('{{ route('pendaftar.kelulusan.surat-pernyataan-siswa') }}', 'Surat Pernyataan Siswa {{ $calonSiswa->nama_lengkap }}')">
+                        <i class="fas fa-eye mr-2"></i>Lihat & Download Surat Pernyataan Siswa
+                    </button>
                 </div>
             </div>
             @endif
@@ -315,11 +315,98 @@
         </div>
     </div>
 </div>
+
+{{-- Modal Preview PDF --}}
+<div class="modal fade" id="pdfPreviewModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered" role="document" style="max-width: 900px;">
+        <div class="modal-content" style="border: none; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 15px 20px;">
+                <h5 class="modal-title text-white" id="pdfPreviewTitle">
+                    <i class="fas fa-file-pdf mr-2"></i><span id="pdfTitleText">Preview Surat</span>
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 1; text-shadow: none;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-0" style="background: #f0f0f0;">
+                <div id="pdfLoading" class="text-center py-5" style="display: none;">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Memuat dokumen...</p>
+                </div>
+                <iframe id="pdfFrame" src="" style="width: 100%; height: 70vh; border: none; display: none;"></iframe>
+            </div>
+            <div class="modal-footer" style="background: #fff; border-top: 1px solid #eee; padding: 12px 20px;">
+                <div class="d-flex w-100 justify-content-between align-items-center">
+                    <small class="text-muted"><i class="fas fa-info-circle mr-1"></i>Gunakan tombol print pada browser untuk mencetak</small>
+                    <div>
+                        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
+                            <i class="fas fa-times mr-1"></i>Tutup
+                        </button>
+                        <a href="#" id="pdfDownloadBtn" class="btn btn-success" download>
+                            <i class="fas fa-download mr-1"></i>Download PDF
+                        </a>
+                        <button type="button" class="btn btn-primary" id="pdfPrintBtn">
+                            <i class="fas fa-print mr-1"></i>Cetak
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('js')
 @if($kelulusan && $kelulusan->status === 'lulus')
 <script>
+// PDF Preview Modal
+function previewPDF(url, title) {
+    var modal = $('#pdfPreviewModal');
+    var frame = document.getElementById('pdfFrame');
+    var loading = document.getElementById('pdfLoading');
+    var downloadBtn = document.getElementById('pdfDownloadBtn');
+    var titleText = document.getElementById('pdfTitleText');
+
+    // Set title
+    titleText.textContent = title;
+
+    // Show loading, hide frame
+    loading.style.display = 'block';
+    frame.style.display = 'none';
+
+    // Set download link
+    downloadBtn.href = url;
+    downloadBtn.download = title.replace(/[\/\\:*?"<>|]/g, '-') + '.pdf';
+
+    // Load PDF in iframe
+    frame.src = url;
+    frame.onload = function() {
+        loading.style.display = 'none';
+        frame.style.display = 'block';
+    };
+
+    // Show modal
+    modal.modal('show');
+}
+
+// Print from modal
+$(document).on('click', '#pdfPrintBtn', function() {
+    var frame = document.getElementById('pdfFrame');
+    if (frame && frame.contentWindow) {
+        frame.contentWindow.focus();
+        frame.contentWindow.print();
+    }
+});
+
+// Clean up iframe when modal closes
+$('#pdfPreviewModal').on('hidden.bs.modal', function() {
+    document.getElementById('pdfFrame').src = '';
+    document.getElementById('pdfFrame').style.display = 'none';
+    document.getElementById('pdfLoading').style.display = 'none';
+});
+
 // Confetti effect for lulus students
 $(function() {
     var hero = document.getElementById('kelulusanHero');
