@@ -260,9 +260,12 @@
             <nav class="mt-2">
                 @php
                     $calonSiswaForMenu = \App\Models\CalonSiswa::where('user_id', auth()->id())->with(['jalurPendaftaran', 'kelulusan'])->first();
+                    // Cek apakah pengumuman aktif (toggle + tanggal/jam)
+                    $kelulusanSettingForMenu = \App\Models\KelulusanSetting::getActive();
+                    $pengumumanAktifForMenu = $kelulusanSettingForMenu && $kelulusanSettingForMenu->isPengumumanAktif();
                     // Cek apakah amplop sudah dibuka (untuk hide/show kelulusan info)
                     $envelopeOpenedForMenu = false;
-                    if ($calonSiswaForMenu) {
+                    if ($calonSiswaForMenu && $pengumumanAktifForMenu) {
                         $envelopeOpenedForMenu = \App\Models\EnvelopeOpenLog::hasOpened(
                             $calonSiswaForMenu->id, 
                             $calonSiswaForMenu->tahun_pelajaran_id
@@ -379,7 +382,13 @@
                     </li>
                     
                     <li class="nav-item">
-                        @if($calonSiswaForMenu && $calonSiswaForMenu->kelulusan && !$envelopeOpenedForMenu)
+                        @if(!$pengumumanAktifForMenu)
+                        {{-- Pengumuman belum aktif (toggle off atau belum waktunya) --}}
+                        <a href="#" class="nav-link text-muted" onclick="return false;" style="cursor: default; opacity: 0.5;">
+                            <i class="nav-icon fas fa-graduation-cap"></i>
+                            <p>Info Kelulusan <span class="badge badge-secondary ml-1" style="font-size: 0.6rem;">Belum Dibuka</span></p>
+                        </a>
+                        @elseif($calonSiswaForMenu && $calonSiswaForMenu->kelulusan && !$envelopeOpenedForMenu)
                         {{-- Ada kelulusan tapi amplop belum dibuka → arahkan ke dashboard --}}
                         <a href="{{ route('pendaftar.dashboard') }}" class="nav-link {{ request()->routeIs('pendaftar.kelulusan') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-lock text-warning"></i>

@@ -92,6 +92,26 @@
                             </div>
                             <small class="text-muted">Jika aktif, pendaftar akan melihat menu "Info Kelulusan" di dashboard mereka</small>
                         </div>
+                        <div class="form-group" id="tanggalPengumumanGroup">
+                            <label><i class="fas fa-calendar-alt mr-1"></i>Tanggal & Jam Pengumuman</label>
+                            <input type="datetime-local" name="tanggal_pengumuman" class="form-control" 
+                                   value="{{ old('tanggal_pengumuman', $setting->tanggal_pengumuman ? $setting->tanggal_pengumuman->format('Y-m-d\TH:i') : '') }}">
+                            <small class="text-muted">
+                                Pengumuman akan tampil ke pendaftar setelah tanggal & jam ini.<br>
+                                Kosongkan jika ingin langsung aktif saat toggle dihidupkan.
+                            </small>
+                            @if($setting->tanggal_pengumuman)
+                                @if(now()->lt($setting->tanggal_pengumuman))
+                                    <div class="mt-2">
+                                        <span class="badge badge-warning"><i class="fas fa-clock mr-1"></i>Terjadwal: {{ $setting->tanggal_pengumuman->locale('id')->isoFormat('dddd, D MMMM Y - HH:mm') }} WIB</span>
+                                    </div>
+                                @else
+                                    <div class="mt-2">
+                                        <span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i>Sudah Aktif sejak {{ $setting->tanggal_pengumuman->locale('id')->isoFormat('dddd, D MMMM Y - HH:mm') }} WIB</span>
+                                    </div>
+                                @endif
+                            @endif
+                        </div>
                         <div class="form-group">
                             <label>Pesan untuk yang <span class="text-success font-weight-bold">LULUS</span></label>
                             <textarea name="pesan_lulus" class="form-control" rows="3">{{ old('pesan_lulus', $setting->pesan_lulus) }}</textarea>
@@ -257,6 +277,17 @@ $(document).ready(function() {
             $(this).closest('.dokumen-item').find('input').val('');
         }
     });
+
+    // Toggle tanggal pengumuman visibility
+    function toggleTanggalPengumuman() {
+        if ($('#tampilkanPengumuman').is(':checked')) {
+            $('#tanggalPengumumanGroup').slideDown(200);
+        } else {
+            $('#tanggalPengumumanGroup').slideUp(200);
+        }
+    }
+    toggleTanggalPengumuman();
+    $('#tampilkanPengumuman').on('change', toggleTanggalPengumuman);
 });
 </script>
 @stop

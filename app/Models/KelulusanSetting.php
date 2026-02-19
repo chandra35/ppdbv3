@@ -22,6 +22,7 @@ class KelulusanSetting extends Model
         'dokumen_persyaratan',
         'template_surat_pernyataan',
         'tampilkan_pengumuman',
+        'tanggal_pengumuman',
         'tampilkan_link_wa',
         'tampilkan_dokumen',
         'tanggal_daftar_ulang_mulai',
@@ -34,9 +35,29 @@ class KelulusanSetting extends Model
         'tampilkan_pengumuman' => 'boolean',
         'tampilkan_link_wa' => 'boolean',
         'tampilkan_dokumen' => 'boolean',
+        'tanggal_pengumuman' => 'datetime',
         'tanggal_daftar_ulang_mulai' => 'date',
         'tanggal_daftar_ulang_selesai' => 'date',
     ];
+
+    /**
+     * Cek apakah pengumuman sudah aktif berdasarkan toggle + tanggal/jam
+     * - tampilkan_pengumuman harus true
+     * - Jika tanggal_pengumuman diisi, waktu sekarang harus >= tanggal_pengumuman
+     * - Jika tanggal_pengumuman kosong, langsung aktif saat toggle ON
+     */
+    public function isPengumumanAktif(): bool
+    {
+        if (!$this->tampilkan_pengumuman) {
+            return false;
+        }
+
+        if ($this->tanggal_pengumuman && now()->lt($this->tanggal_pengumuman)) {
+            return false;
+        }
+
+        return true;
+    }
 
     // Relations
     public function tahunPelajaran(): BelongsTo

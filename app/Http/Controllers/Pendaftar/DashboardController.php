@@ -65,8 +65,7 @@ class DashboardController extends Controller
         // Kelulusan info for dashboard
         $kelulusanSetting = \App\Models\KelulusanSetting::getActive();
         $kelulusanData = null;
-        if ($kelulusanSetting && $kelulusanSetting->tampilkan_pengumuman) {
-            // Cek apakah amplop sudah pernah dibuka (dari DB, bukan hanya session)
+        if ($kelulusanSetting && $kelulusanSetting->isPengumumanAktif()) {
             $envelopeAlreadyOpened = EnvelopeOpenLog::hasOpened($calonSiswa->id, $calonSiswa->tahun_pelajaran_id);
             if ($envelopeAlreadyOpened) {
                 session(['kelulusan_envelope_opened' => true]);
@@ -725,7 +724,7 @@ class DashboardController extends Controller
         $sembunyikanAdmisi = false;
         if ($calonSiswa->kelulusan 
             && $kelulusanSetting 
-            && $kelulusanSetting->tampilkan_pengumuman) {
+            && $kelulusanSetting->isPengumumanAktif()) {
             $envelopeOpened = EnvelopeOpenLog::hasOpened($calonSiswa->id, $calonSiswa->tahun_pelajaran_id)
                 || session('kelulusan_envelope_opened');
             if (!$envelopeOpened) {
@@ -1960,7 +1959,7 @@ class DashboardController extends Controller
         $setting = \App\Models\KelulusanSetting::where('tahun_pelajaran_id', $calonSiswa->tahun_pelajaran_id)->first();
 
         // Check if pengumuman is enabled
-        if (!$setting || !$setting->tampilkan_pengumuman) {
+        if (!$setting || !$setting->isPengumumanAktif()) {
             return redirect()->route('pendaftar.dashboard')
                 ->with('info', 'Pengumuman kelulusan belum tersedia');
         }
