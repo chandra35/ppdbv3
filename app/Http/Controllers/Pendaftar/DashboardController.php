@@ -722,17 +722,23 @@ class DashboardController extends Controller
         // Cek apakah ada kelulusan & pengumuman aktif tapi amplop belum dibuka
         $kelulusanSetting = \App\Models\KelulusanSetting::getActive();
         $sembunyikanAdmisi = false;
-        if ($calonSiswa->kelulusan 
-            && $kelulusanSetting 
-            && $kelulusanSetting->isPengumumanAktif()) {
-            $envelopeOpened = EnvelopeOpenLog::hasOpened($calonSiswa->id, $calonSiswa->tahun_pelajaran_id)
-                || session('kelulusan_envelope_opened');
-            if (!$envelopeOpened) {
+        $pengumumanBelumWaktunya = false;
+        if ($calonSiswa->kelulusan && $kelulusanSetting) {
+            if ($kelulusanSetting->isPengumumanAktif()) {
+                // Pengumuman sudah aktif, cek apakah amplop sudah dibuka
+                $envelopeOpened = EnvelopeOpenLog::hasOpened($calonSiswa->id, $calonSiswa->tahun_pelajaran_id)
+                    || session('kelulusan_envelope_opened');
+                if (!$envelopeOpened) {
+                    $sembunyikanAdmisi = true;
+                }
+            } else {
+                // Pengumuman belum waktunya (terjadwal tapi belum sampai waktunya)
                 $sembunyikanAdmisi = true;
+                $pengumumanBelumWaktunya = true;
             }
         }
 
-        return view('pendaftar.dashboard.status', compact('calonSiswa', 'sembunyikanAdmisi'));
+        return view('pendaftar.dashboard.status', compact('calonSiswa', 'sembunyikanAdmisi', 'pengumumanBelumWaktunya'));
     }
 
     /**
