@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Kelulusan;
 use App\Models\KelulusanSetting;
+use App\Models\EnvelopeOpenLog;
 use App\Models\TahunPelajaran;
 use Illuminate\Http\Request;
 
@@ -83,5 +84,39 @@ class KelulusanSettingController extends Controller
 
         return redirect()->route('admin.kelulusan.setting')
             ->with('success', 'Pengaturan kelulusan berhasil diperbarui');
+    }
+
+    /**
+     * Halaman log buka amplop
+     */
+    public function envelopeLogs(Request $request)
+    {
+        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        if (!$tahunAktif) {
+            return redirect()->route('admin.dashboard')->with('error', 'Tahun pelajaran aktif tidak ditemukan');
+        }
+
+        $query = EnvelopeOpenLog::with(['calonSiswa.jalurPendaftaran', 'calonSiswa.kelulusan'])
+            ->where('tahun_pelajaran_id', $tahunAktif->id)
+            ->orderBy('opened_at', 'desc');
+
+        // Filter pencarian
+        if ($request->search) {
+            $search = $request->search;
+            $query->whereHas('calonSiswa', function ($q) use ($search) {
+                $q->where('nama_lengkap', 'like', "%{$search}%")
+                  ->orWhere('nisn', 'like', "%{$search}%")
+                  ->orWhere('nomor_registrasi', 'like', "%{$search}%");
+            });
+        }
+
+        $logs = $query->paginate(25)->withQueryString();
+
+        // Stats
+        $totalKelulusan = Kelulusan::where('tahun_pelajaran_id', $tahunAktif->id)->count();
+        $totalOpened = EnvelopeOpenLog::where('tahun_pelajaran_id', $tahunAktif->id)->count();
+        $totalBelumBuka = $totalKelulusan - $totalOpened;
+
+        return view('admin.kelulusan.envelope-logs', compact('logs', 'tahunAktif', 'totalKelulusan', 'totalOpened', 'totalBelumBuka'));
     }
 }

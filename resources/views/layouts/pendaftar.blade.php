@@ -259,7 +259,15 @@
             <!-- Sidebar Menu -->
             <nav class="mt-2">
                 @php
-                    $calonSiswaForMenu = \App\Models\CalonSiswa::where('user_id', auth()->id())->with('jalurPendaftaran')->first();
+                    $calonSiswaForMenu = \App\Models\CalonSiswa::where('user_id', auth()->id())->with(['jalurPendaftaran', 'kelulusan'])->first();
+                    // Cek apakah amplop sudah dibuka (untuk hide/show kelulusan info)
+                    $envelopeOpenedForMenu = false;
+                    if ($calonSiswaForMenu) {
+                        $envelopeOpenedForMenu = \App\Models\EnvelopeOpenLog::hasOpened(
+                            $calonSiswaForMenu->id, 
+                            $calonSiswaForMenu->tahun_pelajaran_id
+                        ) || session('kelulusan_envelope_opened');
+                    }
                 @endphp
                 <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                     <li class="nav-header">MENU UTAMA</li>
@@ -371,10 +379,18 @@
                     </li>
                     
                     <li class="nav-item">
+                        @if($calonSiswaForMenu && $calonSiswaForMenu->kelulusan && !$envelopeOpenedForMenu)
+                        {{-- Ada kelulusan tapi amplop belum dibuka → arahkan ke dashboard --}}
+                        <a href="{{ route('pendaftar.dashboard') }}" class="nav-link {{ request()->routeIs('pendaftar.kelulusan') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-lock text-warning"></i>
+                            <p>Info Kelulusan <span class="badge badge-warning ml-1" style="font-size: 0.6rem;">Buka Amplop</span></p>
+                        </a>
+                        @else
                         <a href="{{ route('pendaftar.kelulusan') }}" class="nav-link {{ request()->routeIs('pendaftar.kelulusan') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-graduation-cap"></i>
                             <p>Info Kelulusan</p>
                         </a>
+                        @endif
                     </li>
                     
                     @if($calonSiswaForMenu && $calonSiswaForMenu->is_finalisasi)

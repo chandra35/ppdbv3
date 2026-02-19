@@ -26,7 +26,7 @@
 
     <!-- Stats -->
     <div class="row">
-        <div class="col-lg-4 col-6">
+        <div class="col-lg-3 col-6">
             <div class="small-box bg-success">
                 <div class="inner">
                     <h3>{{ $stats['total_lulus'] }}</h3>
@@ -35,7 +35,7 @@
                 <div class="icon"><i class="fas fa-check-circle"></i></div>
             </div>
         </div>
-        <div class="col-lg-4 col-6">
+        <div class="col-lg-3 col-6">
             <div class="small-box bg-danger">
                 <div class="inner">
                     <h3>{{ $stats['total_tidak_lulus'] }}</h3>
@@ -44,7 +44,7 @@
                 <div class="icon"><i class="fas fa-times-circle"></i></div>
             </div>
         </div>
-        <div class="col-lg-4 col-6">
+        <div class="col-lg-3 col-6">
             <div class="small-box bg-warning">
                 <div class="inner">
                     <h3>{{ $stats['total_cadangan'] }}</h3>
@@ -52,6 +52,18 @@
                 </div>
                 <div class="icon"><i class="fas fa-clock"></i></div>
             </div>
+        </div>
+        <div class="col-lg-3 col-6">
+            <a href="{{ route('admin.kelulusan.envelope-logs') }}" class="text-decoration-none">
+                <div class="small-box bg-info">
+                    <div class="inner">
+                        <h3>{{ \App\Models\EnvelopeOpenLog::where('tahun_pelajaran_id', $tahunAktif->id)->count() }}</h3>
+                        <p>Sudah Buka Amplop</p>
+                    </div>
+                    <div class="icon"><i class="fas fa-envelope-open"></i></div>
+                    <span class="small-box-footer">Lihat Log <i class="fas fa-arrow-circle-right"></i></span>
+                </div>
+            </a>
         </div>
     </div>
 

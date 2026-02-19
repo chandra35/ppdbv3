@@ -384,6 +384,7 @@
             @php
                 $kStatus = $kelulusanData['kelulusan']->status;
                 $kSetting = $kelulusanData['setting'];
+                $envelopeAlreadyOpened = $kelulusanData['envelope_opened'] ?? false;
                 $isLulus = $kStatus === 'lulus';
                 $isCadangan = $kStatus === 'cadangan';
                 $statusLabel = $isLulus ? 'LULUS' : ($isCadangan ? 'CADANGAN' : 'TIDAK LULUS');
@@ -404,6 +405,7 @@
                     </div>
 
                     {{-- Envelope Animation --}}
+                    @if(!$envelopeAlreadyOpened)
                     <div class="kelulusan-envelope-wrapper">
                         <div>
                             <div class="envelope-container" id="envelopeContainer" onclick="openEnvelope()">
@@ -433,9 +435,10 @@
                             </div>
                         </div>
                     </div>
+                    @endif
 
-                    {{-- Result card (appears after envelope opens) --}}
-                    <div class="kelulusan-result-card" id="kelulusanResultCard">
+                    {{-- Result card (appears after envelope opens, or immediately if already opened) --}}
+                    <div class="kelulusan-result-card {{ $envelopeAlreadyOpened ? 'show' : '' }}" id="kelulusanResultCard">
                         <div class="text-center p-3" style="background: {{ $statusColor }}10; border-radius: 12px; border: 1px solid {{ $statusColor }}30;">
                             <h4 class="font-weight-bold mb-2" style="color: {{ $statusColor }};">
                                 {{ $statusIcon }} Anda Dinyatakan {{ $statusLabel }}
@@ -1064,7 +1067,7 @@ function resetLocationCard(message) {
 </script>
 @endif
 
-@if($kelulusanData && $kelulusanData['kelulusan'])
+@if($kelulusanData && $kelulusanData['kelulusan'] && !($kelulusanData['envelope_opened'] ?? false))
 <script>
 let envelopeOpened = false;
 

@@ -9,6 +9,7 @@ use App\Models\CalonDokumen;
 use App\Models\NilaiRapor;
 use App\Models\PpdbSettings;
 use App\Models\InformasiPendaftar;
+use App\Models\EnvelopeOpenLog;
 use App\Services\KopSuratService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -65,9 +66,15 @@ class DashboardController extends Controller
         $kelulusanSetting = \App\Models\KelulusanSetting::getActive();
         $kelulusanData = null;
         if ($kelulusanSetting && $kelulusanSetting->tampilkan_pengumuman) {
+            // Cek apakah amplop sudah pernah dibuka (dari DB, bukan hanya session)
+            $envelopeAlreadyOpened = EnvelopeOpenLog::hasOpened($calonSiswa->id, $calonSiswa->tahun_pelajaran_id);
+            if ($envelopeAlreadyOpened) {
+                session(['kelulusan_envelope_opened' => true]);
+            }
             $kelulusanData = [
                 'setting' => $kelulusanSetting,
                 'kelulusan' => $calonSiswa->kelulusan,
+                'envelope_opened' => $envelopeAlreadyOpened,
             ];
         }
 
@@ -718,9 +725,12 @@ class DashboardController extends Controller
         $sembunyikanAdmisi = false;
         if ($calonSiswa->kelulusan 
             && $kelulusanSetting 
-            && $kelulusanSetting->tampilkan_pengumuman 
-            && !session('kelulusan_envelope_opened')) {
-            $sembunyikanAdmisi = true;
+            && $kelulusanSetting->tampilkan_pengumuman) {
+            $envelopeOpened = EnvelopeOpenLog::hasOpened($calonSiswa->id, $calonSiswa->tahun_pelajaran_id)
+                || session('kelulusan_envelope_opened');
+            if (!$envelopeOpened) {
+                $sembunyikanAdmisi = true;
+            }
         }
 
         return view('pendaftar.dashboard.status', compact('calonSiswa', 'sembunyikanAdmisi'));
@@ -1908,6 +1918,25 @@ class DashboardController extends Controller
      */
     public function markEnvelopeOpened(Request $request)
     {
+        $user = Auth::user();
+        $calonSiswa = CalonSiswa::where('user_id', $user->id)->first();
+
+        if ($calonSiswa) {
+            // Log ke database (hanya sekali per pendaftar per tahun pelajaran)
+            EnvelopeOpenLog::firstOrCreate(
+                [
+                    'calon_siswa_id' => $calonSiswa->id,
+                    'tahun_pelajaran_id' => $calonSiswa->tahun_pelajaran_id,
+                ],
+                [
+                    'user_id' => $user->id,
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                    'opened_at' => now(),
+                ]
+            );
+        }
+
         session(['kelulusan_envelope_opened' => true]);
         return response()->json(['success' => true]);
     }
@@ -1939,7 +1968,9 @@ class DashboardController extends Controller
         $kelulusan = $calonSiswa->kelulusan;
 
         // Jika ada kelulusan tapi amplop belum dibuka → redirect ke dashboard
-        if ($kelulusan && !session('kelulusan_envelope_opened')) {
+        $envelopeOpened = EnvelopeOpenLog::hasOpened($calonSiswa->id, $calonSiswa->tahun_pelajaran_id)
+            || session('kelulusan_envelope_opened');
+        if ($kelulusan && !$envelopeOpened) {
             return redirect()->route('pendaftar.dashboard')
                 ->with('info', 'Silakan buka amplop pengumuman di dashboard terlebih dahulu! ✉️');
         }
