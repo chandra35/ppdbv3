@@ -131,48 +131,54 @@
         </tr>
         <tr>
             <td>6.</td>
+            <td>No. Peserta</td>
+            <td>:</td>
+            <td>{{ $calonSiswa->nomor_tes ?? '-' }}</td>
+        </tr>
+        <tr>
+            <td>7.</td>
             <td>Nama Orang Tua / Wali</td>
             <td>:</td>
             <td>{{ $namaOrtu }}</td>
         </tr>
         <tr>
-            <td>7.</td>
+            <td>8.</td>
             <td>Pekerjaan Orang Tua</td>
             <td>:</td>
             <td>{{ $pekerjaanOrtu }}</td>
         </tr>
         <tr>
-            <td>8.</td>
+            <td>9.</td>
             <td>Nama Wali</td>
             <td>:</td>
             <td class="titik">........................................</td>
         </tr>
         <tr>
-            <td>9.</td>
+            <td>10.</td>
             <td>Pekerjaan Wali</td>
             <td>:</td>
             <td class="titik">........................................</td>
         </tr>
         <tr>
-            <td>10.</td>
+            <td>11.</td>
             <td>Agama Wali</td>
             <td>:</td>
             <td class="titik">........................................</td>
         </tr>
         <tr>
-            <td>11.</td>
+            <td>12.</td>
             <td>Hubungan Keluarga dgn Wali</td>
             <td>:</td>
             <td class="titik">........................................</td>
         </tr>
         <tr>
-            <td>12.</td>
+            <td>13.</td>
             <td>Telp / HP Wali</td>
             <td>:</td>
             <td class="titik">........................................</td>
         </tr>
         <tr>
-            <td>13.</td>
+            <td>14.</td>
             <td>Alamat Orang Tua / Wali</td>
             <td>:</td>
             <td>RT ......... / RW ......... / Dusun .....................</td>
@@ -257,7 +263,7 @@
         <table>
             <tr>
                 <td>*) Surat ini wajib dibawa saat daftar ulang / rapat wali calon peserta didik baru</td>
-                <td style="text-align:right;">{{ $calonSiswa->nomor_registrasi }}</td>
+                <td style="text-align:right;">{{ $calonSiswa->nomor_tes ?? $calonSiswa->nomor_registrasi }}</td>
             </tr>
         </table>
     </div>
