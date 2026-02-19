@@ -137,48 +137,54 @@
         </tr>
         <tr>
             <td>7.</td>
+            <td>Minat Reguler / Asrama</td>
+            <td>:</td>
+            <td>{{ $calonSiswa->pilihan_program ?? '-' }}</td>
+        </tr>
+        <tr>
+            <td>8.</td>
             <td>Nama Orang Tua / Wali</td>
             <td>:</td>
             <td>{{ $namaOrtu }}</td>
         </tr>
         <tr>
-            <td>8.</td>
+            <td>9.</td>
             <td>Pekerjaan Orang Tua</td>
             <td>:</td>
             <td>{{ $pekerjaanOrtu }}</td>
         </tr>
         <tr>
-            <td>9.</td>
+            <td>10.</td>
             <td>Nama Wali</td>
             <td>:</td>
             <td class="titik">........................................</td>
         </tr>
         <tr>
-            <td>10.</td>
+            <td>11.</td>
             <td>Pekerjaan Wali</td>
             <td>:</td>
             <td class="titik">........................................</td>
         </tr>
         <tr>
-            <td>11.</td>
+            <td>12.</td>
             <td>Agama Wali</td>
             <td>:</td>
             <td class="titik">........................................</td>
         </tr>
         <tr>
-            <td>12.</td>
+            <td>13.</td>
             <td>Hubungan Keluarga dgn Wali</td>
             <td>:</td>
             <td class="titik">........................................</td>
         </tr>
         <tr>
-            <td>13.</td>
+            <td>14.</td>
             <td>Telp / HP Wali</td>
             <td>:</td>
             <td class="titik">........................................</td>
         </tr>
         <tr>
-            <td>14.</td>
+            <td>15.</td>
             <td>Alamat Orang Tua / Wali</td>
             <td>:</td>
             <td>RT ......... / RW ......... / Dusun .....................</td>
