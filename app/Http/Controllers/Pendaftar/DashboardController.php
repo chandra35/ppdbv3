@@ -1619,12 +1619,19 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         $calonSiswa = CalonSiswa::where('user_id', $user->id)
-            ->with(['jalurPendaftaran', 'ortu', 'dokumen'])
+            ->with(['jalurPendaftaran', 'gelombangPendaftaran', 'ortu', 'dokumen'])
             ->first();
 
         if (!$calonSiswa) {
             return redirect()->route('pendaftar.dashboard')
                 ->with('error', 'Data pendaftaran tidak ditemukan');
+        }
+
+        // Cek apakah gelombang pendaftaran sudah ditutup
+        $gelombang = $calonSiswa->gelombangPendaftaran;
+        if ($gelombang && !$calonSiswa->is_finalisasi && $gelombang->status !== 'open') {
+            return redirect()->route('pendaftar.dashboard')
+                ->with('error', 'Pendaftaran gelombang ' . $gelombang->nama . ' sudah ditutup. Finalisasi tidak dapat dilakukan.');
         }
 
         // Get progress to check completion
@@ -1643,7 +1650,7 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         $calonSiswa = CalonSiswa::where('user_id', $user->id)
-            ->with(['jalurPendaftaran', 'ortu', 'dokumen'])
+            ->with(['jalurPendaftaran', 'gelombangPendaftaran', 'ortu', 'dokumen'])
             ->first();
 
         if (!$calonSiswa) {
@@ -1651,6 +1658,15 @@ class DashboardController extends Controller
                 'success' => false,
                 'message' => 'Data pendaftaran tidak ditemukan'
             ], 404);
+        }
+
+        // Cek apakah gelombang pendaftaran sudah ditutup
+        $gelombang = $calonSiswa->gelombangPendaftaran;
+        if ($gelombang && $gelombang->status !== 'open') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pendaftaran gelombang ' . $gelombang->nama . ' sudah ditutup. Finalisasi tidak dapat dilakukan.'
+            ], 403);
         }
 
         // Check if already finalized

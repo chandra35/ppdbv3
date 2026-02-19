@@ -483,7 +483,11 @@
 @endif
 
 {{-- Compact Checklist Status --}}
-@if(!$kelengkapan['finalisasi'])
+@php
+    $gelombangStatus = $calonSiswa->gelombangPendaftaran ? $calonSiswa->gelombangPendaftaran->status : null;
+    $pendaftaranDitutup = $gelombangStatus && $gelombangStatus !== 'open';
+@endphp
+@if(!$kelengkapan['finalisasi'] && !$pendaftaranDitutup)
 <div class="row">
     <div class="col-12">
         <div class="card card-outline {{ $kelengkapan['semua_lengkap'] ? 'card-success' : 'card-warning' }}" style="border-top-width: 3px;">
@@ -530,7 +534,14 @@
                         @endif
                         
                         {{-- Finalisasi --}}
-                        @if($kelengkapan['semua_lengkap'])
+                        @php
+                            $gelombangMasihBuka = $calonSiswa->gelombangPendaftaran && $calonSiswa->gelombangPendaftaran->status === 'open';
+                        @endphp
+                        @if(!$gelombangMasihBuka)
+                        <span class="badge badge-danger px-2 py-1" style="font-size: 0.8rem;" title="Pendaftaran gelombang {{ $calonSiswa->gelombangPendaftaran->nama ?? '' }} sudah ditutup">
+                            <i class="fas fa-ban mr-1"></i>Pendaftaran Ditutup
+                        </span>
+                        @elseif($kelengkapan['semua_lengkap'])
                         <a href="{{ route('pendaftar.finalisasi') }}" class="badge badge-primary px-2 py-1" style="font-size: 0.8rem; text-decoration: none;">
                             <i class="fas fa-arrow-right mr-1"></i>Finalisasi
                         </a>
