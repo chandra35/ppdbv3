@@ -272,6 +272,25 @@
                     </a>
                 </div>
             </div>
+
+            {{-- Surat Pernyataan Peserta Didik Baru (hanya untuk yang lulus) --}}
+            <div class="card">
+                <div class="card-header bg-gradient-info">
+                    <h3 class="card-title"><i class="fas fa-file-alt mr-2"></i>Surat Pernyataan Peserta Didik Baru</h3>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-file-pdf fa-3x text-primary"></i>
+                    </div>
+                    <p class="text-muted mb-3">
+                        Download dan cetak surat pernyataan peserta didik baru.<br>
+                        <strong>Wajib ditempel materai Rp 10.000 dan dibawa saat daftar ulang.</strong>
+                    </p>
+                    <a href="{{ route('pendaftar.kelulusan.surat-pernyataan-siswa') }}" target="_blank" class="btn btn-primary btn-lg">
+                        <i class="fas fa-download mr-2"></i>Download Surat Pernyataan Siswa
+                    </a>
+                </div>
+            </div>
             @endif
 
         @else
