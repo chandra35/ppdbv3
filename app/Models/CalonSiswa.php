@@ -190,6 +190,19 @@ class CalonSiswa extends Model
         return $this->belongsTo(GelombangPendaftaran::class, 'gelombang_pendaftaran_id');
     }
 
+    public function riwayatGelombang()
+    {
+        return $this->hasMany(RiwayatGelombang::class, 'calon_siswa_id')->orderBy('created_at', 'asc');
+    }
+
+    /**
+     * Cek apakah pendaftar pernah pindah gelombang
+     */
+    public function pernahPindahGelombang(): bool
+    {
+        return $this->riwayatGelombang()->exists();
+    }
+
     public function verifiedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'verified_by');

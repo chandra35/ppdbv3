@@ -597,6 +597,8 @@ class PendaftarController extends Controller
             'dokumen.cancelledBy',
             'jalurPendaftaran', 
             'gelombangPendaftaran',
+            'riwayatGelombang.dariGelombang',
+            'riwayatGelombang.keGelombang',
             'provinsiSiswa',
             'kabupatenSiswa',
             'kecamatanSiswa',

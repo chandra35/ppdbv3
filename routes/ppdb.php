@@ -132,6 +132,10 @@ Route::middleware(['auth'])->prefix('pendaftar')->name('pendaftar.')->group(func
     Route::get('/kelulusan/surat-pernyataan', [PendaftarDashboardController::class, 'cetakSuratPernyataan'])->name('kelulusan.surat-pernyataan');
     Route::get('/kelulusan/surat-pernyataan-siswa', [PendaftarDashboardController::class, 'cetakSuratPernyataanSiswa'])->name('kelulusan.surat-pernyataan-siswa');
     Route::get('/kelulusan/download-konsider', [PendaftarDashboardController::class, 'downloadKonsider'])->name('kelulusan.download-konsider');
+
+    // Pindah Gelombang
+    Route::get('/pindah-gelombang/cek', [PendaftarDashboardController::class, 'cekGelombangBerikutnya'])->name('pindah-gelombang.cek');
+    Route::post('/pindah-gelombang', [PendaftarDashboardController::class, 'pindahGelombang'])->name('pindah-gelombang');
 });
 
 // ============================================

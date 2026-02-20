@@ -10,6 +10,8 @@ use App\Models\NilaiRapor;
 use App\Models\PpdbSettings;
 use App\Models\InformasiPendaftar;
 use App\Models\EnvelopeOpenLog;
+use App\Models\RiwayatGelombang;
+use App\Models\GelombangPendaftaran;
 use App\Services\KopSuratService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -77,7 +79,16 @@ class DashboardController extends Controller
             ];
         }
 
-        return view('pendaftar.dashboard.index', compact('calonSiswa', 'progress', 'wajibLokasi', 'dokumenBermasalah', 'kelengkapan', 'showInfoModal', 'infoList', 'kelulusanData'));
+        // Cek gelombang berikutnya (untuk notifikasi pindah gelombang)
+        $gelombangBerikutnya = null;
+        if ($calonSiswa->kelulusan && in_array($calonSiswa->kelulusan->status, ['tidak_lulus', 'cadangan'])) {
+            $gelombangBerikutnya = $this->findGelombangBerikutnya($calonSiswa);
+        }
+
+        return view('pendaftar.dashboard.index', compact(
+            'calonSiswa', 'progress', 'wajibLokasi', 'dokumenBermasalah',
+            'kelengkapan', 'showInfoModal', 'infoList', 'kelulusanData', 'gelombangBerikutnya'
+        ));
     }
 
     /**
@@ -2190,5 +2201,164 @@ class DashboardController extends Controller
         }
 
         return response()->download($filePath, 'Lampiran Konsider.' . pathinfo($filePath, PATHINFO_EXTENSION));
+    }
+
+    /**
+     * API: Cek gelombang berikutnya yang tersedia untuk pindah
+     */
+    public function cekGelombangBerikutnya()
+    {
+        $user = Auth::user();
+        $calonSiswa = CalonSiswa::where('user_id', $user->id)
+            ->with(['jalurPendaftaran', 'gelombangPendaftaran', 'kelulusan'])
+            ->first();
+
+        if (!$calonSiswa || !$calonSiswa->kelulusan) {
+            return response()->json(['available' => false]);
+        }
+
+        // Hanya yang tidak lulus atau cadangan yang bisa pindah
+        $statusKelulusan = $calonSiswa->kelulusan->status;
+        if (!in_array($statusKelulusan, ['tidak_lulus', 'cadangan'])) {
+            return response()->json(['available' => false]);
+        }
+
+        // Cari gelombang berikutnya di jalur yang sama
+        $gelombangBerikutnya = $this->findGelombangBerikutnya($calonSiswa);
+
+        if (!$gelombangBerikutnya) {
+            return response()->json(['available' => false]);
+        }
+
+        return response()->json([
+            'available' => true,
+            'gelombang' => [
+                'id' => $gelombangBerikutnya->id,
+                'nama' => $gelombangBerikutnya->nama,
+                'tanggal_tutup' => $gelombangBerikutnya->tanggal_tutup,
+                'sisa_kuota' => $gelombangBerikutnya->sisaKuota(),
+                'jalur_nama' => $calonSiswa->jalurPendaftaran->nama ?? '',
+            ],
+            'status_sebelumnya' => strtoupper($statusKelulusan),
+        ]);
+    }
+
+    /**
+     * Proses pindah gelombang
+     */
+    public function pindahGelombang(Request $request)
+    {
+        $user = Auth::user();
+        $calonSiswa = CalonSiswa::where('user_id', $user->id)
+            ->with(['jalurPendaftaran', 'gelombangPendaftaran', 'kelulusan'])
+            ->first();
+
+        if (!$calonSiswa) {
+            return response()->json(['success' => false, 'message' => 'Data pendaftar tidak ditemukan.'], 404);
+        }
+
+        // Validasi: harus punya kelulusan dengan status tidak_lulus atau cadangan
+        if (!$calonSiswa->kelulusan || !in_array($calonSiswa->kelulusan->status, ['tidak_lulus', 'cadangan'])) {
+            return response()->json(['success' => false, 'message' => 'Anda tidak memenuhi syarat untuk pindah gelombang.'], 403);
+        }
+
+        // Cari gelombang berikutnya
+        $gelombangBerikutnya = $this->findGelombangBerikutnya($calonSiswa);
+
+        if (!$gelombangBerikutnya) {
+            return response()->json(['success' => false, 'message' => 'Tidak ada gelombang berikutnya yang tersedia.'], 404);
+        }
+
+        // Validasi kuota
+        if ($gelombangBerikutnya->sisaKuota() <= 0) {
+            return response()->json(['success' => false, 'message' => 'Kuota gelombang berikutnya sudah penuh.'], 422);
+        }
+
+        // Simpan data lama
+        $gelombangLama = $calonSiswa->gelombangPendaftaran;
+        $nomorRegistrasiLama = $calonSiswa->nomor_registrasi;
+        $statusKelulusanLama = $calonSiswa->kelulusan->status;
+
+        try {
+            \DB::beginTransaction();
+
+            // 1. Generate nomor registrasi baru dari gelombang baru
+            $nomorRegistrasiBaru = $gelombangBerikutnya->generateNomorRegistrasi();
+
+            // 2. Simpan riwayat perpindahan
+            RiwayatGelombang::create([
+                'calon_siswa_id' => $calonSiswa->id,
+                'dari_gelombang_id' => $gelombangLama->id,
+                'ke_gelombang_id' => $gelombangBerikutnya->id,
+                'jalur_pendaftaran_id' => $calonSiswa->jalur_pendaftaran_id,
+                'tahun_pelajaran_id' => $calonSiswa->tahun_pelajaran_id,
+                'nomor_registrasi_lama' => $nomorRegistrasiLama,
+                'nomor_registrasi_baru' => $nomorRegistrasiBaru,
+                'status_kelulusan_sebelumnya' => $statusKelulusanLama,
+                'dipindahkan_oleh' => 'pendaftar',
+            ]);
+
+            // 3. Update calon siswa
+            $calonSiswa->update([
+                'gelombang_pendaftaran_id' => $gelombangBerikutnya->id,
+                'nomor_registrasi' => $nomorRegistrasiBaru,
+            ]);
+
+            // 4. Hapus record kelulusan lama (agar bisa di-set ulang di gelombang baru)
+            $calonSiswa->kelulusan()->delete();
+
+            // 5. Reset status admisi jika ada
+            if ($calonSiswa->status_admisi) {
+                $calonSiswa->update(['status_admisi' => null]);
+            }
+
+            // 6. Hapus envelope open log (agar bisa buka amplop lagi nanti)
+            EnvelopeOpenLog::where('calon_siswa_id', $calonSiswa->id)
+                ->where('tahun_pelajaran_id', $calonSiswa->tahun_pelajaran_id)
+                ->delete();
+
+            // 7. Reset session envelope
+            session()->forget('kelulusan_envelope_opened');
+
+            \DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Berhasil pindah ke {$gelombangBerikutnya->nama}! Nomor registrasi baru Anda: {$nomorRegistrasiBaru}",
+                'nomor_registrasi_baru' => $nomorRegistrasiBaru,
+                'gelombang_baru' => $gelombangBerikutnya->nama,
+            ]);
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            \Log::error('Gagal pindah gelombang: ' . $e->getMessage(), [
+                'calon_siswa_id' => $calonSiswa->id,
+                'ke_gelombang_id' => $gelombangBerikutnya->id,
+            ]);
+            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan. Silakan coba lagi.'], 500);
+        }
+    }
+
+    /**
+     * Helper: Cari gelombang berikutnya yang tersedia di jalur yang sama
+     */
+    private function findGelombangBerikutnya(CalonSiswa $calonSiswa): ?GelombangPendaftaran
+    {
+        if (!$calonSiswa->jalur_pendaftaran_id || !$calonSiswa->gelombangPendaftaran) {
+            return null;
+        }
+
+        return GelombangPendaftaran::where('jalur_id', $calonSiswa->jalur_pendaftaran_id)
+            ->where('is_active', true)
+            ->where('urutan', '>', $calonSiswa->gelombangPendaftaran->urutan)
+            ->where(function ($q) {
+                $q->where('status', 'open')
+                  ->orWhere(function ($q2) {
+                      // Auto-computed status: dalam periode pendaftaran
+                      $q2->whereDate('tanggal_buka', '<=', now()->toDateString())
+                         ->whereDate('tanggal_tutup', '>=', now()->toDateString());
+                  });
+            })
+            ->orderBy('urutan', 'asc')
+            ->first();
     }
 }

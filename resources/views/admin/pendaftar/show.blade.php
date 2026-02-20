@@ -649,6 +649,15 @@ dl.row dt {
                             <td><i class="fas fa-calendar text-muted"></i> <strong>Terdaftar</strong></td>
                             <td class="text-right"><small>{{ $pendaftar->created_at->format('d/m/Y') }}</small></td>
                         </tr>
+                        @if($pendaftar->riwayatGelombang && $pendaftar->riwayatGelombang->count() > 0)
+                        <tr>
+                            <td><i class="fas fa-exchange-alt text-warning"></i> <strong>Pindah Gelombang</strong></td>
+                            <td class="text-right">
+                                <span class="label label-warning">{{ $pendaftar->riwayatGelombang->count() }}x pindah</span>
+                            </td>
+                        </tr>
+                        @endif
+                        </tr>
                         @if($pendaftar->hasRegistrationCoordinates())
                         <tr>
                             <td><i class="fas fa-map-marker-alt text-danger"></i> <strong>Lokasi Daftar</strong></td>
@@ -1419,6 +1428,82 @@ dl.row dt {
                             </div>
                         </div>
                         @endforeach
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <!-- Riwayat Gelombang -->
+            @if($pendaftar->riwayatGelombang && $pendaftar->riwayatGelombang->count() > 0)
+            <div class="box box-solid box-warning">
+                <div class="box-header with-border">
+                    <h3 class="box-title"><i class="fas fa-exchange-alt"></i> Riwayat Perpindahan Gelombang</h3>
+                    <div class="box-tools pull-right">
+                        <span class="badge badge-warning">{{ $pendaftar->riwayatGelombang->count() }}x pindah</span>
+                    </div>
+                </div>
+                <div class="box-body">
+                    <div class="timeline">
+                        @foreach($pendaftar->riwayatGelombang as $riwayat)
+                        <div class="time-label">
+                            <span class="bg-warning">{{ $riwayat->created_at->format('d M Y') }}</span>
+                        </div>
+                        <div>
+                            <i class="fas fa-exchange-alt bg-info"></i>
+                            <div class="timeline-item">
+                                <span class="time"><i class="fas fa-clock"></i> {{ $riwayat->created_at->format('H:i') }}</span>
+                                <h3 class="timeline-header">
+                                    <strong>{{ $riwayat->dariGelombang->nama ?? '?' }}</strong>
+                                    <i class="fas fa-arrow-right mx-2 text-info"></i>
+                                    <strong>{{ $riwayat->keGelombang->nama ?? '?' }}</strong>
+                                </h3>
+                                <div class="timeline-body">
+                                    <table class="table table-sm table-borderless mb-0" style="font-size: 12px;">
+                                        <tr>
+                                            <td width="45%" class="text-muted p-1">No. Reg Lama</td>
+                                            <td class="p-1"><code>{{ $riwayat->nomor_registrasi_lama ?? '-' }}</code></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted p-1">No. Reg Baru</td>
+                                            <td class="p-1"><code class="text-success">{{ $riwayat->nomor_registrasi_baru ?? '-' }}</code></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted p-1">Status Kelulusan Sebelumnya</td>
+                                            <td class="p-1">
+                                                @php $stLama = $riwayat->status_kelulusan_sebelumnya; @endphp
+                                                <span class="badge badge-{{ $stLama === 'tidak_lulus' ? 'danger' : ($stLama === 'cadangan' ? 'warning' : 'secondary') }}">
+                                                    {{ strtoupper(str_replace('_', ' ', $stLama ?? '-')) }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted p-1">Dipindahkan Oleh</td>
+                                            <td class="p-1">
+                                                <span class="badge badge-{{ $riwayat->dipindahkan_oleh === 'admin' ? 'primary' : 'info' }}">
+                                                    {{ ucfirst($riwayat->dipindahkan_oleh) }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        @if($riwayat->catatan)
+                                        <tr>
+                                            <td class="text-muted p-1">Catatan</td>
+                                            <td class="p-1">{{ $riwayat->catatan }}</td>
+                                        </tr>
+                                        @endif
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                        <div>
+                            <i class="fas fa-check-circle bg-success"></i>
+                            <div class="timeline-item">
+                                <h3 class="timeline-header text-muted" style="font-size: 12px;">
+                                    Gelombang saat ini: <strong>{{ $pendaftar->gelombangPendaftaran->nama ?? '-' }}</strong>
+                                    &middot; No. Reg: <code>{{ $pendaftar->nomor_registrasi }}</code>
+                                </h3>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

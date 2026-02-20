@@ -482,6 +482,47 @@
 </div>
 @endif
 
+{{-- Notifikasi Pindah Gelombang --}}
+@if(isset($gelombangBerikutnya) && $gelombangBerikutnya)
+<div class="row" id="pindah-gelombang-section">
+    <div class="col-12">
+        <div class="card" style="border: 2px solid #17a2b8; border-radius: 16px; overflow: hidden; background: linear-gradient(135deg, #f0f9ff 0%, #e8f4fd 100%);">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-start">
+                    <div class="mr-3">
+                        <span class="bg-info rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="fas fa-exchange-alt fa-lg text-white"></i>
+                        </span>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h5 class="font-weight-bold text-info mb-1">
+                            <i class="fas fa-bullhorn mr-1"></i> {{ $gelombangBerikutnya->nama }} {{ $calonSiswa->jalurPendaftaran->nama ?? '' }} Sudah Dibuka!
+                        </h5>
+                        <p class="text-muted mb-2">
+                            Anda dapat mendaftar ulang di <strong>{{ $gelombangBerikutnya->nama }}</strong> tanpa perlu registrasi dari awal.
+                            Data pribadi & dokumen Anda akan dipertahankan.
+                        </p>
+                        <div class="d-flex flex-wrap align-items-center mb-3" style="gap: 15px;">
+                            <span class="text-dark">
+                                <i class="fas fa-users text-info mr-1"></i>
+                                Sisa kuota: <strong>{{ $gelombangBerikutnya->sisaKuota() }}</strong> dari {{ $gelombangBerikutnya->kuotaEfektif() }}
+                            </span>
+                            <span class="text-dark">
+                                <i class="fas fa-calendar-times text-danger mr-1"></i>
+                                Batas: <strong>{{ \Carbon\Carbon::parse($gelombangBerikutnya->tanggal_tutup)->locale('id')->translatedFormat('d F Y') }}</strong>
+                            </span>
+                        </div>
+                        <button type="button" class="btn btn-info btn-lg px-4" onclick="konfirmasiPindahGelombang()" id="btnPindahGelombang">
+                            <i class="fas fa-arrow-right mr-2"></i> Daftar {{ $gelombangBerikutnya->nama }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 {{-- Compact Checklist Status --}}
 @php
     $gelombangStatus = $calonSiswa->gelombangPendaftaran ? $calonSiswa->gelombangPendaftaran->status : null;
@@ -1189,6 +1230,78 @@ $(function() {
         }, 500);
     }
 });
+</script>
+@endif
+
+{{-- JS Pindah Gelombang --}}
+@if(isset($gelombangBerikutnya) && $gelombangBerikutnya)
+<script>
+function konfirmasiPindahGelombang() {
+    Swal.fire({
+        title: 'Pindah ke {{ $gelombangBerikutnya->nama }}?',
+        html: `
+            <div class="text-left" style="font-size: 14px;">
+                <p class="mb-2">Anda akan dipindahkan dari <strong>{{ $calonSiswa->gelombangPendaftaran->nama ?? 'Gelombang sebelumnya' }}</strong> ke <strong>{{ $gelombangBerikutnya->nama }}</strong>.</p>
+                <div class="alert alert-info py-2 px-3 mb-2">
+                    <small>
+                        <i class="fas fa-check mr-1"></i> Data pribadi & dokumen <strong>tetap tersimpan</strong><br>
+                        <i class="fas fa-check mr-1"></i> Nomor registrasi akan <strong>diperbarui</strong><br>
+                        <i class="fas fa-check mr-1"></i> Riwayat gelombang sebelumnya <strong>tetap tercatat</strong>
+                    </small>
+                </div>
+                <div class="alert alert-warning py-2 px-3 mb-0">
+                    <small>
+                        <i class="fas fa-exclamation-triangle mr-1"></i> Status kelulusan sebelumnya akan <strong>direset</strong><br>
+                        <i class="fas fa-exclamation-triangle mr-1"></i> Tindakan ini <strong>tidak dapat dibatalkan</strong>
+                    </small>
+                </div>
+            </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#17a2b8',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="fas fa-exchange-alt mr-1"></i> Ya, Pindah Gelombang',
+        cancelButtonText: 'Batal',
+        showLoaderOnConfirm: true,
+        preConfirm: () => {
+            return fetch('{{ route("pendaftar.pindah-gelombang") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    throw new Error(data.message || 'Gagal pindah gelombang');
+                }
+                return data;
+            })
+            .catch(error => {
+                Swal.showValidationMessage(error.message);
+            });
+        },
+        allowOutsideClick: () => !Swal.isLoading()
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil Pindah Gelombang!',
+                html: `
+                    <p>${result.value.message}</p>
+                    <p class="mb-0"><strong>Nomor Registrasi Baru:</strong><br>
+                    <code style="font-size: 18px;">${result.value.nomor_registrasi_baru}</code></p>
+                `,
+                confirmButtonText: 'OK',
+                allowOutsideClick: false
+            }).then(() => {
+                window.location.reload();
+            });
+        }
+    });
+}
 </script>
 @endif
 @endsection
