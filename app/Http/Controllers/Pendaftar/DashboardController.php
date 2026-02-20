@@ -81,7 +81,7 @@ class DashboardController extends Controller
 
         // Cek gelombang berikutnya (untuk notifikasi pindah gelombang)
         $gelombangBerikutnya = null;
-        if ($calonSiswa->kelulusan && in_array($calonSiswa->kelulusan->status, ['tidak_lulus', 'cadangan'])) {
+        if ($this->bisaPindahGelombang($calonSiswa)) {
             $gelombangBerikutnya = $this->findGelombangBerikutnya($calonSiswa);
         }
 
@@ -2213,13 +2213,7 @@ class DashboardController extends Controller
             ->with(['jalurPendaftaran', 'gelombangPendaftaran', 'kelulusan'])
             ->first();
 
-        if (!$calonSiswa || !$calonSiswa->kelulusan) {
-            return response()->json(['available' => false]);
-        }
-
-        // Hanya yang tidak lulus atau cadangan yang bisa pindah
-        $statusKelulusan = $calonSiswa->kelulusan->status;
-        if (!in_array($statusKelulusan, ['tidak_lulus', 'cadangan'])) {
+        if (!$calonSiswa || !$this->bisaPindahGelombang($calonSiswa)) {
             return response()->json(['available' => false]);
         }
 
@@ -2230,6 +2224,8 @@ class DashboardController extends Controller
             return response()->json(['available' => false]);
         }
 
+        $statusKelulusan = $calonSiswa->kelulusan->status ?? null;
+
         return response()->json([
             'available' => true,
             'gelombang' => [
@@ -2239,7 +2235,7 @@ class DashboardController extends Controller
                 'sisa_kuota' => $gelombangBerikutnya->sisaKuota(),
                 'jalur_nama' => $calonSiswa->jalurPendaftaran->nama ?? '',
             ],
-            'status_sebelumnya' => strtoupper($statusKelulusan),
+            'status_sebelumnya' => $statusKelulusan ? strtoupper($statusKelulusan) : 'BELUM ADA',
         ]);
     }
 
@@ -2257,8 +2253,8 @@ class DashboardController extends Controller
             return response()->json(['success' => false, 'message' => 'Data pendaftar tidak ditemukan.'], 404);
         }
 
-        // Validasi: harus punya kelulusan dengan status tidak_lulus atau cadangan
-        if (!$calonSiswa->kelulusan || !in_array($calonSiswa->kelulusan->status, ['tidak_lulus', 'cadangan'])) {
+        // Validasi: harus memenuhi syarat pindah gelombang
+        if (!$this->bisaPindahGelombang($calonSiswa)) {
             return response()->json(['success' => false, 'message' => 'Anda tidak memenuhi syarat untuk pindah gelombang.'], 403);
         }
 
@@ -2277,7 +2273,7 @@ class DashboardController extends Controller
         // Simpan data lama
         $gelombangLama = $calonSiswa->gelombangPendaftaran;
         $nomorRegistrasiLama = $calonSiswa->nomor_registrasi;
-        $statusKelulusanLama = $calonSiswa->kelulusan->status;
+        $statusKelulusanLama = $calonSiswa->kelulusan->status ?? 'tidak_mengikuti_seleksi';
 
         try {
             \DB::beginTransaction();
@@ -2304,8 +2300,10 @@ class DashboardController extends Controller
                 'nomor_registrasi' => $nomorRegistrasiBaru,
             ]);
 
-            // 4. Hapus record kelulusan lama (agar bisa di-set ulang di gelombang baru)
-            $calonSiswa->kelulusan()->delete();
+            // 4. Hapus record kelulusan lama jika ada (agar bisa di-set ulang di gelombang baru)
+            if ($calonSiswa->kelulusan) {
+                $calonSiswa->kelulusan()->delete();
+            }
 
             // 5. Reset status admisi jika ada
             if ($calonSiswa->status_admisi) {
@@ -2336,6 +2334,35 @@ class DashboardController extends Controller
             ]);
             return response()->json(['success' => false, 'message' => 'Terjadi kesalahan. Silakan coba lagi.'], 500);
         }
+    }
+
+    /**
+     * Helper: Cek apakah pendaftar bisa pindah gelombang
+     * Syarat:
+     * 1. Kelulusan tidak_lulus / cadangan, ATAU
+     * 2. Tidak punya record kelulusan DAN gelombang lama sudah closed/finished
+     * Yang LULUS tidak bisa pindah
+     */
+    private function bisaPindahGelombang(CalonSiswa $calonSiswa): bool
+    {
+        // Harus punya gelombang saat ini
+        if (!$calonSiswa->gelombangPendaftaran) {
+            return false;
+        }
+
+        // Yang lulus TIDAK bisa pindah
+        if ($calonSiswa->kelulusan && $calonSiswa->kelulusan->status === 'lulus') {
+            return false;
+        }
+
+        // Yang tidak lulus / cadangan → bisa pindah
+        if ($calonSiswa->kelulusan && in_array($calonSiswa->kelulusan->status, ['tidak_lulus', 'cadangan'])) {
+            return true;
+        }
+
+        // Tidak punya kelulusan → bisa pindah HANYA jika gelombang lama sudah closed/finished
+        $gelombangStatus = $calonSiswa->gelombangPendaftaran->computed_status ?? $calonSiswa->gelombangPendaftaran->status;
+        return in_array($gelombangStatus, ['closed', 'finished']);
     }
 
     /**

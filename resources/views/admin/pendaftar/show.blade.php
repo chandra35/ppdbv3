@@ -1471,9 +1471,13 @@ dl.row dt {
                                             <td class="text-muted p-1">Status Kelulusan Sebelumnya</td>
                                             <td class="p-1">
                                                 @php $stLama = $riwayat->status_kelulusan_sebelumnya; @endphp
-                                                <span class="badge badge-{{ $stLama === 'tidak_lulus' ? 'danger' : ($stLama === 'cadangan' ? 'warning' : 'secondary') }}">
-                                                    {{ strtoupper(str_replace('_', ' ', $stLama ?? '-')) }}
-                                                </span>
+                                                @if($stLama === 'tidak_mengikuti_seleksi')
+                                                    <span class="badge badge-secondary">TIDAK MENGIKUTI SELEKSI</span>
+                                                @else
+                                                    <span class="badge badge-{{ $stLama === 'tidak_lulus' ? 'danger' : ($stLama === 'cadangan' ? 'warning' : 'secondary') }}">
+                                                        {{ strtoupper(str_replace('_', ' ', $stLama ?? '-')) }}
+                                                    </span>
+                                                @endif
                                             </td>
                                         </tr>
                                         <tr>

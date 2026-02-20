@@ -499,7 +499,11 @@
                             <i class="fas fa-bullhorn mr-1"></i> {{ $gelombangBerikutnya->nama }} {{ $calonSiswa->jalurPendaftaran->nama ?? '' }} Sudah Dibuka!
                         </h5>
                         <p class="text-muted mb-2">
-                            Anda dapat mendaftar ulang di <strong>{{ $gelombangBerikutnya->nama }}</strong> tanpa perlu registrasi dari awal.
+                            @if($calonSiswa->kelulusan && in_array($calonSiswa->kelulusan->status, ['tidak_lulus', 'cadangan']))
+                                Anda dapat mendaftar ulang di <strong>{{ $gelombangBerikutnya->nama }}</strong> tanpa perlu registrasi dari awal.
+                            @else
+                                Gelombang sebelumnya sudah ditutup. Anda dapat melanjutkan pendaftaran di <strong>{{ $gelombangBerikutnya->nama }}</strong>.
+                            @endif
                             Data pribadi & dokumen Anda akan dipertahankan.
                         </p>
                         <div class="d-flex flex-wrap align-items-center mb-3" style="gap: 15px;">
@@ -1251,7 +1255,9 @@ function konfirmasiPindahGelombang() {
                 </div>
                 <div class="alert alert-warning py-2 px-3 mb-0">
                     <small>
+                        @if($calonSiswa->kelulusan)
                         <i class="fas fa-exclamation-triangle mr-1"></i> Status kelulusan sebelumnya akan <strong>direset</strong><br>
+                        @endif
                         <i class="fas fa-exclamation-triangle mr-1"></i> Tindakan ini <strong>tidak dapat dibatalkan</strong>
                     </small>
                 </div>
