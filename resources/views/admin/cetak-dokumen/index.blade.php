@@ -125,7 +125,8 @@
                         <th>Jalur</th>
                         <th>Gelombang</th>
                         <th>Tgl Finalisasi</th>
-                        <th class="text-center" width="200">Aksi</th>
+                        <th>Status Kelulusan</th>
+                        <th class="text-center" width="280">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -166,6 +167,16 @@
                         <td>
                             <small>{{ $p->tanggal_finalisasi ? $p->tanggal_finalisasi->format('d/m/Y H:i') : '-' }}</small>
                         </td>
+                        <td>
+                            @if($p->kelulusan)
+                                @php $stKel = $p->kelulusan->status; @endphp
+                                <span class="badge badge-{{ $stKel === 'lulus' ? 'success' : ($stKel === 'cadangan' ? 'warning' : 'danger') }}">
+                                    {{ strtoupper(str_replace('_', ' ', $stKel)) }}
+                                </span>
+                            @else
+                                <small class="text-muted">-</small>
+                            @endif
+                        </td>
                         <td class="text-center">
                             <div class="btn-group btn-group-sm">
                                 <a href="{{ route('admin.pendaftar.show', $p->id) }}" class="btn btn-info" title="Detail">
@@ -185,12 +196,22 @@
                                     <i class="fas fa-id-card"></i>
                                 </button>
                                 @endif
+                                @if($p->kelulusan && $p->kelulusan->status === 'lulus')
+                                <a href="{{ route('admin.cetak-dokumen.surat-pernyataan-ortu', $p->id) }}" 
+                                   class="btn btn-success" title="Surat Pernyataan Orang Tua" target="_blank">
+                                    <i class="fas fa-file-signature"></i>
+                                </a>
+                                <a href="{{ route('admin.cetak-dokumen.surat-pernyataan-siswa', $p->id) }}" 
+                                   class="btn btn-dark" title="Surat Pernyataan Calon Siswa" target="_blank">
+                                    <i class="fas fa-file-contract"></i>
+                                </a>
+                                @endif
                             </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="9" class="text-center text-muted py-4">
+                        <td colspan="10" class="text-center text-muted py-4">
                             <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
                             Tidak ada pendaftar yang sudah difinalisasi
                         </td>

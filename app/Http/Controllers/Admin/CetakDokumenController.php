@@ -4,15 +4,23 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CalonSiswa;
+use App\Models\CalonOrtu;
 use App\Models\TahunPelajaran;
 use App\Models\JalurPendaftaran;
 use App\Models\GelombangPendaftaran;
 use App\Models\SekolahSettings;
+use App\Services\KopSuratService;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class CetakDokumenController extends Controller
 {
+    protected $kopSuratService;
+
+    public function __construct(KopSuratService $kopSuratService)
+    {
+        $this->kopSuratService = $kopSuratService;
+    }
     /**
      * Display list of pendaftar for document printing
      */
@@ -39,7 +47,7 @@ class CetakDokumenController extends Controller
             : collect();
 
         // Build query - hanya yang sudah finalisasi
-        $query = CalonSiswa::with(['jalurPendaftaran', 'gelombangPendaftaran'])
+        $query = CalonSiswa::with(['jalurPendaftaran', 'gelombangPendaftaran', 'kelulusan'])
             ->where('is_finalisasi', true);
 
         if ($tahunAktif) {
@@ -178,5 +186,113 @@ class CetakDokumenController extends Controller
     public function previewKartuTes($id)
     {
         return redirect()->route('admin.pendaftar.cetak-ujian.preview', $id);
+    }
+
+    /**
+     * Cetak Surat Pernyataan Orang Tua (Admin)
+     */
+    public function cetakSuratPernyataanOrtu($id)
+    {
+        ini_set('memory_limit', '256M');
+
+        $calonSiswa = CalonSiswa::with([
+            'jalurPendaftaran',
+            'gelombangPendaftaran',
+            'tahunPelajaran',
+            'ortu',
+            'kelulusan',
+        ])->findOrFail($id);
+
+        if (!$calonSiswa->kelulusan || $calonSiswa->kelulusan->status !== 'lulus') {
+            return back()->with('error', 'Surat pernyataan hanya tersedia untuk peserta yang dinyatakan lulus.');
+        }
+
+        $sekolahSettings = SekolahSettings::with(['province', 'city'])->first();
+        $kopHtml = $this->kopSuratService->renderKopHtml($sekolahSettings, true);
+
+        $namaSekolah = $sekolahSettings->nama_sekolah ?? config('app.name', 'Sekolah');
+        $kota = $sekolahSettings->city->name ?? config('app.school_city', '............');
+        $kepalaSekolah = $sekolahSettings->nama_kepala_sekolah ?? null;
+        $nipKepalaSekolah = $sekolahSettings->nip_kepala_sekolah ?? null;
+
+        $ortu = $calonSiswa->ortu;
+        if ($ortu && $ortu->tinggal_dengan_wali && $ortu->nama_wali) {
+            $namaOrtu = $ortu->nama_wali;
+            $pekerjaanOrtu = $ortu->pekerjaan_wali ? (CalonOrtu::PEKERJAAN[$ortu->pekerjaan_wali] ?? ucwords(str_replace('_', ' ', $ortu->pekerjaan_wali))) : '-';
+            $hpOrtu = $ortu->no_hp_wali ?? '-';
+            $hubunganOrtu = $ortu->hubungan_wali_label ?? 'Wali';
+        } else {
+            $namaOrtu = $ortu->nama_ayah ?? $ortu->nama_ibu ?? '-';
+            if ($ortu && $ortu->nama_ayah) {
+                $pekerjaanOrtu = $ortu->pekerjaan_ayah_label ?? '-';
+                $hpOrtu = $ortu->hp_ayah ?? $ortu->hp_ibu ?? '-';
+                $hubunganOrtu = 'Orang Tua (Ayah)';
+            } else {
+                $pekerjaanOrtu = $ortu ? ($ortu->pekerjaan_ibu_label ?? '-') : '-';
+                $hpOrtu = $ortu->hp_ibu ?? '-';
+                $hubunganOrtu = 'Orang Tua (Ibu)';
+            }
+        }
+
+        $alamatOrtu = $ortu ? $ortu->alamat_lengkap_ortu : '-';
+
+        $pdf = Pdf::loadView('pendaftar.pdf.surat-pernyataan-ortu', compact(
+            'calonSiswa', 'kopHtml', 'namaSekolah', 'kota',
+            'kepalaSekolah', 'nipKepalaSekolah',
+            'namaOrtu', 'pekerjaanOrtu', 'alamatOrtu', 'hpOrtu', 'hubunganOrtu'
+        ));
+
+        $pdf->setPaper('A4', 'portrait');
+        $filename = 'Surat Pernyataan Ortu ' . preg_replace('/[\/\\\:*?"<>|]/', '-', $calonSiswa->nama_lengkap) . '.pdf';
+
+        return $pdf->stream($filename);
+    }
+
+    /**
+     * Cetak Surat Pernyataan Calon Siswa (Admin)
+     */
+    public function cetakSuratPernyataanSiswa($id)
+    {
+        ini_set('memory_limit', '256M');
+
+        $calonSiswa = CalonSiswa::with([
+            'jalurPendaftaran',
+            'gelombangPendaftaran',
+            'tahunPelajaran',
+            'ortu',
+            'kelulusan',
+        ])->findOrFail($id);
+
+        if (!$calonSiswa->kelulusan || $calonSiswa->kelulusan->status !== 'lulus') {
+            return back()->with('error', 'Surat pernyataan hanya tersedia untuk peserta yang dinyatakan lulus.');
+        }
+
+        $sekolahSettings = SekolahSettings::with(['province', 'city'])->first();
+        $kopHtml = $this->kopSuratService->renderKopHtml($sekolahSettings, true);
+
+        $namaSekolah = $sekolahSettings->nama_sekolah ?? config('app.name', 'Sekolah');
+        $kota = $sekolahSettings->city->name ?? config('app.school_city', '............');
+
+        $ortu = $calonSiswa->ortu;
+        if ($ortu && $ortu->tinggal_dengan_wali && $ortu->nama_wali) {
+            $namaOrtu = $ortu->nama_wali;
+            $pekerjaanOrtu = $ortu->pekerjaan_wali ? (CalonOrtu::PEKERJAAN[$ortu->pekerjaan_wali] ?? ucwords(str_replace('_', ' ', $ortu->pekerjaan_wali))) : '-';
+        } else {
+            $namaOrtu = $ortu->nama_ayah ?? $ortu->nama_ibu ?? '-';
+            if ($ortu && $ortu->nama_ayah) {
+                $pekerjaanOrtu = $ortu->pekerjaan_ayah_label ?? '-';
+            } else {
+                $pekerjaanOrtu = $ortu ? ($ortu->pekerjaan_ibu_label ?? '-') : '-';
+            }
+        }
+
+        $pdf = Pdf::loadView('pendaftar.pdf.surat-pernyataan-siswa', compact(
+            'calonSiswa', 'kopHtml', 'namaSekolah', 'kota', 'namaOrtu', 'pekerjaanOrtu'
+        ));
+
+        $pdf->setPaper('A4', 'portrait');
+        $filename = 'Surat Pernyataan Siswa ' . preg_replace('/[\/\\\:*?"<>|]/', '-', $calonSiswa->nama_lengkap) . '.pdf';
+
+        return $pdf->stream($filename);
     }
 }

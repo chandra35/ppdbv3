@@ -274,6 +274,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/', [\App\Http\Controllers\Admin\CetakDokumenController::class, 'index'])->name('index');
         Route::post('/batch-registrasi', [\App\Http\Controllers\Admin\CetakDokumenController::class, 'batchCetakRegistrasi'])->name('batch-registrasi');
         Route::post('/batch-kartu-tes', [\App\Http\Controllers\Admin\CetakDokumenController::class, 'batchCetakKartuTes'])->name('batch-kartu-tes');
+        Route::get('/surat-pernyataan-ortu/{id}', [\App\Http\Controllers\Admin\CetakDokumenController::class, 'cetakSuratPernyataanOrtu'])->name('surat-pernyataan-ortu');
+        Route::get('/surat-pernyataan-siswa/{id}', [\App\Http\Controllers\Admin\CetakDokumenController::class, 'cetakSuratPernyataanSiswa'])->name('surat-pernyataan-siswa');
     });
 
     // ---- PENJADWALAN UJIAN (CBT + TBQ PARALEL) ----
