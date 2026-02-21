@@ -119,7 +119,7 @@
             <div class="card-tools">
                 <form method="GET" class="input-group input-group-sm" style="width: 250px;">
                     <input type="hidden" name="tab" value="sudah">
-                    <input type="text" name="search" class="form-control" placeholder="Cari nama/NISN/no.reg..."
+                    <input type="text" name="search" class="form-control" placeholder="Cari nama/NISN/no.tes..."
                            value="{{ request('search') }}">
                     <div class="input-group-append">
                         <button type="submit" class="btn btn-default"><i class="fas fa-search"></i></button>
@@ -150,11 +150,16 @@
                                 </a>
                             </th>
                             <th>
-                                <a href="{{ $sortUrl('nomor_registrasi') }}" class="text-dark text-decoration-none">
-                                    No. Registrasi {!! $sortIcon('nomor_registrasi') !!}
+                                <a href="{{ $sortUrl('nomor_tes') }}" class="text-dark text-decoration-none">
+                                    No. Tes {!! $sortIcon('nomor_tes') !!}
                                 </a>
                             </th>
                             <th>Jalur</th>
+                            <th>
+                                <a href="{{ $sortUrl('pilihan_program') }}" class="text-dark text-decoration-none">
+                                    Minat {!! $sortIcon('pilihan_program') !!}
+                                </a>
+                            </th>
                             <th>Status Kelulusan</th>
                             <th>
                                 <a href="{{ $sortUrl('opened_at') }}" class="text-dark text-decoration-none">
@@ -187,12 +192,21 @@
                                 @endif
                             </td>
                             <td>{{ $log->calonSiswa->nisn ?? '-' }}</td>
-                            <td><code>{{ $log->calonSiswa->nomor_registrasi ?? '-' }}</code></td>
+                            <td><code>{{ $log->calonSiswa->nomor_tes ?? '-' }}</code></td>
                             <td>
                                 @if($log->calonSiswa && $log->calonSiswa->jalurPendaftaran)
                                     <span class="badge badge-info">{{ $log->calonSiswa->jalurPendaftaran->nama }}</span>
                                 @else
                                     -
+                                @endif
+                            </td>
+                            <td>
+                                @if($log->calonSiswa && $log->calonSiswa->pilihan_program)
+                                    <span class="badge badge-{{ $log->calonSiswa->pilihan_program === 'asrama' ? 'dark' : 'light border' }}">
+                                        {{ ucfirst($log->calonSiswa->pilihan_program) }}
+                                    </span>
+                                @else
+                                    <small class="text-muted">-</small>
                                 @endif
                             </td>
                             <td>
@@ -232,7 +246,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="9" class="text-center py-4 text-muted">
+                            <td colspan="10" class="text-center py-4 text-muted">
                                 <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
                                 Belum ada pendaftar yang membuka amplop
                             </td>
@@ -259,7 +273,7 @@
             <div class="card-tools">
                 <form method="GET" class="input-group input-group-sm" style="width: 250px;">
                     <input type="hidden" name="tab" value="belum">
-                    <input type="text" name="search_belum" class="form-control" placeholder="Cari nama/NISN/no.reg..."
+                    <input type="text" name="search_belum" class="form-control" placeholder="Cari nama/NISN/no.tes..."
                            value="{{ request('search_belum') }}">
                     <div class="input-group-append">
                         <button type="submit" class="btn btn-default"><i class="fas fa-search"></i></button>
@@ -290,12 +304,17 @@
                                 </a>
                             </th>
                             <th>
-                                <a href="{{ $sortUrlBelum('nomor_registrasi') }}" class="text-dark text-decoration-none">
-                                    No. Registrasi {!! $sortIconBelum('nomor_registrasi') !!}
+                                <a href="{{ $sortUrlBelum('nomor_tes') }}" class="text-dark text-decoration-none">
+                                    No. Tes {!! $sortIconBelum('nomor_tes') !!}
                                 </a>
                             </th>
                             <th>Jalur</th>
                             <th>Gelombang</th>
+                            <th>
+                                <a href="{{ $sortUrlBelum('pilihan_program') }}" class="text-dark text-decoration-none">
+                                    Minat {!! $sortIconBelum('pilihan_program') !!}
+                                </a>
+                            </th>
                             <th>
                                 <a href="{{ $sortUrlBelum('status') }}" class="text-dark text-decoration-none">
                                     Status Kelulusan {!! $sortIconBelum('status') !!}
@@ -318,7 +337,7 @@
                                 @endif
                             </td>
                             <td>{{ $kelulusan->calonSiswa->nisn ?? '-' }}</td>
-                            <td><code>{{ $kelulusan->calonSiswa->nomor_registrasi ?? '-' }}</code></td>
+                            <td><code>{{ $kelulusan->calonSiswa->nomor_tes ?? '-' }}</code></td>
                             <td>
                                 @if($kelulusan->calonSiswa && $kelulusan->calonSiswa->jalurPendaftaran)
                                     <span class="badge badge-info">{{ $kelulusan->calonSiswa->jalurPendaftaran->nama }}</span>
@@ -331,6 +350,15 @@
                                     <span class="badge badge-secondary">{{ $kelulusan->calonSiswa->gelombangPendaftaran->nama }}</span>
                                 @else
                                     -
+                                @endif
+                            </td>
+                            <td>
+                                @if($kelulusan->calonSiswa && $kelulusan->calonSiswa->pilihan_program)
+                                    <span class="badge badge-{{ $kelulusan->calonSiswa->pilihan_program === 'asrama' ? 'dark' : 'light border' }}">
+                                        {{ ucfirst($kelulusan->calonSiswa->pilihan_program) }}
+                                    </span>
+                                @else
+                                    <small class="text-muted">-</small>
                                 @endif
                             </td>
                             <td>
@@ -356,7 +384,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="8" class="text-center py-4 text-muted">
+                            <td colspan="9" class="text-center py-4 text-muted">
                                 <i class="fas fa-check-circle fa-2x mb-2 d-block text-success"></i>
                                 Semua peserta sudah membuka amplop!
                             </td>

@@ -188,7 +188,7 @@ class KelulusanSettingController extends Controller
             $query->whereHas('calonSiswa', function ($q) use ($search) {
                 $q->where('nama_lengkap', 'like', "%{$search}%")
                   ->orWhere('nisn', 'like', "%{$search}%")
-                  ->orWhere('nomor_registrasi', 'like', "%{$search}%");
+                  ->orWhere('nomor_tes', 'like', "%{$search}%");
             });
         }
 
@@ -196,7 +196,7 @@ class KelulusanSettingController extends Controller
         $sortBy = $request->input('sort', 'opened_at');
         $sortDir = $request->input('dir', 'desc');
         $allowedSorts = ['opened_at', 'ip_address', 'location_name', 'created_at'];
-        $allowedRelationSorts = ['nama_lengkap', 'nisn', 'nomor_registrasi'];
+        $allowedRelationSorts = ['nama_lengkap', 'nisn', 'nomor_tes', 'pilihan_program'];
 
         if (in_array($sortBy, $allowedSorts)) {
             $query->orderBy($sortBy, $sortDir === 'asc' ? 'asc' : 'desc');
@@ -227,7 +227,7 @@ class KelulusanSettingController extends Controller
             $belumBukaQuery->whereHas('calonSiswa', function ($q) use ($search) {
                 $q->where('nama_lengkap', 'like', "%{$search}%")
                   ->orWhere('nisn', 'like', "%{$search}%")
-                  ->orWhere('nomor_registrasi', 'like', "%{$search}%");
+                  ->orWhere('nomor_tes', 'like', "%{$search}%");
             });
         }
 
@@ -235,7 +235,7 @@ class KelulusanSettingController extends Controller
         $sortBelum = $request->input('sort_belum', 'nama_lengkap');
         $dirBelum = $request->input('dir_belum', 'asc');
         $allowedBelumSorts = ['status', 'tanggal_kelulusan'];
-        $allowedBelumRelSorts = ['nama_lengkap', 'nisn', 'nomor_registrasi'];
+        $allowedBelumRelSorts = ['nama_lengkap', 'nisn', 'nomor_tes', 'pilihan_program'];
 
         if (in_array($sortBelum, $allowedBelumSorts)) {
             $belumBukaQuery->orderBy($sortBelum, $dirBelum === 'asc' ? 'asc' : 'desc');
