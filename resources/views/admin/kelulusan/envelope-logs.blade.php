@@ -23,7 +23,7 @@
 
     $sortUrl = function($column) {
         $dir = (request('sort') === $column && request('dir', 'desc') === 'asc') ? 'desc' : 'asc';
-        return request()->fullUrlWithQuery(['sort' => $column, 'dir' => $dir, 'page' => 1]);
+        return request()->fullUrlWithQuery(['sort' => $column, 'dir' => $dir, 'page' => 1, 'tab' => 'sudah']);
     };
 
     $sortIcon = function($column) {
@@ -31,6 +31,22 @@
             return '<i class="fas fa-sort text-muted ml-1"></i>';
         }
         $dir = request('dir', 'desc');
+        return $dir === 'asc'
+            ? '<i class="fas fa-sort-up text-primary ml-1"></i>'
+            : '<i class="fas fa-sort-down text-primary ml-1"></i>';
+    };
+
+    // Sort helpers for belum buka tab
+    $sortUrlBelum = function($column) {
+        $dir = (request('sort_belum') === $column && request('dir_belum', 'asc') === 'asc') ? 'desc' : 'asc';
+        return request()->fullUrlWithQuery(['sort_belum' => $column, 'dir_belum' => $dir, 'page_belum' => 1, 'tab' => 'belum']);
+    };
+
+    $sortIconBelum = function($column) {
+        if (request('sort_belum') !== $column && !($column === 'nama_lengkap' && !request('sort_belum'))) {
+            return '<i class="fas fa-sort text-muted ml-1"></i>';
+        }
+        $dir = request('dir_belum', 'asc');
         return $dir === 'asc'
             ? '<i class="fas fa-sort-up text-primary ml-1"></i>'
             : '<i class="fas fa-sort-down text-primary ml-1"></i>';
@@ -52,37 +68,63 @@
             </div>
         </div>
         <div class="col-lg-4 col-6">
-            <div class="small-box bg-success">
-                <div class="inner">
-                    <h3>{{ $totalOpened }}</h3>
-                    <p>Sudah Buka Amplop</p>
+            <a href="{{ route('admin.kelulusan.envelope-logs', ['tab' => 'sudah']) }}" class="small-box-link-wrapper">
+                <div class="small-box bg-success">
+                    <div class="inner">
+                        <h3>{{ $totalOpened }}</h3>
+                        <p>Sudah Buka Amplop</p>
+                    </div>
+                    <div class="icon"><i class="fas fa-envelope-open"></i></div>
                 </div>
-                <div class="icon"><i class="fas fa-envelope-open"></i></div>
-            </div>
+            </a>
         </div>
         <div class="col-lg-4 col-6">
-            <div class="small-box bg-warning">
-                <div class="inner">
-                    <h3>{{ $totalBelumBuka < 0 ? 0 : $totalBelumBuka }}</h3>
-                    <p>Belum Buka Amplop</p>
+            <a href="{{ route('admin.kelulusan.envelope-logs', ['tab' => 'belum']) }}" class="small-box-link-wrapper">
+                <div class="small-box bg-warning">
+                    <div class="inner">
+                        <h3>{{ $totalBelumBuka }}</h3>
+                        <p>Belum Buka Amplop</p>
+                    </div>
+                    <div class="icon"><i class="fas fa-envelope"></i></div>
                 </div>
-                <div class="icon"><i class="fas fa-envelope"></i></div>
-            </div>
+            </a>
         </div>
     </div>
 
-    {{-- Card --}}
-    <div class="card card-outline card-primary">
+    {{-- Tabs --}}
+    <ul class="nav nav-tabs" id="envelopeTab" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link {{ $activeTab === 'sudah' ? 'active' : '' }}"
+               href="{{ route('admin.kelulusan.envelope-logs', ['tab' => 'sudah']) }}">
+                <i class="fas fa-envelope-open text-success mr-1"></i>
+                Sudah Buka Amplop
+                <span class="badge badge-success ml-1">{{ $totalOpened }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ $activeTab === 'belum' ? 'active' : '' }}"
+               href="{{ route('admin.kelulusan.envelope-logs', ['tab' => 'belum']) }}">
+                <i class="fas fa-envelope text-warning mr-1"></i>
+                Belum Buka Amplop
+                <span class="badge badge-warning ml-1">{{ $totalBelumBuka }}</span>
+            </a>
+        </li>
+    </ul>
+
+    {{-- Tab: Sudah Buka Amplop --}}
+    @if($activeTab === 'sudah')
+    <div class="card card-outline card-success" style="border-top-left-radius: 0;">
         <div class="card-header">
             <h3 class="card-title"><i class="fas fa-list mr-1"></i> Riwayat Buka Amplop — {{ $tahunAktif->nama ?? '' }}</h3>
             <div class="card-tools">
                 <form method="GET" class="input-group input-group-sm" style="width: 250px;">
+                    <input type="hidden" name="tab" value="sudah">
                     <input type="text" name="search" class="form-control" placeholder="Cari nama/NISN/no.reg..."
                            value="{{ request('search') }}">
                     <div class="input-group-append">
                         <button type="submit" class="btn btn-default"><i class="fas fa-search"></i></button>
                         @if(request('search'))
-                        <a href="{{ route('admin.kelulusan.envelope-logs') }}" class="btn btn-default" title="Reset">
+                        <a href="{{ route('admin.kelulusan.envelope-logs', ['tab' => 'sudah']) }}" class="btn btn-default" title="Reset">
                             <i class="fas fa-times"></i>
                         </a>
                         @endif
@@ -136,19 +178,25 @@
                         <tr>
                             <td>{{ $logs->firstItem() + $i }}</td>
                             <td>
-                                <strong>{{ $log->calonSiswa->nama_lengkap ?? '-' }}</strong>
+                                @if($log->calonSiswa)
+                                <a href="{{ route('admin.pendaftar.show', $log->calonSiswa->id) }}" class="text-primary font-weight-bold" title="Lihat detail pendaftar">
+                                    {{ $log->calonSiswa->nama_lengkap }}
+                                </a>
+                                @else
+                                    <strong>-</strong>
+                                @endif
                             </td>
                             <td>{{ $log->calonSiswa->nisn ?? '-' }}</td>
                             <td><code>{{ $log->calonSiswa->nomor_registrasi ?? '-' }}</code></td>
                             <td>
-                                @if($log->calonSiswa->jalurPendaftaran)
+                                @if($log->calonSiswa && $log->calonSiswa->jalurPendaftaran)
                                     <span class="badge badge-info">{{ $log->calonSiswa->jalurPendaftaran->nama }}</span>
                                 @else
                                     -
                                 @endif
                             </td>
                             <td>
-                                @if($log->calonSiswa->kelulusan)
+                                @if($log->calonSiswa && $log->calonSiswa->kelulusan)
                                     @php $st = $log->calonSiswa->kelulusan->status; @endphp
                                     <span class="badge badge-{{ $st === 'lulus' ? 'success' : ($st === 'cadangan' ? 'warning' : 'danger') }}">
                                         {{ strtoupper($st) }}
@@ -201,6 +249,131 @@
         </div>
         @endif
     </div>
+    @endif
+
+    {{-- Tab: Belum Buka Amplop --}}
+    @if($activeTab === 'belum')
+    <div class="card card-outline card-warning" style="border-top-left-radius: 0;">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-envelope mr-1"></i> Belum Buka Amplop — {{ $tahunAktif->nama ?? '' }}</h3>
+            <div class="card-tools">
+                <form method="GET" class="input-group input-group-sm" style="width: 250px;">
+                    <input type="hidden" name="tab" value="belum">
+                    <input type="text" name="search_belum" class="form-control" placeholder="Cari nama/NISN/no.reg..."
+                           value="{{ request('search_belum') }}">
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-default"><i class="fas fa-search"></i></button>
+                        @if(request('search_belum'))
+                        <a href="{{ route('admin.kelulusan.envelope-logs', ['tab' => 'belum']) }}" class="btn btn-default" title="Reset">
+                            <i class="fas fa-times"></i>
+                        </a>
+                        @endif
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover table-sm mb-0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th width="40">#</th>
+                            <th>
+                                <a href="{{ $sortUrlBelum('nama_lengkap') }}" class="text-dark text-decoration-none">
+                                    Nama Pendaftar {!! $sortIconBelum('nama_lengkap') !!}
+                                </a>
+                            </th>
+                            <th>
+                                <a href="{{ $sortUrlBelum('nisn') }}" class="text-dark text-decoration-none">
+                                    NISN {!! $sortIconBelum('nisn') !!}
+                                </a>
+                            </th>
+                            <th>
+                                <a href="{{ $sortUrlBelum('nomor_registrasi') }}" class="text-dark text-decoration-none">
+                                    No. Registrasi {!! $sortIconBelum('nomor_registrasi') !!}
+                                </a>
+                            </th>
+                            <th>Jalur</th>
+                            <th>Gelombang</th>
+                            <th>
+                                <a href="{{ $sortUrlBelum('status') }}" class="text-dark text-decoration-none">
+                                    Status Kelulusan {!! $sortIconBelum('status') !!}
+                                </a>
+                            </th>
+                            <th>No. HP / Email</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($belumBuka as $i => $kelulusan)
+                        <tr>
+                            <td>{{ $belumBuka->firstItem() + $i }}</td>
+                            <td>
+                                @if($kelulusan->calonSiswa)
+                                <a href="{{ route('admin.pendaftar.show', $kelulusan->calonSiswa->id) }}" class="text-primary font-weight-bold" title="Lihat detail pendaftar">
+                                    {{ $kelulusan->calonSiswa->nama_lengkap }}
+                                </a>
+                                @else
+                                    <strong>-</strong>
+                                @endif
+                            </td>
+                            <td>{{ $kelulusan->calonSiswa->nisn ?? '-' }}</td>
+                            <td><code>{{ $kelulusan->calonSiswa->nomor_registrasi ?? '-' }}</code></td>
+                            <td>
+                                @if($kelulusan->calonSiswa && $kelulusan->calonSiswa->jalurPendaftaran)
+                                    <span class="badge badge-info">{{ $kelulusan->calonSiswa->jalurPendaftaran->nama }}</span>
+                                @else
+                                    -
+                                @endif
+                            </td>
+                            <td>
+                                @if($kelulusan->calonSiswa && $kelulusan->calonSiswa->gelombangPendaftaran)
+                                    <span class="badge badge-secondary">{{ $kelulusan->calonSiswa->gelombangPendaftaran->nama }}</span>
+                                @else
+                                    -
+                                @endif
+                            </td>
+                            <td>
+                                @php $st = $kelulusan->status; @endphp
+                                <span class="badge badge-{{ $st === 'lulus' ? 'success' : ($st === 'cadangan' ? 'warning' : 'danger') }}">
+                                    {{ strtoupper(str_replace('_', ' ', $st)) }}
+                                </span>
+                            </td>
+                            <td>
+                                @if($kelulusan->calonSiswa)
+                                    @if($kelulusan->calonSiswa->nomor_hp)
+                                        <small><i class="fas fa-phone mr-1"></i>{{ $kelulusan->calonSiswa->nomor_hp }}</small><br>
+                                    @endif
+                                    @if($kelulusan->calonSiswa->email)
+                                        <small><i class="fas fa-envelope mr-1"></i>{{ $kelulusan->calonSiswa->email }}</small>
+                                    @elseif($kelulusan->calonSiswa->user && $kelulusan->calonSiswa->user->email)
+                                        <small><i class="fas fa-envelope mr-1"></i>{{ $kelulusan->calonSiswa->user->email }}</small>
+                                    @endif
+                                @else
+                                    -
+                                @endif
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">
+                                <i class="fas fa-check-circle fa-2x mb-2 d-block text-success"></i>
+                                Semua peserta sudah membuka amplop!
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @if($belumBuka->hasPages())
+        <div class="card-footer clearfix">
+            {{ $belumBuka->links() }}
+        </div>
+        @endif
+    </div>
+    @endif
 
     <div class="mb-3">
         <a href="{{ route('admin.kelulusan.setting') }}" class="btn btn-default">
@@ -218,6 +391,24 @@
     .table thead th a:hover {
         text-decoration: none !important;
         color: #007bff !important;
+    }
+    .nav-tabs .nav-link {
+        color: #6c757d;
+    }
+    .nav-tabs .nav-link.active {
+        font-weight: 600;
+    }
+    .small-box-link-wrapper {
+        text-decoration: none !important;
+        color: inherit !important;
+    }
+    .small-box-link-wrapper:hover .small-box {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transition: all 0.2s ease;
+    }
+    .small-box {
+        transition: all 0.2s ease;
     }
 </style>
 @endpush

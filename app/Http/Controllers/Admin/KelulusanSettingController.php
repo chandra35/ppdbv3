@@ -176,7 +176,10 @@ class KelulusanSettingController extends Controller
             return redirect()->route('admin.dashboard')->with('error', 'Tahun pelajaran aktif tidak ditemukan');
         }
 
-        $query = EnvelopeOpenLog::with(['calonSiswa.jalurPendaftaran', 'calonSiswa.kelulusan'])
+        $activeTab = $request->input('tab', 'sudah');
+
+        // ===== Tab: Sudah Buka Amplop =====
+        $query = EnvelopeOpenLog::with(['calonSiswa.jalurPendaftaran', 'calonSiswa.kelulusan', 'calonSiswa.gelombangPendaftaran'])
             ->where('tahun_pelajaran_id', $tahunAktif->id);
 
         // Filter pencarian
@@ -198,7 +201,6 @@ class KelulusanSettingController extends Controller
         if (in_array($sortBy, $allowedSorts)) {
             $query->orderBy($sortBy, $sortDir === 'asc' ? 'asc' : 'desc');
         } elseif (in_array($sortBy, $allowedRelationSorts)) {
-            // Sort by related calon_siswa columns via subquery
             $query->orderBy(
                 \App\Models\CalonSiswa::select($sortBy)
                     ->whereColumn('calon_siswas.id', 'envelope_open_logs.calon_siswa_id')
@@ -209,13 +211,60 @@ class KelulusanSettingController extends Controller
             $query->orderBy('opened_at', 'desc');
         }
 
-        $logs = $query->paginate(25)->withQueryString();
+        $logs = $query->paginate(25, ['*'], 'page')->withQueryString();
+
+        // ===== Tab: Belum Buka Amplop =====
+        $openedCalonSiswaIds = EnvelopeOpenLog::where('tahun_pelajaran_id', $tahunAktif->id)
+            ->pluck('calon_siswa_id');
+
+        $belumBukaQuery = Kelulusan::with(['calonSiswa.jalurPendaftaran', 'calonSiswa.gelombangPendaftaran', 'calonSiswa.user'])
+            ->where('tahun_pelajaran_id', $tahunAktif->id)
+            ->whereNotIn('calon_siswa_id', $openedCalonSiswaIds);
+
+        // Filter pencarian belum buka
+        if ($request->search_belum) {
+            $search = $request->search_belum;
+            $belumBukaQuery->whereHas('calonSiswa', function ($q) use ($search) {
+                $q->where('nama_lengkap', 'like', "%{$search}%")
+                  ->orWhere('nisn', 'like', "%{$search}%")
+                  ->orWhere('nomor_registrasi', 'like', "%{$search}%");
+            });
+        }
+
+        // Sorting belum buka
+        $sortBelum = $request->input('sort_belum', 'nama_lengkap');
+        $dirBelum = $request->input('dir_belum', 'asc');
+        $allowedBelumSorts = ['status', 'tanggal_kelulusan'];
+        $allowedBelumRelSorts = ['nama_lengkap', 'nisn', 'nomor_registrasi'];
+
+        if (in_array($sortBelum, $allowedBelumSorts)) {
+            $belumBukaQuery->orderBy($sortBelum, $dirBelum === 'asc' ? 'asc' : 'desc');
+        } elseif (in_array($sortBelum, $allowedBelumRelSorts)) {
+            $belumBukaQuery->orderBy(
+                \App\Models\CalonSiswa::select($sortBelum)
+                    ->whereColumn('calon_siswas.id', 'kelulusan.calon_siswa_id')
+                    ->limit(1),
+                $dirBelum === 'asc' ? 'asc' : 'desc'
+            );
+        } else {
+            $belumBukaQuery->orderBy(
+                \App\Models\CalonSiswa::select('nama_lengkap')
+                    ->whereColumn('calon_siswas.id', 'kelulusan.calon_siswa_id')
+                    ->limit(1),
+                'asc'
+            );
+        }
+
+        $belumBuka = $belumBukaQuery->paginate(25, ['*'], 'page_belum')->withQueryString();
 
         // Stats
         $totalKelulusan = Kelulusan::where('tahun_pelajaran_id', $tahunAktif->id)->count();
         $totalOpened = EnvelopeOpenLog::where('tahun_pelajaran_id', $tahunAktif->id)->count();
         $totalBelumBuka = $totalKelulusan - $totalOpened;
+        if ($totalBelumBuka < 0) $totalBelumBuka = 0;
 
-        return view('admin.kelulusan.envelope-logs', compact('logs', 'tahunAktif', 'totalKelulusan', 'totalOpened', 'totalBelumBuka'));
+        return view('admin.kelulusan.envelope-logs', compact(
+            'logs', 'belumBuka', 'tahunAktif', 'totalKelulusan', 'totalOpened', 'totalBelumBuka', 'activeTab'
+        ));
     }
 }
