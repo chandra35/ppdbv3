@@ -202,6 +202,26 @@ class AuthController extends Controller
                         $jenisKelamin = $kemenag['gender_id'] == 1 ? 'L' : 'P';
                     }
                     
+                    // Lookup NPSN detail dari Kemendikdasmen (status, bentuk, akreditasi)
+                    $npsnValue = $kemdikbud['npsn'] ?? ($kemenag['npsn'] ?? null);
+                    $npsnDetail = null;
+                    if ($npsnValue && strlen($npsnValue) === 8) {
+                        try {
+                            $npsnService = new \App\Services\NpsnService();
+                            $npsnResult = $npsnService->cekNpsn($npsnValue);
+                            if ($npsnResult['success'] && $npsnResult['data']) {
+                                $npsnDetail = $npsnResult['data'];
+                                Log::info('AuthController: NPSN detail fetched', [
+                                    'npsn' => $npsnValue,
+                                    'status' => $npsnDetail['status'] ?? null,
+                                    'bentuk' => $npsnDetail['bentuk_pendidikan'] ?? null,
+                                ]);
+                            }
+                        } catch (\Exception $e) {
+                            Log::warning('AuthController: NPSN lookup failed', ['npsn' => $npsnValue, 'error' => $e->getMessage()]);
+                        }
+                    }
+
                     $transformedData = [
                         // Data Dasar
                         'nama' => $kemdikbud['nama'] ?? ($kemenag['full_name'] ?? null),
@@ -215,11 +235,14 @@ class AuthController extends Controller
                         'agama' => $this->mapAgama($kemenag['religion_id'] ?? null),
                         
                         // Sekolah
-                        'sekolah_asal' => $kemdikbud['sekolah'] ?? ($kemenag['institution_name'] ?? null),
-                        'npsn' => $kemdikbud['npsn'] ?? ($kemenag['npsn'] ?? null),
+                        'sekolah_asal' => $npsnDetail['nama_sekolah'] ?? ($kemdikbud['sekolah'] ?? ($kemenag['institution_name'] ?? null)),
+                        'npsn' => $npsnValue,
                         'nsm' => $kemenag['institution_nsm'] ?? null,
                         'tingkat_pendidikan' => $tingkatPendidikan,
                         'level_name' => $levelName,
+                        
+                        // Detail NPSN dari Kemendikdasmen
+                        'npsn_detail' => $npsnDetail,
                         
                         // Alamat Lengkap (dari Kemenag)
                         'alamat' => $kemenag['address'] ?? null,
@@ -500,6 +523,15 @@ class AuthController extends Controller
                 'nama_sekolah_asal' => $emisData['sekolah_asal'] ?? null,
                 'npsn_asal_sekolah' => $emisData['npsn'] ?? null,
                 'nsm_asal_sekolah' => $emisData['nsm'] ?? null,
+                // Detail sekolah dari Kemendikdasmen (jika sudah di-lookup saat cekNisn)
+                'status_sekolah_asal' => isset($emisData['npsn_detail']['status']) ? strtoupper($emisData['npsn_detail']['status']) : null,
+                'bentuk_sekolah_asal' => $emisData['npsn_detail']['bentuk_pendidikan'] ?? null,
+                'akreditasi_sekolah_asal' => $emisData['npsn_detail']['akreditasi'] ?? null,
+                'alamat_sekolah_asal' => $emisData['npsn_detail']['alamat'] ?? null,
+                'kelurahan_sekolah_asal' => $emisData['npsn_detail']['kelurahan'] ?? null,
+                'kecamatan_sekolah_asal' => $emisData['npsn_detail']['kecamatan'] ?? null,
+                'kabupaten_sekolah_asal' => $emisData['npsn_detail']['kabupaten'] ?? null,
+                'provinsi_sekolah_asal' => $emisData['npsn_detail']['provinsi'] ?? null,
                 
                 // Alamat Lengkap (field suffix _siswa)
                 'alamat_siswa' => $emisData['alamat'] ?? null,
@@ -542,6 +574,39 @@ class AuthController extends Controller
                 'registration_device' => $this->getDeviceType($request->header('User-Agent')),
                 'registration_browser' => $this->getBrowserName($request->header('User-Agent')),
             ]);
+
+            // Fallback: Jika NPSN tersedia tapi status/bentuk belum terisi (npsn_detail gagal saat cekNisn),
+            // coba lookup ulang dari Kemendikdasmen
+            if ($calonSiswa->npsn_asal_sekolah && !$calonSiswa->status_sekolah_asal) {
+                try {
+                    $npsnService = new \App\Services\NpsnService();
+                    $npsnResult = $npsnService->cekNpsn($calonSiswa->npsn_asal_sekolah);
+                    if ($npsnResult['success'] && $npsnResult['data']) {
+                        $nd = $npsnResult['data'];
+                        $calonSiswa->update([
+                            'nama_sekolah_asal' => $nd['nama_sekolah'] ?? $calonSiswa->nama_sekolah_asal,
+                            'status_sekolah_asal' => isset($nd['status']) ? strtoupper($nd['status']) : null,
+                            'bentuk_sekolah_asal' => $nd['bentuk_pendidikan'] ?? null,
+                            'akreditasi_sekolah_asal' => $nd['akreditasi'] ?? null,
+                            'alamat_sekolah_asal' => $nd['alamat'] ?? null,
+                            'kelurahan_sekolah_asal' => $nd['kelurahan'] ?? null,
+                            'kecamatan_sekolah_asal' => $nd['kecamatan'] ?? null,
+                            'kabupaten_sekolah_asal' => $nd['kabupaten'] ?? null,
+                            'provinsi_sekolah_asal' => $nd['provinsi'] ?? null,
+                        ]);
+                        Log::info('Register: NPSN fallback lookup success', [
+                            'npsn' => $calonSiswa->npsn_asal_sekolah,
+                            'status' => $nd['status'] ?? null,
+                            'bentuk' => $nd['bentuk_pendidikan'] ?? null,
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Register: NPSN fallback lookup failed', [
+                        'npsn' => $calonSiswa->npsn_asal_sekolah,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
 
             // Reverse geocode if coordinates available but location data not provided from client
             if ($request->filled('registration_latitude') && $request->filled('registration_longitude') 

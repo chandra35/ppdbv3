@@ -6,12 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Models\CalonSiswa;
 use App\Models\NilaiSeleksi;
 use App\Models\NilaiCbt;
+use App\Models\Kelulusan;
 use App\Models\TahunPelajaran;
 use App\Models\JalurPendaftaran;
 use App\Models\GelombangPendaftaran;
 use App\Models\SekolahSettings;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
@@ -43,6 +46,7 @@ class ReportController extends Controller
             'gelombangPendaftaran',
             'kabupatenSiswa',
             'kecamatanSiswa',
+            'kelulusan',
         ]);
 
         if ($selectedTahunId) {
@@ -57,8 +61,8 @@ class ReportController extends Controller
 
         $pendaftar = $query->get();
 
-        // Build statistics
-        $stats = $this->buildStatistics($pendaftar, $selectedTahunId);
+        // Build comprehensive statistics
+        $stats = $this->buildComprehensiveStatistics($pendaftar, $selectedTahunId);
 
         $selectedTahun = $tahunPelajarans->firstWhere('id', $selectedTahunId);
 
@@ -80,16 +84,12 @@ class ReportController extends Controller
         $tahunAktif = TahunPelajaran::where('is_active', true)->first();
         $selectedTahunId = $request->tahun_pelajaran_id ?: $tahunAktif?->id;
 
-        $jalurs = JalurPendaftaran::when($selectedTahunId, fn($q) => $q->where('tahun_pelajaran_id', $selectedTahunId))
-            ->where('is_active', true)
-            ->get();
-
-        // Build query
         $query = CalonSiswa::with([
             'jalurPendaftaran',
             'gelombangPendaftaran',
             'kabupatenSiswa',
             'kecamatanSiswa',
+            'kelulusan',
         ]);
 
         if ($selectedTahunId) {
@@ -103,13 +103,11 @@ class ReportController extends Controller
         }
 
         $pendaftar = $query->get();
-        $stats = $this->buildStatistics($pendaftar, $selectedTahunId);
+        $stats = $this->buildComprehensiveStatistics($pendaftar, $selectedTahunId);
 
         $selectedTahun = TahunPelajaran::find($selectedTahunId);
         $selectedJalur = $request->jalur_id ? JalurPendaftaran::find($request->jalur_id) : null;
         $selectedGelombang = $request->gelombang_id ? GelombangPendaftaran::find($request->gelombang_id) : null;
-
-        // Get sekolah info
         $sekolah = SekolahSettings::first();
 
         $pdf = Pdf::loadView('admin.report.pdf', compact(
@@ -129,127 +127,289 @@ class ReportController extends Controller
     }
 
     /**
-     * Build all statistics from pendaftar collection
+     * Export laporan ke Excel
      */
-    private function buildStatistics($pendaftar, $tahunPelajaranId = null)
+    public function exportExcel(Request $request)
     {
-        $total = $pendaftar->count();
+        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        $selectedTahunId = $request->tahun_pelajaran_id ?: $tahunAktif?->id;
 
-        // Jumlah yang mendapat nomor tes
-        $dapatNomorTes = $pendaftar->filter(fn($p) => !empty($p->nomor_tes))->count();
+        $query = CalonSiswa::with([
+            'jalurPendaftaran',
+            'gelombangPendaftaran',
+            'kabupatenSiswa',
+            'kecamatanSiswa',
+            'kelulusan',
+        ]);
 
-        // Jumlah finalisasi 
-        $finalisasi = $pendaftar->where('is_finalisasi', true)->count();
+        if ($selectedTahunId) {
+            $query->where('tahun_pelajaran_id', $selectedTahunId);
+        }
+        if ($request->jalur_id) {
+            $query->where('jalur_pendaftaran_id', $request->jalur_id);
+        }
+        if ($request->gelombang_id) {
+            $query->where('gelombang_pendaftaran_id', $request->gelombang_id);
+        }
 
-        // Jumlah yang ikut tes (punya nilai TBQ atau CBT)
+        $pendaftar = $query->get();
+        $stats = $this->buildComprehensiveStatistics($pendaftar, $selectedTahunId);
+
+        $selectedTahun = TahunPelajaran::find($selectedTahunId);
+        $selectedJalur = $request->jalur_id ? JalurPendaftaran::find($request->jalur_id) : null;
+        $selectedGelombang = $request->gelombang_id ? GelombangPendaftaran::find($request->gelombang_id) : null;
+        $sekolah = SekolahSettings::first();
+
+        $tahunNama = str_replace(['/', '\\'], '-', $selectedTahun?->nama ?? date('Y'));
+        $filename = 'Laporan_PPDB_' . $tahunNama . '_' . date('Y-m-d_His') . '.xlsx';
+
+        return Excel::download(
+            new \App\Exports\LaporanPpdbExport($stats, $selectedTahun, $selectedJalur, $selectedGelombang, $sekolah),
+            $filename
+        );
+    }
+
+    /**
+     * Build comprehensive statistics - all 5 sections
+     */
+    private function buildComprehensiveStatistics(Collection $pendaftar, $tahunPelajaranId = null): array
+    {
         $calonIds = $pendaftar->pluck('id');
 
-        $ikutTbq = NilaiSeleksi::whereIn('calon_siswa_id', $calonIds)
+        // Get IDs for tes participants (CBT or TBQ)
+        $tbqParticipantIds = NilaiSeleksi::whereIn('calon_siswa_id', $calonIds)
             ->whereIn('status', ['submitted', 'verified'])
-            ->distinct('calon_siswa_id')
-            ->count('calon_siswa_id');
+            ->pluck('calon_siswa_id')
+            ->unique();
 
-        $ikutCbt = NilaiCbt::whereIn('calon_siswa_id', $calonIds)
+        $cbtParticipantIds = NilaiCbt::whereIn('calon_siswa_id', $calonIds)
             ->when($tahunPelajaranId, fn($q) => $q->where('tahun_pelajaran_id', $tahunPelajaranId))
-            ->distinct('calon_siswa_id')
-            ->count('calon_siswa_id');
+            ->pluck('calon_siswa_id')
+            ->unique();
 
-        // Union TBQ + CBT participants
-        $tbqIds = NilaiSeleksi::whereIn('calon_siswa_id', $calonIds)
-            ->whereIn('status', ['submitted', 'verified'])
-            ->pluck('calon_siswa_id');
-        $cbtIds = NilaiCbt::whereIn('calon_siswa_id', $calonIds)
+        $tesParticipantIds = $tbqParticipantIds->merge($cbtParticipantIds)->unique();
+
+        // Split pendaftar into groups
+        $dapatNomorTes = $pendaftar->filter(fn($p) => !empty($p->nomor_tes));
+        $tidakDapatNomorTes = $pendaftar->filter(fn($p) => empty($p->nomor_tes));
+        $ikutTes = $pendaftar->filter(fn($p) => $tesParticipantIds->contains($p->id));
+
+        // Kelulusan data
+        $lulusIds = Kelulusan::whereIn('calon_siswa_id', $calonIds)
             ->when($tahunPelajaranId, fn($q) => $q->where('tahun_pelajaran_id', $tahunPelajaranId))
+            ->where('status', 'lulus')
             ->pluck('calon_siswa_id');
-        $ikutTes = $tbqIds->merge($cbtIds)->unique()->count();
+        $tidakLulusIds = Kelulusan::whereIn('calon_siswa_id', $calonIds)
+            ->when($tahunPelajaranId, fn($q) => $q->where('tahun_pelajaran_id', $tahunPelajaranId))
+            ->where('status', 'tidak_lulus')
+            ->pluck('calon_siswa_id');
+        $cadanganIds = Kelulusan::whereIn('calon_siswa_id', $calonIds)
+            ->when($tahunPelajaranId, fn($q) => $q->where('tahun_pelajaran_id', $tahunPelajaranId))
+            ->where('status', 'cadangan')
+            ->pluck('calon_siswa_id');
 
-        // Status verifikasi
-        $statusVerifikasi = [
-            'pending' => $pendaftar->where('status_verifikasi', 'pending')->count(),
-            'verified' => $pendaftar->where('status_verifikasi', 'verified')->count(),
-            'rejected' => $pendaftar->where('status_verifikasi', 'rejected')->count(),
-            'revisi' => $pendaftar->where('status_verifikasi', 'revisi')->count(),
+        $lulus = $pendaftar->filter(fn($p) => $lulusIds->contains($p->id));
+        $tidakLulus = $pendaftar->filter(fn($p) => $tidakLulusIds->contains($p->id));
+        $cadangan = $pendaftar->filter(fn($p) => $cadanganIds->contains($p->id));
+
+        return [
+            // Summary numbers
+            'total' => $pendaftar->count(),
+            'dapat_nomor_tes' => $dapatNomorTes->count(),
+            'tidak_dapat_nomor_tes' => $tidakDapatNomorTes->count(),
+            'finalisasi' => $pendaftar->where('is_finalisasi', true)->count(),
+            'ikut_tes' => $ikutTes->count(),
+            'ikut_tbq' => $tbqParticipantIds->count(),
+            'ikut_cbt' => $cbtParticipantIds->count(),
+            'lulus_total' => $lulus->count(),
+            'tidak_lulus_total' => $tidakLulus->count(),
+            'cadangan_total' => $cadangan->count(),
+
+            // Section 1: Total Pendaftar
+            'total_pendaftar' => $this->buildSectionStats($pendaftar),
+
+            // Section 2: Yang Mendapat Nomor Tes
+            'dengan_nomor_tes' => $this->buildSectionStats($dapatNomorTes),
+
+            // Section 3: Yang Tidak Mendapat Nomor Tes
+            'tanpa_nomor_tes' => $this->buildSectionStats($tidakDapatNomorTes),
+
+            // Section 4: Yang Mengikuti Tes
+            'peserta_tes' => $this->buildSectionStats($ikutTes),
+
+            // Section 5: Kelulusan
+            'kelulusan' => $this->buildSectionStats($lulus),
+            'kelulusan_tidak_lulus' => $this->buildSectionStats($tidakLulus),
+            'kelulusan_cadangan' => $this->buildSectionStats($cadangan),
+
+            // Keep legacy data for status verifikasi / admisi etc
+            'status_verifikasi' => [
+                'pending' => $pendaftar->where('status_verifikasi', 'pending')->count(),
+                'verified' => $pendaftar->where('status_verifikasi', 'verified')->count(),
+                'rejected' => $pendaftar->where('status_verifikasi', 'rejected')->count(),
+                'revisi' => $pendaftar->where('status_verifikasi', 'revisi')->count(),
+            ],
+            'status_admisi' => [
+                'diterima' => $pendaftar->where('status_admisi', 'diterima')->count(),
+                'ditolak' => $pendaftar->where('status_admisi', 'ditolak')->count(),
+                'cadangan' => $pendaftar->where('status_admisi', 'cadangan')->count(),
+                'pending' => $pendaftar->filter(fn($p) => !in_array($p->status_admisi, ['diterima', 'ditolak', 'cadangan']))->count(),
+            ],
+
+            // Per jalur & gelombang
+            'per_jalur' => $pendaftar->groupBy(fn($p) => $p->jalurPendaftaran?->nama ?? 'Tidak Diketahui')
+                ->map(function ($group) {
+                    return [
+                        'total' => $group->count(),
+                        'laki_laki' => $group->where('jenis_kelamin', 'L')->count(),
+                        'perempuan' => $group->where('jenis_kelamin', 'P')->count(),
+                        'finalisasi' => $group->where('is_finalisasi', true)->count(),
+                        'nomor_tes' => $group->filter(fn($p) => !empty($p->nomor_tes))->count(),
+                    ];
+                })->sortByDesc('total'),
+            'per_gelombang' => $pendaftar->groupBy(fn($p) => $p->gelombangPendaftaran?->nama ?? 'Tidak Diketahui')
+                ->map(function ($group) {
+                    return [
+                        'total' => $group->count(),
+                        'laki_laki' => $group->where('jenis_kelamin', 'L')->count(),
+                        'perempuan' => $group->where('jenis_kelamin', 'P')->count(),
+                    ];
+                })->sortByDesc('total'),
+
+            // Sebaran wilayah
+            'sebaran_kabupaten' => $pendaftar->groupBy(fn($p) => $p->kabupatenSiswa?->name ?? $p->kabupaten_sekolah_asal ?? 'Tidak Diketahui')
+                ->map(fn($group) => $group->count())
+                ->sortByDesc(fn($v) => $v),
+            'sebaran_kecamatan' => $pendaftar->groupBy(fn($p) => $p->kecamatanSiswa?->name ?? $p->kecamatan_sekolah_asal ?? 'Tidak Diketahui')
+                ->map(fn($group) => $group->count())
+                ->sortByDesc(fn($v) => $v)
+                ->take(20),
+
+            // Sebaran sekolah asal (all schools with details)
+            'sebaran_sekolah' => $this->buildSebaranSekolah($pendaftar),
         ];
+    }
 
-        // Status admisi
-        $statusAdmisi = [
-            'diterima' => $pendaftar->where('status_admisi', 'diterima')->count(),
-            'ditolak' => $pendaftar->where('status_admisi', 'ditolak')->count(),
-            'cadangan' => $pendaftar->where('status_admisi', 'cadangan')->count(),
-            'pending' => $pendaftar->filter(fn($p) => !in_array($p->status_admisi, ['diterima', 'ditolak', 'cadangan']))->count(),
-        ];
+    /**
+     * Build detailed stats for a group of pendaftar (reusable per section)
+     */
+    private function buildSectionStats(Collection $group): array
+    {
+        $total = $group->count();
+        $lakiLaki = $group->where('jenis_kelamin', 'L');
+        $perempuan = $group->where('jenis_kelamin', 'P');
 
-        // Jenis kelamin
-        $jenisKelamin = [
-            'laki_laki' => $pendaftar->where('jenis_kelamin', 'L')->count(),
-            'perempuan' => $pendaftar->where('jenis_kelamin', 'P')->count(),
-        ];
+        // Pilihan Program
+        $reguler = $group->filter(fn($p) => strtolower($p->pilihan_program ?? '') === 'reguler');
+        $asrama = $group->filter(fn($p) => strtolower($p->pilihan_program ?? '') === 'asrama');
+        $belumMemilih = $group->filter(fn($p) => empty($p->pilihan_program) || !in_array(strtolower($p->pilihan_program), ['reguler', 'asrama']));
 
-        // Per jalur
-        $perJalur = $pendaftar->groupBy(fn($p) => $p->jalurPendaftaran?->nama ?? 'Tidak Diketahui')
-            ->map(function ($group, $namaJalur) {
-                return [
-                    'total' => $group->count(),
-                    'laki_laki' => $group->where('jenis_kelamin', 'L')->count(),
-                    'perempuan' => $group->where('jenis_kelamin', 'P')->count(),
-                    'finalisasi' => $group->where('is_finalisasi', true)->count(),
-                    'nomor_tes' => $group->filter(fn($p) => !empty($p->nomor_tes))->count(),
-                ];
-            })->sortByDesc('total');
-
-        // Per gelombang
-        $perGelombang = $pendaftar->groupBy(fn($p) => $p->gelombangPendaftaran?->nama ?? 'Tidak Diketahui')
-            ->map(function ($group) {
-                return [
-                    'total' => $group->count(),
-                    'laki_laki' => $group->where('jenis_kelamin', 'L')->count(),
-                    'perempuan' => $group->where('jenis_kelamin', 'P')->count(),
-                ];
-            })->sortByDesc('total');
-
-        // Sebaran wilayah (kabupaten)
-        $sebaranKabupaten = $pendaftar->groupBy(fn($p) => $p->kabupatenSiswa?->name ?? $p->kabupaten_sekolah_asal ?? 'Tidak Diketahui')
-            ->map(fn($group) => $group->count())
-            ->sortByDesc(fn($v) => $v);
-
-        // Sebaran wilayah (kecamatan) - top 20
-        $sebaranKecamatan = $pendaftar->groupBy(fn($p) => $p->kecamatanSiswa?->name ?? $p->kecamatan_sekolah_asal ?? 'Tidak Diketahui')
-            ->map(fn($group) => $group->count())
-            ->sortByDesc(fn($v) => $v)
-            ->take(20);
-
-        // Sebaran asal sekolah - top 20
-        $sebaranSekolah = $pendaftar->groupBy(fn($p) => $p->nama_sekolah_asal ?? 'Tidak Diketahui')
-            ->map(fn($group) => $group->count())
-            ->sortByDesc(fn($v) => $v)
-            ->take(20);
-
-        // Pilihan program
-        $pilihanProgram = $pendaftar->groupBy(fn($p) => $p->pilihan_program ?? 'Belum Memilih')
-            ->map(function ($group) {
-                return [
-                    'total' => $group->count(),
-                    'laki_laki' => $group->where('jenis_kelamin', 'L')->count(),
-                    'perempuan' => $group->where('jenis_kelamin', 'P')->count(),
-                ];
-            })->sortByDesc('total');
+        // Kategorisasi Asal Sekolah
+        $asalSekolah = $this->kategorikanAsalSekolah($group);
 
         return [
             'total' => $total,
-            'dapat_nomor_tes' => $dapatNomorTes,
-            'finalisasi' => $finalisasi,
-            'ikut_tes' => $ikutTes,
-            'ikut_tbq' => $ikutTbq,
-            'ikut_cbt' => $ikutCbt,
-            'jenis_kelamin' => $jenisKelamin,
-            'status_verifikasi' => $statusVerifikasi,
-            'status_admisi' => $statusAdmisi,
-            'per_jalur' => $perJalur,
-            'per_gelombang' => $perGelombang,
-            'sebaran_kabupaten' => $sebaranKabupaten,
-            'sebaran_kecamatan' => $sebaranKecamatan,
-            'sebaran_sekolah' => $sebaranSekolah,
-            'pilihan_program' => $pilihanProgram,
+            'laki_laki' => $lakiLaki->count(),
+            'perempuan' => $perempuan->count(),
+
+            // Program
+            'reguler' => $reguler->count(),
+            'asrama' => $asrama->count(),
+            'reguler_l' => $reguler->where('jenis_kelamin', 'L')->count(),
+            'reguler_p' => $reguler->where('jenis_kelamin', 'P')->count(),
+            'asrama_l' => $asrama->where('jenis_kelamin', 'L')->count(),
+            'asrama_p' => $asrama->where('jenis_kelamin', 'P')->count(),
+            'belum_memilih' => $belumMemilih->count(),
+            'belum_memilih_l' => $belumMemilih->where('jenis_kelamin', 'L')->count(),
+            'belum_memilih_p' => $belumMemilih->where('jenis_kelamin', 'P')->count(),
+
+            // Asal Sekolah
+            'asal_sekolah' => $asalSekolah,
         ];
+    }
+
+    /**
+     * Kategorikan asal sekolah pendaftar
+     * Prioritas: bentuk_sekolah_asal > regex nama, status_sekolah_asal > regex nama
+     */
+    private function kategorikanAsalSekolah(Collection $group): array
+    {
+        $categories = [
+            'MTs Negeri' => ['total' => 0, 'l' => 0, 'p' => 0],
+            'MTs Swasta' => ['total' => 0, 'l' => 0, 'p' => 0],
+            'SMP Negeri' => ['total' => 0, 'l' => 0, 'p' => 0],
+            'SMP Swasta' => ['total' => 0, 'l' => 0, 'p' => 0],
+            'Lainnya' => ['total' => 0, 'l' => 0, 'p' => 0],
+        ];
+
+        foreach ($group as $p) {
+            $nama = strtolower($p->nama_sekolah_asal ?? '');
+            $bentuk = strtoupper(trim($p->bentuk_sekolah_asal ?? ''));
+            $status = strtoupper(trim($p->status_sekolah_asal ?? ''));
+            $jk = $p->jenis_kelamin;
+
+            // 1) Tentukan bentuk pendidikan: prioritas field bentuk_sekolah_asal
+            if (in_array($bentuk, ['MTS', 'MTS.', 'MADRASAH TSANAWIYAH'])) {
+                $isMts = true;
+                $isSmp = false;
+            } elseif (in_array($bentuk, ['SMP', 'SMP.', 'SEKOLAH MENENGAH PERTAMA'])) {
+                $isMts = false;
+                $isSmp = true;
+            } else {
+                // Fallback: regex pada nama_sekolah_asal
+                $isMts = (bool) preg_match('/\b(mts|madrasah\s*tsanawiyah)\b/i', $nama);
+                $isSmp = (bool) preg_match('/\b(smp|sekolah\s*menengah\s*pertama)\b/i', $nama);
+            }
+
+            // 2) Tentukan status: prioritas field status_sekolah_asal
+            if ($status === 'NEGERI') {
+                $isNegeri = true;
+            } elseif ($status === 'SWASTA') {
+                $isNegeri = false;
+            } else {
+                // Fallback: regex pada nama_sekolah_asal
+                $isNegeri = (bool) preg_match('/\bnegeri\b/i', $nama);
+            }
+
+            // 3) Gabungkan kategori
+            if ($isMts) {
+                $cat = $isNegeri ? 'MTs Negeri' : 'MTs Swasta';
+            } elseif ($isSmp) {
+                $cat = $isNegeri ? 'SMP Negeri' : 'SMP Swasta';
+            } else {
+                $cat = 'Lainnya';
+            }
+
+            $categories[$cat]['total']++;
+            if ($jk === 'L') $categories[$cat]['l']++;
+            if ($jk === 'P') $categories[$cat]['p']++;
+        }
+
+        return $categories;
+    }
+
+    /**
+     * Build sebaran sekolah asal (all schools grouped + sorted by count)
+     */
+    private function buildSebaranSekolah(Collection $pendaftar): array
+    {
+        return $pendaftar
+            ->filter(fn($p) => !empty($p->nama_sekolah_asal))
+            ->groupBy(fn($p) => trim($p->nama_sekolah_asal))
+            ->map(function ($group, $namaSekolah) {
+                $first = $group->first();
+                return [
+                    'nama' => $namaSekolah,
+                    'total' => $group->count(),
+                    'l' => $group->where('jenis_kelamin', 'L')->count(),
+                    'p' => $group->where('jenis_kelamin', 'P')->count(),
+                    'bentuk' => $first->bentuk_sekolah_asal ?? '-',
+                    'status' => $first->status_sekolah_asal ?? '-',
+                    'npsn' => $first->npsn_sekolah_asal ?? '-',
+                ];
+            })
+            ->sortByDesc('total')
+            ->values()
+            ->toArray();
     }
 }

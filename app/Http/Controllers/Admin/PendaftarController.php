@@ -437,6 +437,14 @@ class PendaftarController extends Controller
                 // Asal Sekolah
                 'npsn_asal_sekolah' => $request->npsn_asal_sekolah,
                 'nama_sekolah_asal' => $request->nama_sekolah_asal,
+                'status_sekolah_asal' => $request->status_sekolah_asal,
+                'bentuk_sekolah_asal' => $request->bentuk_sekolah_asal,
+                'akreditasi_sekolah_asal' => $request->akreditasi_sekolah_asal,
+                'alamat_sekolah_asal' => $request->alamat_sekolah_asal,
+                'kelurahan_sekolah_asal' => $request->kelurahan_sekolah_asal,
+                'kecamatan_sekolah_asal' => $request->kecamatan_sekolah_asal,
+                'kabupaten_sekolah_asal' => $request->kabupaten_sekolah_asal,
+                'provinsi_sekolah_asal' => $request->provinsi_sekolah_asal,
                 
                 // Status
                 'status_verifikasi' => 'pending',

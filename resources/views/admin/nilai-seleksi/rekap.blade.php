@@ -281,7 +281,16 @@
                             </td>
                             <td>{{ $nilai->calonSiswa->nomor_tes ?? '-' }}</td>
                             <td><code>{{ $nilai->calonSiswa->nisn ?? '-' }}</code></td>
-                            <td><strong>{{ $nilai->calonSiswa->nama_lengkap ?? '-' }}</strong></td>
+                            <td>
+                                @if($nilai->calonSiswa)
+                                    <a href="{{ route('admin.pendaftar.show', $nilai->calon_siswa_id) }}" class="text-dark" title="Lihat detail pendaftar">
+                                        <strong>{{ $nilai->calonSiswa->nama_lengkap ?? '-' }}</strong>
+                                        <i class="fas fa-external-link-alt fa-xs text-muted ml-1"></i>
+                                    </a>
+                                @else
+                                    <strong>-</strong>
+                                @endif
+                            </td>
                             <td class="text-center">
                                 @if($nilai->calonSiswa->jenis_kelamin == 'L')
                                     <span class="text-primary"><i class="fas fa-mars"></i> L</span>

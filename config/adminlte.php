@@ -215,6 +215,12 @@ return [
             'can' => 'admin',
         ],
         [
+            'text' => 'Sync NPSN Sekolah',
+            'route' => 'admin.sync-npsn.index',
+            'icon' => 'fas fa-fw fa-sync-alt text-info',
+            'can' => 'admin',
+        ],
+        [
             'text' => 'Kelulusan',
             'icon' => 'fas fa-fw fa-graduation-cap',
             'can' => 'admin',

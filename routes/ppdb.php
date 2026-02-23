@@ -391,6 +391,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::prefix('report')->name('report.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('index');
         Route::get('/pdf', [\App\Http\Controllers\Admin\ReportController::class, 'exportPdf'])->name('pdf');
+        Route::get('/excel', [\App\Http\Controllers\Admin\ReportController::class, 'exportExcel'])->name('excel');
+    });
+
+    // ---- SYNC NPSN ASAL SEKOLAH ----
+    Route::prefix('sync-npsn')->name('sync-npsn.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\SyncNpsnController::class, 'index'])->name('index');
+        Route::post('/sync-one', [\App\Http\Controllers\Admin\SyncNpsnController::class, 'syncOne'])->name('sync-one');
+        Route::get('/npsn-list', [\App\Http\Controllers\Admin\SyncNpsnController::class, 'getNpsnList'])->name('npsn-list');
     });
 
     // ---- KELULUSAN ----
