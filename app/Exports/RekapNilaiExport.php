@@ -209,6 +209,7 @@ class RekapNilaiExport implements FromCollection, WithHeadings, WithMapping, Wit
             'Tulis Quran',
             'Hafalan',
             'Jumlah Juz',
+            'Hfln Quran (Asli)',
             'Total TBQ',
 
             // Nilai CBT (detail)
@@ -381,6 +382,7 @@ class RekapNilaiExport implements FromCollection, WithHeadings, WithMapping, Wit
             $tbq?->nilai_tulis_quran ?? '',
             $tbq?->nilai_hafalan ?? '',
             $tbq?->jumlah_juz_hafalan ?? '',
+            $tbq?->hafalan_quran_raw ?? '',
             $tbq?->total_nilai ?? '',
 
             // Nilai CBT (detail)

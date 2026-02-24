@@ -245,6 +245,7 @@
                         <th rowspan="2" title="Minat/Pilihan Program">Pilihan</th>
                         <th class="text-center" colspan="4" style="background: #e8f5e9;">TBQ (40%)</th>
                         <th class="text-center" rowspan="2" style="background: #e8f5e9;">T. TBQ</th>
+                        <th class="text-center" rowspan="2" style="background: #e8f5e9;" title="Value asli kolom Hfln Qur'an dari Excel">Hfln Qur'an</th>
                         <th class="text-center" colspan="4" style="background: #e3f2fd;">CBT (50%)</th>
                         <th class="text-center" rowspan="2" style="background: #e3f2fd;">Rata CBT</th>
                         <th class="text-center" rowspan="2" style="background: #fff3e0;">Rapor (10%)</th>
@@ -321,6 +322,14 @@
                                     </span>
                                 @else
                                     -
+                                @endif
+                            </td>
+                            {{-- Hfln Qur'an Raw (referensi dari Excel) --}}
+                            <td class="text-center">
+                                @if($nilai->hafalan_quran_raw)
+                                    <span class="badge badge-light border" title="Value asli dari Excel">{{ $nilai->hafalan_quran_raw }}</span>
+                                @else
+                                    <span class="text-muted">-</span>
                                 @endif
                             </td>
                             {{-- CBT --}}

@@ -25,6 +25,7 @@ class NilaiSeleksi extends Model
         'nilai_baca_quran',
         'nilai_tulis_quran',
         'nilai_hafalan',
+        'hafalan_quran_raw',
         'jumlah_juz_hafalan',
         'total_nilai',
         'catatan_penguji',

@@ -129,6 +129,7 @@
                             <th class="text-center">Tulis Qur'an</th>
                             <th class="text-center">Hafalan</th>
                             <th class="text-center">Juz</th>
+                            <th class="text-center" title="Value asli dari Excel">Hfln Qur'an</th>
                             <th class="text-center">Total</th>
                             <th class="text-center">Status</th>
                             <th class="text-center" width="100">Aksi</th>
@@ -149,6 +150,13 @@
                                 <td class="text-center nilai-cell">{{ $nilai->nilai_tulis_quran ?? '-' }}</td>
                                 <td class="text-center nilai-cell">{{ $nilai->nilai_hafalan ?? '-' }}</td>
                                 <td class="text-center">{{ $nilai->jumlah_juz_hafalan ?? '-' }}</td>
+                                <td class="text-center">
+                                    @if($nilai->hafalan_quran_raw)
+                                        <span title="Value asli dari Excel">{{ $nilai->hafalan_quran_raw }}</span>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
                                 <td class="text-center">
                                     <span class="badge badge-primary nilai-badge">{{ number_format($nilai->total_nilai, 2) }}</span>
                                 </td>

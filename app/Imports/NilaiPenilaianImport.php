@@ -232,6 +232,8 @@ class NilaiPenilaianImport
 
             // Read nilai from columns
             $nilaiData = [];
+            $hafalanRawValue = null;
+            $hafalanJuzCount = null;
             $hasAnyValue = false;
             $hasWarning = false;
 
@@ -259,6 +261,12 @@ class NilaiPenilaianImport
                 } elseif (is_numeric($cellValue)) {
                     // Angka murni
                     $parsedVal = round((float) $cellValue, 2);
+
+                    // Simpan raw value untuk komponen hafalan
+                    if (($mapping['komponen'] ?? null) === 'hafalan') {
+                        $hafalanRawValue = trim((string) $cellValue);
+                    }
+
                     if ($parsedVal < 0 || $parsedVal > 100) {
                         $originalVal = $parsedVal;
                         $parsedVal = max(0, min(100, $parsedVal)); // Cap ke 0-100
@@ -279,11 +287,15 @@ class NilaiPenilaianImport
                     $komponen = $mapping['komponen'] ?? null;
 
                     if ($komponen === 'hafalan') {
+                        // Simpan value asli dari Excel sebagai referensi
+                        $hafalanRawValue = trim((string) $cellValue);
+
                         // Smart hafalan: parse "juz 30", "juz 29-30", "3 juz", dll
                         $hafalanResult = $this->parseHafalanJuz($cellValue);
                         if ($hafalanResult !== null) {
                             $parsedVal = round($hafalanResult['score'], 2);
                             $nilaiData[$mapping['field']] = $parsedVal;
+                            $hafalanJuzCount = $hafalanResult['jumlah_juz'];
                             $hasAnyValue = true;
                             $hasWarning = true;
                             if ($this->previewMode) {
@@ -392,6 +404,15 @@ class NilaiPenilaianImport
                 $nilai->ruang_ujian_id = $ruang->id;
                 $nilai->penguji_id = $user->id;
                 $nilai->fill($nilaiData);
+
+                // Simpan value asli Hfln Qur'an dan jumlah juz
+                if ($hafalanRawValue !== null) {
+                    $nilai->hafalan_quran_raw = $hafalanRawValue;
+                }
+                if ($hafalanJuzCount !== null) {
+                    $nilai->jumlah_juz_hafalan = $hafalanJuzCount;
+                }
+
                 $nilai->status = NilaiSeleksi::STATUS_SUBMITTED;
                 $nilai->save();
                 $nilai->updateTotalNilai();
