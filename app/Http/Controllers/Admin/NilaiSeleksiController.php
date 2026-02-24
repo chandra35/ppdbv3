@@ -253,6 +253,7 @@ class NilaiSeleksiController extends Controller
                 $virtual->nilai_tulis_quran = null;
                 $virtual->nilai_hafalan = null;
                 $virtual->jumlah_juz_hafalan = null;
+                $virtual->hafalan_quran_raw = null;
                 $virtual->nilai_wawancara = null;
                 $virtual->total_nilai = 0;
                 $virtual->status = 'cbt_only';

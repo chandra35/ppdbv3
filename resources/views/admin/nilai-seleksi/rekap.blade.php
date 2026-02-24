@@ -326,7 +326,7 @@
                             </td>
                             {{-- Hfln Qur'an Raw (referensi dari Excel) --}}
                             <td class="text-center">
-                                @if($nilai->hafalan_quran_raw)
+                                @if(($nilai->hafalan_quran_raw ?? null))
                                     <span class="badge badge-light border" title="Value asli dari Excel">{{ $nilai->hafalan_quran_raw }}</span>
                                 @else
                                     <span class="text-muted">-</span>
