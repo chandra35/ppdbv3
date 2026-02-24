@@ -371,9 +371,10 @@ class NilaiPenilaianImport
 
             $isNew = !$nilai;
 
-            if ($nilai && !$nilai->isEditable()) {
-                $errMsg = "Nilai sudah disubmit/verified, tidak bisa diubah";
-                $this->errors[] = "Sheet '{$sheetName}' baris {$row}: Nilai '{$nomorTes}' sudah disubmit, dilewati.";
+            // Admin bisa re-upload untuk update nilai submitted, hanya verified yang terkunci
+            if ($nilai && $nilai->status === NilaiSeleksi::STATUS_VERIFIED) {
+                $errMsg = "Nilai sudah diverifikasi, tidak bisa diubah via upload";
+                $this->errors[] = "Sheet '{$sheetName}' baris {$row}: Nilai '{$nomorTes}' sudah verified, dilewati.";
                 $this->skipped++;
                 if ($this->previewMode) {
                     $previewRow['status'] = 'error';

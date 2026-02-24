@@ -47,9 +47,10 @@ class NilaiSeleksi extends Model
         'verified_at' => 'datetime',
     ];
 
-    // Status constants (tanpa verifikasi - langsung submitted = final)
+    // Status constants
     const STATUS_DRAFT = 'draft';
     const STATUS_SUBMITTED = 'submitted';
+    const STATUS_VERIFIED = 'verified';
 
     /**
      * Hitung rata-rata nilai Baca Al-Qur'an dari sub-komponen (Tajwid, Makhroj, Kelancaran)
