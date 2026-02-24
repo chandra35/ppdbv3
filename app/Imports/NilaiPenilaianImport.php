@@ -391,6 +391,27 @@ class NilaiPenilaianImport
                 if ($hasWarning) {
                     $previewRow['status'] = 'warning';
                 }
+
+                // Tampilkan info nilai lama jika UPDATE
+                if (!$isNew && $nilai) {
+                    $changes = [];
+                    foreach ($nilaiData as $field => $newVal) {
+                        if ($newVal === null) continue;
+                        $oldVal = $nilai->{$field};
+                        if ($oldVal !== null && round((float)$oldVal, 2) != round((float)$newVal, 2)) {
+                            $label = ucwords(str_replace(['nilai_', '_'], ['', ' '], $field));
+                            $changes[] = "{$label}: {$oldVal} → {$newVal}";
+                        }
+                    }
+                    if (!empty($changes)) {
+                        $previewRow['issues'][] = "Update: " . implode(', ', $changes);
+                    }
+                    // Info hafalan asli lama jika ada
+                    if ($nilai->hafalan_quran_raw && $hafalanRawValue !== null && $nilai->hafalan_quran_raw !== $hafalanRawValue) {
+                        $previewRow['issues'][] = "Hafalan asli lama: \"{$nilai->hafalan_quran_raw}\" → baru: \"{$hafalanRawValue}\"";
+                    }
+                }
+
                 $this->previewRows[] = $previewRow;
             } else {
                 // Actually save

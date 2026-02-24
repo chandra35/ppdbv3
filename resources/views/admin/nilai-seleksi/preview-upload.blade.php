@@ -257,10 +257,13 @@
                                         @if($nv['type'] === 'valid')
                                             {{ $nv['parsed'] }}
                                         @elseif($nv['type'] === 'smart')
-                                            <span title="{{ $nv['raw'] }} → {{ $nv['smart_info']['jumlah_juz'] }} juz ({{ $nv['smart_info']['detail'] }}) → skor {{ $nv['parsed'] }}">
-                                                {{ $nv['parsed'] }}
-                                                <i class="fas fa-quran text-success" style="font-size: 0.7rem;"></i>
-                                            </span>
+                                            <div title="{{ $nv['raw'] }} → {{ $nv['smart_info']['jumlah_juz'] }} juz ({{ $nv['smart_info']['detail'] }}) → skor {{ $nv['parsed'] }}">
+                                                <small class="d-block text-muted" style="font-size: 0.7rem; line-height: 1.2;">
+                                                    <i class="fas fa-quran text-success" style="font-size: 0.6rem;"></i>
+                                                    "{{ $nv['raw'] }}"
+                                                </small>
+                                                <span class="font-weight-bold">→ {{ $nv['parsed'] }}</span>
+                                            </div>
                                         @elseif($nv['type'] === 'extracted')
                                             <span title="Asli: '{{ $nv['raw'] }}' → diambil {{ $nv['parsed'] }}">
                                                 {{ $nv['parsed'] }}
