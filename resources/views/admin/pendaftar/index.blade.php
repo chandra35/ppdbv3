@@ -288,7 +288,20 @@
                         <th>Jalur / Gelombang</th>
                         <th>Pilihan Program</th>
                         <th>Lokasi</th>
-                        <th>Dokumen</th>
+                        <th>
+                            @php
+                                $isDokSort = $sortBy == 'dokumen_count';
+                                $dokDir = $isDokSort && $sortDir == 'asc' ? 'desc' : 'asc';
+                            @endphp
+                            <a href="{{ request()->fullUrlWithQuery(['sort' => 'dokumen_count', 'dir' => $dokDir]) }}" class="text-dark">
+                                Dokumen
+                                @if($isDokSort)
+                                    <i class="fas fa-sort-{{ $sortDir == 'asc' ? 'up' : 'down' }} text-primary"></i>
+                                @else
+                                    <i class="fas fa-sort text-muted"></i>
+                                @endif
+                            </a>
+                        </th>
                         <th>
                             @php
                                 $isStatusSort = $sortBy == 'status_verifikasi';
@@ -374,15 +387,14 @@
                                 $revisionCount = $pendaftar->dokumen->where('status_verifikasi', 'revision')->count();
                             @endphp
                             @if($dokumenCount > 0)
-                                <div class="btn-group btn-group-sm">
+                                <div class="btn-group btn-group-sm" style="cursor: pointer;" onclick="showDokumenModal('{{ $pendaftar->id }}', '{{ addslashes($pendaftar->nama_lengkap) }}')">
                                     @if($validCount > 0)
                                         <button class="btn btn-success" title="{{ $validCount }} dokumen valid">
                                             <i class="fas fa-check"></i> {{ $validCount }}
                                         </button>
                                     @endif
                                     @if($pendingCount > 0)
-                                        <button class="btn btn-warning" title="{{ $pendingCount }} dokumen pending" 
-                                                onclick="showDokumenModal('{{ $pendaftar->id }}', '{{ $pendaftar->nama_lengkap }}')">
+                                        <button class="btn btn-warning" title="{{ $pendingCount }} dokumen pending">
                                             <i class="fas fa-clock"></i> {{ $pendingCount }}
                                         </button>
                                     @endif
@@ -481,6 +493,7 @@
                                     $revisionCount = $pendaftar->dokumen->where('status_verifikasi', 'revision')->count();
                                 @endphp
                                 @if($dokumenCount > 0)
+                                    <span style="cursor: pointer;" onclick="showDokumenModal('{{ $pendaftar->id }}', '{{ addslashes($pendaftar->nama_lengkap) }}')">
                                     @if($validCount > 0)
                                         <span class="badge badge-success" style="font-size: 8px; padding: 1px 3px; margin-right: 2px;"><i class="fas fa-check"></i> {{ $validCount }}</span>
                                     @endif
@@ -493,6 +506,7 @@
                                     @if($revisionCount > 0)
                                         <span class="badge badge-info" style="font-size: 8px; padding: 1px 3px;"><i class="fas fa-redo"></i> {{ $revisionCount }}</span>
                                     @endif
+                                    </span>
                                 @endif
                             </div>
                         </div>
@@ -560,20 +574,60 @@
                             <thead class="bg-light">
                                 <tr>
                                     <th style="width: 30px;">#</th>
+                                    <th style="width: 80px;">Preview</th>
                                     <th>Jenis Dokumen</th>
+                                    <th style="width: 100px;">Ukuran</th>
                                     <th style="width: 120px;">Status</th>
                                     <th>Verifikasi Terakhir</th>
-                                    <th style="width: 200px;">Aksi Cepat</th>
+                                    <th style="width: 200px;">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="dokumenListBody">
                                 <tr>
-                                    <td colspan="5" class="text-center">
+                                    <td colspan="7" class="text-center">
                                         <i class="fas fa-spinner fa-spin"></i> Memuat...
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Preview File -->
+    <div class="modal fade" id="filePreviewModal" tabindex="-1" data-backdrop="static">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white py-2">
+                    <h6 class="modal-title" id="filePreviewTitle">
+                        <i class="fas fa-eye"></i> Preview Dokumen
+                    </h6>
+                    <div>
+                        <a href="#" id="fileDownloadBtn" class="btn btn-sm btn-outline-light mr-2" target="_blank" title="Download">
+                            <i class="fas fa-download"></i>
+                        </a>
+                        <button type="button" class="close text-white" data-dismiss="modal" style="opacity: 1;">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-body p-0 text-center" style="min-height: 400px; max-height: 80vh; overflow: auto; background: #f0f0f0;">
+                    <div id="filePreviewLoading" class="py-5">
+                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                        <p class="mt-2">Memuat preview...</p>
+                    </div>
+                    <div id="filePreviewContent" style="display: none;">
+                        <img id="previewImage" src="" alt="Preview" class="img-fluid" style="max-height: 75vh; display: none;">
+                        <iframe id="previewPdf" src="" style="width: 100%; height: 80vh; border: none; display: none;"></iframe>
+                        <div id="previewUnsupported" style="display: none;" class="py-5">
+                            <i class="fas fa-file fa-4x text-muted"></i>
+                            <p class="mt-3 text-muted">Preview tidak tersedia untuk tipe file ini.</p>
+                            <a href="#" id="previewDownloadLink" class="btn btn-primary" target="_blank">
+                                <i class="fas fa-download"></i> Download File
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -739,29 +793,103 @@
                         const statusBadge = getStatusBadge(dok.status_verifikasi);
                         const actionButtons = getActionButtons(dok);
                         const verifikasiInfo = getVerifikasiInfo(dok);
+                        const thumbnail = getThumbnail(dok);
                         
                         html += `
                             <tr>
-                                <td>${index + 1}</td>
+                                <td class="text-center">${index + 1}</td>
+                                <td class="text-center">${thumbnail}</td>
                                 <td>
                                     <strong>${dok.nama_dokumen_lengkap}</strong>
-                                    ${dok.catatan_verifikasi ? `<br><small class="text-muted"><i class="fas fa-comment"></i> ${dok.catatan_verifikasi}</small>` : ''}
+                                    <br><small class="text-muted">${dok.nama_file || ''}</small>
+                                    ${dok.catatan_verifikasi ? `<br><small class="text-danger"><i class="fas fa-comment"></i> ${dok.catatan_verifikasi}</small>` : ''}
                                 </td>
-                                <td>${statusBadge}</td>
+                                <td class="text-center"><small>${dok.file_size || '-'}</small></td>
+                                <td class="text-center">${statusBadge}</td>
                                 <td><small>${verifikasiInfo}</small></td>
-                                <td>${actionButtons}</td>
+                                <td class="text-center">${actionButtons}</td>
                             </tr>
                         `;
                     });
                 } else {
-                    html = '<tr><td colspan="5" class="text-center text-muted">Tidak ada dokumen</td></tr>';
+                    html = '<tr><td colspan="7" class="text-center text-muted">Tidak ada dokumen</td></tr>';
                 }
                 $('#dokumenListBody').html(html);
             },
             error: function() {
-                $('#dokumenListBody').html('<tr><td colspan="5" class="text-center text-danger"><i class="fas fa-exclamation-triangle"></i> Gagal memuat data</td></tr>');
+                $('#dokumenListBody').html('<tr><td colspan="7" class="text-center text-danger"><i class="fas fa-exclamation-triangle"></i> Gagal memuat data</td></tr>');
             }
         });
+    }
+
+    // Generate thumbnail for document
+    function getThumbnail(dok) {
+        if (!dok.file_path) {
+            return '<span class="text-muted"><i class="fas fa-file fa-2x"></i></span>';
+        }
+        
+        const fileUrl = `/storage/${dok.file_path}`;
+        const isImage = dok.mime_type && dok.mime_type.startsWith('image/');
+        const isPdf = dok.mime_type === 'application/pdf';
+        
+        if (isImage) {
+            return `<img src="${fileUrl}" 
+                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid #dee2e6;" 
+                         onclick="previewFile('${fileUrl}', '${dok.mime_type}', '${dok.nama_dokumen_lengkap}')"
+                         title="Klik untuk preview">`;
+        } else if (isPdf) {
+            return `<div style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; background: #fef2f2; border-radius: 4px; cursor: pointer; border: 2px solid #dee2e6;" 
+                         onclick="previewFile('${fileUrl}', '${dok.mime_type}', '${dok.nama_dokumen_lengkap}')"
+                         title="Klik untuk preview PDF">
+                        <i class="fas fa-file-pdf fa-2x text-danger"></i>
+                    </div>`;
+        } else {
+            return `<div style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; border-radius: 4px; cursor: pointer; border: 2px solid #dee2e6;"
+                         onclick="previewFile('${fileUrl}', '${dok.mime_type}', '${dok.nama_dokumen_lengkap}')"
+                         title="Klik untuk preview/download">
+                        <i class="fas fa-file fa-2x text-secondary"></i>
+                    </div>`;
+        }
+    }
+
+    // Preview file in modal
+    function previewFile(fileUrl, mimeType, title) {
+        $('#filePreviewTitle').html('<i class="fas fa-eye"></i> ' + title);
+        $('#fileDownloadBtn').attr('href', fileUrl);
+        $('#filePreviewLoading').show();
+        $('#filePreviewContent').hide();
+        $('#previewImage').hide();
+        $('#previewPdf').hide().attr('src', '');
+        $('#previewUnsupported').hide();
+        
+        $('#filePreviewModal').modal('show');
+        
+        const isImage = mimeType && mimeType.startsWith('image/');
+        const isPdf = mimeType === 'application/pdf';
+        
+        if (isImage) {
+            const img = $('#previewImage');
+            img.off('load error').on('load', function() {
+                $('#filePreviewLoading').hide();
+                $('#filePreviewContent').show();
+                img.show();
+            }).on('error', function() {
+                $('#filePreviewLoading').hide();
+                $('#filePreviewContent').show();
+                $('#previewUnsupported').show();
+                $('#previewDownloadLink').attr('href', fileUrl);
+            }).attr('src', fileUrl);
+        } else if (isPdf) {
+            $('#previewPdf').attr('src', fileUrl);
+            $('#filePreviewLoading').hide();
+            $('#filePreviewContent').show();
+            $('#previewPdf').show();
+        } else {
+            $('#filePreviewLoading').hide();
+            $('#filePreviewContent').show();
+            $('#previewUnsupported').show();
+            $('#previewDownloadLink').attr('href', fileUrl);
+        }
     }
 
     function getStatusBadge(status) {
@@ -784,6 +912,16 @@
 
     function getActionButtons(dok) {
         let buttons = '';
+        
+        // Preview button - always show if file exists
+        if (dok.file_path) {
+            const fileUrl = `/storage/${dok.file_path}`;
+            buttons += `
+                <button class="btn btn-primary btn-sm" onclick="previewFile('${fileUrl}', '${dok.mime_type}', '${dok.nama_dokumen_lengkap}')" title="Preview">
+                    <i class="fas fa-eye"></i>
+                </button>
+            `;
+        }
         
         if (dok.status_verifikasi === 'pending') {
             buttons += `

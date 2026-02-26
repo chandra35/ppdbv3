@@ -75,14 +75,19 @@ class PendaftarController extends Controller
         // Sorting
         $sortBy = $request->get('sort', 'created_at');
         $sortDir = $request->get('dir', 'desc');
-        $allowedSorts = ['nama_lengkap', 'nisn', 'nomor_registrasi', 'nomor_tes', 'created_at', 'status_verifikasi'];
+        $allowedSorts = ['nama_lengkap', 'nisn', 'nomor_registrasi', 'nomor_tes', 'created_at', 'status_verifikasi', 'dokumen_count'];
         if (!in_array($sortBy, $allowedSorts)) {
             $sortBy = 'created_at';
         }
         if (!in_array($sortDir, ['asc', 'desc'])) {
             $sortDir = 'desc';
         }
-        $query->orderBy($sortBy, $sortDir);
+
+        if ($sortBy === 'dokumen_count') {
+            $query->withCount('dokumen')->orderBy('dokumen_count', $sortDir);
+        } else {
+            $query->orderBy($sortBy, $sortDir);
+        }
 
         // Filter by jalur
         if ($selectedJalurId) {
@@ -582,6 +587,10 @@ class PendaftarController extends Controller
                 'catatan_verifikasi' => $dok->catatan_verifikasi,
                 'verified_by_name' => $dok->verifiedBy ? $dok->verifiedBy->name : null,
                 'verified_at' => $dok->verified_at,
+                'file_path' => $dok->file_path,
+                'mime_type' => $dok->mime_type,
+                'file_size' => $dok->file_size_formatted,
+                'nama_file' => $dok->nama_file,
             ];
         });
 
