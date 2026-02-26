@@ -558,8 +558,8 @@
 
     <!-- Modal Dokumen Quick Action -->
     <div class="modal fade" id="dokumenModal" tabindex="-1">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content" style="max-height: 85vh;">
                 <div class="modal-header bg-primary">
                     <h5 class="modal-title">
                         <i class="fas fa-file-alt"></i> Dokumen - <span id="modalPendaftarNama"></span>
