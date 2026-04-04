@@ -54,18 +54,38 @@
         letter-spacing: 0.04em;
         color: #5c6b7a;
     }
-    .select2-container--bootstrap4 .select2-selection--single {
+    .filter-select {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        width: 100%;
         min-height: calc(2.25rem + 2px);
-        border-radius: 0.5rem;
-        border-color: #ced4da;
-        box-shadow: none;
+        padding: 0.5rem 2.5rem 0.5rem 0.85rem;
+        border: 1px solid #cfd7df;
+        border-radius: 0.6rem;
+        background-color: #fff;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 20 20'%3E%3Cpath fill='%235c6b7a' d='M5.5 7.5L10 12l4.5-4.5' stroke='%235c6b7a' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.8rem center;
+        background-size: 18px 18px;
+        color: #243b53;
+        font-size: 0.92rem;
+        font-weight: 500;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
     }
-    .select2-container--bootstrap4.select2-container--focus .select2-selection--single {
+    .filter-select:hover {
+        border-color: #b8c4d1;
+    }
+    .filter-select:focus {
+        outline: none;
         border-color: #80bdff;
         box-shadow: 0 0 0 0.2rem rgba(0,123,255,.12);
     }
-    .select2-container--bootstrap4 .select2-selection__placeholder {
-        color: #7b8794;
+    .filter-select:disabled {
+        background-color: #f8fafc;
+        color: #9aa5b1;
+        cursor: not-allowed;
     }
     .filter-hint {
         font-size: 0.76rem;
@@ -148,7 +168,7 @@
                 <div class="row">
                     <div class="col-md-3">
                         <label class="mb-1 filter-label">Tahun Pelajaran</label>
-                        <select name="tahun_pelajaran_id" id="tahun_pelajaran_id" class="form-control form-control-sm select2-filter">
+                        <select name="tahun_pelajaran_id" id="tahun_pelajaran_id" class="filter-select">
                             @foreach($tahunPelajarans as $tp)
                                 <option value="{{ $tp->id }}" {{ $selectedTahunIdInput == $tp->id ? 'selected' : '' }}>{{ $tp->nama }}</option>
                             @endforeach
@@ -157,7 +177,7 @@
                     </div>
                     <div class="col-md-2">
                         <label class="mb-1 filter-label">Jalur</label>
-                        <select name="jalur_id" id="jalur_id" class="form-control form-control-sm select2-filter">
+                        <select name="jalur_id" id="jalur_id" class="filter-select">
                             <option value="all" {{ $selectedJalurIdInput === 'all' ? 'selected' : '' }}>Semua Jalur</option>
                             @foreach($jalurs as $jalur)
                                 <option value="{{ $jalur->id }}" {{ (string) $selectedJalurIdInput === (string) $jalur->id ? 'selected' : '' }}>{{ $jalur->nama }}</option>
@@ -167,7 +187,7 @@
                     </div>
                     <div class="col-md-2">
                         <label class="mb-1 filter-label">Gelombang</label>
-                        <select name="gelombang_id" id="gelombang_id" class="form-control form-control-sm select2-filter">
+                        <select name="gelombang_id" id="gelombang_id" class="filter-select">
                             <option value="all" {{ $selectedGelombangIdInput === 'all' ? 'selected' : '' }}>Semua Gelombang</option>
                             @foreach($allGelombangs as $gel)
                                 <option
@@ -358,12 +378,6 @@ $(document).ready(function() {
     const selectedGelombangId = @json((string) ($selectedGelombangIdInput ?? 'all'));
     const allGelombangOptions = $gelombang.find('option').clone();
 
-    $('.select2-filter').select2({
-        theme: 'bootstrap4',
-        width: '100%',
-        minimumResultsForSearch: 8
-    });
-
     function refreshGelombangOptions(preferredValue = null) {
         const jalurId = String($jalur.val() || 'all');
         const currentValue = preferredValue ?? String($gelombang.val() || 'all');
@@ -385,7 +399,6 @@ $(document).ready(function() {
 
         const optionExists = $gelombang.find(`option[value="${currentValue}"]`).length > 0;
         $gelombang.val(optionExists ? currentValue : 'all');
-        $gelombang.trigger('change.select2');
     }
 
     $jalur.on('change', function() {
