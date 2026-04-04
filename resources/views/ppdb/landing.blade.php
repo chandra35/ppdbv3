@@ -37,6 +37,21 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+
+        body.countdown-lock-active {
+            overflow: hidden;
+        }
+
+        .page-content {
+            transition: filter 0.35s ease, transform 0.35s ease, opacity 0.35s ease;
+        }
+
+        body.countdown-lock-active .page-content {
+            filter: blur(10px) brightness(0.48);
+            transform: scale(1.01);
+            pointer-events: none;
+            user-select: none;
+        }
         
         .btn-primary {
             background-color: var(--primary-color);
@@ -290,21 +305,48 @@
         
         /* Countdown Styles */
         .countdown-wrapper {
-            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
-            padding: 2rem;
-            border: 1px solid rgba(255,255,255,0.2);
+            position: relative;
+            max-width: 880px;
+            margin: 0 auto;
+            padding: 2rem 1.75rem;
+            border-radius: 28px;
+            border: 1px solid rgba(255,255,255,0.18);
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.40) 0%, rgba(49, 46, 129, 0.24) 100%);
+            backdrop-filter: blur(18px);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+            overflow: hidden;
+        }
+
+        .countdown-wrapper::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at top left, rgba(255,255,255,0.16), transparent 38%),
+                linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02));
+            pointer-events: none;
+        }
+
+        .countdown-wrapper > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .countdown-wrapper p {
+            margin-bottom: 1rem;
+            font-weight: 500;
+            letter-spacing: 0.2px;
         }
         
         .countdown-status {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 20px;
+            padding: 10px 22px;
             border-radius: 50px;
             font-weight: 600;
             margin-bottom: 1rem;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.18);
         }
         
         .countdown-status.upcoming {
@@ -337,12 +379,13 @@
         
         .countdown-box {
             min-width: 85px;
-            background: rgba(255,255,255,0.15);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
+            background: rgba(255,255,255,0.14);
+            backdrop-filter: blur(12px);
+            border-radius: 18px;
             padding: 1rem 0.75rem;
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.18);
             transition: all 0.3s ease;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
         }
         
         .countdown-box:hover {
@@ -369,9 +412,16 @@
         .countdown-separator {
             font-size: 2rem;
             font-weight: 700;
-            opacity: 0.5;
+            opacity: 0.55;
             align-self: center;
             animation: blink 1s infinite;
+        }
+
+        @media (max-width: 768px) {
+            .countdown-wrapper {
+                padding: 1.35rem 1rem;
+                border-radius: 22px;
+            }
         }
         
         @keyframes blink {
@@ -402,6 +452,136 @@
             display: block;
             opacity: 0.8;
             font-size: 0.75rem;
+        }
+
+        .countdown-lock-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 5000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background:
+                radial-gradient(circle at top, rgba(59, 130, 246, 0.12), transparent 32%),
+                radial-gradient(circle at bottom right, rgba(255, 255, 255, 0.08), transparent 24%),
+                rgba(8, 15, 32, 0.18);
+        }
+
+        .countdown-lock-panel {
+            width: min(820px, 100%);
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 34px 90px rgba(0, 0, 0, 0.42);
+            border: 1px solid rgba(255,255,255,0.12);
+            background:
+                radial-gradient(circle at top left, rgba(255,255,255,0.09), transparent 30%),
+                linear-gradient(135deg, rgba(10, 30, 66, 0.96), rgba(23, 78, 166, 0.95));
+        }
+
+        .countdown-lock-top {
+            color: #fff;
+            padding: 1.6rem 1.6rem 1.15rem;
+        }
+
+        .countdown-lock-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.45rem 0.85rem;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.14);
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 1.4px;
+            margin-bottom: 1rem;
+        }
+
+        .countdown-lock-title {
+            font-size: clamp(1.55rem, 2.5vw, 2.3rem);
+            font-weight: 700;
+            line-height: 1.15;
+            margin-bottom: 0.4rem;
+        }
+
+        .countdown-lock-copy {
+            opacity: 0.82;
+            font-size: 1rem;
+            max-width: 620px;
+            margin-bottom: 1.4rem;
+        }
+
+        .countdown-lock-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.85rem;
+            text-align: center;
+        }
+
+        .countdown-lock-unit {
+            padding: 1rem 0.85rem;
+            border-radius: 22px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.14);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+
+        .countdown-lock-label {
+            display: block;
+            font-size: 0.72rem;
+            letter-spacing: 1.6px;
+            opacity: 0.82;
+            margin-bottom: 0.65rem;
+            text-transform: uppercase;
+        }
+
+        .countdown-lock-value {
+            display: block;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: clamp(2.35rem, 5vw, 3.2rem);
+            font-weight: 700;
+            line-height: 1;
+            text-shadow: 0 2px 12px rgba(0,0,0,0.16);
+        }
+
+        .countdown-lock-bottom {
+            background: rgba(255,255,255,0.95);
+            color: #1f2937;
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding: 1.05rem 1.35rem;
+            letter-spacing: 0.4px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .countdown-lock-bottom .accent {
+            color: var(--primary-color);
+        }
+
+        @media (max-width: 768px) {
+            .countdown-lock-top {
+                padding: 1.2rem 1rem 1rem;
+            }
+
+            .countdown-lock-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+
+            .countdown-lock-value {
+                font-size: 2.4rem;
+            }
+
+            .countdown-lock-bottom {
+                padding: 0.9rem 1rem;
+                font-size: 0.78rem;
+                justify-content: center;
+                text-align: center;
+            }
         }
         
         /* Cards */
@@ -662,7 +842,8 @@
         }
     </style>
 </head>
-<body>
+<body class="{{ $statusPendaftaran === 'upcoming' ? 'countdown-lock-active' : '' }}">
+    <div class="page-content">
     {{-- Navbar --}}
     <nav class="navbar navbar-expand-lg navbar-light fixed-top">
         <div class="container">
@@ -814,22 +995,22 @@
                             </p>
                             <div id="countdown" class="countdown-timer" data-target="{{ $countdownTarget->format('Y-m-d H:i:s') }}">
                                 <div class="countdown-box">
-                                    <div class="countdown-value" id="days">00</div>
+                                    <div class="countdown-value" data-countdown-part="days">00</div>
                                     <div class="countdown-label">Hari</div>
                                 </div>
                                 <span class="countdown-separator d-none d-sm-block">:</span>
                                 <div class="countdown-box">
-                                    <div class="countdown-value" id="hours">00</div>
+                                    <div class="countdown-value" data-countdown-part="hours">00</div>
                                     <div class="countdown-label">Jam</div>
                                 </div>
                                 <span class="countdown-separator d-none d-sm-block">:</span>
                                 <div class="countdown-box">
-                                    <div class="countdown-value" id="minutes">00</div>
+                                    <div class="countdown-value" data-countdown-part="minutes">00</div>
                                     <div class="countdown-label">Menit</div>
                                 </div>
                                 <span class="countdown-separator d-none d-sm-block">:</span>
                                 <div class="countdown-box">
-                                    <div class="countdown-value" id="seconds">00</div>
+                                    <div class="countdown-value" data-countdown-part="seconds">00</div>
                                     <div class="countdown-label">Detik</div>
                                 </div>
                             </div>
@@ -994,22 +1175,22 @@
                         </p>
                         <div id="countdown" class="countdown-timer" data-target="{{ $countdownTarget->format('Y-m-d H:i:s') }}">
                             <div class="countdown-box">
-                                <div class="countdown-value" id="days">00</div>
+                                <div class="countdown-value" data-countdown-part="days">00</div>
                                 <div class="countdown-label">Hari</div>
                             </div>
                             <span class="countdown-separator d-none d-sm-block">:</span>
                             <div class="countdown-box">
-                                <div class="countdown-value" id="hours">00</div>
+                                <div class="countdown-value" data-countdown-part="hours">00</div>
                                 <div class="countdown-label">Jam</div>
                             </div>
                             <span class="countdown-separator d-none d-sm-block">:</span>
                             <div class="countdown-box">
-                                <div class="countdown-value" id="minutes">00</div>
+                                <div class="countdown-value" data-countdown-part="minutes">00</div>
                                 <div class="countdown-label">Menit</div>
                             </div>
                             <span class="countdown-separator d-none d-sm-block">:</span>
                             <div class="countdown-box">
-                                <div class="countdown-value" id="seconds">00</div>
+                                <div class="countdown-value" data-countdown-part="seconds">00</div>
                                 <div class="countdown-label">Detik</div>
                             </div>
                         </div>
@@ -1409,6 +1590,46 @@
         </a>
     </div>
     @endif
+    </div>
+
+    @if($statusPendaftaran === 'upcoming' && $countdownTarget)
+    <div class="countdown-lock-overlay" id="countdownLockOverlay" aria-live="polite">
+        <div class="countdown-lock-panel">
+            <div class="countdown-lock-top">
+                <div class="countdown-lock-kicker">
+                    <i class="fas fa-hourglass-half"></i>
+                    <span>Pembukaan Pendaftaran</span>
+                </div>
+                <div class="countdown-lock-title">PPDB Belum Dibuka</div>
+                <div class="countdown-lock-copy">
+                    Portal akan aktif otomatis saat jadwal pembukaan dimulai. Silakan tunggu hitung mundurnya selesai.
+                </div>
+                <div class="countdown-lock-grid">
+                    <div class="countdown-lock-unit">
+                        <span class="countdown-lock-label">Hari</span>
+                        <span class="countdown-lock-value" data-countdown-part="days">00</span>
+                    </div>
+                    <div class="countdown-lock-unit">
+                        <span class="countdown-lock-label">Jam</span>
+                        <span class="countdown-lock-value" data-countdown-part="hours">00</span>
+                    </div>
+                    <div class="countdown-lock-unit">
+                        <span class="countdown-lock-label">Menit</span>
+                        <span class="countdown-lock-value" data-countdown-part="minutes">00</span>
+                    </div>
+                    <div class="countdown-lock-unit">
+                        <span class="countdown-lock-label">Detik</span>
+                        <span class="countdown-lock-value" data-countdown-part="seconds">00</span>
+                    </div>
+                </div>
+            </div>
+            <div class="countdown-lock-bottom">
+                <span>{{ $gelombangAktif?->nama ?: 'PPDB MAN 1 Metro' }}</span>
+                <span class="accent">Dibuka {{ $countdownTarget->format('d M Y H:i') }} WIB</span>
+            </div>
+        </div>
+    </div>
+    @endif
 
     {{-- Scripts --}}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -1514,10 +1735,10 @@
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((distance % (1000 * 60)) / 1000);
             
-            document.getElementById('days').textContent = String(days).padStart(2, '0');
-            document.getElementById('hours').textContent = String(hours).padStart(2, '0');
-            document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
-            document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
+            document.querySelectorAll('[data-countdown-part=\"days\"]').forEach(el => el.textContent = String(days).padStart(2, '0'));
+            document.querySelectorAll('[data-countdown-part=\"hours\"]').forEach(el => el.textContent = String(hours).padStart(2, '0'));
+            document.querySelectorAll('[data-countdown-part=\"minutes\"]').forEach(el => el.textContent = String(minutes).padStart(2, '0'));
+            document.querySelectorAll('[data-countdown-part=\"seconds\"]').forEach(el => el.textContent = String(seconds).padStart(2, '0'));
         }
         
         // Update countdown setiap detik
