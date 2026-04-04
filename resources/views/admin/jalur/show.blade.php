@@ -21,6 +21,17 @@
 @stop
 
 @section('content')
+@if($errors->any())
+<div class="alert alert-danger">
+    <h5><i class="fas fa-exclamation-triangle mr-1"></i> Gagal menyimpan data</h5>
+    <ul class="mb-0 pl-3">
+        @foreach($errors->all() as $error)
+            <li>{{ $error }}</li>
+        @endforeach
+    </ul>
+</div>
+@endif
+
 {{-- Status Cards --}}
 <div class="row">
     <div class="col-md-3 col-sm-6">
@@ -358,14 +369,16 @@
                             <div class="form-group">
                                 <label for="nama">Nama Gelombang <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="nama" name="nama" required
-                                    placeholder="Contoh: Gelombang 1">
+                                    placeholder="Contoh: Gelombang 1"
+                                    value="{{ old('nama') }}">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="kuota">Kuota <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="kuota" name="kuota" min="1" required
-                                    placeholder="Jumlah kuota">
+                                    placeholder="Jumlah kuota"
+                                    value="{{ old('kuota') }}">
                             </div>
                         </div>
                     </div>
@@ -374,6 +387,7 @@
                             <div class="form-group">
                                 <label for="tanggal_buka">Tanggal Buka <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="tanggal_buka" name="tanggal_buka" required
+                                    value="{{ old('tanggal_buka') }}"
                                     min="{{ $jalur->tanggal_buka ? $jalur->tanggal_buka->timezone(config('app.timezone'))->format('Y-m-d') : '' }}"
                                     max="{{ $jalur->tanggal_tutup ? $jalur->tanggal_tutup->timezone(config('app.timezone'))->format('Y-m-d') : '' }}">
                             </div>
@@ -381,7 +395,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="waktu_buka">Waktu Buka</label>
-                                <input type="time" class="form-control" id="waktu_buka" name="waktu_buka" value="00:00">
+                                <input type="time" class="form-control" id="waktu_buka" name="waktu_buka" value="{{ old('waktu_buka', '00:00') }}">
                             </div>
                         </div>
                     </div>
@@ -390,6 +404,7 @@
                             <div class="form-group">
                                 <label for="tanggal_tutup">Tanggal Tutup <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="tanggal_tutup" name="tanggal_tutup" required
+                                    value="{{ old('tanggal_tutup') }}"
                                     min="{{ $jalur->tanggal_buka ? $jalur->tanggal_buka->timezone(config('app.timezone'))->format('Y-m-d') : '' }}"
                                     max="{{ $jalur->tanggal_tutup ? $jalur->tanggal_tutup->timezone(config('app.timezone'))->format('Y-m-d') : '' }}">
                             </div>
@@ -397,14 +412,14 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="waktu_tutup">Waktu Tutup</label>
-                                <input type="time" class="form-control" id="waktu_tutup" name="waktu_tutup" value="23:59">
+                                <input type="time" class="form-control" id="waktu_tutup" name="waktu_tutup" value="{{ old('waktu_tutup', '23:59') }}">
                             </div>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="keterangan">Keterangan</label>
-                        <textarea class="form-control" id="keterangan" name="keterangan" rows="2"
-                            placeholder="Keterangan tambahan (opsional)"></textarea>
+                        <label for="deskripsi">Keterangan</label>
+                        <textarea class="form-control" id="deskripsi" name="deskripsi" rows="2"
+                            placeholder="Keterangan tambahan (opsional)">{{ old('deskripsi') }}</textarea>
                     </div>
                     <div class="form-group">
                         <div class="custom-control custom-switch">
@@ -543,6 +558,12 @@
 @section('js')
 <script>
 $(function() {
+    @if($errors->any() && old('nama'))
+    $('#modalTambahGelombang').modal('show');
+    @endif
+
+    $('#is_active').prop('checked', {{ old('is_active') ? 'true' : 'false' }});
+
     // Handle edit gelombang button click
     $('.btn-edit-gelombang').on('click', function() {
         var id = $(this).data('id');
