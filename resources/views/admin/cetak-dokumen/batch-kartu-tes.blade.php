@@ -174,10 +174,12 @@
                         <td>Gelombang</td>
                         <td>{{ $calonSiswa->gelombangPendaftaran?->nama ?? '-' }}</td>
                     </tr>
+                    @if($calonSiswa->jalurPendaftaran?->pilihan_program_aktif && $calonSiswa->pilihan_program)
                     <tr>
                         <td>Pilihan Program</td>
-                        <td>{{ $calonSiswa->pilihan_program ?? '-' }}</td>
+                        <td>{{ $calonSiswa->pilihan_program }}</td>
                     </tr>
+                    @endif
                     <tr>
                         <td>Asal Sekolah</td>
                         <td>{{ $calonSiswa->nama_sekolah_asal ?? '-' }}</td>

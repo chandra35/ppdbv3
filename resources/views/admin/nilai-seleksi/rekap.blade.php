@@ -43,6 +43,12 @@
 
 @section('content')
 <div class="container-fluid">
+    <div class="alert alert-info">
+        Rekap nilai sedang memakai konteks:
+        Tahun <strong>{{ $contextInfo['tahun'] }}</strong>,
+        Jalur <strong>{{ $contextInfo['jalur'] }}</strong>,
+        Gelombang <strong>{{ $contextInfo['gelombang'] }}</strong>.
+    </div>
 
     <!-- Summary -->
     <div class="row">
@@ -115,6 +121,11 @@
 
             {{-- Minat Program --}}
             <h6 class="text-muted text-uppercase mb-3"><i class="fas fa-heart mr-1"></i> Minat Program (Pilihan Pendaftar)</h6>
+            @if($detailStats['minat']->isEmpty())
+            <div class="alert alert-secondary">
+                Jalur pada konteks ini tidak menggunakan pilihan program.
+            </div>
+            @else
             <div class="row mb-3">
                 @foreach($detailStats['minat'] as $namaMinat => $stat)
                     <div class="col-md-4 col-6 mb-3">
@@ -139,6 +150,7 @@
                     </div>
                 @endforeach
             </div>
+            @endif
 
             <hr>
             {{-- Total Gender --}}
@@ -184,9 +196,8 @@
                     <div class="col-md-3">
                         <label class="mb-1 small">Tahun Pelajaran</label>
                         <select name="tahun_pelajaran_id" class="form-control form-control-sm select2">
-                            <option value="">-- Semua --</option>
                             @foreach($tahunPelajarans as $tp)
-                                <option value="{{ $tp->id }}" {{ request('tahun_pelajaran_id') == $tp->id ? 'selected' : '' }}>
+                                <option value="{{ $tp->id }}" {{ $selectedTahunIdInput == $tp->id ? 'selected' : '' }}>
                                     {{ $tp->nama }}
                                 </option>
                             @endforeach
@@ -195,9 +206,80 @@
                     <div class="col-md-2">
                         <label class="mb-1 small">Jalur</label>
                         <select name="jalur_id" class="form-control form-control-sm select2">
-                            <option value="">-- Semua --</option>
+                            <option value="all" {{ $selectedJalurIdInput === 'all' ? 'selected' : '' }}>-- Semua --</option>
                             @foreach($jalurs as $jalur)
-                                <option value="{{ $jalur->id }}" {{ request('jalur_id') == $jalur->id ? 'selected' : '' }}>
+                                <option value="{{ $jalur->id }}" {{ (string) $selectedJalurIdInput === (string) $jalur->id ? 'selected' : '' }}>
+                                    {{ $jalur->nama }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="mb-1 small">Gelombang</label>
+                        <select name="gelombang_id" class="form-control form-control-sm select2">
+                            <option value="all" {{ $selectedGelombangIdInput === 'all' ? 'selected' : '' }}>-- Semua --</option>
+                            @foreach($gelombangs as $gelombang)
+                                <option value="{{ $gelombang->id }}" {{ (string) $selectedGelombangIdInput === (string) $gelombang->id ? 'selected' : '' }}>
+                                    {{ $gelombang->nama }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="mb-1 small">Status</label>
+                        <select name="status" class="form-control form-control-sm">
+                            <option value="">-- Semua --</option>
+                            <option value="verified" {{ request('status') == 'verified' ? 'selected' : '' }}>Verified</option>
+                            <option value="submitted" {{ request('status') == 'submitted' ? 'selected' : '' }}>Submitted</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <label class="mb-1 small">Jenis Tes</label>
+                        <select name="jenis_tes" class="form-control form-control-sm">
+                            <option value="">-- Semua --</option>
+                            <option value="tbq" {{ request('jenis_tes') == 'tbq' ? 'selected' : '' }}>TBQ</option>
+                            <option value="cbt" {{ request('jenis_tes') == 'cbt' ? 'selected' : '' }}>CBT</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="fas fa-search mr-1"></i> Filter
+                        </button>
+                        <a href="{{ route('admin.nilai-seleksi.rekap') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-sync mr-1"></i> Reset
+                        </a>
+                        <a href="{{ route('admin.nilai-seleksi.rekap.export', request()->query()) }}" class="btn btn-success btn-sm" title="Export seluruh pendaftar dengan semua nilai lengkap">
+                            <i class="fas fa-file-excel mr-1"></i> Export Lengkap
+                        </a>
+                    </div>
+                </div>
+            </form>
+            <div style="overflow-x: auto;">
+            <table id="rekapTable" class="table table-bordered table-striped" style="font-size: 0.8rem;">
+                <thead>
+                    <tr>
+                        <th class="text-center" width="40" rowspan="2">Rank</th>
+                        <th rowspan="2">No. Tes</th>
+                        <th rowspan="2">NISN</th>
+                        <th rowspan="2">Nama Peserta</th>
+                        <th rowspan="2">JK</th>
+                        <th rowspan="2">Jalur</th>
+                        <th rowspan="2" title="Minat/Pilihan Program">Pilihan</th>
+                        <th class="text-center" colspan="4" style="background: #e8f5e9;">TBQ (40%)</th>
+                        <th class="text-center" rowspan="2" style="background: #e8f5e9;">T. TBQ</th>
+                        <th class="text-center" rowspan="2" style="background: #e8f5e9;" title="Value asli kolom Hfln Qur'an dari Excel">Hfln Qur'an</th>
+                        <th class="text-center" colspan="4" style="background: #e3f2fd;">CBT (50%)</th>
+                        <th class="text-center" rowspan="2" style="background: #e3f2fd;">Rata CBT</th>
+                        <th class="text-center" rowspan="2" style="background: #fff3e0;">Rapor (10%)</th>
+                        <th class="text-center" rowspan="2" style="background: #fce4ec;" title="Nilai Akhir = CBTÃ—50% + RaporÃ—10% + TBQÃ—40%">Nilai Akhir</th>
+                        <th class="text-center" rowspan="2" title="Minat terhadap pilihan program (tiebreaker)">Minat</th>
+                        <th class="text-center" rowspan="2" title="Hafalan Juz (rekomendasi)">Rekomendasi</th>
+                        <th class="text-center" rowspan="2" title="Sertifikat/Piagam prestasi (referensi)">Sertifikat</th>
+                        <th class="text-center" rowspan="2">Status</th>
+                    </tr>
+                    <tr>
+                        <th class="text-center" style="background: #e8f5e9;">Baca</th>
+                        <th class="text-center" style="background: #e8f5e9;">Tulis</th>
                                     {{ $jalur->nama }}
                                 </option>
                             @endforeach
@@ -435,7 +517,7 @@
                                     <div class="card-body p-2 text-center">
                                         @if($dok->file_path)
                                             @php
-                                                $fileUrl = asset('storage/' . $dok->file_path);
+                                                $fileUrl = $dok->file_url;
                                                 $isImage = in_array($dok->mime_type, ['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
                                                 $isPdf = $dok->mime_type === 'application/pdf';
                                             @endphp

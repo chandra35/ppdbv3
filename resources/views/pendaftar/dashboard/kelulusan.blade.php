@@ -111,7 +111,7 @@
                 </div>
                 <div class="kelulusan-status-text mb-3">
                     @if($kelulusan->status === 'lulus')
-                        SELAMAT! ANDA LULUS 🎓
+                        SELAMAT! ANDA LULUS
                     @elseif($kelulusan->status === 'tidak_lulus')
                         MOHON MAAF
                     @else
@@ -169,7 +169,7 @@
                             <td><strong>Gelombang</strong></td>
                             <td>{{ $calonSiswa->gelombangPendaftaran->nama ?? '-' }}</td>
                         </tr>
-                        @if($calonSiswa->pilihan_program)
+                        @if($calonSiswa->jalurPendaftaran?->pilihan_program_aktif && $calonSiswa->pilihan_program)
                         <tr>
                             <td><strong>Jalur Minat</strong></td>
                             <td>{{ $calonSiswa->pilihan_program }}</td>
@@ -453,3 +453,4 @@ $(function() {
 </script>
 @endif
 @endsection
+

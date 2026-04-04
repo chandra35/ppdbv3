@@ -7,6 +7,7 @@ use App\Models\Kelulusan;
 use App\Models\KelulusanSetting;
 use App\Models\EnvelopeOpenLog;
 use App\Models\TahunPelajaran;
+use App\Support\AdminPpdbContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -15,9 +16,10 @@ class KelulusanSettingController extends Controller
     /**
      * Halaman manajemen info kelulusan
      */
-    public function index()
+    public function index(Request $request)
     {
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        $context = AdminPpdbContext::resolve($request->get('tahun_pelajaran_id'));
+        $tahunAktif = $context['selectedTahun'];
         if (!$tahunAktif) {
             return redirect()->route('admin.dashboard')->with('error', 'Tahun pelajaran aktif tidak ditemukan');
         }
@@ -38,7 +40,13 @@ class KelulusanSettingController extends Controller
             'total_cadangan' => Kelulusan::where('tahun_pelajaran_id', $tahunAktif->id)->cadangan()->count(),
         ];
 
-        return view('admin.kelulusan.setting', compact('setting', 'tahunAktif', 'stats'));
+        return view('admin.kelulusan.setting', compact('setting', 'tahunAktif', 'stats') + [
+            'tahunPelajaranList' => $context['tahunPelajarans'],
+            'selectedTahunIdInput' => $context['selectedTahunIdInput'],
+            'contextInfo' => [
+                'tahun' => $tahunAktif->nama,
+            ],
+        ]);
     }
 
     /**
@@ -46,9 +54,11 @@ class KelulusanSettingController extends Controller
      */
     public function update(Request $request)
     {
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        $context = AdminPpdbContext::resolve($request->input('tahun_pelajaran_id'));
+        $tahunAktif = $context['selectedTahun'];
 
         $request->validate([
+            'tahun_pelajaran_id' => 'nullable',
             'judul_pengumuman' => 'required|string|max:255',
             'pesan_lulus' => 'nullable|string',
             'pesan_tidak_lulus' => 'nullable|string',
@@ -85,7 +95,9 @@ class KelulusanSettingController extends Controller
             'catatan_daftar_ulang' => $request->catatan_daftar_ulang,
         ]);
 
-        return redirect()->route('admin.kelulusan.setting')
+        return redirect()->route('admin.kelulusan.setting', [
+                'tahun_pelajaran_id' => $tahunAktif?->id,
+            ])
             ->with('success', 'Pengaturan kelulusan berhasil diperbarui');
     }
 
@@ -102,7 +114,8 @@ class KelulusanSettingController extends Controller
             'file_konsider.max' => 'Ukuran file maksimal 10MB.',
         ]);
 
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        $context = AdminPpdbContext::resolve($request->input('tahun_pelajaran_id'));
+        $tahunAktif = $context['selectedTahun'];
         if (!$tahunAktif) {
             return response()->json(['success' => false, 'message' => 'Tahun pelajaran aktif tidak ditemukan.'], 422);
         }
@@ -137,7 +150,8 @@ class KelulusanSettingController extends Controller
      */
     public function deleteKonsider(Request $request)
     {
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        $context = AdminPpdbContext::resolve($request->input('tahun_pelajaran_id'));
+        $tahunAktif = $context['selectedTahun'];
         if (!$tahunAktif) {
             return response()->json(['success' => false, 'message' => 'Tahun pelajaran aktif tidak ditemukan.'], 422);
         }
@@ -171,7 +185,8 @@ class KelulusanSettingController extends Controller
      */
     public function envelopeLogs(Request $request)
     {
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        $context = AdminPpdbContext::resolve($request->get('tahun_pelajaran_id'));
+        $tahunAktif = $context['selectedTahun'];
         if (!$tahunAktif) {
             return redirect()->route('admin.dashboard')->with('error', 'Tahun pelajaran aktif tidak ditemukan');
         }
@@ -265,6 +280,9 @@ class KelulusanSettingController extends Controller
 
         return view('admin.kelulusan.envelope-logs', compact(
             'logs', 'belumBuka', 'tahunAktif', 'totalKelulusan', 'totalOpened', 'totalBelumBuka', 'activeTab'
-        ));
+        ) + [
+            'tahunPelajaranList' => $context['tahunPelajarans'],
+            'selectedTahunIdInput' => $context['selectedTahunIdInput'],
+        ]);
     }
 }

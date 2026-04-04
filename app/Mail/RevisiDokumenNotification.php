@@ -45,7 +45,7 @@ class RevisiDokumenNotification extends Mailable
         $template = $this->emailSettings?->template_revisi 
             ?? PengaturanEmail::getDefaultTemplates()['template_revisi'];
         
-        $dokumenName = ucwords(str_replace('_', ' ', $this->dokumen->jenis_dokumen));
+        $dokumenName = $this->dokumen->nama_dokumen_lengkap;
         
         $placeholders = [
             '{nama_siswa}' => $this->calonSiswa->nama_lengkap,

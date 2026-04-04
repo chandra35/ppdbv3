@@ -422,8 +422,14 @@
                         @error('email')
                             <span class="invalid-feedback">{{ $message }}</span>
                         @enderror
+                        @php $waAktif = \App\Models\PengaturanWa::isActive(); @endphp
                         <small class="form-text text-danger">
-                            <i class="fas fa-exclamation-triangle"></i> Pastikan email aktif. Kredensial login akan dikirim ke WhatsApp dan Email ini.
+                            <i class="fas fa-exclamation-triangle"></i>
+                            @if($waAktif)
+                                Pastikan email aktif. Kredensial login akan dikirim ke WhatsApp dan Email ini.
+                            @else
+                                Pastikan email aktif. Kredensial login akan dikirim ke Email ini.
+                            @endif
                         </small>
                     </div>
 
@@ -432,7 +438,7 @@
                         <h5><i class="fas fa-info-circle"></i> Informasi</h5>
                         <ul>
                             <li>Akun akan dibuat otomatis dengan username: <strong>NISN Anda</strong></li>
-                            <li>Password akan digenerate otomatis dan dikirim via <strong>WhatsApp & Email</strong></li>
+                            <li>Password akan digenerate otomatis dan dikirim via <strong>{{ $waAktif ? 'WhatsApp & Email' : 'Email' }}</strong></li>
                             <li>Anda dapat mengubah password setelah login</li>
                             <li>Setelah daftar, Anda akan langsung masuk ke dashboard untuk melengkapi data</li>
                         </ul>

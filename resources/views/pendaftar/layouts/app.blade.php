@@ -38,7 +38,9 @@
 </head>
 <body class="hold-transition sidebar-mini layout-fixed">
 @php
-    $calonSiswaProfile = Auth::user()->calonSiswa;
+    $calonSiswaProfile = \App\Models\CalonSiswa::with(['user', 'jalurPendaftaran', 'tahunPelajaran'])
+        ->where('user_id', auth()->id())
+        ->first();
     $fotoProfileAlt = $calonSiswaProfile ? $calonSiswaProfile->dokumen()->where('jenis_dokumen', 'foto')->first() : null;
     $fotoProfileAltUrl = $fotoProfileAlt ? asset('storage/' . $fotoProfileAlt->file_path) : null;
 @endphp
@@ -116,7 +118,7 @@
                 <div class="info">
                     <a href="{{ route('pendaftar.profile') }}" class="d-block">{{ Str::limit(Auth::user()->name, 20) }}</a>
                     @php
-                        $calonSiswa = Auth::user()->calonSiswa;
+                        $calonSiswa = $calonSiswaProfile;
                     @endphp
                     @if($calonSiswa)
                         <small class="text-muted">{{ $calonSiswa->nomor_registrasi }}</small>
@@ -366,11 +368,13 @@
                                                 <td class="data-separator" style="width: 8px; color: #666; font-size: 9px; vertical-align: top; text-align: left;">:</td>
                                                 <td class="data-value" style="font-weight: bold; color: #333; font-size: 9px; text-align: left;">{{ $calonSiswa->tempat_lahir ?? '-' }}, {{ $calonSiswa->tanggal_lahir ? \Carbon\Carbon::parse($calonSiswa->tanggal_lahir)->format('d/m/Y') : '-' }}</td>
                                             </tr>
+                                            @if($calonSiswa->jalurPendaftaran?->pilihan_program_aktif && $calonSiswa->pilihan_program)
                                             <tr>
                                                 <td class="data-label" style="width: 40px; color: #666; font-size: 9px; vertical-align: top; text-align: left;">Program</td>
                                                 <td class="data-separator" style="width: 8px; color: #666; font-size: 9px; vertical-align: top; text-align: left;">:</td>
-                                                <td class="data-value" style="font-weight: bold; color: #333; font-size: 9px; text-align: left;">{{ $calonSiswa->pilihan_program ?? '-' }}</td>
+                                                <td class="data-value" style="font-weight: bold; color: #333; font-size: 9px; text-align: left;">{{ $calonSiswa->pilihan_program }}</td>
                                             </tr>
+                                            @endif
                                         </table>
                                         
                                         {{-- Password --}}

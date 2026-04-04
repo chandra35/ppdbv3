@@ -304,7 +304,7 @@
                                  data-doc-label="{{ $label }}"
                                  @if($isUploaded)
                                  data-doc-id="{{ $doc->id }}"
-                                 data-doc-path="{{ asset('storage/' . $doc->file_path) }}"
+                                 data-doc-path="{{ $doc->preview_url }}"
                                  data-doc-name="{{ $doc->nama_file }}"
                                  @endif
                                  style="{{ $calonSiswa->is_finalisasi ? 'cursor: default;' : '' }}">
@@ -312,7 +312,7 @@
                                 {{-- Thumbnail Container --}}
                                 <div class="thumbnail-container">
                                     @if($isUploaded && $isImage)
-                                        <img src="{{ asset('storage/' . $doc->file_path) }}" alt="{{ $label }}">
+                                        <img src="{{ $doc->preview_url }}" alt="{{ $label }}">
                                     @else
                                         <div class="no-preview">
                                             @if($isUploaded)
@@ -401,10 +401,16 @@
                         </thead>
                         <tbody>
                             @foreach($uploadedDokumenTambahan as $idx => $dok)
+                            @php
+                                $dokKategori = \App\Models\CalonDokumen::getDokumenTambahanCategory($dok->jenis_dokumen);
+                            @endphp
                             <tr>
                                 <td>{{ $idx + 1 }}</td>
                                 <td>
                                     <strong>{{ $dokumenTambahanOptions[$dok->jenis_dokumen] ?? $dok->jenis_dokumen }}</strong>
+                                    @if($dokKategori)
+                                    <br><span class="badge badge-light border text-muted" style="font-size: 10px;">{{ $dokKategori }}</span>
+                                    @endif
                                     @if($dok->nama_dokumen && $dok->nama_dokumen != ($dokumenTambahanOptions[$dok->jenis_dokumen] ?? ''))
                                     <br><small class="text-muted">{{ Str::limit($dok->nama_dokumen, 40) }}</small>
                                     @endif
@@ -420,7 +426,7 @@
                                         $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif']);
                                     @endphp
                                     <button type="button" class="btn btn-xs btn-info btn-preview-dokumen-tambahan" 
-                                            data-url="{{ asset('storage/' . $dok->file_path) }}"
+                                            data-url="{{ $dok->preview_url }}"
                                             data-title="{{ $dokumenTambahanOptions[$dok->jenis_dokumen] ?? $dok->jenis_dokumen }}"
                                             data-type="{{ $isImage ? 'image' : 'pdf' }}"
                                             title="Lihat">
@@ -566,8 +572,12 @@
                         <label for="jenis_dokumen_tambahan"><i class="fas fa-tag mr-1"></i> Jenis Dokumen <span class="text-danger">*</span></label>
                         <select class="form-control" id="jenis_dokumen_tambahan" name="jenis_dokumen" required>
                             <option value="">-- Pilih Jenis Dokumen --</option>
-                            @foreach($dokumenTambahanOptions as $key => $label)
-                            <option value="{{ $key }}">{{ $label }}</option>
+                            @foreach($dokumenTambahanGroups as $groupLabel => $groupOptions)
+                            <optgroup label="{{ $groupLabel }}">
+                                @foreach($groupOptions as $key => $label)
+                                <option value="{{ $key }}">{{ $label }}</option>
+                                @endforeach
+                            </optgroup>
                             @endforeach
                         </select>
                     </div>

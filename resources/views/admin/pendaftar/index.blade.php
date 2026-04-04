@@ -94,7 +94,7 @@
                     <div class="text-dark" id="live-time" style="font-size: 16px; font-weight: 600;"></div>
                 </div>
                 @if(auth()->user()->hasPermission('pendaftar.create'))
-                <a href="{{ route('admin.pendaftar.create') }}" class="btn btn-primary btn-sm">
+                <a href="{{ route('admin.pendaftar.tambah') }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-user-plus mr-1"></i> Tambah Pendaftar
                 </a>
                 @endif
@@ -142,6 +142,13 @@
         </div>
     @endif
 
+    <div class="alert alert-info">
+        Daftar pendaftar sedang memakai konteks:
+        Tahun <strong>{{ $contextInfo['tahun'] }}</strong>,
+        Jalur <strong>{{ $contextInfo['jalur'] }}</strong>,
+        Gelombang <strong>{{ $contextInfo['gelombang'] }}</strong>.
+    </div>
+
     <div class="card">
         <div class="card-header">
             <h3 class="card-title mb-0">Filter</h3>
@@ -166,12 +173,12 @@
                     <div class="form-group mb-1">
                         <label style="font-size: 10px; font-weight: 600; margin-bottom: 2px;">Jalur</label>
                         <select name="jalur_id" id="jalur_filter" class="form-control form-control-sm auto-submit" style="font-size: 11px; padding: 4px 8px;">
-                            <option value="">Semua Jalur</option>
+                            <option value="all" {{ $selectedJalurId === 'all' ? 'selected' : '' }}>Semua Jalur</option>
                             @foreach($jalurList as $jalur)
                             <option value="{{ $jalur->id }}" 
                                 {{ $selectedJalurId == $jalur->id ? 'selected' : '' }}
                                 data-tahun-aktif="{{ $jalur->tahunPelajaran->is_active ?? false }}">
-                                {{ $jalur->nama }} ({{ $jalur->tahunPelajaran->nama ?? '-' }})
+                                {{ $jalur->nama }}
                             </option>
                             @endforeach
                         </select>
@@ -181,12 +188,12 @@
                     <div class="form-group mb-1">
                         <label style="font-size: 10px; font-weight: 600; margin-bottom: 2px;">Gelombang</label>
                         <select name="gelombang_id" id="gelombang_filter" class="form-control form-control-sm auto-submit" style="font-size: 11px; padding: 4px 8px;">
-                            <option value="">Semua Gelombang</option>
+                            <option value="all" {{ $selectedGelombangId === 'all' ? 'selected' : '' }}>Semua Gelombang</option>
                             @foreach($gelombangList as $gelombang)
                             <option value="{{ $gelombang->id }}" 
                                 data-jalur-id="{{ $gelombang->jalur_id }}"
-                                {{ request('gelombang_id') == $gelombang->id ? 'selected' : '' }}
-                                style="{{ ($selectedJalurId && $gelombang->jalur_id != $selectedJalurId) ? 'display:none;' : '' }}">
+                                {{ $selectedGelombangId == $gelombang->id ? 'selected' : '' }}
+                                style="{{ ($selectedJalurId && $selectedJalurId !== 'all' && $gelombang->jalur_id != $selectedJalurId) ? 'display:none;' : '' }}">
                                 {{ $gelombang->nama }}
                             </option>
                             @endforeach
@@ -699,7 +706,7 @@
             return '<span class="text-muted"><i class="fas fa-file fa-2x"></i></span>';
         }
         
-        const fileUrl = `/storage/${dok.file_path}`;
+        const fileUrl = dok.file_url || `/storage/${dok.file_path}`;
         const isImage = dok.mime_type && dok.mime_type.startsWith('image/');
         const isPdf = dok.mime_type === 'application/pdf';
         
@@ -786,7 +793,7 @@
         
         // Preview button - always show if file exists
         if (dok.file_path) {
-            const fileUrl = `/storage/${dok.file_path}`;
+            const fileUrl = dok.file_url || `/storage/${dok.file_path}`;
             buttons += `
                 <button class="btn btn-primary btn-sm" onclick="previewFile('${fileUrl}', '${dok.mime_type}', '${dok.nama_dokumen_lengkap}')" title="Preview">
                     <i class="fas fa-eye"></i>
@@ -803,7 +810,7 @@
         var gelombangSelect = $('#gelombang_filter');
         
         // Reset gelombang selection
-        gelombangSelect.val('');
+        gelombangSelect.val('all');
         
         // Show/hide gelombang options based on selected jalur
         gelombangSelect.find('option').each(function() {
@@ -811,7 +818,7 @@
             if (!jalurId) {
                 // "Semua Gelombang" option - always show
                 $(this).show();
-            } else if (!selectedJalurId) {
+            } else if (!selectedJalurId || selectedJalurId === 'all') {
                 // No jalur selected - show all
                 $(this).show();
             } else if (jalurId === selectedJalurId) {
@@ -844,7 +851,7 @@
     // Initialize gelombang filter on page load
     $(document).ready(function() {
         var selectedJalurId = $('#jalur_filter').val();
-        if (selectedJalurId) {
+        if (selectedJalurId && selectedJalurId !== 'all') {
             $('#gelombang_filter').find('option').each(function() {
                 var jalurId = $(this).data('jalur-id');
                 if (jalurId && jalurId !== selectedJalurId) {

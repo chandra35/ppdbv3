@@ -42,6 +42,12 @@
 @stop
 
 @section('content')
+<div class="alert alert-info">
+    Finalisasi sedang memakai konteks:
+    Tahun <strong>{{ $contextInfo['tahun'] }}</strong>,
+    Jalur <strong>{{ $contextInfo['jalur'] }}</strong>,
+    Gelombang <strong>{{ $contextInfo['gelombang'] }}</strong>.
+</div>
 {{-- Statistics --}}
 <div class="row">
     <div class="col-lg-3 col-md-6">
@@ -99,9 +105,9 @@
             <div class="row">
                 <div class="col-md-2">
                     <select name="jalur_id" class="form-control form-control-sm">
-                        <option value="">-- Semua Jalur --</option>
+                        <option value="all" {{ $selectedJalurIdInput === 'all' ? 'selected' : '' }}>-- Semua Jalur --</option>
                         @foreach($jalurList as $jalur)
-                        <option value="{{ $jalur->id }}" {{ request('jalur_id') == $jalur->id ? 'selected' : '' }}>
+                        <option value="{{ $jalur->id }}" {{ (string) $selectedJalurIdInput === (string) $jalur->id ? 'selected' : '' }}>
                             {{ $jalur->nama }}
                         </option>
                         @endforeach
@@ -109,9 +115,9 @@
                 </div>
                 <div class="col-md-2">
                     <select name="gelombang_id" class="form-control form-control-sm">
-                        <option value="">-- Semua Gelombang --</option>
+                        <option value="all" {{ $selectedGelombangIdInput === 'all' ? 'selected' : '' }}>-- Semua Gelombang --</option>
                         @foreach($gelombangList as $gel)
-                        <option value="{{ $gel->id }}" {{ request('gelombang_id') == $gel->id ? 'selected' : '' }}>
+                        <option value="{{ $gel->id }}" {{ (string) $selectedGelombangIdInput === (string) $gel->id ? 'selected' : '' }}>
                             {{ $gel->nama }}
                         </option>
                         @endforeach

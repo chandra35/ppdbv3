@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class JalurPendaftaran extends Model
 {
@@ -234,13 +235,24 @@ class JalurPendaftaran extends Model
      */
     public function aktifkan(): bool
     {
-        if (!$this->bisaDiaktifkan()) {
-            return false;
-        }
-        
-        $this->status = self::STATUS_OPEN;
-        $this->is_active = true;
-        return $this->save();
+        return DB::transaction(function () {
+            if (!$this->bisaDiaktifkan()) {
+                return false;
+            }
+
+            static::where('tahun_pelajaran_id', $this->tahun_pelajaran_id)
+                ->where('id', '!=', $this->id)
+                ->where('is_active', true)
+                ->update([
+                    'status' => self::STATUS_CLOSED,
+                    'is_active' => false,
+                ]);
+
+            $this->status = self::STATUS_OPEN;
+            $this->is_active = true;
+
+            return $this->save();
+        });
     }
 
     /**
@@ -248,9 +260,19 @@ class JalurPendaftaran extends Model
      */
     public function tutup(): bool
     {
-        $this->status = self::STATUS_CLOSED;
-        $this->is_active = false;
-        return $this->save();
+        return DB::transaction(function () {
+            $saved = $this->forceFill([
+                'status' => self::STATUS_CLOSED,
+                'is_active' => false,
+            ])->save();
+
+            $this->gelombang()->where('is_active', true)->update([
+                'status' => GelombangPendaftaran::STATUS_CLOSED,
+                'is_active' => false,
+            ]);
+
+            return $saved;
+        });
     }
 
     /**
@@ -258,9 +280,19 @@ class JalurPendaftaran extends Model
      */
     public function selesaikan(): bool
     {
-        $this->status = self::STATUS_FINISHED;
-        $this->is_active = false;
-        return $this->save();
+        return DB::transaction(function () {
+            $saved = $this->forceFill([
+                'status' => self::STATUS_FINISHED,
+                'is_active' => false,
+            ])->save();
+
+            $this->gelombang()->update([
+                'status' => GelombangPendaftaran::STATUS_FINISHED,
+                'is_active' => false,
+            ]);
+
+            return $saved;
+        });
     }
 
     /**

@@ -410,8 +410,8 @@
                             <div class="photo-box">
                                 @php
                                     $fotoDokumen = $calonSiswa->dokumen()->where('jenis_dokumen', 'foto')->first();
-                                    $fotoPath = $fotoDokumen ? storage_path('app/public/' . $fotoDokumen->file_path) : null;
-                                    $fotoUrl = $fotoDokumen ? asset('storage/' . $fotoDokumen->file_path) : null;
+                                    $fotoPath = ($fotoDokumen && $fotoDokumen->storage_disk === 'public' && $fotoDokumen->file_path) ? storage_path('app/public/' . $fotoDokumen->file_path) : null;
+                                    $fotoUrl = $fotoDokumen?->file_url;
                                     
                                     // For PDF, use base64 encoded image
                                     $fotoBase64 = null;
@@ -423,6 +423,8 @@
                                 @endphp
                                 @if(isset($isPdf) && $isPdf && $fotoBase64)
                                     <img src="{{ $fotoBase64 }}" alt="Foto">
+                                @elseif(isset($isPdf) && $isPdf && $fotoUrl)
+                                    <img src="{{ $fotoUrl }}" alt="Foto">
                                 @elseif($fotoUrl && (!isset($isPdf) || !$isPdf))
                                     <img src="{{ $fotoUrl }}" alt="Foto">
                                 @else
@@ -456,11 +458,13 @@
                                     <td class="data-separator">:</td>
                                     <td class="data-value">{{ $calonSiswa->tempat_lahir ?? '-' }}, {{ $calonSiswa->tanggal_lahir ? \Carbon\Carbon::parse($calonSiswa->tanggal_lahir)->format('d/m/Y') : '-' }}</td>
                                 </tr>
+                                @if($calonSiswa->jalurPendaftaran?->pilihan_program_aktif && $calonSiswa->pilihan_program)
                                 <tr>
                                     <td class="data-label">Program</td>
                                     <td class="data-separator">:</td>
-                                    <td class="data-value">{{ $calonSiswa->pilihan_program ?? '-' }}</td>
+                                    <td class="data-value">{{ $calonSiswa->pilihan_program }}</td>
                                 </tr>
+                                @endif
                             </table>
                             
                             {{-- Password --}}

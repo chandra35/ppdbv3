@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\NomorService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -431,34 +432,8 @@ class CalonSiswa extends Model
      */
     protected function generateNomorTesAfterVerification(): void
     {
-        $nomorTes = \Illuminate\Support\Facades\DB::transaction(function () {
-            // Lock the settings row to prevent concurrent reads
-            $settings = \App\Models\PpdbSettings::lockForUpdate()->first();
-            $tahun = $this->tahunPelajaran->tahun_mulai ?? date('Y');
-            $jalurCode = strtoupper(substr($this->jalurPendaftaran->nama ?? 'REG', 0, 3));
-            
-            // Get and update counter for this jalur (now safe with row lock)
-            $counters = $settings->nomor_tes_counter ?? [];
-            $jalurKey = (string) $this->jalur_pendaftaran_id;
-            $counter = ($counters[$jalurKey] ?? 0) + 1;
-            
-            $counters[$jalurKey] = $counter;
-            $settings->update(['nomor_tes_counter' => $counters]);
-            
-            // Generate nomor using format template
-            $format = $settings->nomor_tes_format ?? '{PREFIX}-{TAHUN}-{JALUR}-{NOMOR}';
-            $nomor = str_pad($counter, $settings->nomor_tes_digit ?? 4, '0', STR_PAD_LEFT);
-            
-            $nomorTes = str_replace(
-                ['{PREFIX}', '{TAHUN}', '{JALUR}', '{NOMOR}'],
-                [$settings->nomor_tes_prefix ?? 'NTS', $tahun, $jalurCode, $nomor],
-                $format
-            );
-
-            $this->update(['nomor_tes' => $nomorTes]);
-
-            return $nomorTes;
-        });
+        $nomorTes = app(NomorService::class)->generateNomorTes($this);
+        $this->update(['nomor_tes' => $nomorTes]);
 
         // Kirim notifikasi WA ke pendaftar (outside transaction)
         $this->sendVerificationNotification($nomorTes);
@@ -676,27 +651,7 @@ class CalonSiswa extends Model
     // Helper methods
     public function generateNomorRegistrasi(): string
     {
-        // Prioritas: gunakan counter dari gelombang, lalu jalur, terakhir settings global
-        if ($this->gelombangPendaftaran) {
-            // Gelombang punya prefix dan counter sendiri
-            return $this->gelombangPendaftaran->generateNomorRegistrasi();
-        }
-        
-        if ($this->jalurPendaftaran) {
-            // Jalur punya prefix dan counter sendiri
-            return $this->jalurPendaftaran->generateNomorRegistrasi();
-        }
-        
-        // Fallback ke settings global
-        $settings = PpdbSettings::getActive();
-        if ($settings && $settings->exists) {
-            return $settings->generateNomorRegistrasi();
-        }
-        
-        // Ultimate fallback
-        $tahun = date('Y');
-        $sequence = self::whereYear('created_at', $tahun)->count() + 1;
-        return sprintf('PPDB-%s-%05d', $tahun, $sequence);
+        return app(NomorService::class)->generateNomorRegistrasi($this);
     }
 
     /**

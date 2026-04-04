@@ -13,6 +13,9 @@ use App\Models\EnvelopeOpenLog;
 use App\Models\RiwayatGelombang;
 use App\Models\GelombangPendaftaran;
 use App\Services\KopSuratService;
+use App\Services\NomorService;
+use App\Services\DocumentStorageService;
+use App\Support\AdminPpdbContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -21,10 +24,14 @@ use Barryvdh\DomPDF\Facade\Pdf;
 class DashboardController extends Controller
 {
     protected $kopSuratService;
+    protected $nomorService;
+    protected $documentStorageService;
 
-    public function __construct(KopSuratService $kopSuratService)
+    public function __construct(KopSuratService $kopSuratService, NomorService $nomorService, DocumentStorageService $documentStorageService)
     {
         $this->kopSuratService = $kopSuratService;
+        $this->nomorService = $nomorService;
+        $this->documentStorageService = $documentStorageService;
     }
 
     /**
@@ -79,7 +86,7 @@ class DashboardController extends Controller
             ];
         }
 
-        // Cek gelombang berikutnya (untuk notifikasi pindah gelombang)
+        // Cek tujuan pendaftaran berikutnya (jalur/gelombang) untuk notifikasi pindah
         $gelombangBerikutnya = null;
         if ($this->bisaPindahGelombang($calonSiswa)) {
             $gelombangBerikutnya = $this->findGelombangBerikutnya($calonSiswa);
@@ -420,6 +427,7 @@ class DashboardController extends Controller
         
         // Get dokumen tambahan options
         $dokumenTambahanOptions = CalonDokumen::DOKUMEN_TAMBAHAN;
+        $dokumenTambahanGroups = CalonDokumen::getDokumenTambahanGroups();
         
         // Get uploaded dokumen tambahan
         $uploadedDokumenTambahan = $calonSiswa->dokumen
@@ -432,6 +440,7 @@ class DashboardController extends Controller
             'uploadedDocs',
             'izinkanDokumenTambahan',
             'dokumenTambahanOptions',
+            'dokumenTambahanGroups',
             'uploadedDokumenTambahan'
         ));
     }
@@ -471,26 +480,29 @@ class DashboardController extends Controller
                 return response()->json(['success' => false, 'message' => 'Gagal memproses gambar'], 400);
             }
             
-            // Generate filename
-            $filename = $jenisDokumen . '_' . $calonSiswa->nisn . '_' . time() . '.jpg';
-            $path = 'dokumen/' . $calonSiswa->id . '/' . $filename;
-            
-            // Store file
-            Storage::disk('public')->put($path, $imageData);
-            
-            // Save or update document record
+            $existingDokumen = CalonDokumen::where('calon_siswa_id', $calonSiswa->id)
+                ->where('jenis_dokumen', $jenisDokumen)
+                ->first();
+
+            if ($existingDokumen) {
+                $this->documentStorageService->delete($existingDokumen);
+            }
+
+            $stored = $this->documentStorageService->storeBase64Image($request->input('camera_captured'), $calonSiswa, $jenisDokumen, [
+                'filename' => $jenisDokumen . '_' . $calonSiswa->nisn . '_' . time() . '.jpg',
+                'original_name' => $jenisDokumen . '_cropped.jpg',
+                'local_directory' => 'dokumen/' . $calonSiswa->id,
+            ]);
+
             CalonDokumen::updateOrCreate(
                 [
                     'calon_siswa_id' => $calonSiswa->id,
                     'jenis_dokumen' => $jenisDokumen,
                 ],
-                [
-                    'nama_file' => $jenisDokumen . '_cropped.jpg',
-                    'file_path' => $path,
-                    'mime_type' => 'image/jpeg',
-                    'file_size' => strlen($imageData),
+                array_merge($stored, [
+                    'nama_dokumen' => CalonDokumen::JENIS_DOKUMEN[$jenisDokumen] ?? $jenisDokumen,
                     'status_verifikasi' => 'pending',
-                ]
+                ])
             );
         } else {
             // Pas foto hanya boleh format gambar (tidak boleh PDF)
@@ -510,8 +522,17 @@ class DashboardController extends Controller
 
             $file = $request->file('file');
 
-            // Store file
-            $path = $file->store('dokumen/' . $calonSiswa->id, 'public');
+            $existingDokumen = CalonDokumen::where('calon_siswa_id', $calonSiswa->id)
+                ->where('jenis_dokumen', $jenisDokumen)
+                ->first();
+
+            if ($existingDokumen) {
+                $this->documentStorageService->delete($existingDokumen);
+            }
+
+            $stored = $this->documentStorageService->storeUploadedFile($file, $calonSiswa, $jenisDokumen, [
+                'local_directory' => 'dokumen/' . $calonSiswa->id,
+            ]);
 
             // Save or update document record
             CalonDokumen::updateOrCreate(
@@ -519,13 +540,10 @@ class DashboardController extends Controller
                     'calon_siswa_id' => $calonSiswa->id,
                     'jenis_dokumen' => $jenisDokumen,
                 ],
-                [
-                    'nama_file' => $file->getClientOriginalName(),
-                    'file_path' => $path,
-                    'mime_type' => $file->getMimeType(),
-                    'file_size' => $file->getSize(),
+                array_merge($stored, [
+                    'nama_dokumen' => CalonDokumen::JENIS_DOKUMEN[$jenisDokumen] ?? $jenisDokumen,
                     'status_verifikasi' => 'pending',
-                ]
+                ])
             );
         }
 
@@ -581,8 +599,7 @@ class DashboardController extends Controller
             ], 404);
         }
 
-        // Delete file
-        Storage::disk('public')->delete($dokumen->file_path);
+        $this->documentStorageService->delete($dokumen);
         
         // Delete record
         $dokumen->delete();
@@ -650,19 +667,23 @@ class DashboardController extends Controller
         $extension = $file->getClientOriginalExtension();
         $filename = $jenisDokumen . '_' . $calonSiswa->nisn . '_' . time() . '.' . $extension;
         
-        // Store file
-        $path = $file->storeAs('dokumen_pendaftar/' . $calonSiswa->id . '/tambahan', $filename, 'public');
+        $stored = $this->documentStorageService->storeUploadedFile($file, $calonSiswa, $jenisDokumen, [
+            'filename' => $filename,
+            'local_directory' => 'dokumen_pendaftar/' . $calonSiswa->id . '/tambahan',
+        ]);
 
         // Create dokumen record - dokumen tambahan langsung valid (tidak perlu verifikasi)
         $dokumen = CalonDokumen::create([
             'calon_siswa_id' => $calonSiswa->id,
             'jenis_dokumen' => $jenisDokumen,
             'nama_dokumen' => CalonDokumen::DOKUMEN_TAMBAHAN[$jenisDokumen] . ($keterangan ? ' - ' . $keterangan : ''),
-            'nama_file' => $file->getClientOriginalName(),
-            'file_path' => $path,
-            'file_size' => $file->getSize(),
-            'mime_type' => $file->getMimeType(),
-            'storage_disk' => 'public',
+            'nama_file' => $stored['nama_file'],
+            'file_path' => $stored['file_path'],
+            'remote_file_id' => $stored['remote_file_id'],
+            'remote_file_url' => $stored['remote_file_url'],
+            'file_size' => $stored['file_size'],
+            'mime_type' => $stored['mime_type'],
+            'storage_disk' => $stored['storage_disk'],
             'is_required' => false,
             'status_verifikasi' => 'valid', // Langsung valid karena opsional
             'verified_at' => now(),
@@ -676,7 +697,7 @@ class DashboardController extends Controller
                 'jenis' => $jenisDokumen,
                 'nama' => $dokumen->nama_dokumen,
                 'nama_file' => $dokumen->nama_file,
-                'file_url' => asset('storage/' . $dokumen->file_path),
+                'file_url' => $dokumen->file_url,
                 'file_size' => $dokumen->file_size_formatted,
                 'status' => $dokumen->status_verifikasi,
             ]
@@ -710,8 +731,7 @@ class DashboardController extends Controller
             return response()->json(['success' => false, 'message' => 'Dokumen tidak ditemukan'], 404);
         }
 
-        // Delete file
-        Storage::disk('public')->delete($dokumen->file_path);
+        $this->documentStorageService->delete($dokumen);
         $dokumen->delete();
 
         return response()->json([
@@ -870,7 +890,7 @@ class DashboardController extends Controller
         // Delete existing file if any
         $existingDokumen = $calonSiswa->dokumen()->where('jenis_dokumen', $jenisDokumen)->first();
         if ($existingDokumen) {
-            Storage::disk('public')->delete($existingDokumen->file_path);
+            $this->documentStorageService->delete($existingDokumen);
             $existingDokumen->delete();
         }
 
@@ -891,23 +911,24 @@ class DashboardController extends Controller
                 return response()->json(['success' => false, 'message' => 'Gagal memproses gambar'], 400);
             }
             
-            // Generate filename
-            $filename = 'rapor_sem' . $semester . '_' . $calonSiswa->nisn . '_' . time() . '.jpg';
-            $path = 'dokumen_pendaftar/' . $calonSiswa->id . '/' . $filename;
-            
-            // Store file
-            Storage::disk('public')->put($path, $imageData);
-            
+            $stored = $this->documentStorageService->storeBase64Image($request->input('camera_captured'), $calonSiswa, $jenisDokumen, [
+                'filename' => 'rapor_sem' . $semester . '_' . $calonSiswa->nisn . '_' . time() . '.jpg',
+                'original_name' => 'rapor_semester_' . $semester . '_camera.jpg',
+                'local_directory' => 'dokumen_pendaftar/' . $calonSiswa->id,
+            ]);
+
             // Create dokumen record
             $dokumen = CalonDokumen::create([
                 'calon_siswa_id' => $calonSiswa->id,
                 'jenis_dokumen' => $jenisDokumen,
                 'nama_dokumen' => CalonDokumen::JENIS_DOKUMEN[$jenisDokumen] ?? 'Rapor Semester ' . $semester,
-                'nama_file' => 'rapor_semester_' . $semester . '_camera.jpg',
-                'file_path' => $path,
-                'file_size' => strlen($imageData),
-                'mime_type' => 'image/jpeg',
-                'storage_disk' => 'public',
+                'nama_file' => $stored['nama_file'],
+                'file_path' => $stored['file_path'],
+                'remote_file_id' => $stored['remote_file_id'],
+                'remote_file_url' => $stored['remote_file_url'],
+                'file_size' => $stored['file_size'],
+                'mime_type' => $stored['mime_type'],
+                'storage_disk' => $stored['storage_disk'],
                 'is_required' => false,
                 'status_verifikasi' => 'pending',
             ]);
@@ -927,19 +948,23 @@ class DashboardController extends Controller
             $extension = $file->getClientOriginalExtension();
             $filename = 'rapor_sem' . $semester . '_' . $calonSiswa->nisn . '_' . time() . '.' . $extension;
             
-            // Store file
-            $path = $file->storeAs('dokumen_pendaftar/' . $calonSiswa->id, $filename, 'public');
+            $stored = $this->documentStorageService->storeUploadedFile($file, $calonSiswa, $jenisDokumen, [
+                'filename' => $filename,
+                'local_directory' => 'dokumen_pendaftar/' . $calonSiswa->id,
+            ]);
 
             // Create dokumen record
             $dokumen = CalonDokumen::create([
                 'calon_siswa_id' => $calonSiswa->id,
                 'jenis_dokumen' => $jenisDokumen,
                 'nama_dokumen' => CalonDokumen::JENIS_DOKUMEN[$jenisDokumen] ?? 'Rapor Semester ' . $semester,
-                'nama_file' => $file->getClientOriginalName(),
-                'file_path' => $path,
-                'file_size' => $file->getSize(),
-                'mime_type' => $file->getMimeType(),
-                'storage_disk' => 'public',
+                'nama_file' => $stored['nama_file'],
+                'file_path' => $stored['file_path'],
+                'remote_file_id' => $stored['remote_file_id'],
+                'remote_file_url' => $stored['remote_file_url'],
+                'file_size' => $stored['file_size'],
+                'mime_type' => $stored['mime_type'],
+                'storage_disk' => $stored['storage_disk'],
                 'is_required' => false,
                 'status_verifikasi' => 'pending',
             ]);
@@ -979,7 +1004,7 @@ class DashboardController extends Controller
             'dokumen' => [
                 'id' => $dokumen->id,
                 'nama_file' => $dokumen->nama_file,
-                'file_url' => asset('storage/' . $dokumen->file_path),
+                'file_url' => $dokumen->file_url,
                 'file_size' => $dokumen->file_size_formatted,
                 'status' => $dokumen->status_verifikasi,
             ]
@@ -1010,8 +1035,7 @@ class DashboardController extends Controller
             return response()->json(['success' => false, 'message' => 'File rapor tidak ditemukan'], 404);
         }
 
-        // Delete file
-        Storage::disk('public')->delete($dokumen->file_path);
+        $this->documentStorageService->delete($dokumen);
         $dokumen->delete();
 
         // Clear dokumen_path in nilai_rapor table
@@ -1097,7 +1121,8 @@ class DashboardController extends Controller
             'kota' => $sekolahSettings->city->name ?? config('app.school_city', ''),
         ];
         
-        $pdf = Pdf::loadView('pendaftar.pdf.bukti-registrasi', compact('calonSiswa', 'sekolah', 'kopHtml', 'qrCode', 'sekolahSettings'));
+        $pdf = Pdf::loadView('pendaftar.pdf.bukti-registrasi', compact('calonSiswa', 'sekolah', 'kopHtml', 'qrCode', 'sekolahSettings'))
+            ->setOption('isRemoteEnabled', true);
         
         $filename = 'bukti-registrasi-' . preg_replace('/[\/\\\:*?"<>|]/', '-', $calonSiswa->nomor_registrasi) . '.pdf';
         
@@ -1207,6 +1232,7 @@ class DashboardController extends Controller
         $isPdf = true;
         
         $pdf = Pdf::loadView('pendaftar.pdf.kartu-ujian', compact('calonSiswa', 'sekolah', 'password', 'kopHtml', 'isPdf'))
+            ->setOption('isRemoteEnabled', true)
             ->setPaper([0, 0, 298, 421], 'landscape');
         
         $filename = 'kartu-ujian-' . preg_replace('/[\/\\\:*?"<>|]/', '-', $calonSiswa->nomor_tes) . '.pdf';
@@ -1747,30 +1773,9 @@ class DashboardController extends Controller
             return $calonSiswa;
         }
 
-        $settings = \App\Models\PpdbSettings::first();
-        $tahun = $calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y');
-        $jalurCode = strtoupper(substr($calonSiswa->jalurPendaftaran->nama ?? 'REG', 0, 3));
-        
-        // Get and update counter for this jalur
-        $counters = $settings->nomor_tes_counter ?? [];
-        $jalurKey = (string) $calonSiswa->jalur_pendaftaran_id;
-        $counter = ($counters[$jalurKey] ?? 0) + 1;
-        
-        // Update counter atomically
-        $counters[$jalurKey] = $counter;
-        $settings->update(['nomor_tes_counter' => $counters]);
-        
-        // Generate nomor using format template
-        $format = $settings->nomor_tes_format ?? '{PREFIX}-{TAHUN}-{JALUR}-{NOMOR}';
-        $nomor = str_pad($counter, $settings->nomor_tes_digit ?? 4, '0', STR_PAD_LEFT);
-        
-        $nomorTes = str_replace(
-            ['{PREFIX}', '{TAHUN}', '{JALUR}', '{NOMOR}'],
-            [$settings->nomor_tes_prefix ?? 'NTS', $tahun, $jalurCode, $nomor],
-            $format
-        );
-
-        $calonSiswa->update(['nomor_tes' => $nomorTes]);
+        $calonSiswa->update([
+            'nomor_tes' => $this->nomorService->generateNomorTes($calonSiswa),
+        ]);
         
         return $calonSiswa->fresh();
     }
@@ -2204,7 +2209,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * API: Cek gelombang berikutnya yang tersedia untuk pindah
+     * API: Cek tujuan pendaftaran berikutnya yang tersedia untuk pindah
      */
     public function cekGelombangBerikutnya()
     {
@@ -2217,7 +2222,7 @@ class DashboardController extends Controller
             return response()->json(['available' => false]);
         }
 
-        // Cari gelombang berikutnya di jalur yang sama
+        // Cari tujuan pendaftaran berikutnya
         $gelombangBerikutnya = $this->findGelombangBerikutnya($calonSiswa);
 
         if (!$gelombangBerikutnya) {
@@ -2233,14 +2238,14 @@ class DashboardController extends Controller
                 'nama' => $gelombangBerikutnya->nama,
                 'tanggal_tutup' => $gelombangBerikutnya->tanggal_tutup,
                 'sisa_kuota' => $gelombangBerikutnya->sisaKuota(),
-                'jalur_nama' => $calonSiswa->jalurPendaftaran->nama ?? '',
+                'jalur_nama' => $gelombangBerikutnya->jalur->nama ?? '',
             ],
             'status_sebelumnya' => $statusKelulusan ? strtoupper($statusKelulusan) : 'BELUM ADA',
         ]);
     }
 
     /**
-     * Proses pindah gelombang
+     * Proses pindah jalur/gelombang
      */
     public function pindahGelombang(Request $request)
     {
@@ -2253,12 +2258,12 @@ class DashboardController extends Controller
             return response()->json(['success' => false, 'message' => 'Data pendaftar tidak ditemukan.'], 404);
         }
 
-        // Validasi: harus memenuhi syarat pindah gelombang
+        // Validasi: harus memenuhi syarat pindah jalur/gelombang
         if (!$this->bisaPindahGelombang($calonSiswa)) {
             return response()->json(['success' => false, 'message' => 'Anda tidak memenuhi syarat untuk pindah gelombang.'], 403);
         }
 
-        // Cari gelombang berikutnya
+        // Cari tujuan pendaftaran berikutnya
         $gelombangBerikutnya = $this->findGelombangBerikutnya($calonSiswa);
 
         if (!$gelombangBerikutnya) {
@@ -2272,43 +2277,75 @@ class DashboardController extends Controller
 
         // Simpan data lama
         $gelombangLama = $calonSiswa->gelombangPendaftaran;
+        $jalurLama = $calonSiswa->jalurPendaftaran;
+        $jalurBaru = $gelombangBerikutnya->jalur;
         $nomorRegistrasiLama = $calonSiswa->nomor_registrasi;
-        $statusKelulusanLama = $calonSiswa->kelulusan->status ?? 'tidak_mengikuti_seleksi';
+        $nomorTesLama = $calonSiswa->nomor_tes;
+        $statusKelulusanRaw = $calonSiswa->kelulusan->status ?? null;
+        $statusKelulusanLama = match ($statusKelulusanRaw) {
+            'lulus' => 'lulus',
+            'tidak_lulus' => 'tidak_lulus',
+            'cadangan' => 'cadangan',
+            default => 'belum_ada',
+        };
 
         try {
             \DB::beginTransaction();
 
-            // 1. Generate nomor registrasi baru dari gelombang baru
-            $nomorRegistrasiBaru = $gelombangBerikutnya->generateNomorRegistrasi();
+            // 1. Generate nomor registrasi baru dari jalur/gelombang baru
+            $calonSiswa->jalur_pendaftaran_id = $jalurBaru?->id;
+            $calonSiswa->gelombang_pendaftaran_id = $gelombangBerikutnya->id;
+            $calonSiswa->nomor_registrasi = null;
+            $calonSiswa->nomor_tes = null;
+            $calonSiswa->unsetRelation('jalurPendaftaran');
+            $calonSiswa->unsetRelation('gelombangPendaftaran');
+            $calonSiswa->setRelation('jalurPendaftaran', $jalurBaru);
+            $calonSiswa->setRelation('gelombangPendaftaran', $gelombangBerikutnya);
+            $nomorRegistrasiBaru = $this->nomorService->generateNomorRegistrasi($calonSiswa);
+            $nomorTesBaru = null;
+            if ($calonSiswa->is_finalisasi && $calonSiswa->status_verifikasi === 'verified') {
+                $nomorTesBaru = $this->nomorService->generateNomorTes($calonSiswa);
+            }
 
             // 2. Simpan riwayat perpindahan
             RiwayatGelombang::create([
                 'calon_siswa_id' => $calonSiswa->id,
                 'dari_gelombang_id' => $gelombangLama->id,
                 'ke_gelombang_id' => $gelombangBerikutnya->id,
-                'jalur_pendaftaran_id' => $calonSiswa->jalur_pendaftaran_id,
+                'jalur_pendaftaran_id' => $jalurLama?->id,
                 'tahun_pelajaran_id' => $calonSiswa->tahun_pelajaran_id,
                 'nomor_registrasi_lama' => $nomorRegistrasiLama,
                 'nomor_registrasi_baru' => $nomorRegistrasiBaru,
                 'status_kelulusan_sebelumnya' => $statusKelulusanLama,
                 'dipindahkan_oleh' => 'pendaftar',
+                'catatan' => trim(implode(' | ', array_filter([
+                    $statusKelulusanRaw ? "Status kelulusan lama: {$statusKelulusanRaw}" : "Belum ada status kelulusan",
+                    $jalurLama && $jalurBaru && $jalurLama->id !== $jalurBaru->id
+                        ? "Pindah jalur: {$jalurLama->nama} -> {$jalurBaru->nama}"
+                        : null,
+                    $nomorTesLama ? "Nomor tes lama: {$nomorTesLama}" : null,
+                    $nomorTesBaru ? "Nomor tes baru: {$nomorTesBaru}" : "Nomor tes akan digenerate ulang",
+                ]))),
             ]);
 
             // 3. Update calon siswa
             $calonSiswa->update([
+                'jalur_pendaftaran_id' => $jalurBaru?->id,
                 'gelombang_pendaftaran_id' => $gelombangBerikutnya->id,
                 'nomor_registrasi' => $nomorRegistrasiBaru,
+                'nomor_tes' => $nomorTesBaru,
             ]);
 
-            // 4. Hapus record kelulusan lama jika ada (agar bisa di-set ulang di gelombang baru)
+            // 4. Hapus record kelulusan lama jika ada (agar bisa di-set ulang di konteks baru)
             if ($calonSiswa->kelulusan) {
                 $calonSiswa->kelulusan()->delete();
             }
 
-            // 5. Reset status admisi jika ada
-            if ($calonSiswa->status_admisi) {
-                $calonSiswa->update(['status_admisi' => null]);
-            }
+            // 5. Reset status admisi agar siap diproses lagi di jalur/gelombang baru
+            $calonSiswa->update([
+                'status_admisi' => 'pending',
+                'catatan_admisi' => null,
+            ]);
 
             // 6. Hapus envelope open log (agar bisa buka amplop lagi nanti)
             EnvelopeOpenLog::where('calon_siswa_id', $calonSiswa->id)
@@ -2322,15 +2359,18 @@ class DashboardController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "Berhasil pindah ke {$gelombangBerikutnya->nama}! Nomor registrasi baru Anda: {$nomorRegistrasiBaru}",
+                'message' => "Berhasil pindah ke {$gelombangBerikutnya->nama}" . ($jalurBaru ? " jalur {$jalurBaru->nama}" : '') . "! Nomor registrasi baru Anda: {$nomorRegistrasiBaru}",
                 'nomor_registrasi_baru' => $nomorRegistrasiBaru,
                 'gelombang_baru' => $gelombangBerikutnya->nama,
+                'jalur_baru' => $jalurBaru?->nama,
+                'nomor_tes_baru' => $nomorTesBaru,
             ]);
         } catch (\Exception $e) {
             \DB::rollBack();
-            \Log::error('Gagal pindah gelombang: ' . $e->getMessage(), [
+            \Log::error('Gagal pindah jalur/gelombang: ' . $e->getMessage(), [
                 'calon_siswa_id' => $calonSiswa->id,
                 'ke_gelombang_id' => $gelombangBerikutnya->id,
+                'ke_jalur_id' => $jalurBaru?->id,
             ]);
             return response()->json(['success' => false, 'message' => 'Terjadi kesalahan. Silakan coba lagi.'], 500);
         }
@@ -2339,14 +2379,13 @@ class DashboardController extends Controller
     /**
      * Helper: Cek apakah pendaftar bisa pindah gelombang
      * Syarat:
-     * 1. Kelulusan tidak_lulus / cadangan, ATAU
-     * 2. Tidak punya record kelulusan DAN gelombang lama sudah closed/finished
-     * Yang LULUS tidak bisa pindah
+     * 1. Yang lulus tidak bisa pindah
+     * 2. Selain lulus boleh pindah selama ada tujuan aktif yang valid
      */
     private function bisaPindahGelombang(CalonSiswa $calonSiswa): bool
     {
-        // Harus punya gelombang saat ini
-        if (!$calonSiswa->gelombangPendaftaran) {
+        // Harus punya konteks saat ini
+        if (!$calonSiswa->gelombangPendaftaran || !$calonSiswa->jalurPendaftaran) {
             return false;
         }
 
@@ -2355,37 +2394,40 @@ class DashboardController extends Controller
             return false;
         }
 
-        // Yang tidak lulus / cadangan → bisa pindah
-        if ($calonSiswa->kelulusan && in_array($calonSiswa->kelulusan->status, ['tidak_lulus', 'cadangan'])) {
-            return true;
-        }
-
-        // Tidak punya kelulusan → bisa pindah HANYA jika gelombang lama sudah closed/finished
-        $gelombangStatus = $calonSiswa->gelombangPendaftaran->computed_status ?? $calonSiswa->gelombangPendaftaran->status;
-        return in_array($gelombangStatus, ['closed', 'finished']);
+        return $this->findGelombangBerikutnya($calonSiswa) !== null;
     }
 
     /**
-     * Helper: Cari gelombang berikutnya yang tersedia di jalur yang sama
+     * Helper: Cari tujuan jalur/gelombang aktif yang tersedia di tahun yang sama.
+     * Prioritas mengikuti konteks aktif admin pada tahun tersebut.
      */
     private function findGelombangBerikutnya(CalonSiswa $calonSiswa): ?GelombangPendaftaran
     {
-        if (!$calonSiswa->jalur_pendaftaran_id || !$calonSiswa->gelombangPendaftaran) {
+        if (!$calonSiswa->tahun_pelajaran_id || !$calonSiswa->gelombangPendaftaran) {
             return null;
         }
 
-        return GelombangPendaftaran::where('jalur_id', $calonSiswa->jalur_pendaftaran_id)
-            ->where('is_active', true)
-            ->where('urutan', '>', $calonSiswa->gelombangPendaftaran->urutan)
-            ->where(function ($q) {
-                $q->where('status', 'open')
-                  ->orWhere(function ($q2) {
-                      // Auto-computed status: dalam periode pendaftaran
-                      $q2->whereDate('tanggal_buka', '<=', now()->toDateString())
-                         ->whereDate('tanggal_tutup', '>=', now()->toDateString());
-                  });
+        $context = AdminPpdbContext::resolve($calonSiswa->tahun_pelajaran_id);
+        $targetGelombang = $context['selectedGelombang'];
+
+        if (
+            $targetGelombang
+            && $targetGelombang->id !== $calonSiswa->gelombang_pendaftaran_id
+            && $targetGelombang->bisaMenerimaPendaftar()
+        ) {
+            return $targetGelombang->loadMissing('jalur');
+        }
+
+        return GelombangPendaftaran::with('jalur')
+            ->whereHas('jalur', function ($query) use ($calonSiswa) {
+                $query->where('tahun_pelajaran_id', $calonSiswa->tahun_pelajaran_id)
+                    ->where('is_active', true);
             })
-            ->orderBy('urutan', 'asc')
-            ->first();
+            ->where('is_active', true)
+            ->where('id', '!=', $calonSiswa->gelombang_pendaftaran_id)
+            ->get()
+            ->first(function (GelombangPendaftaran $gelombang) {
+                return $gelombang->bisaMenerimaPendaftar();
+            });
     }
 }

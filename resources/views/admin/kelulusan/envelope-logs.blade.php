@@ -55,6 +55,23 @@
 
 @section('content')
 <div class="container-fluid">
+    <div class="alert alert-info d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+            Log amplop sedang memakai konteks tahun:
+            <strong>{{ $tahunAktif->nama ?? '-' }}</strong>
+        </div>
+        <form method="GET" class="form-inline">
+            <input type="hidden" name="tab" value="{{ $activeTab }}">
+            <label class="mr-2 mb-0">Tahun</label>
+            <select name="tahun_pelajaran_id" class="form-control form-control-sm" onchange="this.form.submit()">
+                @foreach($tahunPelajaranList as $tp)
+                <option value="{{ $tp->id }}" {{ (string) $selectedTahunIdInput === (string) $tp->id ? 'selected' : '' }}>
+                    {{ $tp->nama }} {{ $tp->is_active ? '(Aktif)' : '' }}
+                </option>
+                @endforeach
+            </select>
+        </form>
+    </div>
 
     {{-- Stats --}}
     <div class="row">

@@ -135,12 +135,14 @@
             <td>:</td>
             <td>{{ $calonSiswa->nomor_tes ?? '-' }}</td>
         </tr>
+        @if($calonSiswa->jalurPendaftaran?->pilihan_program_aktif && $calonSiswa->pilihan_program)
         <tr>
             <td>7.</td>
-            <td>Minat Reguler / Asrama</td>
+            <td>Pilihan Program</td>
             <td>:</td>
-            <td>{{ $calonSiswa->pilihan_program ?? '-' }}</td>
+            <td>{{ $calonSiswa->pilihan_program }}</td>
         </tr>
+        @endif
         <tr>
             <td>8.</td>
             <td>Nama Orang Tua / Wali</td>

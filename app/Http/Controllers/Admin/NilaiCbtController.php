@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Imports\NilaiCbtImport;
 use App\Models\NilaiCbt;
 use App\Models\TahunPelajaran;
+use App\Support\AdminPpdbContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -16,17 +17,30 @@ class NilaiCbtController extends Controller
      */
     public function index(Request $request)
     {
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
-        $selectedTahunId = $request->tahun_pelajaran_id ?: $tahunAktif?->id;
+        $context = AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
+        $tahunAktif = $context['selectedTahun'];
+        $selectedTahunId = $tahunAktif?->id;
 
         $query = NilaiCbt::with('calonSiswa')
             ->where('tahun_pelajaran_id', $selectedTahunId);
 
-        $data = $query->orderBy('rata_rata', 'desc')->get();
+        if ($context['jalurFilterId']) {
+            $query->whereHas('calonSiswa', function ($q) use ($context) {
+                $q->where('jalur_pendaftaran_id', $context['jalurFilterId']);
+            });
+        }
 
-        $tahunPelajarans = TahunPelajaran::orderBy('is_active', 'desc')
-            ->orderBy('nama', 'desc')
-            ->get();
+        if ($context['gelombangFilterId']) {
+            $query->whereHas('calonSiswa', function ($q) use ($context) {
+                $q->where('gelombang_pendaftaran_id', $context['gelombangFilterId']);
+            });
+        }
+
+        $data = $query->orderBy('rata_rata', 'desc')->get();
 
         // Hitung progress per mapel
         $komponenList = NilaiCbt::komponenList();
@@ -45,10 +59,20 @@ class NilaiCbtController extends Controller
         return view('admin.nilai-cbt.index', compact(
             'data',
             'tahunAktif',
-            'tahunPelajarans',
             'selectedTahunId',
             'mapelProgress'
-        ));
+        ) + [
+            'tahunPelajarans' => $context['tahunPelajarans'],
+            'jalurs' => $context['jalurs'],
+            'gelombangs' => $context['gelombangs'],
+            'selectedJalurIdInput' => $context['selectedJalurIdInput'],
+            'selectedGelombangIdInput' => $context['selectedGelombangIdInput'],
+            'contextInfo' => [
+                'tahun' => $context['selectedTahun']?->nama ?? '-',
+                'jalur' => $context['selectedJalur']?->nama ?? 'Semua Jalur',
+                'gelombang' => $context['selectedGelombang']?->nama ?? 'Semua Gelombang',
+            ],
+        ]);
     }
 
     /**
@@ -56,11 +80,28 @@ class NilaiCbtController extends Controller
      */
     public function upload(Request $request)
     {
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        $context = AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
+        $tahunAktif = $context['selectedTahun'];
         $komponenList = NilaiCbt::komponenList();
         $selectedMapel = $request->mapel;
 
-        return view('admin.nilai-cbt.upload', compact('tahunAktif', 'komponenList', 'selectedMapel'));
+        return view('admin.nilai-cbt.upload', compact('tahunAktif', 'komponenList', 'selectedMapel') + [
+            'tahunPelajarans' => $context['tahunPelajarans'],
+            'jalurs' => $context['jalurs'],
+            'gelombangs' => $context['gelombangs'],
+            'selectedTahunIdInput' => $context['selectedTahunIdInput'],
+            'selectedJalurIdInput' => $context['selectedJalurIdInput'],
+            'selectedGelombangIdInput' => $context['selectedGelombangIdInput'],
+            'contextInfo' => [
+                'tahun' => $context['selectedTahun']?->nama ?? '-',
+                'jalur' => $context['selectedJalur']?->nama ?? 'Semua Jalur',
+                'gelombang' => $context['selectedGelombang']?->nama ?? 'Semua Gelombang',
+            ],
+        ]);
     }
 
     /**
@@ -69,11 +110,19 @@ class NilaiCbtController extends Controller
     public function processUpload(Request $request)
     {
         $request->validate([
+            'tahun_pelajaran_id' => 'nullable',
+            'jalur_id' => 'nullable',
+            'gelombang_id' => 'nullable',
             'file' => 'required|file|mimes:xlsx,xls|max:10240',
             'mapel' => 'required|in:nilai_mtk,nilai_ipa,nilai_ips,nilai_bahasa_inggris',
         ]);
 
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        $context = AdminPpdbContext::resolve(
+            $request->input('tahun_pelajaran_id'),
+            $request->input('jalur_id'),
+            $request->input('gelombang_id')
+        );
+        $tahunAktif = $context['selectedTahun'];
         if (!$tahunAktif) {
             return back()->with('error', 'Tahun pelajaran aktif tidak ditemukan.');
         }
@@ -103,6 +152,11 @@ class NilaiCbtController extends Controller
             'originalName' => $file->getClientOriginalName(),
             'mapel' => $mapel,
             'mapelLabel' => $mapelLabel,
+            'returnContext' => [
+                'tahun_pelajaran_id' => $request->input('tahun_pelajaran_id'),
+                'jalur_id' => $request->input('jalur_id'),
+                'gelombang_id' => $request->input('gelombang_id'),
+            ],
         ]);
     }
 
@@ -117,20 +171,37 @@ class NilaiCbtController extends Controller
         $tempPath = storage_path("app/temp/cbt_{$token}.{$ext}");
 
         if (!file_exists($tempPath)) {
-            return redirect()->route('admin.nilai-cbt.upload')
+            return redirect()->route('admin.nilai-cbt.upload', [
+                    'tahun_pelajaran_id' => $request->input('tahun_pelajaran_id'),
+                    'jalur_id' => $request->input('jalur_id'),
+                    'gelombang_id' => $request->input('gelombang_id'),
+                ])
                 ->with('error', 'File temporary tidak ditemukan. Silakan upload ulang.');
         }
 
         if (!$mapel || !in_array($mapel, array_keys(NilaiCbt::komponenList()))) {
             @unlink($tempPath);
-            return redirect()->route('admin.nilai-cbt.upload')
+            return redirect()->route('admin.nilai-cbt.upload', [
+                    'tahun_pelajaran_id' => $request->input('tahun_pelajaran_id'),
+                    'jalur_id' => $request->input('jalur_id'),
+                    'gelombang_id' => $request->input('gelombang_id'),
+                ])
                 ->with('error', 'Mapel tidak valid.');
         }
 
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        $context = AdminPpdbContext::resolve(
+            $request->input('tahun_pelajaran_id'),
+            $request->input('jalur_id'),
+            $request->input('gelombang_id')
+        );
+        $tahunAktif = $context['selectedTahun'];
         if (!$tahunAktif) {
             @unlink($tempPath);
-            return redirect()->route('admin.nilai-cbt.upload')
+            return redirect()->route('admin.nilai-cbt.upload', [
+                    'tahun_pelajaran_id' => $request->input('tahun_pelajaran_id'),
+                    'jalur_id' => $request->input('jalur_id'),
+                    'gelombang_id' => $request->input('gelombang_id'),
+                ])
                 ->with('error', 'Tahun pelajaran aktif tidak ditemukan.');
         }
 
@@ -147,7 +218,11 @@ class NilaiCbtController extends Controller
             $message .= " {$result['skipped']} dilewati.";
         }
 
-        return redirect()->route('admin.nilai-cbt.index')
+        return redirect()->route('admin.nilai-cbt.index', [
+                'tahun_pelajaran_id' => $request->input('tahun_pelajaran_id'),
+                'jalur_id' => $request->input('jalur_id'),
+                'gelombang_id' => $request->input('gelombang_id'),
+            ])
             ->with('success', $message);
     }
 
@@ -164,7 +239,11 @@ class NilaiCbtController extends Controller
             @unlink($tempPath);
         }
 
-        return redirect()->route('admin.nilai-cbt.upload')
+        return redirect()->route('admin.nilai-cbt.upload', [
+                'tahun_pelajaran_id' => $request->input('tahun_pelajaran_id'),
+                'jalur_id' => $request->input('jalur_id'),
+                'gelombang_id' => $request->input('gelombang_id'),
+            ])
             ->with('info', 'Upload dibatalkan.');
     }
 

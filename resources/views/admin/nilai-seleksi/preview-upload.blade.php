@@ -381,6 +381,9 @@
                     <form method="POST" action="{{ route('admin.nilai-seleksi.upload.cancel') }}" class="d-inline">
                         @csrf
                         <input type="hidden" name="temp_file" value="{{ $tempFile }}">
+                        <input type="hidden" name="tahun_pelajaran_id" value="{{ $returnContext['tahun_pelajaran_id'] }}">
+                        <input type="hidden" name="jalur_id" value="{{ $returnContext['jalur_id'] }}">
+                        <input type="hidden" name="gelombang_id" value="{{ $returnContext['gelombang_id'] }}">
                         <button type="submit" class="btn btn-secondary">
                             <i class="fas fa-arrow-left mr-1"></i>Batal & Kembali
                         </button>
@@ -392,6 +395,9 @@
                             @csrf
                             <input type="hidden" name="jadwal_id" value="{{ $jadwalId }}">
                             <input type="hidden" name="temp_file" value="{{ $tempFile }}">
+                            <input type="hidden" name="tahun_pelajaran_id" value="{{ $returnContext['tahun_pelajaran_id'] }}">
+                            <input type="hidden" name="jalur_id" value="{{ $returnContext['jalur_id'] }}">
+                            <input type="hidden" name="gelombang_id" value="{{ $returnContext['gelombang_id'] }}">
                             <button type="submit" class="btn btn-success btn-lg" id="btnConfirm">
                                 <i class="fas fa-check-circle mr-1"></i>Konfirmasi Import
                                 <span class="badge badge-light ml-1">{{ $preview['summary']['valid'] + $preview['summary']['warning'] }} data</span>

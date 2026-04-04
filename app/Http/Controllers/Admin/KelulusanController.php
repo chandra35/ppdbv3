@@ -12,6 +12,7 @@ use App\Models\NilaiRapor;
 use App\Models\TahunPelajaran;
 use App\Models\JalurPendaftaran;
 use App\Models\GelombangPendaftaran;
+use App\Support\AdminPpdbContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -23,8 +24,13 @@ class KelulusanController extends Controller
      */
     public function index(Request $request)
     {
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
-        $selectedTahunId = $request->tahun_pelajaran_id ?: $tahunAktif?->id;
+        $context = AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
+        $tahunAktif = $context['selectedTahun'];
+        $selectedTahunId = $tahunAktif?->id;
 
         // ---- 1. Load NilaiSeleksi (TBQ) data ----
         $seleksiQuery = NilaiSeleksi::with(['calonSiswa.jalurPendaftaran', 'calonSiswa.gelombangPendaftaran', 'ruangUjian', 'sesiUjian.jalur'])
@@ -36,15 +42,15 @@ class KelulusanController extends Controller
             });
         }
 
-        if ($request->jalur_id) {
-            $seleksiQuery->whereHas('sesiUjian', function ($q) use ($request) {
-                $q->where('jalur_id', $request->jalur_id);
+        if ($context['jalurFilterId']) {
+            $seleksiQuery->whereHas('sesiUjian', function ($q) use ($context) {
+                $q->where('jalur_id', $context['jalurFilterId']);
             });
         }
 
-        if ($request->gelombang_id) {
-            $seleksiQuery->whereHas('calonSiswa', function ($q) use ($request) {
-                $q->where('gelombang_pendaftaran_id', $request->gelombang_id);
+        if ($context['gelombangFilterId']) {
+            $seleksiQuery->whereHas('calonSiswa', function ($q) use ($context) {
+                $q->where('gelombang_pendaftaran_id', $context['gelombangFilterId']);
             });
         }
 
@@ -65,11 +71,11 @@ class KelulusanController extends Controller
             $cbtOnlySiswa = CalonSiswa::with(['jalurPendaftaran', 'gelombangPendaftaran'])
                 ->whereIn('id', $cbtOnlyCalonIds);
 
-            if ($request->jalur_id) {
-                $cbtOnlySiswa->where('jalur_pendaftaran_id', $request->jalur_id);
+            if ($context['jalurFilterId']) {
+                $cbtOnlySiswa->where('jalur_pendaftaran_id', $context['jalurFilterId']);
             }
-            if ($request->gelombang_id) {
-                $cbtOnlySiswa->where('gelombang_pendaftaran_id', $request->gelombang_id);
+            if ($context['gelombangFilterId']) {
+                $cbtOnlySiswa->where('gelombang_pendaftaran_id', $context['gelombangFilterId']);
             }
 
             foreach ($cbtOnlySiswa->get() as $siswa) {
@@ -152,26 +158,48 @@ class KelulusanController extends Controller
         })->values();
 
         // ---- 7. Load existing kelulusan status ----
-        $kelulusanData = Kelulusan::where('tahun_pelajaran_id', $selectedTahunId)
+        $kelulusanBaseQuery = Kelulusan::query()
+            ->where('tahun_pelajaran_id', $selectedTahunId);
+
+        if ($context['jalurFilterId'] || $context['gelombangFilterId']) {
+            $kelulusanBaseQuery->whereHas('calonSiswa', function ($q) use ($context) {
+                if ($context['jalurFilterId']) {
+                    $q->where('jalur_pendaftaran_id', $context['jalurFilterId']);
+                }
+                if ($context['gelombangFilterId']) {
+                    $q->where('gelombang_pendaftaran_id', $context['gelombangFilterId']);
+                }
+            });
+        }
+
+        $kelulusanData = (clone $kelulusanBaseQuery)
             ->pluck('status', 'calon_siswa_id');
 
         // Stats
         $stats = [
             'total' => $rekapData->count(),
             'sudah_lulus' => $kelulusanData->where('lulus')->count(),
-            'total_lulus' => Kelulusan::where('tahun_pelajaran_id', $selectedTahunId)->lulus()->count(),
-            'total_tidak_lulus' => Kelulusan::where('tahun_pelajaran_id', $selectedTahunId)->tidakLulus()->count(),
-            'total_cadangan' => Kelulusan::where('tahun_pelajaran_id', $selectedTahunId)->cadangan()->count(),
+            'total_lulus' => (clone $kelulusanBaseQuery)->lulus()->count(),
+            'total_tidak_lulus' => (clone $kelulusanBaseQuery)->tidakLulus()->count(),
+            'total_cadangan' => (clone $kelulusanBaseQuery)->cadangan()->count(),
         ];
-
-        $tahunPelajarans = TahunPelajaran::orderBy('is_active', 'desc')->orderBy('nama', 'desc')->get();
-        $jalurs = JalurPendaftaran::where('tahun_pelajaran_id', $selectedTahunId)->where('is_active', true)->get();
-        $gelombangs = GelombangPendaftaran::whereIn('jalur_id', $jalurs->pluck('id'))->orderBy('urutan')->get();
 
         return view('admin.kelulusan.index', compact(
             'rekapData', 'cbtData', 'raporData', 'kelulusanData', 'stats',
-            'tahunAktif', 'tahunPelajarans', 'jalurs', 'gelombangs', 'nisnSearch'
-        ));
+            'tahunAktif', 'nisnSearch'
+        ) + [
+            'tahunPelajarans' => $context['tahunPelajarans'],
+            'jalurs' => $context['jalurs'],
+            'gelombangs' => $context['gelombangs'],
+            'selectedTahunIdInput' => $context['selectedTahunIdInput'],
+            'selectedJalurIdInput' => $context['selectedJalurIdInput'],
+            'selectedGelombangIdInput' => $context['selectedGelombangIdInput'],
+            'contextInfo' => [
+                'tahun' => $context['selectedTahun']?->nama ?? '-',
+                'jalur' => $context['selectedJalur']?->nama ?? 'Semua Jalur',
+                'gelombang' => $context['selectedGelombang']?->nama ?? 'Semua Gelombang',
+            ],
+        ]);
     }
 
     /**
@@ -180,13 +208,15 @@ class KelulusanController extends Controller
     public function luluskan(Request $request)
     {
         $request->validate([
+            'tahun_pelajaran_id' => 'nullable',
             'calon_siswa_ids' => 'required|array|min:1',
             'calon_siswa_ids.*' => 'required|uuid',
             'status' => 'required|in:lulus,tidak_lulus,cadangan',
             'catatan' => 'nullable|string|max:500',
         ]);
 
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        $context = AdminPpdbContext::resolve($request->input('tahun_pelajaran_id'));
+        $tahunAktif = $context['selectedTahun'];
         if (!$tahunAktif) {
             return response()->json(['success' => false, 'message' => 'Tahun pelajaran aktif tidak ditemukan'], 422);
         }
@@ -246,11 +276,13 @@ class KelulusanController extends Controller
     public function batalkan(Request $request)
     {
         $request->validate([
+            'tahun_pelajaran_id' => 'nullable',
             'calon_siswa_ids' => 'required|array|min:1',
             'calon_siswa_ids.*' => 'required|uuid',
         ]);
 
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        $context = AdminPpdbContext::resolve($request->input('tahun_pelajaran_id'));
+        $tahunAktif = $context['selectedTahun'];
 
         DB::beginTransaction();
         try {

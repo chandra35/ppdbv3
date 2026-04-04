@@ -23,6 +23,40 @@
 
 @section('content')
 <div class="container-fluid">
+    <div class="alert alert-info">
+        <i class="fas fa-layer-group mr-1"></i>
+        <strong>Konteks aktif:</strong>
+        Tahun {{ $contextInfo['tahun'] }}.
+    </div>
+
+    <div class="card card-outline card-info">
+        <div class="card-body">
+            <form method="GET" action="{{ route('admin.kelulusan.setting') }}" class="row">
+                <div class="col-md-4">
+                    <div class="form-group mb-md-0">
+                        <label>Tahun Pelajaran</label>
+                        <select name="tahun_pelajaran_id" class="form-control">
+                            @foreach($tahunPelajaranList as $tahun)
+                                <option value="{{ $tahun->id }}" {{ $selectedTahunIdInput == $tahun->id ? 'selected' : '' }}>
+                                    {{ $tahun->nama }}{{ $tahun->is_active ? ' (Aktif)' : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <div class="mb-md-0">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="fas fa-filter mr-1"></i>Terapkan
+                        </button>
+                        <a href="{{ route('admin.kelulusan.setting') }}" class="btn btn-default btn-sm">
+                            <i class="fas fa-undo mr-1"></i>Reset
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Stats -->
     <div class="row">
@@ -54,7 +88,7 @@
             </div>
         </div>
         <div class="col-lg-3 col-6">
-            <a href="{{ route('admin.kelulusan.envelope-logs') }}" class="text-decoration-none">
+            <a href="{{ route('admin.kelulusan.envelope-logs', ['tahun_pelajaran_id' => $selectedTahunIdInput]) }}" class="text-decoration-none">
                 <div class="small-box bg-info">
                     <div class="inner">
                         <h3>{{ \App\Models\EnvelopeOpenLog::where('tahun_pelajaran_id', $tahunAktif->id)->count() }}</h3>
@@ -70,6 +104,7 @@
     <form action="{{ route('admin.kelulusan.setting.update') }}" method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
+        <input type="hidden" name="tahun_pelajaran_id" value="{{ $selectedTahunIdInput }}">
 
         <div class="row">
             <!-- Pengumuman -->
@@ -415,6 +450,7 @@ $(document).ready(function() {
         var formData = new FormData();
         formData.append('file_konsider', file);
         formData.append('_token', '{{ csrf_token() }}');
+        formData.append('tahun_pelajaran_id', '{{ $selectedTahunIdInput }}');
 
         // Show progress
         $('#konsiderProgress').show();
@@ -502,7 +538,10 @@ $(document).ready(function() {
         $.ajax({
             url: '{{ route("admin.kelulusan.setting.delete-konsider") }}',
             type: 'DELETE',
-            data: { _token: '{{ csrf_token() }}' },
+            data: {
+                _token: '{{ csrf_token() }}',
+                tahun_pelajaran_id: '{{ $selectedTahunIdInput }}'
+            },
             success: function(res) {
                 $('#konsiderFileInfo').slideUp(300);
                 showKonsiderAlert('success', '<strong>Berhasil!</strong> File konsider telah dihapus.');

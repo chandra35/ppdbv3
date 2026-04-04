@@ -55,12 +55,34 @@
                 </option>
                 @endforeach
             </select>
+            <select name="jalur_id" class="form-control form-control-sm ml-2" onchange="this.form.submit()">
+                <option value="all" {{ $selectedJalurIdInput === 'all' ? 'selected' : '' }}>Semua Jalur</option>
+                @foreach($jalurList as $jalur)
+                <option value="{{ $jalur->id }}" {{ (string) $selectedJalurIdInput === (string) $jalur->id ? 'selected' : '' }}>
+                    {{ $jalur->nama }}
+                </option>
+                @endforeach
+            </select>
+            <select name="gelombang_id" class="form-control form-control-sm ml-2" onchange="this.form.submit()">
+                <option value="all" {{ $selectedGelombangIdInput === 'all' ? 'selected' : '' }}>Semua Gelombang</option>
+                @foreach($gelombangList as $gelombang)
+                <option value="{{ $gelombang->id }}" {{ (string) $selectedGelombangIdInput === (string) $gelombang->id ? 'selected' : '' }}>
+                    {{ $gelombang->nama }}
+                </option>
+                @endforeach
+            </select>
         </form>
     </div>
 </div>
 @stop
 
 @section('content')
+<div class="alert alert-info">
+    Statistik sedang memakai konteks:
+    Tahun <strong>{{ $contextInfo['tahun'] }}</strong>,
+    Jalur <strong>{{ $contextInfo['jalur'] }}</strong>,
+    Gelombang <strong>{{ $contextInfo['gelombang'] }}</strong>.
+</div>
 <div class="row">
     {{-- Total Pendaftar --}}
     <div class="col-lg-3 col-6">
@@ -111,16 +133,16 @@
 <div class="row mb-3">
     <div class="col-12">
         <div class="d-flex flex-wrap justify-content-center" style="gap: 10px;">
-            <a href="{{ route('admin.statistik.geografis') }}" class="btn btn-outline-primary">
+            <a href="{{ route('admin.statistik.geografis', ['tahun_pelajaran_id' => $tahunAktif?->id, 'jalur_id' => $selectedJalurIdInput, 'gelombang_id' => $selectedGelombangIdInput]) }}" class="btn btn-outline-primary">
                 <i class="fas fa-map-marked-alt"></i> Sebaran Geografis
             </a>
-            <a href="{{ route('admin.statistik.asal-sekolah') }}" class="btn btn-outline-success">
+            <a href="{{ route('admin.statistik.asal-sekolah', ['tahun_pelajaran_id' => $tahunAktif?->id, 'jalur_id' => $selectedJalurIdInput, 'gelombang_id' => $selectedGelombangIdInput]) }}" class="btn btn-outline-success">
                 <i class="fas fa-school"></i> Asal Sekolah
             </a>
-            <a href="{{ route('admin.statistik.ekonomi') }}" class="btn btn-outline-info">
+            <a href="{{ route('admin.statistik.ekonomi', ['tahun_pelajaran_id' => $tahunAktif?->id, 'jalur_id' => $selectedJalurIdInput, 'gelombang_id' => $selectedGelombangIdInput]) }}" class="btn btn-outline-info">
                 <i class="fas fa-wallet"></i> Status Ekonomi
             </a>
-            <a href="{{ route('admin.statistik.dokumen-prestasi') }}" class="btn btn-outline-warning">
+            <a href="{{ route('admin.statistik.dokumen-prestasi', ['tahun_pelajaran_id' => $tahunAktif?->id, 'jalur_id' => $selectedJalurIdInput, 'gelombang_id' => $selectedGelombangIdInput]) }}" class="btn btn-outline-warning">
                 <i class="fas fa-trophy"></i> Dokumen Prestasi
             </a>
         </div>
@@ -211,9 +233,15 @@
                 <h3 class="card-title"><i class="fas fa-graduation-cap"></i> Pendaftar per Program</h3>
             </div>
             <div class="card-body">
+                @if($showPilihanProgramStat)
                 <div class="chart-container">
                     <canvas id="chartProgram"></canvas>
                 </div>
+                @else
+                <div class="text-muted text-center py-5">
+                    Jalur pada konteks ini tidak menggunakan pilihan program.
+                </div>
+                @endif
             </div>
         </div>
     </div>
@@ -242,6 +270,8 @@
         <div class="card-tools">
             <form class="form-inline" method="GET">
                 <input type="hidden" name="tahun_pelajaran_id" value="{{ $tahunAktif?->id }}">
+                <input type="hidden" name="jalur_id" value="{{ $selectedJalurIdInput }}">
+                <input type="hidden" name="gelombang_id" value="{{ $selectedGelombangIdInput }}">
                 <select name="filter_type" class="form-control form-control-sm mr-1" onchange="this.form.submit()">
                     <option value="">-- Pilih Filter --</option>
                     <option value="status" {{ $filterType == 'status' ? 'selected' : '' }}>Status</option>
@@ -453,6 +483,7 @@
         }
     });
     
+    @if($showPilihanProgramStat)
     // Chart Program
     new Chart(document.getElementById('chartProgram'), {
         type: 'pie',
@@ -469,6 +500,7 @@
             plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } }
         }
     });
+    @endif
     
     // Chart Trend
     new Chart(document.getElementById('chartTrend'), {

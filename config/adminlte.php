@@ -125,6 +125,12 @@ return [
                     'can' => 'pendaftar.view',
                 ],
                 [
+                    'text' => 'Tambah Pendaftar',
+                    'route' => 'admin.pendaftar.tambah',
+                    'icon' => 'fas fa-fw fa-user-plus',
+                    'can' => 'pendaftar.create',
+                ],
+                [
                     'text' => 'Finalisasi',
                     'route' => 'admin.finalisasi.index',
                     'icon' => 'fas fa-fw fa-clipboard-check',
@@ -318,6 +324,18 @@ return [
                     'text' => 'PPDB Settings',
                     'route' => 'admin.settings.index',
                     'icon' => 'fas fa-fw fa-sliders-h',
+                    'can' => 'settings.edit',
+                ],
+                [
+                    'text' => 'Storage Dokumen',
+                    'route' => 'admin.settings.storage.index',
+                    'icon' => 'fab fa-fw fa-google-drive',
+                    'can' => 'settings.edit',
+                ],
+                [
+                    'text' => 'Pengaturan Penomoran',
+                    'route' => 'admin.settings.nomor-rules.index',
+                    'icon' => 'fas fa-fw fa-hashtag',
                     'can' => 'settings.edit',
                 ],
                 [

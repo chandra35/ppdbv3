@@ -222,23 +222,20 @@ class JalurPendaftaranController extends Controller
      */
     public function aktifkanJalur(JalurPendaftaran $jalur)
     {
-        // Cek apakah ada jalur lain yang aktif
         $jalurAktifLain = JalurPendaftaran::where('id', '!=', $jalur->id)
             ->where('tahun_pelajaran_id', $jalur->tahun_pelajaran_id)
             ->where('status', JalurPendaftaran::STATUS_OPEN)
             ->first();
-        
-        if ($jalurAktifLain) {
+
+        if ($jalurAktifLain && !$jalur->is_active) {
             return redirect()->back()->with('error', 
                 "Tidak dapat mengaktifkan jalur ini! Jalur \"{$jalurAktifLain->nama}\" masih aktif. Tutup/selesaikan jalur tersebut terlebih dahulu."
             );
         }
-        
-        // Update status
-        $jalur->update([
-            'status' => JalurPendaftaran::STATUS_OPEN,
-            'is_active' => true,
-        ]);
+
+        if (!$jalur->aktifkan()) {
+            return redirect()->back()->with('error', 'Jalur gagal diaktifkan.');
+        }
         
         return redirect()->back()->with('success', 
             "Jalur \"{$jalur->nama}\" berhasil diaktifkan! Pendaftaran sekarang dibuka."
@@ -250,16 +247,7 @@ class JalurPendaftaranController extends Controller
      */
     public function tutupJalur(JalurPendaftaran $jalur)
     {
-        $jalur->update([
-            'status' => JalurPendaftaran::STATUS_CLOSED,
-            'is_active' => false,
-        ]);
-
-        // Cascade: tutup semua gelombang di bawah jalur ini
-        $jalur->gelombang()->where('is_active', true)->update([
-            'status' => GelombangPendaftaran::STATUS_CLOSED,
-            'is_active' => false,
-        ]);
+        $jalur->tutup();
         
         return redirect()->back()->with('success', 
             "Jalur \"{$jalur->nama}\" beserta semua gelombangnya berhasil ditutup. Pendaftaran dihentikan."
@@ -271,16 +259,7 @@ class JalurPendaftaranController extends Controller
      */
     public function selesaikanJalur(JalurPendaftaran $jalur)
     {
-        $jalur->update([
-            'status' => JalurPendaftaran::STATUS_FINISHED,
-            'is_active' => false,
-        ]);
-
-        // Cascade: selesaikan semua gelombang di bawah jalur ini
-        $jalur->gelombang()->update([
-            'status' => GelombangPendaftaran::STATUS_FINISHED,
-            'is_active' => false,
-        ]);
+        $jalur->selesaikan();
         
         return redirect()->back()->with('success', 
             "Jalur \"{$jalur->nama}\" beserta semua gelombangnya telah diselesaikan. Anda dapat mengaktifkan jalur lain sekarang."
@@ -366,7 +345,17 @@ class JalurPendaftaranController extends Controller
         $validated['urutan'] = $jalur->gelombang()->max('urutan') + 1;
         $validated['prefix_nomor'] = $jalur->prefix_nomor ?? 'REG';
 
+        if ($validated['is_active'] && !$jalur->is_active) {
+            return redirect()
+                ->route('admin.jalur.show', $jalur)
+                ->with('error', "Gelombang tidak bisa langsung dibuka karena jalur \"{$jalur->nama}\" belum aktif.");
+        }
+
         $gelombang = GelombangPendaftaran::create($validated);
+
+        if ($validated['is_active']) {
+            $gelombang->bukaPendaftaran();
+        }
 
         return redirect()
             ->route('admin.jalur.show', $jalur)
@@ -443,10 +432,13 @@ class JalurPendaftaranController extends Controller
      */
     public function bukaGelombang(JalurPendaftaran $jalur, GelombangPendaftaran $gelombang)
     {
-        $gelombang->update([
-            'status' => GelombangPendaftaran::STATUS_OPEN,
-            'is_active' => true,
-        ]);
+        if (!$jalur->is_active || $jalur->status !== JalurPendaftaran::STATUS_OPEN) {
+            return redirect()
+                ->route('admin.jalur.show', $jalur)
+                ->with('error', "Gelombang tidak dapat dibuka karena jalur \"{$jalur->nama}\" belum aktif.");
+        }
+
+        $gelombang->bukaPendaftaran();
 
         return redirect()
             ->route('admin.jalur.show', $jalur)
@@ -458,10 +450,7 @@ class JalurPendaftaranController extends Controller
      */
     public function tutupGelombang(JalurPendaftaran $jalur, GelombangPendaftaran $gelombang)
     {
-        $gelombang->update([
-            'status' => GelombangPendaftaran::STATUS_CLOSED,
-            'is_active' => false,
-        ]);
+        $gelombang->tutupPendaftaran();
 
         return redirect()
             ->route('admin.jalur.show', $jalur)
@@ -473,10 +462,7 @@ class JalurPendaftaranController extends Controller
      */
     public function selesaikanGelombang(JalurPendaftaran $jalur, GelombangPendaftaran $gelombang)
     {
-        $gelombang->update([
-            'status' => GelombangPendaftaran::STATUS_FINISHED,
-            'is_active' => false,
-        ]);
+        $gelombang->selesaikan();
 
         return redirect()
             ->route('admin.jalur.show', $jalur)

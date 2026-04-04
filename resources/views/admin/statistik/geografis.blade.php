@@ -31,6 +31,22 @@
                     </option>
                     @endforeach
                 </select>
+                <select name="jalur_id" class="form-control form-control-sm ml-2" onchange="this.form.submit()">
+                    <option value="all" {{ $selectedJalurIdInput === 'all' ? 'selected' : '' }}>Semua Jalur</option>
+                    @foreach($jalurList as $jalur)
+                    <option value="{{ $jalur->id }}" {{ (string) $selectedJalurIdInput === (string) $jalur->id ? 'selected' : '' }}>
+                        {{ $jalur->nama }}
+                    </option>
+                    @endforeach
+                </select>
+                <select name="gelombang_id" class="form-control form-control-sm ml-2" onchange="this.form.submit()">
+                    <option value="all" {{ $selectedGelombangIdInput === 'all' ? 'selected' : '' }}>Semua Gelombang</option>
+                    @foreach($gelombangList as $gelombang)
+                    <option value="{{ $gelombang->id }}" {{ (string) $selectedGelombangIdInput === (string) $gelombang->id ? 'selected' : '' }}>
+                        {{ $gelombang->nama }}
+                    </option>
+                    @endforeach
+                </select>
             </form>
         </div>
     </div>
@@ -38,6 +54,13 @@
 @stop
 
 @section('content')
+<div class="alert alert-info">
+    Statistik geografis sedang menggunakan konteks:
+    Tahun <strong>{{ $contextInfo['tahun'] }}</strong>,
+    Jalur <strong>{{ $contextInfo['jalur'] }}</strong>,
+    Gelombang <strong>{{ $contextInfo['gelombang'] }}</strong>.
+</div>
+
 {{-- Peta Sebaran --}}
 @if($mapData->count() > 0)
 <div class="row">
@@ -80,7 +103,12 @@
                         <tr>
                             <td>{{ $i + 1 }}</td>
                             <td>
-                                <a href="?provinsi={{ urlencode($prov->provinsi_code) }}&tahun_pelajaran_id={{ $tahunAktif?->id }}">
+                                <a href="{{ route('admin.statistik.geografis', [
+                                    'tahun_pelajaran_id' => $tahunAktif?->id,
+                                    'jalur_id' => $selectedJalurIdInput,
+                                    'gelombang_id' => $selectedGelombangIdInput,
+                                    'provinsi' => $prov->provinsi_code,
+                                ]) }}">
                                     {{ $prov->provinsi }}
                                 </a>
                             </td>
@@ -108,7 +136,11 @@
                 @if($filterProvinsi)
                 <div class="card-tools">
                     <span class="badge badge-primary">{{ $filterProvinsi }}</span>
-                    <a href="{{ route('admin.statistik.geografis', ['tahun_pelajaran_id' => $tahunAktif?->id]) }}" class="badge badge-secondary">Reset</a>
+                    <a href="{{ route('admin.statistik.geografis', [
+                        'tahun_pelajaran_id' => $tahunAktif?->id,
+                        'jalur_id' => $selectedJalurIdInput,
+                        'gelombang_id' => $selectedGelombangIdInput,
+                    ]) }}" class="badge badge-secondary">Reset</a>
                 </div>
                 @endif
             </div>
@@ -128,7 +160,13 @@
                         <tr>
                             <td>{{ $i + 1 }}</td>
                             <td>
-                                <a href="?kabupaten={{ urlencode($kab->kabupaten_code) }}&tahun_pelajaran_id={{ $tahunAktif?->id }}">
+                                <a href="{{ route('admin.statistik.geografis', [
+                                    'tahun_pelajaran_id' => $tahunAktif?->id,
+                                    'jalur_id' => $selectedJalurIdInput,
+                                    'gelombang_id' => $selectedGelombangIdInput,
+                                    'provinsi' => $filterProvinsi,
+                                    'kabupaten' => $kab->kabupaten_code,
+                                ]) }}">
                                     {{ $kab->kabupaten }}
                                 </a>
                                 @if(!$filterProvinsi)
@@ -178,7 +216,14 @@
                         <tr>
                             <td>{{ $i + 1 }}</td>
                             <td>
-                                <a href="?kecamatan={{ urlencode($kec->kecamatan_code) }}&tahun_pelajaran_id={{ $tahunAktif?->id }}">
+                                <a href="{{ route('admin.statistik.geografis', [
+                                    'tahun_pelajaran_id' => $tahunAktif?->id,
+                                    'jalur_id' => $selectedJalurIdInput,
+                                    'gelombang_id' => $selectedGelombangIdInput,
+                                    'provinsi' => $filterProvinsi,
+                                    'kabupaten' => $filterKabupaten,
+                                    'kecamatan' => $kec->kecamatan_code,
+                                ]) }}">
                                     {{ $kec->kecamatan }}
                                 </a>
                                 @if(!$filterKabupaten)

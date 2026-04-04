@@ -18,12 +18,14 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 class PendaftarExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths, WithTitle, ShouldAutoSize
 {
     protected $type; // 'all' or 'with_nomor_tes'
+    protected $tahunPelajaranId;
     protected $jalurId;
     protected $gelombangId;
 
-    public function __construct($type = 'all', $jalurId = null, $gelombangId = null)
+    public function __construct($type = 'all', $tahunPelajaranId = null, $jalurId = null, $gelombangId = null)
     {
         $this->type = $type;
+        $this->tahunPelajaranId = $tahunPelajaranId;
         $this->jalurId = $jalurId;
         $this->gelombangId = $gelombangId;
     }
@@ -44,6 +46,10 @@ class PendaftarExport implements FromCollection, WithHeadings, WithMapping, With
 
         if ($this->type === 'with_nomor_tes') {
             $query->whereNotNull('nomor_tes')->where('nomor_tes', '!=', '');
+        }
+
+        if ($this->tahunPelajaranId) {
+            $query->where('tahun_pelajaran_id', $this->tahunPelajaranId);
         }
 
         if ($this->jalurId) {

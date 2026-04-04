@@ -15,6 +15,7 @@ use App\Models\PesertaRuang;
 use App\Models\PengujiRuang;
 use App\Models\SekolahSettings;
 use App\Models\User;
+use App\Support\AdminPpdbContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -29,24 +30,17 @@ class PenjadwalanUjianController extends Controller
      */
     public function index(Request $request)
     {
-        $tahunPelajaranList = TahunPelajaran::orderBy('is_active', 'desc')
-            ->orderBy('nama', 'desc')
-            ->get();
-        
-        $tahunAktif = $request->tahun_pelajaran_id 
-            ? TahunPelajaran::find($request->tahun_pelajaran_id)
-            : TahunPelajaran::where('is_active', true)->first();
-
-        $jalurList = $tahunAktif 
-            ? JalurPendaftaran::where('tahun_pelajaran_id', $tahunAktif->id)->get() 
-            : collect();
-        
-        $gelombangList = $tahunAktif 
-            ? GelombangPendaftaran::whereHas('jalur', fn($q) => $q->where('tahun_pelajaran_id', $tahunAktif->id))->get() 
-            : collect();
+        $context = AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
+        $tahunAktif = $context['selectedTahun'];
+        $jalurList = $context['jalurs'];
+        $gelombangList = $context['gelombangs'];
 
         // Get eligible peserta count
-        $totalPeserta = $this->getPesertaQuery($tahunAktif)->count();
+        $totalPeserta = $this->getPesertaQuery($tahunAktif, $context['jalurFilterId'], $context['gelombangFilterId'])->count();
 
         // Get existing jadwal for this tahun pelajaran
         $existingJadwal = $tahunAktif 
@@ -66,8 +60,8 @@ class PenjadwalanUjianController extends Controller
             'kapasitas_wawancara' => 15,
             'durasi_wawancara' => 60,
             'prefix_ruang_wawancara' => 'Ruang Wawancara',
-            'jalur_id' => null,
-            'gelombang_id' => null,
+            'jalur_id' => $context['selectedJalurIdInput'] === 'all' ? null : $context['selectedJalurIdInput'],
+            'gelombang_id' => $context['selectedGelombangIdInput'] === 'all' ? null : $context['selectedGelombangIdInput'],
             'max_sesi' => null,
             'ketua_panitia_id' => null,
         ]);
@@ -90,7 +84,15 @@ class PenjadwalanUjianController extends Controller
             'settings',
             'existingJadwal',
             'pengujiList'
-        ));
+        ) + [
+            'selectedJalurIdInput' => $context['selectedJalurIdInput'],
+            'selectedGelombangIdInput' => $context['selectedGelombangIdInput'],
+            'contextInfo' => [
+                'tahun' => $context['selectedTahun']?->nama ?? '-',
+                'jalur' => $context['selectedJalur']?->nama ?? 'Semua Jalur',
+                'gelombang' => $context['selectedGelombang']?->nama ?? 'Semua Gelombang',
+            ],
+        ]);
     }
 
     /**
@@ -118,12 +120,15 @@ class PenjadwalanUjianController extends Controller
             'jalur_id', 'gelombang_id', 'tahun_pelajaran_id', 'max_sesi', 'ketua_panitia_id'
         ])]);
 
-        $tahunAktif = $request->tahun_pelajaran_id 
-            ? TahunPelajaran::find($request->tahun_pelajaran_id)
-            : TahunPelajaran::where('is_active', true)->first();
+        $context = AdminPpdbContext::resolve(
+            $request->tahun_pelajaran_id,
+            $request->jalur_id,
+            $request->gelombang_id
+        );
+        $tahunAktif = $context['selectedTahun'];
 
         // Get peserta list
-        $pesertaList = $this->getPesertaQuery($tahunAktif, $request->jalur_id, $request->gelombang_id)
+        $pesertaList = $this->getPesertaQuery($tahunAktif, $context['jalurFilterId'], $context['gelombangFilterId'])
             ->orderBy('nomor_tes')
             ->get();
 
@@ -219,9 +224,9 @@ class PenjadwalanUjianController extends Controller
         }
 
         // Get filter lists
-        $tahunPelajaranList = TahunPelajaran::orderBy('is_active', 'desc')->orderBy('nama', 'desc')->get();
-        $jalurList = $tahunAktif ? JalurPendaftaran::where('tahun_pelajaran_id', $tahunAktif->id)->get() : collect();
-        $gelombangList = $tahunAktif ? GelombangPendaftaran::whereHas('jalur', fn($q) => $q->where('tahun_pelajaran_id', $tahunAktif->id))->get() : collect();
+        $tahunPelajaranList = $context['tahunPelajarans'];
+        $jalurList = $context['jalurs'];
+        $gelombangList = $context['gelombangs'];
 
         $settings = $request->only([
             'tanggal_ujian', 'jam_mulai', 'jeda_sesi', 'mode',
@@ -252,7 +257,15 @@ class PenjadwalanUjianController extends Controller
             'kapasitasWawancara',
             'kapasitasParalel',
             'pengujiList'
-        ));
+        ) + [
+            'selectedJalurIdInput' => $context['selectedJalurIdInput'],
+            'selectedGelombangIdInput' => $context['selectedGelombangIdInput'],
+            'contextInfo' => [
+                'tahun' => $context['selectedTahun']?->nama ?? '-',
+                'jalur' => $context['selectedJalur']?->nama ?? 'Semua Jalur',
+                'gelombang' => $context['selectedGelombang']?->nama ?? 'Semua Gelombang',
+            ],
+        ]);
     }
 
     /**
@@ -391,18 +404,33 @@ class PenjadwalanUjianController extends Controller
      */
     public function list(Request $request)
     {
-        $tahunAktif = $request->tahun_pelajaran_id 
-            ? TahunPelajaran::find($request->tahun_pelajaran_id)
-            : TahunPelajaran::where('is_active', true)->first();
+        $context = AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
+        $tahunAktif = $context['selectedTahun'];
 
         $jadwalList = JadwalUjian::with(['tahunPelajaran', 'jalurPendaftaran', 'gelombangPendaftaran'])
             ->when($tahunAktif, fn($q) => $q->where('tahun_pelajaran_id', $tahunAktif->id))
+            ->when($context['jalurFilterId'], fn($q) => $q->where('jalur_pendaftaran_id', $context['jalurFilterId']))
+            ->when($context['gelombangFilterId'], fn($q) => $q->where('gelombang_pendaftaran_id', $context['gelombangFilterId']))
+            ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
             ->orderBy('tanggal_ujian', 'desc')
             ->paginate(10);
 
-        $tahunPelajaranList = TahunPelajaran::orderBy('is_active', 'desc')->orderBy('nama', 'desc')->get();
-
-        return view('admin.penjadwalan-ujian.list', compact('jadwalList', 'tahunPelajaranList', 'tahunAktif'));
+        return view('admin.penjadwalan-ujian.list', compact('jadwalList', 'tahunAktif') + [
+            'tahunPelajaranList' => $context['tahunPelajarans'],
+            'jalurList' => $context['jalurs'],
+            'gelombangList' => $context['gelombangs'],
+            'selectedJalurIdInput' => $context['selectedJalurIdInput'],
+            'selectedGelombangIdInput' => $context['selectedGelombangIdInput'],
+            'contextInfo' => [
+                'tahun' => $context['selectedTahun']?->nama ?? '-',
+                'jalur' => $context['selectedJalur']?->nama ?? 'Semua Jalur',
+                'gelombang' => $context['selectedGelombang']?->nama ?? 'Semua Gelombang',
+            ],
+        ]);
     }
 
     /**

@@ -10,6 +10,7 @@ use App\Models\TahunPelajaran;
 use App\Models\JalurPendaftaran;
 use App\Models\GelombangPendaftaran;
 use App\Services\EmisNisnService;
+use App\Services\NomorService;
 use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,12 +22,14 @@ use Illuminate\Support\Str;
 class AuthController extends Controller
 {
     protected EmisNisnService $emisService;
+    protected NomorService $nomorService;
     protected WhatsAppService $whatsAppService;
 
-    public function __construct(EmisNisnService $emisService, WhatsAppService $whatsAppService)
+    public function __construct(EmisNisnService $emisService, WhatsAppService $whatsAppService, NomorService $nomorService)
     {
         $this->emisService = $emisService;
         $this->whatsAppService = $whatsAppService;
+        $this->nomorService = $nomorService;
     }
 
     /**
@@ -65,7 +68,13 @@ class AuthController extends Controller
         }
         
         $tahunAktif = TahunPelajaran::where('is_active', true)->first();
-        $jalurPendaftaran = JalurPendaftaran::where('is_active', true)->orderBy('urutan')->get();
+        $jalurPendaftaran = JalurPendaftaran::query()
+            ->where('is_active', true)
+            ->when($tahunAktif, function ($query) use ($tahunAktif) {
+                $query->where('tahun_pelajaran_id', $tahunAktif->id);
+            })
+            ->orderBy('urutan')
+            ->get();
         
         // Get active gelombang from the active tahun pelajaran only
         $gelombangAktif = GelombangPendaftaran::where('is_active', true)
@@ -630,7 +639,7 @@ class AuthController extends Controller
             }
 
             // Generate nomor registrasi
-            $calonSiswa->nomor_registrasi = $calonSiswa->generateNomorRegistrasi();
+            $calonSiswa->nomor_registrasi = $this->nomorService->generateNomorRegistrasi($calonSiswa);
             $calonSiswa->save();
 
             DB::commit();

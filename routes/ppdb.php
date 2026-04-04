@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\GtkController;
 use App\Http\Controllers\Admin\JalurPendaftaranController;
+use App\Http\Controllers\Admin\NomorRuleController;
 use App\Http\Controllers\Admin\TahunPelajaranController;
 use App\Http\Controllers\Admin\AlurPendaftaranController;
 use App\Http\Controllers\Admin\EmisTokenController;
@@ -211,38 +212,40 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/pendaftar/export', [PendaftarController::class, 'export'])->middleware('permission:pendaftar.export')->name('pendaftar.export');
     Route::get('/pendaftar/export-moodle', [PendaftarController::class, 'exportMoodle'])->middleware('permission:pendaftar.export')->name('pendaftar.export-moodle');
     
+    // ---- PENDAFTAR (Create) ----
+    Route::middleware(['permission:pendaftar.create'])->group(function () {
+        Route::post('/pendaftar/cek-nisn', [PendaftarController::class, 'cekNisnManual'])->name('pendaftar.cek-nisn');
+        Route::get('/pendaftar/tambah', [PendaftarController::class, 'create'])->name('pendaftar.tambah');
+        Route::get('/pendaftar/create', [PendaftarController::class, 'create'])->name('pendaftar.create');
+        Route::post('/pendaftar', [PendaftarController::class, 'store'])->name('pendaftar.store');
+    });
+
     Route::middleware(['permission:pendaftar.view'])->group(function () {
         Route::get('/pendaftar', [PendaftarController::class, 'index'])->name('pendaftar.index');
         Route::get('/pendaftar/map', [PendaftarController::class, 'map'])->name('pendaftar.map');
-        Route::get('/pendaftar/{id}', [PendaftarController::class, 'show'])->name('pendaftar.show');
-        Route::get('/pendaftar/{id}/dokumen-list', [PendaftarController::class, 'getDokumenList'])->name('pendaftar.dokumen-list');
-        Route::get('/pendaftar/{id}/show-password', [PendaftarController::class, 'showPassword'])->name('pendaftar.show-password');
-    });
-    
-    // ---- PENDAFTAR (Create) ----
-    Route::middleware(['permission:pendaftar.create'])->group(function () {
-        Route::get('/pendaftar/create', [PendaftarController::class, 'create'])->name('pendaftar.create');
-        Route::post('/pendaftar', [PendaftarController::class, 'store'])->name('pendaftar.store');
+        Route::get('/pendaftar/{id}', [PendaftarController::class, 'show'])->whereUuid('id')->name('pendaftar.show');
+        Route::get('/pendaftar/{id}/dokumen-list', [PendaftarController::class, 'getDokumenList'])->whereUuid('id')->name('pendaftar.dokumen-list');
+        Route::get('/pendaftar/{id}/show-password', [PendaftarController::class, 'showPassword'])->whereUuid('id')->name('pendaftar.show-password');
     });
     
     // ---- PENDAFTAR (Edit) ----
     Route::middleware(['permission:pendaftar.edit'])->group(function () {
-        Route::get('/pendaftar/{id}/edit', [PendaftarController::class, 'edit'])->name('pendaftar.edit');
-        Route::put('/pendaftar/{id}', [PendaftarController::class, 'update'])->name('pendaftar.update');
-        Route::post('/pendaftar/{id}/reset-password', [PendaftarController::class, 'resetPassword'])->name('pendaftar.reset-password');
-        Route::post('/pendaftar/{id}/upload-dokumen', [PendaftarController::class, 'uploadDokumen'])->name('pendaftar.upload-dokumen');
-        Route::post('/pendaftar/{id}/send-email', [PendaftarController::class, 'sendEmail'])->name('pendaftar.send-email');
+        Route::get('/pendaftar/{id}/edit', [PendaftarController::class, 'edit'])->whereUuid('id')->name('pendaftar.edit');
+        Route::put('/pendaftar/{id}', [PendaftarController::class, 'update'])->whereUuid('id')->name('pendaftar.update');
+        Route::post('/pendaftar/{id}/reset-password', [PendaftarController::class, 'resetPassword'])->whereUuid('id')->name('pendaftar.reset-password');
+        Route::post('/pendaftar/{id}/upload-dokumen', [PendaftarController::class, 'uploadDokumen'])->whereUuid('id')->name('pendaftar.upload-dokumen');
+        Route::post('/pendaftar/{id}/send-email', [PendaftarController::class, 'sendEmail'])->whereUuid('id')->name('pendaftar.send-email');
     });
     
     // ---- PENDAFTAR (Delete) ----
-    Route::delete('/pendaftar/{id}', [PendaftarController::class, 'destroy'])->middleware('permission:pendaftar.delete')->name('pendaftar.destroy');
+    Route::delete('/pendaftar/{id}', [PendaftarController::class, 'destroy'])->whereUuid('id')->middleware('permission:pendaftar.delete')->name('pendaftar.destroy');
     
     // ---- VERIFIKASI (Verify/Approve/Reject) ----
     Route::middleware(['permission:verifikasi.verify'])->group(function () {
-        Route::post('/pendaftar/{id}/verify', [PendaftarController::class, 'verify'])->name('pendaftar.verify');
-        Route::post('/pendaftar/{id}/reject', [PendaftarController::class, 'reject'])->name('pendaftar.reject');
-        Route::post('/pendaftar/{id}/approve', [PendaftarController::class, 'approve'])->name('pendaftar.approve');
-        Route::post('/pendaftar/{id}/batal-finalisasi', [PendaftarController::class, 'batalFinalisasi'])->name('pendaftar.batal-finalisasi');
+        Route::post('/pendaftar/{id}/verify', [PendaftarController::class, 'verify'])->whereUuid('id')->name('pendaftar.verify');
+        Route::post('/pendaftar/{id}/reject', [PendaftarController::class, 'reject'])->whereUuid('id')->name('pendaftar.reject');
+        Route::post('/pendaftar/{id}/approve', [PendaftarController::class, 'approve'])->whereUuid('id')->name('pendaftar.approve');
+        Route::post('/pendaftar/{id}/batal-finalisasi', [PendaftarController::class, 'batalFinalisasi'])->whereUuid('id')->name('pendaftar.batal-finalisasi');
         Route::post('/pendaftar/dokumen/{id}/approve', [PendaftarController::class, 'approveDokumen'])->name('pendaftar.dokumen.approve');
         Route::post('/pendaftar/dokumen/{id}/reject', [PendaftarController::class, 'rejectDokumen'])->name('pendaftar.dokumen.reject');
         Route::post('/pendaftar/dokumen/{id}/revisi', [PendaftarController::class, 'revisiDokumen'])->name('pendaftar.dokumen.revisi');
@@ -253,9 +256,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     
     // ---- CETAK (Print) ----
     Route::middleware(['permission:verifikasi.cetak'])->group(function () {
-        Route::get('/pendaftar/{id}/cetak-registrasi', [PendaftarController::class, 'cetakBuktiRegistrasi'])->name('pendaftar.cetak-registrasi');
-        Route::get('/pendaftar/{id}/cetak-ujian/preview', [PendaftarController::class, 'previewKartuUjian'])->name('pendaftar.cetak-ujian.preview');
-        Route::get('/pendaftar/{id}/cetak-ujian', [PendaftarController::class, 'cetakKartuUjian'])->name('pendaftar.cetak-ujian');
+        Route::get('/pendaftar/{id}/cetak-registrasi', [PendaftarController::class, 'cetakBuktiRegistrasi'])->whereUuid('id')->name('pendaftar.cetak-registrasi');
+        Route::get('/pendaftar/{id}/cetak-ujian/preview', [PendaftarController::class, 'previewKartuUjian'])->whereUuid('id')->name('pendaftar.cetak-ujian.preview');
+        Route::get('/pendaftar/{id}/cetak-ujian', [PendaftarController::class, 'cetakKartuUjian'])->whereUuid('id')->name('pendaftar.cetak-ujian');
     });
     
     // Sync NPSN dari Kemdikdasmen
@@ -450,6 +453,21 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
             // PPDB Settings
             Route::get('/', [SettingsController::class, 'index'])->name('index');
             Route::post('/', [SettingsController::class, 'update'])->name('update');
+            Route::prefix('storage-dokumen')->name('storage.')->group(function () {
+                Route::get('/', [SettingsController::class, 'storage'])->name('index');
+                Route::post('/', [SettingsController::class, 'updateStorage'])->name('update');
+                Route::get('/google-drive/oauth/redirect', [SettingsController::class, 'redirectGoogleDriveOauth'])->name('google-drive.oauth.redirect');
+                Route::get('/google-drive/oauth/callback', [SettingsController::class, 'callbackGoogleDriveOauth'])->name('google-drive.oauth.callback');
+                Route::post('/google-drive/oauth/disconnect', [SettingsController::class, 'disconnectGoogleDriveOauth'])->name('google-drive.oauth.disconnect');
+            });
+
+            Route::prefix('nomor-rules')->name('nomor-rules.')->group(function () {
+                Route::get('/', [NomorRuleController::class, 'index'])->name('index');
+                Route::get('/suggest', [NomorRuleController::class, 'suggest'])->name('suggest');
+                Route::post('/', [NomorRuleController::class, 'store'])->name('store');
+                Route::put('/{nomorRule}', [NomorRuleController::class, 'update'])->name('update');
+                Route::delete('/{nomorRule}', [NomorRuleController::class, 'destroy'])->name('destroy');
+            });
 
             // Site Settings (Frontend Configuration) 
             Route::get('/halaman', [SiteSettingsController::class, 'index'])->name('halaman.index');

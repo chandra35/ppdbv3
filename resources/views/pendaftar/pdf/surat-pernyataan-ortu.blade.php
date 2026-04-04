@@ -172,7 +172,7 @@
             <td>7.</td>
             <td>Jalur Pendaftaran</td>
             <td>:</td>
-            <td>{{ $calonSiswa->jalurPendaftaran->nama ?? '-' }}@if($calonSiswa->pilihan_program) &mdash; {{ $calonSiswa->pilihan_program }}@endif</td>
+            <td>{{ $calonSiswa->jalurPendaftaran->nama ?? '-' }}@if($calonSiswa->jalurPendaftaran?->pilihan_program_aktif && $calonSiswa->pilihan_program) &mdash; {{ $calonSiswa->pilihan_program }}@endif</td>
         </tr>
     </table>
 

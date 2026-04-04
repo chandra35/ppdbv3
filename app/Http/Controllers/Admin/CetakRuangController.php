@@ -12,6 +12,7 @@ use App\Models\SesiUjian;
 use App\Models\RuangUjian;
 use App\Models\PesertaRuang;
 use App\Services\KopSuratService;
+use App\Support\AdminPpdbContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -30,25 +31,15 @@ class CetakRuangController extends Controller
      */
     public function index(Request $request)
     {
-        // Get tahun pelajaran
-        $tahunPelajaranList = TahunPelajaran::orderBy('is_active', 'desc')
-            ->orderBy('nama', 'desc')
-            ->get();
-        
-        $tahunAktif = $request->tahun_pelajaran_id 
-            ? TahunPelajaran::find($request->tahun_pelajaran_id)
-            : TahunPelajaran::where('is_active', true)->first();
-
-        // Get jalur and gelombang for filters
-        $jalurList = $tahunAktif 
-            ? JalurPendaftaran::where('tahun_pelajaran_id', $tahunAktif->id)->get() 
-            : collect();
-        
-        $gelombangList = $tahunAktif 
-            ? GelombangPendaftaran::whereHas('jalur', function($q) use ($tahunAktif) {
-                $q->where('tahun_pelajaran_id', $tahunAktif->id);
-            })->get() 
-            : collect();
+        $context = AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
+        $tahunAktif = $context['selectedTahun'];
+        $tahunPelajaranList = $context['tahunPelajarans'];
+        $jalurList = $context['jalurs'];
+        $gelombangList = $context['allGelombangs'];
 
         // Get count of eligible peserta (finalisasi + nomor_tes)
         $pesertaQuery = CalonSiswa::where('is_finalisasi', true)
@@ -59,14 +50,22 @@ class CetakRuangController extends Controller
             $pesertaQuery->where('tahun_pelajaran_id', $tahunAktif->id);
         }
 
+        if ($context['jalurFilterId']) {
+            $pesertaQuery->where('jalur_pendaftaran_id', $context['jalurFilterId']);
+        }
+
+        if ($context['gelombangFilterId']) {
+            $pesertaQuery->where('gelombang_pendaftaran_id', $context['gelombangFilterId']);
+        }
+
         $totalPeserta = $pesertaQuery->count();
 
         // Get settings from session or defaults
         $settings = session('cetak_ruang_settings', [
             'peserta_per_ruang' => 20,
             'prefix_ruang' => 'Ruang',
-            'jalur_id' => null,
-            'gelombang_id' => null,
+            'jalur_id' => $context['selectedJalurIdInput'] === 'all' ? null : $context['selectedJalurIdInput'],
+            'gelombang_id' => $context['selectedGelombangIdInput'] === 'all' ? null : $context['selectedGelombangIdInput'],
             'urutan' => 'nomor_tes',
             'tanggal_ujian' => null,
             'waktu_mulai' => null,
@@ -80,7 +79,13 @@ class CetakRuangController extends Controller
             'gelombangList',
             'totalPeserta',
             'settings'
-        ));
+        ) + [
+            'contextInfo' => [
+                'tahun' => $context['selectedTahun']?->nama ?? '-',
+                'jalur' => $context['selectedJalur']?->nama ?? 'Semua Jalur',
+                'gelombang' => $context['selectedGelombang']?->nama ?? 'Semua Gelombang',
+            ],
+        ]);
     }
 
     /**
@@ -107,9 +112,12 @@ class CetakRuangController extends Controller
             'waktu_selesai'
         ])]);
 
-        $tahunAktif = $request->tahun_pelajaran_id 
-            ? TahunPelajaran::find($request->tahun_pelajaran_id)
-            : TahunPelajaran::where('is_active', true)->first();
+        $context = AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
+        $tahunAktif = $context['selectedTahun'];
 
         // Build query
         $pesertaList = $this->getPesertaList($request, $tahunAktif);
@@ -122,19 +130,9 @@ class CetakRuangController extends Controller
         );
 
         // Get filter info
-        $jalurList = $tahunAktif 
-            ? JalurPendaftaran::where('tahun_pelajaran_id', $tahunAktif->id)->get() 
-            : collect();
-        
-        $gelombangList = $tahunAktif 
-            ? GelombangPendaftaran::whereHas('jalur', function($q) use ($tahunAktif) {
-                $q->where('tahun_pelajaran_id', $tahunAktif->id);
-            })->get() 
-            : collect();
-
-        $tahunPelajaranList = TahunPelajaran::orderBy('is_active', 'desc')
-            ->orderBy('nama', 'desc')
-            ->get();
+        $jalurList = $context['jalurs'];
+        $gelombangList = $context['allGelombangs'];
+        $tahunPelajaranList = $context['tahunPelajarans'];
 
         $totalPeserta = count($pesertaList);
 
@@ -158,7 +156,13 @@ class CetakRuangController extends Controller
             'totalPeserta',
             'settings',
             'rooms'
-        ));
+        ) + [
+            'contextInfo' => [
+                'tahun' => $context['selectedTahun']?->nama ?? '-',
+                'jalur' => $context['selectedJalur']?->nama ?? 'Semua Jalur',
+                'gelombang' => $context['selectedGelombang']?->nama ?? 'Semua Gelombang',
+            ],
+        ]);
     }
 
     /**
@@ -434,9 +438,12 @@ class CetakRuangController extends Controller
             'urutan' => 'required|in:nomor_tes,nama,tanggal_finalisasi',
         ]);
 
-        $tahunAktif = $request->tahun_pelajaran_id 
-            ? TahunPelajaran::find($request->tahun_pelajaran_id)
-            : TahunPelajaran::where('is_active', true)->first();
+        $context = AdminPpdbContext::resolve(
+            $request->input('tahun_pelajaran_id'),
+            $request->input('jalur_id'),
+            $request->input('gelombang_id')
+        );
+        $tahunAktif = $context['selectedTahun'];
 
         if (!$tahunAktif) {
             return back()->with('error', 'Tahun pelajaran tidak ditemukan.');

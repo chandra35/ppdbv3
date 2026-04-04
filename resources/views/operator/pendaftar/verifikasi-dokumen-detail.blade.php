@@ -66,7 +66,7 @@
                         @foreach($pendaftar->dokumen as $dokumen)
                         <div class="card mb-3">
                             <div class="card-header d-flex justify-content-between align-items-center">
-                                <strong>{{ $dokumen->jenis_dokumen }}</strong>
+                                <strong>{{ $dokumen->nama_dokumen_lengkap }}</strong>
                                 @if($dokumen->status == 'pending')
                                     <span class="badge badge-warning">Pending</span>
                                 @elseif($dokumen->status == 'verified')
@@ -83,9 +83,9 @@
                                                 $extension = pathinfo($dokumen->file_path, PATHINFO_EXTENSION);
                                             @endphp
                                             @if(in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif']))
-                                                <img src="{{ asset('storage/' . $dokumen->file_path) }}" class="img-fluid mb-2" alt="{{ $dokumen->jenis_dokumen }}">
+                                                <img src="{{ $dokumen->preview_url }}" class="img-fluid mb-2" alt="{{ $dokumen->nama_dokumen_lengkap }}">
                                             @endif
-                                            <a href="{{ asset('storage/' . $dokumen->file_path) }}" target="_blank" class="btn btn-info btn-sm">
+                                            <a href="{{ $dokumen->preview_url }}" target="_blank" class="btn btn-info btn-sm">
                                                 <i class="fas fa-external-link-alt"></i> Buka File
                                             </a>
                                         @else

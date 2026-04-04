@@ -11,7 +11,9 @@ use App\Models\TahunPelajaran;
 use App\Models\JalurPendaftaran;
 use App\Models\GelombangPendaftaran;
 use App\Models\SekolahSettings;
+use App\Support\AdminPpdbContext;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
@@ -23,57 +25,31 @@ class ReportController extends Controller
      */
     public function index(Request $request)
     {
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
-        $selectedTahunId = $request->tahun_pelajaran_id ?: $tahunAktif?->id;
+        $context = $this->resolveContext($request);
 
-        $tahunPelajarans = TahunPelajaran::orderBy('is_active', 'desc')
-            ->orderBy('nama', 'desc')
-            ->get();
-
-        $jalurs = JalurPendaftaran::when($selectedTahunId, fn($q) => $q->where('tahun_pelajaran_id', $selectedTahunId))
-            ->where('is_active', true)
-            ->get();
-
-        $gelombangs = GelombangPendaftaran::when($request->jalur_id, fn($q) => $q->where('jalur_id', $request->jalur_id))
-            ->when(!$request->jalur_id && $selectedTahunId, function ($q) use ($jalurs) {
-                $q->whereIn('jalur_id', $jalurs->pluck('id'));
-            })
-            ->get();
-
-        // Build query
-        $query = CalonSiswa::with([
+        $pendaftar = $this->baseQuery($context)->with([
             'jalurPendaftaran',
             'gelombangPendaftaran',
             'kabupatenSiswa',
             'kecamatanSiswa',
             'kelulusan',
+        ])->get();
+
+        $stats = $this->buildComprehensiveStatistics($pendaftar, $context['selectedTahun']?->id);
+
+        return view('admin.report.index', [
+            'tahunPelajarans' => $context['tahunPelajarans'],
+            'jalurs' => $context['jalurs'],
+            'gelombangs' => $context['gelombangs'],
+            'stats' => $stats,
+            'selectedTahun' => $context['selectedTahun'],
+            'tahunAktif' => $context['selectedTahun'],
+            'selectedJalur' => $context['selectedJalur'],
+            'selectedGelombang' => $context['selectedGelombang'],
+            'selectedTahunIdInput' => $context['selectedTahunIdInput'],
+            'selectedJalurIdInput' => $context['selectedJalurIdInput'],
+            'selectedGelombangIdInput' => $context['selectedGelombangIdInput'],
         ]);
-
-        if ($selectedTahunId) {
-            $query->where('tahun_pelajaran_id', $selectedTahunId);
-        }
-        if ($request->jalur_id) {
-            $query->where('jalur_pendaftaran_id', $request->jalur_id);
-        }
-        if ($request->gelombang_id) {
-            $query->where('gelombang_pendaftaran_id', $request->gelombang_id);
-        }
-
-        $pendaftar = $query->get();
-
-        // Build comprehensive statistics
-        $stats = $this->buildComprehensiveStatistics($pendaftar, $selectedTahunId);
-
-        $selectedTahun = $tahunPelajarans->firstWhere('id', $selectedTahunId);
-
-        return view('admin.report.index', compact(
-            'tahunPelajarans',
-            'jalurs',
-            'gelombangs',
-            'stats',
-            'selectedTahun',
-            'tahunAktif'
-        ));
     }
 
     /**
@@ -81,33 +57,20 @@ class ReportController extends Controller
      */
     public function exportPdf(Request $request)
     {
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
-        $selectedTahunId = $request->tahun_pelajaran_id ?: $tahunAktif?->id;
+        $context = $this->resolveContext($request);
 
-        $query = CalonSiswa::with([
+        $pendaftar = $this->baseQuery($context)->with([
             'jalurPendaftaran',
             'gelombangPendaftaran',
             'kabupatenSiswa',
             'kecamatanSiswa',
             'kelulusan',
-        ]);
+        ])->get();
+        $stats = $this->buildComprehensiveStatistics($pendaftar, $context['selectedTahun']?->id);
 
-        if ($selectedTahunId) {
-            $query->where('tahun_pelajaran_id', $selectedTahunId);
-        }
-        if ($request->jalur_id) {
-            $query->where('jalur_pendaftaran_id', $request->jalur_id);
-        }
-        if ($request->gelombang_id) {
-            $query->where('gelombang_pendaftaran_id', $request->gelombang_id);
-        }
-
-        $pendaftar = $query->get();
-        $stats = $this->buildComprehensiveStatistics($pendaftar, $selectedTahunId);
-
-        $selectedTahun = TahunPelajaran::find($selectedTahunId);
-        $selectedJalur = $request->jalur_id ? JalurPendaftaran::find($request->jalur_id) : null;
-        $selectedGelombang = $request->gelombang_id ? GelombangPendaftaran::find($request->gelombang_id) : null;
+        $selectedTahun = $context['selectedTahun'];
+        $selectedJalur = $context['selectedJalur'];
+        $selectedGelombang = $context['selectedGelombang'];
         $sekolah = SekolahSettings::first();
 
         $pdf = Pdf::loadView('admin.report.pdf', compact(
@@ -131,33 +94,20 @@ class ReportController extends Controller
      */
     public function exportExcel(Request $request)
     {
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
-        $selectedTahunId = $request->tahun_pelajaran_id ?: $tahunAktif?->id;
+        $context = $this->resolveContext($request);
 
-        $query = CalonSiswa::with([
+        $pendaftar = $this->baseQuery($context)->with([
             'jalurPendaftaran',
             'gelombangPendaftaran',
             'kabupatenSiswa',
             'kecamatanSiswa',
             'kelulusan',
-        ]);
+        ])->get();
+        $stats = $this->buildComprehensiveStatistics($pendaftar, $context['selectedTahun']?->id);
 
-        if ($selectedTahunId) {
-            $query->where('tahun_pelajaran_id', $selectedTahunId);
-        }
-        if ($request->jalur_id) {
-            $query->where('jalur_pendaftaran_id', $request->jalur_id);
-        }
-        if ($request->gelombang_id) {
-            $query->where('gelombang_pendaftaran_id', $request->gelombang_id);
-        }
-
-        $pendaftar = $query->get();
-        $stats = $this->buildComprehensiveStatistics($pendaftar, $selectedTahunId);
-
-        $selectedTahun = TahunPelajaran::find($selectedTahunId);
-        $selectedJalur = $request->jalur_id ? JalurPendaftaran::find($request->jalur_id) : null;
-        $selectedGelombang = $request->gelombang_id ? GelombangPendaftaran::find($request->gelombang_id) : null;
+        $selectedTahun = $context['selectedTahun'];
+        $selectedJalur = $context['selectedJalur'];
+        $selectedGelombang = $context['selectedGelombang'];
         $sekolah = SekolahSettings::first();
 
         $tahunNama = str_replace(['/', '\\'], '-', $selectedTahun?->nama ?? date('Y'));
@@ -299,10 +249,7 @@ class ReportController extends Controller
         $lakiLaki = $group->where('jenis_kelamin', 'L');
         $perempuan = $group->where('jenis_kelamin', 'P');
 
-        // Pilihan Program
-        $reguler = $group->filter(fn($p) => strtolower($p->pilihan_program ?? '') === 'reguler');
-        $asrama = $group->filter(fn($p) => strtolower($p->pilihan_program ?? '') === 'asrama');
-        $belumMemilih = $group->filter(fn($p) => empty($p->pilihan_program) || !in_array(strtolower($p->pilihan_program), ['reguler', 'asrama']));
+        $programStats = $this->buildProgramStats($group);
 
         // Kategorisasi Asal Sekolah
         $asalSekolah = $this->kategorikanAsalSekolah($group);
@@ -312,19 +259,38 @@ class ReportController extends Controller
             'laki_laki' => $lakiLaki->count(),
             'perempuan' => $perempuan->count(),
 
-            // Program
-            'reguler' => $reguler->count(),
-            'asrama' => $asrama->count(),
-            'reguler_l' => $reguler->where('jenis_kelamin', 'L')->count(),
-            'reguler_p' => $reguler->where('jenis_kelamin', 'P')->count(),
-            'asrama_l' => $asrama->where('jenis_kelamin', 'L')->count(),
-            'asrama_p' => $asrama->where('jenis_kelamin', 'P')->count(),
-            'belum_memilih' => $belumMemilih->count(),
-            'belum_memilih_l' => $belumMemilih->where('jenis_kelamin', 'L')->count(),
-            'belum_memilih_p' => $belumMemilih->where('jenis_kelamin', 'P')->count(),
+            'program_stats' => $programStats,
 
             // Asal Sekolah
             'asal_sekolah' => $asalSekolah,
+        ];
+    }
+
+    private function buildProgramStats(Collection $group): array
+    {
+        $programGroups = $group
+            ->filter(fn($p) => $p->jalurPendaftaran?->pilihan_program_aktif)
+            ->groupBy(fn($p) => $p->pilihan_program ?: 'Belum Memilih');
+
+        if ($programGroups->isEmpty()) {
+            return [
+                'enabled' => false,
+                'items' => collect(),
+            ];
+        }
+
+        $items = $programGroups->map(function (Collection $items, string $label) {
+            return [
+                'label' => $label,
+                'total' => $items->count(),
+                'l' => $items->where('jenis_kelamin', 'L')->count(),
+                'p' => $items->where('jenis_kelamin', 'P')->count(),
+            ];
+        })->sortByDesc('total')->values();
+
+        return [
+            'enabled' => true,
+            'items' => $items,
         ];
     }
 
@@ -411,5 +377,28 @@ class ReportController extends Controller
             ->sortByDesc('total')
             ->values()
             ->toArray();
+    }
+
+    private function resolveContext(Request $request): array
+    {
+        return AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
+    }
+
+    private function baseQuery(array $context): Builder
+    {
+        return CalonSiswa::query()
+            ->when($context['selectedTahun'], function (Builder $q) use ($context) {
+                $q->where('calon_siswas.tahun_pelajaran_id', $context['selectedTahun']->id);
+            })
+            ->when($context['jalurFilterId'], function (Builder $q) use ($context) {
+                $q->where('calon_siswas.jalur_pendaftaran_id', $context['jalurFilterId']);
+            })
+            ->when($context['gelombangFilterId'], function (Builder $q) use ($context) {
+                $q->where('calon_siswas.gelombang_pendaftaran_id', $context['gelombangFilterId']);
+            });
     }
 }

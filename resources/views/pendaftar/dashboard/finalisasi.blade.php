@@ -290,7 +290,14 @@
                 <li><strong>Semua data akan dikunci</strong> dan tidak dapat diubah</li>
                 <li>Dokumen akan diverifikasi oleh admin</li>
                 <li><strong>Nomor Tes</strong> akan diberikan setelah semua dokumen diverifikasi</li>
-                <li>Anda akan menerima notifikasi WhatsApp saat nomor tes sudah tersedia</li>
+                @php $waAktif = \App\Models\PengaturanWa::isActive(); @endphp
+                <li>
+                    @if($waAktif)
+                        Anda akan menerima notifikasi WhatsApp saat nomor tes sudah tersedia
+                    @else
+                        Anda akan menerima notifikasi email saat nomor tes sudah tersedia
+                    @endif
+                </li>
                 <li>Tidak dapat membatalkan finalisasi</li>
             </ul>
         </div>
@@ -561,7 +568,7 @@ $(document).ready(function() {
                     } else {
                         contentHtml += '<div class="alert alert-info">' +
                               '<i class="fas fa-info-circle mr-2"></i>' +
-                              'Nomor tes akan dikirim via WhatsApp setelah dokumen diverifikasi.' +
+                              'Nomor tes akan dikirim via {{ \App\Models\PengaturanWa::isActive() ? 'WhatsApp' : 'email' }} setelah dokumen diverifikasi.' +
                               '</div>';
                     }
                     

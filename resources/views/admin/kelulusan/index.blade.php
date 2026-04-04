@@ -66,6 +66,12 @@
 
 @section('content')
 <div class="container-fluid">
+    <div class="alert alert-info">
+        Kelulusan sedang memakai konteks:
+        Tahun <strong>{{ $contextInfo['tahun'] }}</strong>,
+        Jalur <strong>{{ $contextInfo['jalur'] }}</strong>,
+        Gelombang <strong>{{ $contextInfo['gelombang'] }}</strong>.
+    </div>
 
     <!-- Stats -->
     <div class="row">
@@ -118,27 +124,26 @@
                     <div class="col-md-3">
                         <label class="mb-1 small">Tahun Pelajaran</label>
                         <select name="tahun_pelajaran_id" class="form-control form-control-sm select2">
-                            <option value="">-- Semua --</option>
                             @foreach($tahunPelajarans as $tp)
-                                <option value="{{ $tp->id }}" {{ request('tahun_pelajaran_id') == $tp->id ? 'selected' : '' }}>{{ $tp->nama }}</option>
+                                <option value="{{ $tp->id }}" {{ $selectedTahunIdInput == $tp->id ? 'selected' : '' }}>{{ $tp->nama }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="col-md-2">
                         <label class="mb-1 small">Jalur</label>
                         <select name="jalur_id" class="form-control form-control-sm select2">
-                            <option value="">-- Semua --</option>
+                            <option value="all" {{ $selectedJalurIdInput === 'all' ? 'selected' : '' }}>-- Semua --</option>
                             @foreach($jalurs as $jalur)
-                                <option value="{{ $jalur->id }}" {{ request('jalur_id') == $jalur->id ? 'selected' : '' }}>{{ $jalur->nama }}</option>
+                                <option value="{{ $jalur->id }}" {{ (string) $selectedJalurIdInput === (string) $jalur->id ? 'selected' : '' }}>{{ $jalur->nama }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="col-md-2">
                         <label class="mb-1 small">Gelombang</label>
                         <select name="gelombang_id" class="form-control form-control-sm select2">
-                            <option value="">-- Semua --</option>
+                            <option value="all" {{ $selectedGelombangIdInput === 'all' ? 'selected' : '' }}>-- Semua --</option>
                             @foreach($gelombangs as $gel)
-                                <option value="{{ $gel->id }}" {{ request('gelombang_id') == $gel->id ? 'selected' : '' }}>{{ $gel->nama }}</option>
+                                <option value="{{ $gel->id }}" {{ (string) $selectedGelombangIdInput === (string) $gel->id ? 'selected' : '' }}>{{ $gel->nama }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -170,6 +175,7 @@
             <h3 class="card-title"><i class="fas fa-table mr-2"></i>Data Peserta Seleksi</h3>
             <div>
                 <a href="{{ route('admin.kelulusan.setting') }}" class="btn btn-outline-info btn-sm">
+                <a href="{{ route('admin.kelulusan.setting', ['tahun_pelajaran_id' => $selectedTahunIdInput]) }}" class="btn btn-outline-info btn-sm">
                     <i class="fas fa-cog mr-1"></i>Pengaturan Kelulusan
                 </a>
             </div>
@@ -483,6 +489,7 @@ function processKelulusan(ids, status, catatan) {
         type: "POST",
         data: {
             _token: "{{ csrf_token() }}",
+            tahun_pelajaran_id: "{{ $selectedTahunIdInput }}",
             calon_siswa_ids: ids,
             status: status,
             catatan: catatan
@@ -543,7 +550,11 @@ function showBatalkanModal() {
             $.ajax({
                 url: "{{ route('admin.kelulusan.batalkan') }}",
                 type: "POST",
-                data: { _token: "{{ csrf_token() }}", calon_siswa_ids: ids },
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    tahun_pelajaran_id: "{{ $selectedTahunIdInput }}",
+                    calon_siswa_ids: ids
+                },
                 success: function(response) {
                     if (response.success) {
                         Swal.fire({ icon: 'success', title: 'Berhasil!', text: response.message, confirmButtonColor: '#28a745' })

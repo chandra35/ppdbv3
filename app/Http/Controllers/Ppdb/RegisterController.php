@@ -12,6 +12,7 @@ use App\Models\PpdbSettings;
 use App\Models\User;
 use App\Models\VisitorLog;
 use App\Services\EmisNisnService;
+use App\Services\DocumentStorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -367,13 +368,13 @@ class RegisterController extends Controller
         }
 
         $requiredDocs = [
-            'foto' => ['label' => 'Pas Foto (3x4)', 'required' => true],
-            'kk' => ['label' => 'Kartu Keluarga', 'required' => true],
-            'akta_lahir' => ['label' => 'Akta Kelahiran', 'required' => true],
-            'ktp_ortu' => ['label' => 'KTP Orang Tua', 'required' => false],
-            'ijazah' => ['label' => 'Ijazah/SKL', 'required' => false],
-            'raport' => ['label' => 'Raport', 'required' => false],
-            'sertifikat_prestasi' => ['label' => 'Sertifikat Prestasi (jika ada)', 'required' => false],
+            'foto' => ['label' => CalonDokumen::JENIS_DOKUMEN['foto'] . ' (3x4)', 'required' => true],
+            'kk' => ['label' => CalonDokumen::JENIS_DOKUMEN['kk'], 'required' => true],
+            'akta_lahir' => ['label' => CalonDokumen::JENIS_DOKUMEN['akta_lahir'], 'required' => true],
+            'ktp_ortu' => ['label' => CalonDokumen::JENIS_DOKUMEN['ktp_ortu'], 'required' => false],
+            'ijazah' => ['label' => CalonDokumen::JENIS_DOKUMEN['ijazah'], 'required' => false],
+            'raport' => ['label' => CalonDokumen::JENIS_DOKUMEN['raport'], 'required' => false],
+            'sertifikat_prestasi' => ['label' => CalonDokumen::DOKUMEN_TAMBAHAN['sertifikat_prestasi'] . ' (jika ada)', 'required' => false],
         ];
 
         return view('ppdb.step4', compact('requiredDocs'));
@@ -680,17 +681,50 @@ class RegisterController extends Controller
             $uploadedDocs = session('ppdb_uploaded_docs', []);
             $requiredDocs = ['foto', 'kk', 'akta_lahir'];
             
+            $documentStorageService = app(DocumentStorageService::class);
             foreach ($uploadedDocs as $jenisDoc => $docData) {
-                CalonDokumen::create([
-                    'id' => Uuid::uuid4()->toString(),
-                    'calon_siswa_id' => $calonSiswa->id,
-                    'jenis_dokumen' => $jenisDoc,
-                    'nama_dokumen' => CalonDokumen::JENIS_DOKUMEN[$jenisDoc] ?? $jenisDoc,
+                $stored = [
                     'nama_file' => $docData['nama_file'],
                     'file_path' => $docData['file_path'],
                     'file_size' => $docData['file_size'],
                     'mime_type' => $docData['mime_type'],
                     'storage_disk' => 'public',
+                    'remote_file_id' => null,
+                    'remote_file_url' => null,
+                ];
+
+                $tempFullPath = storage_path('app/public/' . $docData['file_path']);
+                if (file_exists($tempFullPath)) {
+                    $stored = $documentStorageService->storeRawContent(
+                        file_get_contents($tempFullPath),
+                        $calonSiswa,
+                        $jenisDoc,
+                        [
+                            'filename' => basename($docData['file_path']),
+                            'original_name' => $docData['nama_file'],
+                            'mime_type' => $docData['mime_type'] ?? 'application/octet-stream',
+                            'file_size' => $docData['file_size'] ?? filesize($tempFullPath),
+                            'local_directory' => 'ppdb/' . $calonSiswa->id,
+                        ]
+                    );
+
+                    if ($stored['file_path'] !== $docData['file_path']) {
+                        Storage::disk('public')->delete($docData['file_path']);
+                    }
+                }
+
+                CalonDokumen::create([
+                    'id' => Uuid::uuid4()->toString(),
+                    'calon_siswa_id' => $calonSiswa->id,
+                    'jenis_dokumen' => $jenisDoc,
+                    'nama_dokumen' => CalonDokumen::JENIS_DOKUMEN[$jenisDoc] ?? $jenisDoc,
+                    'nama_file' => $stored['nama_file'],
+                    'file_path' => $stored['file_path'],
+                    'remote_file_id' => $stored['remote_file_id'],
+                    'remote_file_url' => $stored['remote_file_url'],
+                    'file_size' => $stored['file_size'],
+                    'mime_type' => $stored['mime_type'],
+                    'storage_disk' => $stored['storage_disk'],
                     'is_required' => in_array($jenisDoc, $requiredDocs),
                     'status_verifikasi' => 'pending',
                 ]);

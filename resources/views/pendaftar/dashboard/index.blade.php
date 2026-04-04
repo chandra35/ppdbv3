@@ -482,7 +482,7 @@
 </div>
 @endif
 
-{{-- Notifikasi Pindah Gelombang --}}
+{{-- Notifikasi Pindah Jalur/Gelombang --}}
 @if(isset($gelombangBerikutnya) && $gelombangBerikutnya)
 <div class="row" id="pindah-gelombang-section">
     <div class="col-12">
@@ -496,28 +496,30 @@
                     </div>
                     <div class="flex-grow-1">
                         <h5 class="font-weight-bold text-info mb-1">
-                            <i class="fas fa-bullhorn mr-1"></i> {{ $gelombangBerikutnya->nama }} {{ $calonSiswa->jalurPendaftaran->nama ?? '' }} Sudah Dibuka!
+                            <i class="fas fa-bullhorn mr-1"></i> {{ $gelombangBerikutnya->nama }} Jalur {{ $gelombangBerikutnya->jalur->nama ?? '-' }} Sudah Dibuka!
                         </h5>
                         <p class="text-muted mb-2">
                             @if($calonSiswa->kelulusan && in_array($calonSiswa->kelulusan->status, ['tidak_lulus', 'cadangan']))
-                                Anda dapat mendaftar ulang di <strong>{{ $gelombangBerikutnya->nama }}</strong> tanpa perlu registrasi dari awal.
+                                Anda dapat melanjutkan pendaftaran ke <strong>{{ $gelombangBerikutnya->nama }}</strong> jalur <strong>{{ $gelombangBerikutnya->jalur->nama ?? '-' }}</strong> tanpa perlu registrasi dari awal.
                             @else
-                                Gelombang sebelumnya sudah ditutup. Anda dapat melanjutkan pendaftaran di <strong>{{ $gelombangBerikutnya->nama }}</strong>.
+                                Pendaftaran sebelumnya sudah tidak aktif. Anda dapat melanjutkan pendaftaran ke <strong>{{ $gelombangBerikutnya->nama }}</strong> jalur <strong>{{ $gelombangBerikutnya->jalur->nama ?? '-' }}</strong>.
                             @endif
                             Data pribadi & dokumen Anda akan dipertahankan.
                         </p>
                         <div class="d-flex flex-wrap align-items-center mb-3" style="gap: 15px;">
+                            @if($gelombangBerikutnya->tampil_kuota && $gelombangBerikutnya->kuota)
                             <span class="text-dark">
                                 <i class="fas fa-users text-info mr-1"></i>
                                 Sisa kuota: <strong>{{ $gelombangBerikutnya->sisaKuota() }}</strong> dari {{ $gelombangBerikutnya->kuotaEfektif() }}
                             </span>
+                            @endif
                             <span class="text-dark">
                                 <i class="fas fa-calendar-times text-danger mr-1"></i>
                                 Batas: <strong>{{ \Carbon\Carbon::parse($gelombangBerikutnya->tanggal_tutup)->locale('id')->translatedFormat('d F Y') }}</strong>
                             </span>
                         </div>
                         <button type="button" class="btn btn-info btn-lg px-4" onclick="konfirmasiPindahGelombang()" id="btnPindahGelombang">
-                            <i class="fas fa-arrow-right mr-2"></i> Daftar {{ $gelombangBerikutnya->nama }}
+                            <i class="fas fa-arrow-right mr-2"></i> Pindah ke {{ $gelombangBerikutnya->jalur->nama ?? 'Jalur Baru' }}
                         </button>
                     </div>
                 </div>
@@ -848,7 +850,7 @@
         <!-- Profile Card -->
         @php
             $fotoProfileDashboard = $calonSiswa->dokumen()->where('jenis_dokumen', 'foto')->first();
-            $fotoProfileDashboardUrl = $fotoProfileDashboard ? asset('storage/' . $fotoProfileDashboard->file_path) : null;
+            $fotoProfileDashboardUrl = $fotoProfileDashboard?->file_url;
         @endphp
         <div class="card">
             <div class="card-body text-center">
@@ -1242,15 +1244,16 @@ $(function() {
 <script>
 function konfirmasiPindahGelombang() {
     Swal.fire({
-        title: 'Pindah ke {{ $gelombangBerikutnya->nama }}?',
+        title: 'Pindah ke {{ $gelombangBerikutnya->jalur->nama ?? "-" }}?',
         html: `
             <div class="text-left" style="font-size: 14px;">
-                <p class="mb-2">Anda akan dipindahkan dari <strong>{{ $calonSiswa->gelombangPendaftaran->nama ?? 'Gelombang sebelumnya' }}</strong> ke <strong>{{ $gelombangBerikutnya->nama }}</strong>.</p>
+                <p class="mb-2">Anda akan dipindahkan dari <strong>{{ $calonSiswa->jalurPendaftaran->nama ?? 'Jalur sebelumnya' }} - {{ $calonSiswa->gelombangPendaftaran->nama ?? 'Gelombang sebelumnya' }}</strong> ke <strong>{{ $gelombangBerikutnya->jalur->nama ?? '-' }} - {{ $gelombangBerikutnya->nama }}</strong>.</p>
                 <div class="alert alert-info py-2 px-3 mb-2">
                     <small>
                         <i class="fas fa-check mr-1"></i> Data pribadi & dokumen <strong>tetap tersimpan</strong><br>
                         <i class="fas fa-check mr-1"></i> Nomor registrasi akan <strong>diperbarui</strong><br>
-                        <i class="fas fa-check mr-1"></i> Riwayat gelombang sebelumnya <strong>tetap tercatat</strong>
+                        <i class="fas fa-check mr-1"></i> Nomor tes akan <strong>digenerate ulang</strong><br>
+                        <i class="fas fa-check mr-1"></i> Riwayat jalur/gelombang sebelumnya <strong>tetap tercatat</strong>
                     </small>
                 </div>
                 <div class="alert alert-warning py-2 px-3 mb-0">
@@ -1267,7 +1270,7 @@ function konfirmasiPindahGelombang() {
         showCancelButton: true,
         confirmButtonColor: '#17a2b8',
         cancelButtonColor: '#6c757d',
-        confirmButtonText: '<i class="fas fa-exchange-alt mr-1"></i> Ya, Pindah Gelombang',
+        confirmButtonText: '<i class="fas fa-exchange-alt mr-1"></i> Ya, Pindah',
         cancelButtonText: 'Batal',
         showLoaderOnConfirm: true,
         preConfirm: () => {
@@ -1281,7 +1284,7 @@ function konfirmasiPindahGelombang() {
             .then(response => response.json())
             .then(data => {
                 if (!data.success) {
-                    throw new Error(data.message || 'Gagal pindah gelombang');
+                    throw new Error(data.message || 'Gagal pindah pendaftaran');
                 }
                 return data;
             })
@@ -1294,11 +1297,12 @@ function konfirmasiPindahGelombang() {
         if (result.isConfirmed) {
             Swal.fire({
                 icon: 'success',
-                title: 'Berhasil Pindah Gelombang!',
+                title: 'Berhasil Pindah Pendaftaran!',
                 html: `
                     <p>${result.value.message}</p>
                     <p class="mb-0"><strong>Nomor Registrasi Baru:</strong><br>
                     <code style="font-size: 18px;">${result.value.nomor_registrasi_baru}</code></p>
+                    ${result.value.nomor_tes_baru ? `<p class="mt-2 mb-0"><strong>Nomor Tes Baru:</strong><br><code style="font-size: 18px;">${result.value.nomor_tes_baru}</code></p>` : ``}
                 `,
                 confirmButtonText: 'OK',
                 allowOutsideClick: false

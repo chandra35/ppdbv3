@@ -329,6 +329,7 @@
                 </div>
 
                 <!-- WhatsApp & Email Status -->
+                @php $waAktif = \App\Models\PengaturanWa::isActive(); @endphp
                 @if($waSent)
                     <div class="alert alert-success">
                         <h5><i class="fas fa-check-circle"></i> Notifikasi Terkirim</h5>
@@ -342,12 +343,16 @@
                         <p class="mb-0 mt-2"><small>Silakan cek WhatsApp dan inbox email Anda (termasuk folder spam).</small></p>
                     </div>
                 @else
-                    <div class="alert alert-warning">
-                        <h5><i class="fas fa-exclamation-triangle"></i> WhatsApp Tidak Terkirim</h5>
+                    <div class="alert alert-{{ $waAktif ? 'warning' : 'info' }}">
+                        <h5><i class="fas fa-{{ $waAktif ? 'exclamation-triangle' : 'info-circle' }}"></i> {{ $waAktif ? 'WhatsApp Tidak Terkirim' : 'Notifikasi Email Aktif' }}</h5>
                         <p class="mb-2">
-                            Kredensial login tidak dapat dikirim via WhatsApp.
+                            @if($waAktif)
+                                Kredensial login tidak dapat dikirim via WhatsApp.
+                            @else
+                                Notifikasi WhatsApp sedang dinonaktifkan oleh admin.
+                            @endif
                             @if(!empty($credentials['email']) && !str_contains($credentials['email'], '@ppdb.temp'))
-                                <br>Namun, kredensial telah dikirim ke email: <strong>{{ $credentials['email'] }}</strong>
+                                <br>Kredensial telah dikirim ke email: <strong>{{ $credentials['email'] }}</strong>
                             @endif
                         </p>
                         <p class="mb-0">

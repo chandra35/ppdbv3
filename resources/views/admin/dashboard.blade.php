@@ -44,6 +44,18 @@
 @section('content')
     @include('admin.partials.flash-messages')
 
+    <div class="alert alert-info d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+            <strong>Konteks Dashboard</strong><br>
+            Tahun: <strong id="context-tahun">{{ $contextInfo['tahun'] }}</strong>
+            &middot; Jalur: <strong id="context-jalur">{{ $contextInfo['jalur'] }}</strong>
+            &middot; Gelombang: <strong id="context-gelombang">{{ $contextInfo['gelombang'] }}</strong>
+        </div>
+        <small class="text-muted">
+            Default otomatis ke jalur/gelombang aktif, atau yang terakhir dipakai jika yang aktif sudah tidak ada.
+        </small>
+    </div>
+
     {{-- Welcome Card --}}
     <div class="card card-primary card-outline mb-3">
         <div class="card-body py-2">
@@ -94,9 +106,9 @@
                     <h3 data-stat="total_pendaftar">{{ number_format($stats['total_pendaftar']) }}</h3>
                     <p>Total Pendaftar</p>
                     <small style="font-size: 10px; opacity: 0.9; line-height: 1.4; display: block;">
-                        Reguler = <span data-stat="pendaftar_reguler">{{ number_format($stats['pendaftar_reguler']) }}</span><br>
-                        Asrama = <span data-stat="pendaftar_asrama">{{ number_format($stats['pendaftar_asrama']) }}</span><br>
-                        Belum Memilih = <span data-stat="pendaftar_belum_memilih">{{ number_format($stats['pendaftar_belum_memilih']) }}</span>
+                        Jalur terpilih = <span data-stat="pendaftar_jalur">{{ number_format($stats['pendaftar_jalur']) }}</span><br>
+                        Gelombang terpilih = <span data-stat="pendaftar_gelombang">{{ number_format($stats['pendaftar_gelombang']) }}</span><br>
+                        Tahun terpilih = <span data-stat="pendaftar_tahun">{{ number_format($stats['pendaftar_tahun']) }}</span>
                     </small>
                 </div>
                 <div class="icon">
@@ -113,9 +125,9 @@
                     <h3 data-stat="pendaftar_baru">{{ number_format($stats['pendaftar_baru']) }}</h3>
                     <p>Belum Lengkap</p>
                     <small style="font-size: 10px; opacity: 0.9; line-height: 1.4; display: block;">
-                        Reguler = <span data-stat="pendaftar_baru_reguler">{{ number_format($stats['pendaftar_baru_reguler']) }}</span><br>
-                        Asrama = <span data-stat="pendaftar_baru_asrama">{{ number_format($stats['pendaftar_baru_asrama']) }}</span><br>
-                        Belum Memilih = <span data-stat="pendaftar_baru_belum_memilih">{{ number_format($stats['pendaftar_baru_belum_memilih']) }}</span>
+                        Jalur terpilih = <span data-stat="pendaftar_baru_jalur">{{ number_format($stats['pendaftar_baru_jalur']) }}</span><br>
+                        Gelombang terpilih = <span data-stat="pendaftar_baru_gelombang">{{ number_format($stats['pendaftar_baru_gelombang']) }}</span><br>
+                        Tahun terpilih = <span data-stat="pendaftar_baru_tahun">{{ number_format($stats['pendaftar_baru_tahun']) }}</span>
                     </small>
                 </div>
                 <div class="icon">
@@ -132,9 +144,9 @@
                     <h3 data-stat="terverifikasi">{{ number_format($stats['terverifikasi']) }}</h3>
                     <p>Mendapatkan No. Tes</p>
                     <small style="font-size: 10px; opacity: 0.9; line-height: 1.4; display: block;">
-                        Reguler = <span data-stat="terverifikasi_reguler">{{ number_format($stats['terverifikasi_reguler']) }}</span><br>
-                        Asrama = <span data-stat="terverifikasi_asrama">{{ number_format($stats['terverifikasi_asrama']) }}</span><br>
-                        Belum Memilih = <span data-stat="terverifikasi_belum_memilih">{{ number_format($stats['terverifikasi_belum_memilih']) }}</span>
+                        Jalur terpilih = <span data-stat="terverifikasi_jalur">{{ number_format($stats['terverifikasi_jalur']) }}</span><br>
+                        Gelombang terpilih = <span data-stat="terverifikasi_gelombang">{{ number_format($stats['terverifikasi_gelombang']) }}</span><br>
+                        Tahun terpilih = <span data-stat="terverifikasi_tahun">{{ number_format($stats['terverifikasi_tahun']) }}</span>
                     </small>
                 </div>
                 <div class="icon">
@@ -151,9 +163,9 @@
                     <h3 data-stat="siap_verifikasi">{{ number_format($stats['siap_verifikasi']) }}</h3>
                     <p>Siap Verifikasi</p>
                     <small style="font-size: 10px; opacity: 0.9; line-height: 1.4; display: block;">
-                        Reguler = <span data-stat="siap_verifikasi_reguler">{{ number_format($stats['siap_verifikasi_reguler']) }}</span><br>
-                        Asrama = <span data-stat="siap_verifikasi_asrama">{{ number_format($stats['siap_verifikasi_asrama']) }}</span><br>
-                        Belum Memilih = <span data-stat="siap_verifikasi_belum_memilih">{{ number_format($stats['siap_verifikasi_belum_memilih']) }}</span>
+                        Jalur terpilih = <span data-stat="siap_verifikasi_jalur">{{ number_format($stats['siap_verifikasi_jalur']) }}</span><br>
+                        Gelombang terpilih = <span data-stat="siap_verifikasi_gelombang">{{ number_format($stats['siap_verifikasi_gelombang']) }}</span><br>
+                        Tahun terpilih = <span data-stat="siap_verifikasi_tahun">{{ number_format($stats['siap_verifikasi_tahun']) }}</span>
                     </small>
                 </div>
                 <div class="icon">
@@ -170,9 +182,9 @@
                     <h3 data-stat="hanya_mendaftar">{{ number_format($stats['hanya_mendaftar']) }}</h3>
                     <p>Hanya Mendaftar</p>
                     <small style="font-size: 10px; opacity: 0.9; line-height: 1.4; display: block;">
-                        Reguler = <span data-stat="hanya_mendaftar_reguler">{{ number_format($stats['hanya_mendaftar_reguler']) }}</span><br>
-                        Asrama = <span data-stat="hanya_mendaftar_asrama">{{ number_format($stats['hanya_mendaftar_asrama']) }}</span><br>
-                        Belum Memilih = <span data-stat="hanya_mendaftar_belum_memilih">{{ number_format($stats['hanya_mendaftar_belum_memilih']) }}</span>
+                        Jalur terpilih = <span data-stat="hanya_mendaftar_jalur">{{ number_format($stats['hanya_mendaftar_jalur']) }}</span><br>
+                        Gelombang terpilih = <span data-stat="hanya_mendaftar_gelombang">{{ number_format($stats['hanya_mendaftar_gelombang']) }}</span><br>
+                        Tahun terpilih = <span data-stat="hanya_mendaftar_tahun">{{ number_format($stats['hanya_mendaftar_tahun']) }}</span>
                     </small>
                 </div>
                 <div class="icon">
@@ -260,8 +272,8 @@
                                 @php
                                     // Prioritas foto: 1. Dokumen foto, 2. Foto manual, 3. UI Avatars
                                     $foto = $pendaftar->dokumen->where('jenis_dokumen', 'foto')->first();
-                                    if($foto && $foto->file_path && file_exists(public_path('storage/' . $foto->file_path))) {
-                                        $avatarUrl = asset('storage/' . $foto->file_path);
+                                    if($foto && $foto->file_url) {
+                                        $avatarUrl = $foto->file_url;
                                     } elseif($pendaftar->foto && file_exists(public_path('storage/' . $pendaftar->foto))) {
                                         $avatarUrl = asset('storage/' . $pendaftar->foto);
                                     } else {
@@ -501,6 +513,15 @@
                             }
                         }
                     });
+
+                    if (data.contextInfo) {
+                        const tahunEl = document.getElementById('context-tahun');
+                        const jalurEl = document.getElementById('context-jalur');
+                        const gelombangEl = document.getElementById('context-gelombang');
+                        if (tahunEl) tahunEl.textContent = data.contextInfo.tahun;
+                        if (jalurEl) jalurEl.textContent = data.contextInfo.jalur;
+                        if (gelombangEl) gelombangEl.textContent = data.contextInfo.gelombang;
+                    }
                     
                     // Update chart data
                     if (data.chartData && statsChart) {

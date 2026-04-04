@@ -353,7 +353,7 @@
                                             @if($nilai['dokumen'])
                                                 <div class="uploaded-file">
                                                     <a href="javascript:void(0);" 
-                                                       onclick="openPreviewRaporModal({{ $semester }}, '{{ asset('storage/' . $nilai['dokumen']->file_path) }}', '{{ $nilai['status_validasi'] }}', '{{ $nilai['catatan_validasi'] ?? '' }}')"
+                                                       onclick="openPreviewRaporModal({{ $semester }}, '{{ $nilai['dokumen']->file_url }}', '{{ $nilai['status_validasi'] }}', '{{ $nilai['catatan_validasi'] ?? '' }}')"
                                                        class="btn btn-sm btn-outline-success mb-1" title="Lihat File">
                                                         <i class="fas fa-eye"></i> {{ Str::limit($nilai['dokumen']->nama_file, 15) }}
                                                     </a>
@@ -483,7 +483,7 @@
                                     <div class="uploaded-file-mobile">
                                         <div class="d-flex align-items-center justify-content-between mb-2">
                                             <a href="javascript:void(0);" 
-                                               onclick="openPreviewRaporModal({{ $semester }}, '{{ asset('storage/' . $nilai['dokumen']->file_path) }}', '{{ $nilai['status_validasi'] }}', '{{ $nilai['catatan_validasi'] ?? '' }}')"
+                                               onclick="openPreviewRaporModal({{ $semester }}, '{{ $nilai['dokumen']->file_url }}', '{{ $nilai['status_validasi'] }}', '{{ $nilai['catatan_validasi'] ?? '' }}')"
                                                class="btn btn-sm btn-outline-success">
                                                 <i class="fas fa-eye"></i> Lihat File
                                             </a>

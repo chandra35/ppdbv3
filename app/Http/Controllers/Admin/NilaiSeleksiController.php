@@ -14,6 +14,7 @@ use App\Models\ActivityLog;
 use App\Imports\NilaiPenilaianImport;
 use App\Exports\RekapNilaiExport;
 use App\Services\EmailNotificationService;
+use App\Support\AdminPpdbContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -25,12 +26,23 @@ class NilaiSeleksiController extends Controller
      */
     public function index(Request $request)
     {
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        $context = AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
+        $tahunAktif = $context['selectedTahun'];
         
         // Get sesi ujian list
         $sesiUjians = SesiUjian::with(['jalur', 'gelombang', 'ruangan.peserta'])
             ->where('tahun_pelajaran_id', $tahunAktif?->id)
             ->whereIn('status', ['locked', 'in_progress', 'completed'])
+            ->when($context['jalurFilterId'], function ($query, $jalurId) {
+                $query->where('jalur_id', $jalurId);
+            })
+            ->when($context['gelombangFilterId'], function ($query, $gelombangId) {
+                $query->where('gelombang_id', $gelombangId);
+            })
             ->orderBy('tanggal', 'desc')
             ->get();
 
@@ -48,7 +60,19 @@ class NilaiSeleksiController extends Controller
             'sesiUjians',
             'stats',
             'tahunAktif'
-        ));
+        ) + [
+            'tahunPelajarans' => $context['tahunPelajarans'],
+            'jalurs' => $context['jalurs'],
+            'gelombangs' => $context['gelombangs'],
+            'selectedTahunIdInput' => $context['selectedTahunIdInput'],
+            'selectedJalurIdInput' => $context['selectedJalurIdInput'],
+            'selectedGelombangIdInput' => $context['selectedGelombangIdInput'],
+            'contextInfo' => [
+                'tahun' => $context['selectedTahun']?->nama ?? '-',
+                'jalur' => $context['selectedJalur']?->nama ?? 'Semua Jalur',
+                'gelombang' => $context['selectedGelombang']?->nama ?? 'Semua Gelombang',
+            ],
+        ]);
     }
 
     /**
@@ -191,10 +215,13 @@ class NilaiSeleksiController extends Controller
      */
     public function rekap(Request $request)
     {
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
-        
-        // Filter by tahun pelajaran
-        $selectedTahunId = $request->tahun_pelajaran_id ?: $tahunAktif?->id;
+        $context = AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
+        $tahunAktif = $context['selectedTahun'];
+        $selectedTahunId = $tahunAktif?->id;
 
         // Filter by jenis tes
         $jenisTes = $request->jenis_tes;
@@ -210,9 +237,14 @@ class NilaiSeleksiController extends Controller
         }
         
         // Filter by jalur (for TBQ records via sesiUjian)
-        if ($request->jalur_id) {
-            $seleksiQuery->whereHas('sesiUjian', function($q) use ($request) {
-                $q->where('jalur_id', $request->jalur_id);
+        if ($context['jalurFilterId']) {
+            $seleksiQuery->whereHas('sesiUjian', function($q) use ($context) {
+                $q->where('jalur_id', $context['jalurFilterId']);
+            });
+        }
+        if ($context['gelombangFilterId']) {
+            $seleksiQuery->whereHas('calonSiswa', function($q) use ($context) {
+                $q->where('gelombang_pendaftaran_id', $context['gelombangFilterId']);
             });
         }
         
@@ -239,8 +271,11 @@ class NilaiSeleksiController extends Controller
                 ->whereIn('id', $cbtOnlyCalonIds);
             
             // Filter by jalur for CBT-only
-            if ($request->jalur_id) {
-                $cbtOnlySiswa->where('jalur_pendaftaran_id', $request->jalur_id);
+            if ($context['jalurFilterId']) {
+                $cbtOnlySiswa->where('jalur_pendaftaran_id', $context['jalurFilterId']);
+            }
+            if ($context['gelombangFilterId']) {
+                $cbtOnlySiswa->where('gelombang_pendaftaran_id', $context['gelombangFilterId']);
             }
             
             $cbtOnlySiswa = $cbtOnlySiswa->get();
@@ -281,7 +316,7 @@ class NilaiSeleksiController extends Controller
 
         // Load Sertifikat/Prestasi
         $sertifikatData = \App\Models\CalonDokumen::whereIn('calon_siswa_id', $allCalonIds)
-            ->whereIn('jenis_dokumen', ['sertifikat_prestasi', 'piagam'])
+            ->whereIn('jenis_dokumen', array_keys(\App\Models\CalonDokumen::getPrestasiDocumentTypes()))
             ->where('status_verifikasi', '!=', 'rejected')
             ->get()
             ->groupBy('calon_siswa_id');
@@ -323,6 +358,15 @@ class NilaiSeleksiController extends Controller
         })->values();
 
         // Detail stats: jalur, minat & gender breakdown
+        $programGroups = $rekapData
+            ->filter(fn($n) => $n->calonSiswa?->jalurPendaftaran?->pilihan_program_aktif)
+            ->groupBy(fn($n) => $n->calonSiswa?->pilihan_program ?? 'Belum Memilih')
+            ->map(fn($group) => [
+                'total' => $group->count(),
+                'laki_laki' => $group->filter(fn($n) => $n->calonSiswa?->jenis_kelamin === 'L')->count(),
+                'perempuan' => $group->filter(fn($n) => $n->calonSiswa?->jenis_kelamin === 'P')->count(),
+            ])->sortByDesc('total');
+
         $detailStats = [
             'total' => $rekapData->count(),
             'laki_laki' => $rekapData->filter(fn($n) => $n->calonSiswa && $n->calonSiswa->jenis_kelamin === 'L')->count(),
@@ -333,21 +377,8 @@ class NilaiSeleksiController extends Controller
                     'laki_laki' => $group->filter(fn($n) => $n->calonSiswa?->jenis_kelamin === 'L')->count(),
                     'perempuan' => $group->filter(fn($n) => $n->calonSiswa?->jenis_kelamin === 'P')->count(),
                 ])->sortByDesc('total'),
-            'minat' => $rekapData->groupBy(fn($n) => $n->calonSiswa?->pilihan_program ?? 'Belum Memilih')
-                ->map(fn($group) => [
-                    'total' => $group->count(),
-                    'laki_laki' => $group->filter(fn($n) => $n->calonSiswa?->jenis_kelamin === 'L')->count(),
-                    'perempuan' => $group->filter(fn($n) => $n->calonSiswa?->jenis_kelamin === 'P')->count(),
-                ])->sortByDesc('total'),
+            'minat' => $programGroups,
         ];
-
-        $tahunPelajarans = TahunPelajaran::orderBy('is_active', 'desc')
-            ->orderBy('nama', 'desc')
-            ->get();
-            
-        $jalurs = \App\Models\JalurPendaftaran::where('tahun_pelajaran_id', $selectedTahunId)
-            ->where('is_active', true)
-            ->get();
 
         return view('admin.nilai-seleksi.rekap', compact(
             'rekapData',
@@ -356,9 +387,19 @@ class NilaiSeleksiController extends Controller
             'sertifikatData',
             'detailStats',
             'tahunAktif',
-            'tahunPelajarans',
-            'jalurs'
-        ));
+        ) + [
+            'tahunPelajarans' => $context['tahunPelajarans'],
+            'jalurs' => $context['jalurs'],
+            'gelombangs' => $context['gelombangs'],
+            'selectedTahunIdInput' => $context['selectedTahunIdInput'],
+            'selectedJalurIdInput' => $context['selectedJalurIdInput'],
+            'selectedGelombangIdInput' => $context['selectedGelombangIdInput'],
+            'contextInfo' => [
+                'tahun' => $context['selectedTahun']?->nama ?? '-',
+                'jalur' => $context['selectedJalur']?->nama ?? 'Semua Jalur',
+                'gelombang' => $context['selectedGelombang']?->nama ?? 'Semua Gelombang',
+            ],
+        ]);
     }
 
     /**
@@ -366,13 +407,17 @@ class NilaiSeleksiController extends Controller
      */
     public function exportRekap(Request $request)
     {
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
-        $selectedTahunId = $request->tahun_pelajaran_id ?: $tahunAktif?->id;
+        $context = AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
+        $selectedTahunId = $context['selectedTahun']?->id;
 
         $export = new RekapNilaiExport(
             $selectedTahunId,
-            $request->jalur_id,
-            $request->gelombang_id
+            $context['jalurFilterId'],
+            $context['gelombangFilterId']
         );
 
         $filename = 'Rekap_Nilai_Lengkap_PPDB_' . date('Y-m-d_His') . '.xlsx';
@@ -385,12 +430,23 @@ class NilaiSeleksiController extends Controller
      */
     public function uploadNilai(Request $request)
     {
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        $context = AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
+        $tahunAktif = $context['selectedTahun'];
 
         // Get jadwal ujian untuk tahun aktif (semua status yang punya sesi)
         $jadwalList = JadwalUjian::with(['tahunPelajaran', 'jalurPendaftaran', 'gelombangPendaftaran'])
             ->withCount('sesiUjian')
             ->where('tahun_pelajaran_id', $tahunAktif?->id)
+            ->when($context['jalurFilterId'], function ($query, $jalurId) {
+                $query->where('jalur_pendaftaran_id', $jalurId);
+            })
+            ->when($context['gelombangFilterId'], function ($query, $gelombangId) {
+                $query->where('gelombang_pendaftaran_id', $gelombangId);
+            })
             ->has('sesiUjian')
             ->orderBy('tanggal_ujian', 'desc')
             ->get();
@@ -406,6 +462,18 @@ class NilaiSeleksiController extends Controller
             ->whereHas('sesiUjian', function ($q) use ($tahunAktif) {
                 $q->where('tahun_pelajaran_id', $tahunAktif?->id);
             });
+
+        if ($context['jalurFilterId']) {
+            $nilaiQuery->whereHas('sesiUjian', function ($q) use ($context) {
+                $q->where('jalur_id', $context['jalurFilterId']);
+            });
+        }
+
+        if ($context['gelombangFilterId']) {
+            $nilaiQuery->whereHas('calonSiswa', function ($q) use ($context) {
+                $q->where('gelombang_pendaftaran_id', $context['gelombangFilterId']);
+            });
+        }
 
         // Filter by jadwal
         if ($request->jadwal_id) {
@@ -436,6 +504,16 @@ class NilaiSeleksiController extends Controller
         $allNilaiQuery = NilaiSeleksi::whereHas('sesiUjian', function ($q) use ($tahunAktif) {
             $q->where('tahun_pelajaran_id', $tahunAktif?->id);
         });
+        if ($context['jalurFilterId']) {
+            $allNilaiQuery->whereHas('sesiUjian', function ($q) use ($context) {
+                $q->where('jalur_id', $context['jalurFilterId']);
+            });
+        }
+        if ($context['gelombangFilterId']) {
+            $allNilaiQuery->whereHas('calonSiswa', function ($q) use ($context) {
+                $q->where('gelombang_pendaftaran_id', $context['gelombangFilterId']);
+            });
+        }
         $stats = [
             'total' => (clone $allNilaiQuery)->count(),
             'draft' => (clone $allNilaiQuery)->where('status', 'draft')->count(),
@@ -449,7 +527,19 @@ class NilaiSeleksiController extends Controller
             'nilaiList',
             'stats',
             'tahunAktif'
-        ));
+        ) + [
+            'tahunPelajarans' => $context['tahunPelajarans'],
+            'jalurs' => $context['jalurs'],
+            'gelombangs' => $context['gelombangs'],
+            'selectedTahunIdInput' => $context['selectedTahunIdInput'],
+            'selectedJalurIdInput' => $context['selectedJalurIdInput'],
+            'selectedGelombangIdInput' => $context['selectedGelombangIdInput'],
+            'contextInfo' => [
+                'tahun' => $context['selectedTahun']?->nama ?? '-',
+                'jalur' => $context['selectedJalur']?->nama ?? 'Semua Jalur',
+                'gelombang' => $context['selectedGelombang']?->nama ?? 'Semua Gelombang',
+            ],
+        ]);
     }
 
     /**
@@ -458,6 +548,9 @@ class NilaiSeleksiController extends Controller
     public function processUpload(Request $request)
     {
         $request->validate([
+            'tahun_pelajaran_id' => 'nullable',
+            'jalur_id' => 'nullable',
+            'gelombang_id' => 'nullable',
             'jadwal_id' => 'required|exists:jadwal_ujian,id',
             'file_nilai' => 'required|file|mimes:xlsx,xls|max:10240',
         ], [
@@ -493,6 +586,11 @@ class NilaiSeleksiController extends Controller
                 'tempFile' => $tempFileName,
                 'jadwalId' => $jadwal->id,
                 'originalFileName' => $file->getClientOriginalName(),
+                'returnContext' => [
+                    'tahun_pelajaran_id' => $request->input('tahun_pelajaran_id'),
+                    'jalur_id' => $request->input('jalur_id'),
+                    'gelombang_id' => $request->input('gelombang_id'),
+                ],
             ]);
         } catch (\Exception $e) {
             return redirect()->route('admin.nilai-seleksi.upload')
@@ -506,6 +604,9 @@ class NilaiSeleksiController extends Controller
     public function confirmUpload(Request $request)
     {
         $request->validate([
+            'tahun_pelajaran_id' => 'nullable',
+            'jalur_id' => 'nullable',
+            'gelombang_id' => 'nullable',
             'jadwal_id' => 'required|exists:jadwal_ujian,id',
             'temp_file' => 'required|string',
         ]);
@@ -528,16 +629,28 @@ class NilaiSeleksiController extends Controller
             $message = "Import selesai: <strong>{$result['imported']}</strong> baru, <strong>{$result['updated']}</strong> diupdate, <strong>{$result['skipped']}</strong> dilewati.";
 
             if (!empty($result['errors'])) {
-                return redirect()->route('admin.nilai-seleksi.upload')
+                return redirect()->route('admin.nilai-seleksi.upload', [
+                        'tahun_pelajaran_id' => $request->input('tahun_pelajaran_id'),
+                        'jalur_id' => $request->input('jalur_id'),
+                        'gelombang_id' => $request->input('gelombang_id'),
+                    ])
                     ->with('warning', $message)
                     ->with('import_errors', $result['errors']);
             }
 
-            return redirect()->route('admin.nilai-seleksi.upload')
+            return redirect()->route('admin.nilai-seleksi.upload', [
+                    'tahun_pelajaran_id' => $request->input('tahun_pelajaran_id'),
+                    'jalur_id' => $request->input('jalur_id'),
+                    'gelombang_id' => $request->input('gelombang_id'),
+                ])
                 ->with('success', $message);
         } catch (\Exception $e) {
             @unlink($tempPath);
-            return redirect()->route('admin.nilai-seleksi.upload')
+            return redirect()->route('admin.nilai-seleksi.upload', [
+                    'tahun_pelajaran_id' => $request->input('tahun_pelajaran_id'),
+                    'jalur_id' => $request->input('jalur_id'),
+                    'gelombang_id' => $request->input('gelombang_id'),
+                ])
                 ->with('error', 'Gagal import: ' . $e->getMessage());
         }
     }
@@ -552,22 +665,37 @@ class NilaiSeleksiController extends Controller
             @unlink($tempPath);
         }
 
-        return redirect()->route('admin.nilai-seleksi.upload')
+        return redirect()->route('admin.nilai-seleksi.upload', [
+                'tahun_pelajaran_id' => $request->input('tahun_pelajaran_id'),
+                'jalur_id' => $request->input('jalur_id'),
+                'gelombang_id' => $request->input('gelombang_id'),
+            ])
             ->with('info', 'Upload dibatalkan.');
     }
 
     /**
      * Pengumuman Hasil Seleksi - Form
      */
-    public function pengumuman()
+    public function pengumuman(Request $request)
     {
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        $context = AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
+        $tahunAktif = $context['selectedTahun'];
         
         // Get kandidat untuk pengumuman (yang sudah verified dan finalisasi)
         $kandidat = CalonSiswa::with(['jalurPendaftaran', 'gelombangPendaftaran'])
             ->where('tahun_pelajaran_id', $tahunAktif?->id)
             ->where('is_finalisasi', true)
             ->whereIn('status_verifikasi', ['verified'])
+            ->when($context['jalurFilterId'], function ($query, $jalurId) {
+                $query->where('jalur_pendaftaran_id', $jalurId);
+            })
+            ->when($context['gelombangFilterId'], function ($query, $gelombangId) {
+                $query->where('gelombang_pendaftaran_id', $gelombangId);
+            })
             ->orderBy('nilai_akhir', 'desc')
             ->get();
         
@@ -580,16 +708,23 @@ class NilaiSeleksiController extends Controller
             'cadangan' => $kandidat->where('status_admisi', 'cadangan')->count(),
         ];
         
-        $jalurs = \App\Models\JalurPendaftaran::where('tahun_pelajaran_id', $tahunAktif?->id)
-            ->where('is_active', true)
-            ->get();
-
         return view('admin.nilai-seleksi.pengumuman', compact(
             'kandidat',
             'stats',
-            'tahunAktif',
-            'jalurs'
-        ));
+            'tahunAktif'
+        ) + [
+            'tahunPelajarans' => $context['tahunPelajarans'],
+            'jalurs' => $context['jalurs'],
+            'gelombangs' => $context['gelombangs'],
+            'selectedTahunIdInput' => $context['selectedTahunIdInput'],
+            'selectedJalurIdInput' => $context['selectedJalurIdInput'],
+            'selectedGelombangIdInput' => $context['selectedGelombangIdInput'],
+            'contextInfo' => [
+                'tahun' => $context['selectedTahun']?->nama ?? '-',
+                'jalur' => $context['selectedJalur']?->nama ?? 'Semua Jalur',
+                'gelombang' => $context['selectedGelombang']?->nama ?? 'Semua Gelombang',
+            ],
+        ]);
     }
 
     /**

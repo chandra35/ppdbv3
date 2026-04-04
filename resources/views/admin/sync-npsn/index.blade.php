@@ -12,6 +12,13 @@
 @stop
 
 @section('content')
+<div class="alert alert-info">
+    Sync NPSN sedang memakai konteks:
+    Tahun <strong>{{ $contextInfo['tahun'] }}</strong>,
+    Jalur <strong>{{ $contextInfo['jalur'] }}</strong>,
+    Gelombang <strong>{{ $contextInfo['gelombang'] }}</strong>.
+</div>
+
 <div class="row">
     {{-- Statistik Cards --}}
     <div class="col-lg-3 col-6">
@@ -62,8 +69,30 @@
                 <label>Tahun Pelajaran</label>
                 <select name="tahun_pelajaran_id" class="form-control form-control-sm">
                     @foreach($tahunList as $tp)
-                        <option value="{{ $tp->id }}" {{ $selectedTahunId == $tp->id ? 'selected' : '' }}>
+                        <option value="{{ $tp->id }}" {{ $selectedTahunIdInput == $tp->id ? 'selected' : '' }}>
                             {{ $tp->nama }} {{ $tp->is_active ? '(Aktif)' : '' }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label>Jalur</label>
+                <select name="jalur_id" class="form-control form-control-sm">
+                    <option value="all" {{ $selectedJalurIdInput === 'all' ? 'selected' : '' }}>Semua Jalur</option>
+                    @foreach($jalurList as $jalur)
+                        <option value="{{ $jalur->id }}" {{ (string) $selectedJalurIdInput === (string) $jalur->id ? 'selected' : '' }}>
+                            {{ $jalur->nama }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label>Gelombang</label>
+                <select name="gelombang_id" class="form-control form-control-sm">
+                    <option value="all" {{ $selectedGelombangIdInput === 'all' ? 'selected' : '' }}>Semua Gelombang</option>
+                    @foreach($gelombangList as $gelombang)
+                        <option value="{{ $gelombang->id }}" {{ (string) $selectedGelombangIdInput === (string) $gelombang->id ? 'selected' : '' }}>
+                            {{ $gelombang->nama }}
                         </option>
                     @endforeach
                 </select>
@@ -81,7 +110,7 @@
                     <i class="fas fa-search mr-1"></i>Filter
                 </button>
             </div>
-            <div class="col-md-4 text-right">
+            <div class="col-md-12 text-right mt-2">
                 @if($totalBelumSync > 0)
                 <button type="button" id="btnSyncAll" class="btn btn-sm btn-info">
                     <i class="fas fa-sync-alt mr-1"></i>Sync Semua Belum Sync
@@ -227,7 +256,9 @@ $(function() {
     const csrfToken = '{{ csrf_token() }}';
     const syncOneUrl = '{{ route("admin.sync-npsn.sync-one") }}';
     const npsnListUrl = '{{ route("admin.sync-npsn.npsn-list") }}';
-    const tahunId = '{{ $selectedTahunId }}';
+    const tahunId = '{{ $selectedTahunIdInput }}';
+    const jalurId = '{{ $selectedJalurIdInput }}';
+    const gelombangId = '{{ $selectedGelombangIdInput }}';
     let cancelSync = false;
 
     // ============================================
@@ -243,7 +274,7 @@ $(function() {
         $.ajax({
             url: syncOneUrl,
             type: 'POST',
-            data: { _token: csrfToken, npsn: npsn, tahun_pelajaran_id: tahunId },
+            data: { _token: csrfToken, npsn: npsn, tahun_pelajaran_id: tahunId, jalur_id: jalurId, gelombang_id: gelombangId },
             success: function(res) {
                 if (res.success) {
                     // Update ALL rows with same NPSN
@@ -318,7 +349,7 @@ $(function() {
         $('#syncLog').show();
 
         // Fetch NPSN list
-        $.get(npsnListUrl, { tahun_pelajaran_id: tahunId }, function(res) {
+        $.get(npsnListUrl, { tahun_pelajaran_id: tahunId, jalur_id: jalurId, gelombang_id: gelombangId }, function(res) {
             if (!res.success || res.data.length === 0) {
                 $progressText.text('Tidak ada NPSN yang perlu di-sync.');
                 return;
@@ -365,7 +396,7 @@ $(function() {
                 $.ajax({
                     url: syncOneUrl,
                     type: 'POST',
-                    data: { _token: csrfToken, npsn: item.npsn, tahun_pelajaran_id: tahunId },
+                    data: { _token: csrfToken, npsn: item.npsn, tahun_pelajaran_id: tahunId, jalur_id: jalurId, gelombang_id: gelombangId },
                     timeout: 30000,
                     success: function(res) {
                         if (res.success) {

@@ -36,6 +36,14 @@
 @stop
 
 @section('content')
+<div class="alert alert-info">
+    <i class="fas fa-layer-group mr-1"></i>
+    <strong>Konteks aktif:</strong>
+    Tahun {{ $contextInfo['tahun'] }},
+    Jalur {{ $contextInfo['jalur'] }},
+    Gelombang {{ $contextInfo['gelombang'] }}.
+</div>
+
 {{-- Statistics --}}
 <div class="row">
     <div class="col-lg-4 col-md-6">

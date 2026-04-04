@@ -186,7 +186,7 @@
                             <tbody>
                                 @foreach($pendaftar->dokumen as $dokumen)
                                 <tr>
-                                    <td>{{ $dokumen->jenis_dokumen }}</td>
+                                    <td>{{ $dokumen->nama_dokumen_lengkap }}</td>
                                     <td>
                                         @if($dokumen->status == 'pending')
                                             <span class="badge badge-warning">Pending</span>
@@ -198,7 +198,7 @@
                                     </td>
                                     <td>
                                         @if($dokumen->file_path)
-                                            <a href="{{ asset('storage/' . $dokumen->file_path) }}" target="_blank" class="btn btn-info btn-xs">
+                                            <a href="{{ $dokumen->preview_url }}" target="_blank" class="btn btn-info btn-xs">
                                                 <i class="fas fa-eye"></i> Lihat
                                             </a>
                                         @endif

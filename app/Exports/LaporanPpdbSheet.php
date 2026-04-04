@@ -52,11 +52,9 @@ class LaporanPpdbSheet implements FromArray, WithTitle, WithStyles, WithColumnWi
         $rows[] = ['LAPORAN PENERIMAAN PESERTA DIDIK BARU (PPDB)'];
         $rows[] = ['Tahun Pelajaran: ' . ($this->selectedTahun?->nama ?? '-')];
 
-        $filter = '';
-        if ($this->selectedJalur) $filter .= 'Jalur: ' . $this->selectedJalur->nama . '  ';
-        if ($this->selectedGelombang) $filter .= 'Gelombang: ' . $this->selectedGelombang->nama;
-        if ($filter) $rows[] = [$filter];
-        else $rows[] = [''];
+        $filter = 'Jalur: ' . ($this->selectedJalur?->nama ?? 'Semua Jalur') . '  ';
+        $filter .= 'Gelombang: ' . ($this->selectedGelombang?->nama ?? 'Semua Gelombang');
+        $rows[] = [$filter];
 
         $rows[] = ['Dicetak: ' . now()->translatedFormat('d F Y H:i') . ' WIB'];
         $rows[] = ['']; // blank row
@@ -226,18 +224,23 @@ class LaporanPpdbSheet implements FromArray, WithTitle, WithStyles, WithColumnWi
         $rows[] = ['PILIHAN PROGRAM'];
         $this->currentRow++;
 
-        $this->headerRows[] = $this->currentRow;
-        $rows[] = ['Program', 'Total', 'Laki-laki', 'Perempuan'];
-        $this->currentRow++;
+        if (!($section['program_stats']['enabled'] ?? false)) {
+            $rows[] = ['Jalur pada konteks ini tidak menggunakan pilihan program.'];
+            $this->currentRow++;
+        } else {
+            $this->headerRows[] = $this->currentRow;
+            $rows[] = ['Program', 'Total', 'Laki-laki', 'Perempuan'];
+            $this->currentRow++;
 
-        $rows[] = ['Reguler', $section['reguler'], $section['reguler_l'], $section['reguler_p']];
-        $rows[] = ['Asrama', $section['asrama'], $section['asrama_l'], $section['asrama_p']];
-        $rows[] = ['Belum Memilih', $section['belum_memilih'], $section['belum_memilih_l'], $section['belum_memilih_p']];
-        $this->currentRow += 3;
+            foreach (($section['program_stats']['items'] ?? []) as $program) {
+                $rows[] = [$program['label'], $program['total'], $program['l'], $program['p']];
+                $this->currentRow++;
+            }
 
-        $this->totalRows[] = $this->currentRow;
-        $rows[] = ['TOTAL', $section['total'], $section['laki_laki'], $section['perempuan']];
-        $this->currentRow++;
+            $this->totalRows[] = $this->currentRow;
+            $rows[] = ['TOTAL', $section['total'], $section['laki_laki'], $section['perempuan']];
+            $this->currentRow++;
+        }
 
         $rows[] = [''];
         $this->currentRow++;
@@ -305,14 +308,19 @@ class LaporanPpdbSheet implements FromArray, WithTitle, WithStyles, WithColumnWi
         $rows[] = ['TIDAK LULUS - PILIHAN PROGRAM'];
         $this->currentRow++;
 
-        $this->headerRows[] = $this->currentRow;
-        $rows[] = ['Program', 'Total', 'Laki-laki', 'Perempuan'];
-        $this->currentRow++;
+        if (!($tidakLulusSection['program_stats']['enabled'] ?? false)) {
+            $rows[] = ['Jalur pada konteks ini tidak menggunakan pilihan program.'];
+            $this->currentRow++;
+        } else {
+            $this->headerRows[] = $this->currentRow;
+            $rows[] = ['Program', 'Total', 'Laki-laki', 'Perempuan'];
+            $this->currentRow++;
 
-        $rows[] = ['Reguler', $tidakLulusSection['reguler'] ?? 0, $tidakLulusSection['reguler_l'] ?? 0, $tidakLulusSection['reguler_p'] ?? 0];
-        $rows[] = ['Asrama', $tidakLulusSection['asrama'] ?? 0, $tidakLulusSection['asrama_l'] ?? 0, $tidakLulusSection['asrama_p'] ?? 0];
-        $rows[] = ['Belum Memilih', $tidakLulusSection['belum_memilih'] ?? 0, $tidakLulusSection['belum_memilih_l'] ?? 0, $tidakLulusSection['belum_memilih_p'] ?? 0];
-        $this->currentRow += 3;
+            foreach (($tidakLulusSection['program_stats']['items'] ?? []) as $program) {
+                $rows[] = [$program['label'], $program['total'], $program['l'], $program['p']];
+                $this->currentRow++;
+            }
+        }
 
         $rows[] = [''];
         $this->currentRow++;
@@ -337,19 +345,7 @@ class LaporanPpdbSheet implements FromArray, WithTitle, WithStyles, WithColumnWi
 
         // -- Cadangan --
         $cadanganSection = $this->stats['kelulusan_cadangan'] ?? [];
-
-        $this->sectionHeaderRows[] = $this->currentRow;
-        $rows[] = ['CADANGAN - RINCIAN'];
-        $this->currentRow++;
-
-        $this->headerRows[] = $this->currentRow;
-        $rows[] = ['Uraian', 'Jumlah'];
-        $this->currentRow++;
-
-        $rows[] = ['Total Cadangan', $cadanganSection['total'] ?? 0];
-        $rows[] = ['Laki-laki', $cadanganSection['laki_laki'] ?? 0];
-        $rows[] = ['Perempuan', $cadanganSection['perempuan'] ?? 0];
-        $this->currentRow += 3;
+        $rows = array_merge($rows, $this->buildSectionDetail($cadanganSection, 'CADANGAN'));
 
         return $rows;
     }

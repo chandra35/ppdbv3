@@ -305,7 +305,7 @@
                     <td class="col-urut">{{ $index + 1 }}</td>
                     <td class="col-psrta">{{ $cs->nomor_tes ?? '' }}</td>
                     <td class="col-nama">{{ $cs->nama_lengkap ?? '' }}</td>
-                    <td class="col-program">{{ $cs->pilihan_program ?? '-' }}</td>
+                    <td class="col-program">{{ $cs->jalurPendaftaran?->pilihan_program_aktif ? ($cs->pilihan_program ?? '') : '' }}</td>
                     @php $nilai = $room['nilaiMap'][$cs->id] ?? null; @endphp
                     @foreach($bobotList as $bobot)
                         @if($bobot->komponen === 'baca_quran')

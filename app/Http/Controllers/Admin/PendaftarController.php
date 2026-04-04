@@ -13,7 +13,12 @@ use App\Models\TahunPelajaran;
 use App\Models\ActivityLog;
 use App\Models\User;
 use App\Models\Role;
+use App\Services\EmisNisnService;
+use App\Services\NpsnService;
 use App\Services\KopSuratService;
+use App\Services\NomorService;
+use App\Services\DocumentStorageService;
+use App\Support\AdminPpdbContext;
 use App\Exports\PendaftarExport;
 use App\Exports\MoodlePendaftarExport;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -28,10 +33,16 @@ use Laravolt\Indonesia\Models\Province;
 class PendaftarController extends Controller
 {
     protected $kopSuratService;
+    protected $nomorService;
+    protected $emisService;
+    protected $documentStorageService;
 
-    public function __construct(KopSuratService $kopSuratService)
+    public function __construct(KopSuratService $kopSuratService, NomorService $nomorService, EmisNisnService $emisService, DocumentStorageService $documentStorageService)
     {
         $this->kopSuratService = $kopSuratService;
+        $this->nomorService = $nomorService;
+        $this->emisService = $emisService;
+        $this->documentStorageService = $documentStorageService;
     }
 
     /**
@@ -55,20 +66,15 @@ class PendaftarController extends Controller
 
     public function index(Request $request)
     {
-        // Get active tahun pelajaran
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
-        
-        // Get default jalur from active tahun pelajaran
-        $defaultJalurId = null;
-        if ($tahunAktif) {
-            $defaultJalur = JalurPendaftaran::where('tahun_pelajaran_id', $tahunAktif->id)
-                ->orderBy('urutan')
-                ->first();
-            $defaultJalurId = $defaultJalur?->id;
-        }
-        
-        // Use request jalur_id or default to active tahun's jalur
-        $selectedJalurId = $request->filled('jalur_id') ? $request->jalur_id : ($request->has('jalur_id') ? null : $defaultJalurId);
+        $context = AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
+
+        $tahunAktif = $context['selectedTahun'];
+        $selectedJalurId = $context['selectedJalurIdInput'];
+        $selectedGelombangId = $context['selectedGelombangIdInput'];
         
         $query = CalonSiswa::with(['user', 'jalurPendaftaran', 'gelombangPendaftaran', 'dokumen']);
 
@@ -90,13 +96,13 @@ class PendaftarController extends Controller
         }
 
         // Filter by jalur
-        if ($selectedJalurId) {
-            $query->where('jalur_pendaftaran_id', $selectedJalurId);
+        if ($context['jalurFilterId']) {
+            $query->where('jalur_pendaftaran_id', $context['jalurFilterId']);
         }
 
         // Filter by gelombang
-        if ($request->filled('gelombang_id')) {
-            $query->where('gelombang_pendaftaran_id', $request->gelombang_id);
+        if ($context['gelombangFilterId']) {
+            $query->where('gelombang_pendaftaran_id', $context['gelombangFilterId']);
         }
 
         // Filter by status
@@ -166,23 +172,26 @@ class PendaftarController extends Controller
         }
         
         // Get jalur list for filter - prioritize active tahun pelajaran
-        $jalurList = JalurPendaftaran::with('tahunPelajaran')
-            ->orderByRaw('(SELECT is_active FROM tahun_pelajarans WHERE tahun_pelajarans.id = jalur_pendaftaran.tahun_pelajaran_id) DESC')
-            ->orderByDesc(function ($query) {
-                $query->select('nama')
-                      ->from('tahun_pelajarans')
-                      ->whereColumn('tahun_pelajarans.id', 'jalur_pendaftaran.tahun_pelajaran_id')
-                      ->limit(1);
-            })
-            ->orderBy('urutan')
-            ->get();
-            
-        // Get gelombang list for filter - grouped by jalur
-        $gelombangList = GelombangPendaftaran::with('jalur.tahunPelajaran')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $jalurList = $context['jalurs'];
+        $gelombangList = $context['allGelombangs'];
 
-        return view('admin.pendaftar.index', compact('pendaftars', 'jalurList', 'gelombangList', 'selectedJalurId', 'sortBy', 'sortDir'));
+        return view('admin.pendaftar.index', compact(
+            'pendaftars',
+            'jalurList',
+            'gelombangList',
+            'selectedJalurId',
+            'selectedGelombangId',
+            'sortBy',
+            'sortDir'
+        ) + [
+            'tahunAktif' => $tahunAktif,
+            'tahunPelajaranList' => $context['tahunPelajarans'],
+            'contextInfo' => [
+                'tahun' => $context['selectedTahun']?->nama ?? '-',
+                'jalur' => $context['selectedJalur']?->nama ?? 'Semua Jalur',
+                'gelombang' => $context['selectedGelombang']?->nama ?? 'Semua Gelombang',
+            ],
+        ]);
     }
 
     /**
@@ -190,19 +199,27 @@ class PendaftarController extends Controller
      */
     public function export(Request $request)
     {
+        $context = AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
+
         $type = $request->get('type', 'all'); // 'all' or 'with_nomor_tes'
-        $jalurId = $request->get('jalur_id');
-        $gelombangId = $request->get('gelombang_id');
+        $tahunAktif = $context['selectedTahun'];
+        $jalurId = $context['jalurFilterId'];
+        $gelombangId = $context['gelombangFilterId'];
         
-        // Get tahun pelajaran aktif for filename
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
         $tahunLabel = $tahunAktif ? str_replace('/', '-', $tahunAktif->nama) : date('Y');
         
         $filename = $type === 'with_nomor_tes' 
             ? "Peserta_Ujian_PPDB_{$tahunLabel}.xlsx"
             : "Data_Pendaftar_PPDB_{$tahunLabel}.xlsx";
         
-        return Excel::download(new PendaftarExport($type, $jalurId, $gelombangId), $filename);
+        return Excel::download(
+            new PendaftarExport($type, $tahunAktif?->id, $jalurId, $gelombangId),
+            $filename
+        );
     }
 
     /**
@@ -211,17 +228,22 @@ class PendaftarController extends Controller
      */
     public function exportMoodle(Request $request)
     {
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        $context = AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
+        $tahunAktif = $context['selectedTahun'];
         $tahunNama = $tahunAktif->nama ?? date('Y');
         $tahunShort = preg_match('/(\d{4})\/\d{4}/', $tahunNama, $m) ? $m[1] : date('Y');
 
-        $jalurId = $request->get('jalur_id');
-        $gelombangId = $request->get('gelombang_id');
+        $jalurId = $context['jalurFilterId'];
+        $gelombangId = $context['gelombangFilterId'];
 
         $filename = 'moodle-pendaftar-' . $tahunShort . '.xlsx';
 
         return Excel::download(
-            new MoodlePendaftarExport($tahunShort, $jalurId, $gelombangId),
+            new MoodlePendaftarExport($tahunShort, $tahunAktif?->id, $jalurId, $gelombangId),
             $filename
         );
     }
@@ -231,14 +253,28 @@ class PendaftarController extends Controller
      */
     public function map(Request $request)
     {
+        $context = AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
+        $tahunAktif = $context['selectedTahun'];
+
         $query = CalonSiswa::query()
             ->whereNotNull('registration_latitude')
             ->whereNotNull('registration_longitude')
             ->with(['jalurPendaftaran']);
+
+        if ($tahunAktif) {
+            $query->where('tahun_pelajaran_id', $tahunAktif->id);
+        }
         
-        // Filter by jalur
-        if ($request->filled('jalur_id')) {
-            $query->where('jalur_pendaftaran_id', $request->jalur_id);
+        if ($context['jalurFilterId']) {
+            $query->where('jalur_pendaftaran_id', $context['jalurFilterId']);
+        }
+
+        if ($context['gelombangFilterId']) {
+            $query->where('gelombang_pendaftaran_id', $context['gelombangFilterId']);
         }
         
         $pendaftars = $query->select([
@@ -269,9 +305,20 @@ class PendaftarController extends Controller
             ];
         });
         
-        $jalurList = JalurPendaftaran::orderBy('urutan')->get();
+        $jalurList = $context['jalurs'];
         
-        return view('admin.pendaftar.map', compact('pendaftars', 'jalurList'));
+        return view('admin.pendaftar.map', compact('pendaftars', 'jalurList') + [
+            'tahunAktif' => $tahunAktif,
+            'tahunPelajaranList' => $context['tahunPelajarans'],
+            'selectedJalurId' => $context['selectedJalurIdInput'],
+            'selectedGelombangId' => $context['selectedGelombangIdInput'],
+            'gelombangList' => $context['allGelombangs'],
+            'contextInfo' => [
+                'tahun' => $context['selectedTahun']?->nama ?? '-',
+                'jalur' => $context['selectedJalur']?->nama ?? 'Semua Jalur',
+                'gelombang' => $context['selectedGelombang']?->nama ?? 'Semua Gelombang',
+            ],
+        ]);
     }
 
     /**
@@ -284,14 +331,16 @@ class PendaftarController extends Controller
             abort(403, 'Anda tidak memiliki izin untuk menambah pendaftar');
         }
 
-        // Get tahun pelajaran aktif
-        $tahunPelajaran = TahunPelajaran::active()->first();
+        $context = AdminPpdbContext::resolve(request('tahun_pelajaran_id'), request('jalur_id'), request('gelombang_id'));
+
+        // Get tahun pelajaran aktif / konteks
+        $tahunPelajaran = $context['selectedTahun'];
         if (!$tahunPelajaran) {
             return redirect()->route('admin.pendaftar.index')
                 ->with('error', 'Tidak ada tahun pelajaran aktif. Silakan aktifkan tahun pelajaran terlebih dahulu.');
         }
 
-        // Get jalur pendaftaran (aktif atau tidak untuk manual input)
+        // Get jalur pendaftaran pada tahun konteks (aktif atau tidak untuk manual input)
         $jalurList = JalurPendaftaran::where('tahun_pelajaran_id', $tahunPelajaran->id)
             ->with('gelombang')
             ->orderBy('urutan')
@@ -305,7 +354,206 @@ class PendaftarController extends Controller
         // Get provinces for address selection
         $provinces = Province::orderBy('name')->get();
 
-        return view('admin.pendaftar.create', compact('tahunPelajaran', 'jalurList', 'provinces'));
+        $contextInfo = [
+            'tahun' => $context['selectedTahun']?->nama ?? '-',
+            'jalur' => $context['selectedJalur']?->nama ?? 'Belum dipilih',
+            'gelombang' => $context['selectedGelombang']?->nama ?? 'Belum dipilih',
+        ];
+
+        return view('admin.pendaftar.create', compact(
+            'tahunPelajaran',
+            'jalurList',
+            'provinces',
+            'contextInfo'
+        ) + [
+            'selectedJalurIdInput' => $context['selectedJalurIdInput'],
+            'selectedGelombangIdInput' => $context['selectedGelombangIdInput'],
+        ]);
+    }
+
+    public function cekNisnManual(Request $request)
+    {
+        $this->checkPermission('pendaftar.create');
+
+        $request->validate([
+            'nisn' => 'required|string|size:10',
+        ]);
+
+        $nisn = $request->nisn;
+
+        $existing = CalonSiswa::where('nisn', $nisn)->first();
+        if ($existing) {
+            return response()->json([
+                'success' => false,
+                'message' => 'NISN sudah terdaftar. Silakan buka data pendaftar yang sudah ada.',
+                'already_registered' => true,
+                'existing_id' => $existing->id,
+            ], 422);
+        }
+
+        try {
+            $result = $this->emisService->cekNisn($nisn);
+
+            if (!($result['success'] ?? false) || !($result['data'] ?? null)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'NISN tidak ditemukan di Kemdikbud/Kemenag. Operator tetap bisa melanjutkan input manual.',
+                    'manual_allowed' => true,
+                ], 404);
+            }
+
+            $transformed = $this->transformEmisDataForManualForm($nisn, $result['data']);
+            $sources = [];
+            if (!empty($result['data']['kemdikbud'])) {
+                $sources[] = 'Kemdikbud Pusdatin';
+            }
+            if (!empty($result['data']['kemenag'])) {
+                $sources[] = 'Kemenag PPDB';
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data NISN ditemukan dan siap mengisi form otomatis.',
+                'data' => $transformed,
+                'sources' => $sources,
+                'source_label' => implode(' & ', $sources),
+                'is_eligible' => $transformed['tingkat_pendidikan'] === 9,
+                'warning' => $transformed['tingkat_pendidikan'] !== 9 && $transformed['tingkat_pendidikan']
+                    ? 'Status kelas terdeteksi bukan kelas 9. Mohon periksa kembali sebelum menyimpan.'
+                    : null,
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghubungi layanan cek NISN. Operator tetap bisa lanjut input manual.',
+                'manual_allowed' => true,
+            ], 500);
+        }
+    }
+
+    private function transformEmisDataForManualForm(string $nisn, array $emisData): array
+    {
+        $kemdikbud = $emisData['kemdikbud'] ?? null;
+        $kemenag = $emisData['kemenag'] ?? null;
+
+        $tingkatPendidikan = null;
+        $levelName = null;
+
+        if ($kemdikbud && isset($kemdikbud['tingkat_pendidikan'])) {
+            $tingkatPendidikan = (int) $kemdikbud['tingkat_pendidikan'];
+        } elseif ($kemenag && isset($kemenag['level_id'])) {
+            $tingkatPendidikan = (int) $kemenag['level_id'];
+            $levelName = $kemenag['level_name'] ?? null;
+        }
+
+        $jenisKelamin = null;
+        if (isset($kemdikbud['jenis_kelamin'])) {
+            $jenisKelamin = $kemdikbud['jenis_kelamin'];
+        } elseif (isset($kemenag['gender_id'])) {
+            $jenisKelamin = (string) $kemenag['gender_id'] === '1' ? 'L' : 'P';
+        }
+
+        $npsnValue = $kemdikbud['npsn'] ?? ($kemenag['npsn'] ?? null);
+        $npsnDetail = null;
+        if ($npsnValue && strlen($npsnValue) === 8) {
+            try {
+                $npsnService = app(NpsnService::class);
+                $npsnResult = $npsnService->cekNpsn($npsnValue);
+                if (($npsnResult['success'] ?? false) && !empty($npsnResult['data'])) {
+                    $npsnDetail = $npsnResult['data'];
+                }
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        return [
+            'nisn' => $kemdikbud['nisn'] ?? ($kemenag['nisn'] ?? $nisn),
+            'nik' => $kemdikbud['nik'] ?? ($kemenag['nik'] ?? null),
+            'nama_lengkap' => $kemdikbud['nama'] ?? ($kemenag['full_name'] ?? null),
+            'tempat_lahir' => $kemdikbud['tempat_lahir'] ?? ($kemenag['birth_place'] ?? null),
+            'tanggal_lahir' => $kemdikbud['tanggal_lahir'] ?? ($kemenag['birth_date'] ?? null),
+            'jenis_kelamin' => $jenisKelamin,
+            'agama' => $this->mapAgama($kemenag['religion_id'] ?? null),
+            'nama_sekolah_asal' => $npsnDetail['nama_sekolah'] ?? ($kemdikbud['sekolah'] ?? ($kemenag['institution_name'] ?? null)),
+            'npsn_asal_sekolah' => $npsnValue,
+            'nsm_asal_sekolah' => $kemenag['institution_nsm'] ?? null,
+            'alamat_siswa' => $kemenag['address'] ?? null,
+            'rt_siswa' => $kemenag['rt'] ?? null,
+            'rw_siswa' => $kemenag['rw'] ?? null,
+            'kodepos_siswa' => $kemenag['postal_code'] ?? null,
+            'provinsi_id_siswa' => $kemenag['province_code'] ?? null,
+            'kabupaten_id_siswa' => $kemenag['city_code'] ?? null,
+            'kecamatan_id_siswa' => $kemenag['district_code'] ?? null,
+            'kelurahan_id_siswa' => $kemenag['village_code'] ?? null,
+            'nama_ayah' => $kemenag['father_name'] ?? null,
+            'nama_ibu' => $kemdikbud['nama_ibu_kandung'] ?? ($kemenag['mother_name'] ?? null),
+            'status_dalam_keluarga' => $kemenag['child_status'] ?? null,
+            'anak_ke' => $kemenag['child_number'] ?? null,
+            'jumlah_saudara' => $kemenag['sibling_count'] ?? null,
+            'transportasi' => $kemenag['transportation'] ?? null,
+            'jarak_ke_sekolah' => $kemenag['distance_to_school'] ?? null,
+            'status_sekolah_asal' => isset($npsnDetail['status']) ? strtoupper($npsnDetail['status']) : null,
+            'bentuk_sekolah_asal' => $npsnDetail['bentuk_pendidikan'] ?? null,
+            'akreditasi_sekolah_asal' => $npsnDetail['akreditasi'] ?? null,
+            'alamat_sekolah_asal' => $npsnDetail['alamat'] ?? null,
+            'kelurahan_sekolah_asal' => $npsnDetail['kelurahan'] ?? null,
+            'kecamatan_sekolah_asal' => $npsnDetail['kecamatan'] ?? null,
+            'kabupaten_sekolah_asal' => $npsnDetail['kabupaten'] ?? null,
+            'provinsi_sekolah_asal' => $npsnDetail['provinsi'] ?? null,
+            'tingkat_pendidikan' => $tingkatPendidikan,
+            'level_name' => $levelName,
+        ];
+    }
+
+    private function mapAgama($religionId): ?string
+    {
+        return match ((string) $religionId) {
+            '1' => 'Islam',
+            '2' => 'Kristen',
+            '3' => 'Katolik',
+            '4' => 'Hindu',
+            '5' => 'Buddha',
+            '6' => 'Konghucu',
+            default => null,
+        };
+    }
+
+    private function detectBrowserName(?string $userAgent): string
+    {
+        if (!$userAgent) {
+            return 'Unknown';
+        }
+
+        if (preg_match('/MSIE/i', $userAgent) || preg_match('/Trident/i', $userAgent)) {
+            return 'Internet Explorer';
+        }
+        if (preg_match('/Edge/i', $userAgent)) {
+            return 'Edge';
+        }
+        if (preg_match('/Edg/i', $userAgent)) {
+            return 'Microsoft Edge';
+        }
+        if (preg_match('/Firefox/i', $userAgent)) {
+            return 'Firefox';
+        }
+        if (preg_match('/Chrome/i', $userAgent)) {
+            if (preg_match('/OPR/i', $userAgent)) {
+                return 'Opera';
+            }
+
+            return 'Chrome';
+        }
+        if (preg_match('/Safari/i', $userAgent)) {
+            return 'Safari';
+        }
+        if (preg_match('/Opera/i', $userAgent)) {
+            return 'Opera';
+        }
+
+        return Str::limit($userAgent, 100, '');
     }
 
     /**
@@ -346,6 +594,7 @@ class PendaftarController extends Controller
             // Data Orang Tua Wajib
             'nama_ayah' => 'required|string|max:100',
             'nama_ibu' => 'required|string|max:100',
+            'email' => 'nullable|email|unique:users,email|unique:calon_siswas,email',
         ], [
             'nisn.unique' => 'NISN sudah terdaftar dalam sistem',
             'nisn.size' => 'NISN harus 10 digit',
@@ -370,20 +619,33 @@ class PendaftarController extends Controller
             // Get jalur & gelombang
             $jalur = JalurPendaftaran::findOrFail($request->jalur_pendaftaran_id);
             $gelombang = GelombangPendaftaran::findOrFail($request->gelombang_pendaftaran_id);
-            $tahunPelajaran = TahunPelajaran::active()->first();
+            $tahunPelajaran = TahunPelajaran::find($jalur->tahun_pelajaran_id) ?? TahunPelajaran::active()->first();
 
-            // Generate nomor registrasi dari gelombang (konsisten dengan registrasi online)
-            $nomorRegistrasi = $gelombang->generateNomorRegistrasi();
+            if ($gelombang->jalur_id !== $jalur->id) {
+                return back()->withErrors([
+                    'gelombang_pendaftaran_id' => 'Gelombang tidak sesuai dengan jalur yang dipilih.'
+                ])->withInput();
+            }
+
+            // Generate nomor registrasi dari service agar konsisten dengan rule baru dan fallback legacy
+            $nomorRegistrasi = $this->nomorService->generateNomorRegistrasi(
+                new CalonSiswa([
+                    'jalur_pendaftaran_id' => $jalur->id,
+                    'gelombang_pendaftaran_id' => $gelombang->id,
+                    'tahun_pelajaran_id' => $tahunPelajaran->id,
+                ])
+            );
             
             // Generate username & password
             $username = $request->nisn;
             $password = $this->generateSecurePassword(8);
             $hashedPassword = Hash::make($password);
+            $email = trim((string) $request->email) !== '' ? trim((string) $request->email) : ($request->nisn . '@ppdb.local');
 
             // Create user account
             $user = User::create([
                 'name' => $request->nama_lengkap,
-                'email' => $request->email ?? $request->nisn . '@ppdb.local',
+                'email' => $email,
                 'password' => $hashedPassword,
             ]);
             
@@ -421,7 +683,7 @@ class PendaftarController extends Controller
                 'tanggal_lahir' => $request->tanggal_lahir,
                 'agama' => $request->agama,
                 'nomor_hp' => $nomorHp,
-                'email' => $request->email,
+                'email' => $email,
                 
                 // Data Tambahan
                 'jumlah_saudara' => $request->jumlah_saudara,
@@ -461,7 +723,7 @@ class PendaftarController extends Controller
                 'registration_longitude' => $request->registration_longitude,
                 'registration_ip' => $request->ip(),
                 'registration_device' => 'Admin Manual Input',
-                'registration_browser' => $request->userAgent(),
+                'registration_browser' => $this->detectBrowserName($request->userAgent()),
             ]);
 
             // Create calon ortu record
@@ -504,10 +766,6 @@ class PendaftarController extends Controller
             $calonSiswa->update([
                 'data_ortu_completed' => true,
             ]);
-
-            // Update kuota terisi
-            $jalur->increment('kuota_terisi');
-            $gelombang->increment('kuota_terisi');
 
             // Log activity
             ActivityLog::create([
@@ -559,21 +817,6 @@ class PendaftarController extends Controller
         }
     }
 
-    /**
-     * Generate nomor registrasi
-     */
-    private function generateNomorRegistrasi(JalurPendaftaran $jalur): string
-    {
-        $prefix = $jalur->prefix_nomor ?? 'REG';
-        $counter = $jalur->counter_nomor + 1;
-        
-        // Update counter
-        $jalur->update(['counter_nomor' => $counter]);
-        
-        // Format: PREFIX-YYYYMM-XXXXX
-        return $prefix . '-' . date('Ym') . '-' . str_pad($counter, 5, '0', STR_PAD_LEFT);
-    }
-
     public function getDokumenList($id)
     {
         $pendaftar = CalonSiswa::with(['dokumen.verifiedBy'])->findOrFail($id);
@@ -588,6 +831,7 @@ class PendaftarController extends Controller
                 'verified_by_name' => $dok->verifiedBy ? $dok->verifiedBy->name : null,
                 'verified_at' => $dok->verified_at,
                 'file_path' => $dok->file_path,
+                'file_url' => $dok->file_url,
                 'mime_type' => $dok->mime_type,
                 'file_size' => $dok->file_size_formatted,
                 'nama_file' => $dok->nama_file,
@@ -631,18 +875,9 @@ class PendaftarController extends Controller
         $wajibLokasiRegistrasi = $settings?->wajib_lokasi_registrasi ?? false;
         
         // Map document types to labels
-        $dokumenLabels = [
-            'kk' => 'Kartu Keluarga',
-            'akta_lahir' => 'Akta Kelahiran',
-            'ijazah' => 'Ijazah/SKL',
-            'foto' => 'Pas Foto',
-            'ktp_ortu' => 'KTP Orang Tua',
-            'skhun' => 'SKHUN',
-            'raport' => 'Raport',
-            'surat_sehat' => 'Surat Keterangan Sehat',
-            'surat_kelakuan_baik' => 'Surat Kelakuan Baik',
-            'kartu_pelajar' => 'Kartu Pelajar/NISN',
-        ];
+        $dokumenLabels = CalonDokumen::DOKUMEN_UTAMA;
+        $adminUploadDokumenOptions = CalonDokumen::getAdminUploadOptions();
+        $adminUploadDokumenGroups = CalonDokumen::getAdminUploadOptionGroups();
         
         // Get dokumen tambahan
         $dokumenTambahanOptions = \App\Models\CalonDokumen::DOKUMEN_TAMBAHAN;
@@ -650,7 +885,7 @@ class PendaftarController extends Controller
             ->whereIn('jenis_dokumen', array_keys($dokumenTambahanOptions))
             ->values();
         
-        return view('admin.pendaftar.show', compact('pendaftar', 'requiredDocs', 'dokumenLabels', 'dokumenTambahanOptions', 'dokumenTambahan', 'wajibLokasiRegistrasi'));
+        return view('admin.pendaftar.show', compact('pendaftar', 'requiredDocs', 'dokumenLabels', 'dokumenTambahanOptions', 'dokumenTambahan', 'wajibLokasiRegistrasi', 'adminUploadDokumenOptions', 'adminUploadDokumenGroups'));
     }
 
     public function verify(Request $request, $id)
@@ -1133,6 +1368,11 @@ class PendaftarController extends Controller
     public function edit($id)
     {
         $pendaftar = CalonSiswa::with(['user', 'jalurPendaftaran', 'gelombangPendaftaran', 'ortu'])->findOrFail($id);
+        $jalurAktifPendaftar = $pendaftar->jalurPendaftaran;
+        $pilihanProgramOptions = collect($jalurAktifPendaftar?->pilihan_program_options ?? [])
+            ->filter(fn ($option) => filled($option))
+            ->values()
+            ->all();
         
         // Get jalur list
         $jalurList = JalurPendaftaran::with('tahunPelajaran')
@@ -1153,7 +1393,13 @@ class PendaftarController extends Controller
         // Get provinces for Laravolt
         $provinces = \Laravolt\Indonesia\Models\Province::orderBy('name')->get();
         
-        return view('admin.pendaftar.edit', compact('pendaftar', 'jalurList', 'gelombangList', 'provinces'));
+        return view('admin.pendaftar.edit', compact(
+            'pendaftar',
+            'jalurList',
+            'gelombangList',
+            'provinces',
+            'pilihanProgramOptions'
+        ));
     }
     
     /**
@@ -1163,8 +1409,14 @@ class PendaftarController extends Controller
     {
         $pendaftar = CalonSiswa::with(['user', 'ortu'])->findOrFail($id);
         $oldValues = $pendaftar->toArray();
+        $jalurAktifPendaftar = $pendaftar->jalurPendaftaran;
+        $pilihanProgramAktif = (bool) ($jalurAktifPendaftar?->pilihan_program_aktif);
+        $pilihanProgramOptions = collect($jalurAktifPendaftar?->pilihan_program_options ?? [])
+            ->filter(fn ($option) => filled($option))
+            ->values()
+            ->all();
         
-        $validated = $request->validate([
+        $rules = [
             'nama_lengkap' => 'required|string|max:255',
             // NISN tidak di-update (disabled di form)
             'nik' => 'required|digits:16',
@@ -1185,7 +1437,6 @@ class PendaftarController extends Controller
             // Email updated via user
             'jalur_pendaftaran_id' => 'nullable|exists:jalur_pendaftaran,id',
             'gelombang_pendaftaran_id' => 'nullable|exists:gelombang_pendaftaran,id',
-            'pilihan_program' => 'required|in:Reguler,Asrama',
             // Data Orang Tua
             'no_kk' => 'nullable|digits:16',
             // Data Orang Tua - Ayah
@@ -1217,7 +1468,16 @@ class PendaftarController extends Controller
             'status_sekolah_asal' => 'nullable|in:NEGERI,SWASTA',
             'bentuk_sekolah_asal' => 'nullable|string|max:50',
             'akreditasi_sekolah_asal' => 'nullable|string|max:1',
-        ], [
+        ];
+
+        if ($pilihanProgramAktif && !empty($pilihanProgramOptions)) {
+            $escapedOptions = array_map(fn ($option) => str_replace(',', '\,', $option), $pilihanProgramOptions);
+            $rules['pilihan_program'] = 'required|in:' . implode(',', $escapedOptions);
+        } else {
+            $rules['pilihan_program'] = 'nullable|string|max:100';
+        }
+
+        $validated = $request->validate($rules, [
             'nik.digits' => 'NIK harus 16 digit angka.',
             'nik_ayah.digits' => 'NIK Ayah harus 16 digit angka.',
             'nik_ibu.digits' => 'NIK Ibu harus 16 digit angka.',
@@ -1225,6 +1485,7 @@ class PendaftarController extends Controller
             'nomor_hp.regex' => 'Format No. HP harus 08xxxxxxxxxx (0 diikuti 9-12 digit).',
             'hp_ayah.regex' => 'Format No. HP Ayah harus 08xxxxxxxxxx (0 diikuti 9-12 digit).',
             'hp_ibu.regex' => 'Format No. HP Ibu harus 08xxxxxxxxxx (0 diikuti 9-12 digit).',
+            'pilihan_program.in' => 'Pilihan program tidak sesuai dengan pengaturan jalur pendaftaran aktif.',
         ]);
 
         // Check if phone number already registered by other user
@@ -1275,7 +1536,7 @@ class PendaftarController extends Controller
             'kelurahan_id_siswa' => $validated['kelurahan_id_siswa'],
             'kodepos_siswa' => $validated['kodepos_siswa'] ?? null,
             'nomor_hp' => $validated['nomor_hp'],
-            'pilihan_program' => $validated['pilihan_program'],
+            'pilihan_program' => $pilihanProgramAktif ? ($validated['pilihan_program'] ?? null) : null,
             'nama_sekolah_asal' => $validated['nama_sekolah_asal'] ?? null,
             'npsn_asal_sekolah' => $validated['npsn_asal_sekolah'] ?? null,
             'alamat_sekolah_asal' => $validated['alamat_sekolah_asal'] ?? null,
@@ -1533,7 +1794,8 @@ class PendaftarController extends Controller
             'kota' => $sekolahSettings->city->name ?? config('app.school_city', ''),
         ];
         
-        $pdf = Pdf::loadView('pendaftar.pdf.bukti-registrasi', compact('calonSiswa', 'sekolah', 'kopHtml', 'qrCode', 'sekolahSettings'));
+        $pdf = Pdf::loadView('pendaftar.pdf.bukti-registrasi', compact('calonSiswa', 'sekolah', 'kopHtml', 'qrCode', 'sekolahSettings'))
+            ->setOption('isRemoteEnabled', true);
         
         $filename = 'bukti-registrasi-' . preg_replace('/[\/\\\:*?"<>|]/', '-', $calonSiswa->nomor_registrasi) . '.pdf';
         
@@ -1628,6 +1890,7 @@ class PendaftarController extends Controller
         $isPdf = true;
         
         $pdf = Pdf::loadView('pendaftar.pdf.kartu-ujian', compact('calonSiswa', 'sekolah', 'password', 'kopHtml', 'isPdf'))
+            ->setOption('isRemoteEnabled', true)
             ->setPaper([0, 0, 298, 421], 'landscape');
         
         $filename = 'kartu-ujian-' . preg_replace('/[\/\\\:*?"<>|]/', '-', $calonSiswa->nomor_tes ?? $calonSiswa->nomor_registrasi) . '.pdf';
@@ -1660,7 +1923,7 @@ class PendaftarController extends Controller
         }
 
         $request->validate([
-            'jenis_dokumen' => 'required|string',
+            'jenis_dokumen' => 'required|string|in:' . implode(',', array_keys(CalonDokumen::getAdminUploadOptions())),
             'catatan' => 'nullable|string|max:500',
         ]);
 
@@ -1676,19 +1939,16 @@ class PendaftarController extends Controller
             $calonSiswa = CalonSiswa::findOrFail($id);
             
             $jenisDokumen = $request->jenis_dokumen;
-            $filePath = null;
-            $originalName = null;
-            $fileSize = 0;
-            $mimeType = null;
+            $stored = null;
             
             // Handle file upload (from camera base64 or file upload)
             if ($request->filled('captured_image_data') && str_starts_with($request->captured_image_data, 'data:image')) {
                 // Base64 image from camera
-                $base64Image = $request->captured_image_data;
-                $filePath = $this->saveBase64Image($base64Image, $calonSiswa->id, $jenisDokumen);
-                $originalName = 'camera_capture_' . date('Ymd_His') . '.jpg';
-                $fileSize = strlen(base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $base64Image)));
-                $mimeType = 'image/jpeg';
+                $stored = $this->documentStorageService->storeBase64Image($request->captured_image_data, $calonSiswa, $jenisDokumen, [
+                    'filename' => $jenisDokumen . '_' . time() . '_' . Str::random(8) . '.jpg',
+                    'original_name' => 'camera_capture_' . date('Ymd_His') . '.jpg',
+                    'local_directory' => "dokumen/{$calonSiswa->id}",
+                ]);
             } elseif ($request->hasFile('file')) {
                 // Regular file upload - pas foto hanya boleh format gambar
                 if ($jenisDokumen === 'foto') {
@@ -1700,10 +1960,9 @@ class PendaftarController extends Controller
                     $request->validate(['file' => 'file|mimes:jpg,jpeg,png,pdf|max:5120']);
                 }
                 $file = $request->file('file');
-                $filePath = $file->store("dokumen/{$calonSiswa->id}", 'public');
-                $originalName = $file->getClientOriginalName();
-                $fileSize = $file->getSize();
-                $mimeType = $file->getMimeType();
+                $stored = $this->documentStorageService->storeUploadedFile($file, $calonSiswa, $jenisDokumen, [
+                    'local_directory' => "dokumen/{$calonSiswa->id}",
+                ]);
             }
 
             // Semua dokumen yang diupload admin langsung valid
@@ -1716,15 +1975,17 @@ class PendaftarController extends Controller
 
             if ($dokumen) {
                 // Delete old file if exists
-                if ($dokumen->file_path && Storage::disk('public')->exists($dokumen->file_path)) {
-                    Storage::disk('public')->delete($dokumen->file_path);
-                }
+                $this->documentStorageService->delete($dokumen);
 
                 $updateData = [
-                    'file_path' => $filePath,
-                    'nama_file' => $originalName,
-                    'file_size' => $fileSize,
-                    'mime_type' => $mimeType,
+                    'file_path' => $stored['file_path'],
+                    'remote_file_id' => $stored['remote_file_id'],
+                    'remote_file_url' => $stored['remote_file_url'],
+                    'nama_file' => $stored['nama_file'],
+                    'file_size' => $stored['file_size'],
+                    'mime_type' => $stored['mime_type'],
+                    'storage_disk' => $stored['storage_disk'],
+                    'nama_dokumen' => CalonDokumen::JENIS_DOKUMEN[$jenisDokumen] ?? $jenisDokumen,
                     'status_verifikasi' => 'valid',
                     'catatan_verifikasi' => null,
                     'uploaded_by' => auth()->id(),
@@ -1739,10 +2000,14 @@ class PendaftarController extends Controller
                 $createData = [
                     'calon_siswa_id' => $calonSiswa->id,
                     'jenis_dokumen' => $jenisDokumen,
-                    'nama_file' => $originalName,
-                    'file_path' => $filePath,
-                    'file_size' => $fileSize,
-                    'mime_type' => $mimeType,
+                    'nama_dokumen' => CalonDokumen::JENIS_DOKUMEN[$jenisDokumen] ?? $jenisDokumen,
+                    'nama_file' => $stored['nama_file'],
+                    'file_path' => $stored['file_path'],
+                    'remote_file_id' => $stored['remote_file_id'],
+                    'remote_file_url' => $stored['remote_file_url'],
+                    'file_size' => $stored['file_size'],
+                    'mime_type' => $stored['mime_type'],
+                    'storage_disk' => $stored['storage_disk'],
                     'status_verifikasi' => 'valid',
                     'uploaded_by' => auth()->id(),
                     'uploaded_at' => now(),
@@ -1785,6 +2050,7 @@ class PendaftarController extends Controller
                     'id' => $dokumen->id,
                     'jenis_dokumen' => $dokumen->jenis_dokumen,
                     'file_path' => $dokumen->file_path,
+                    'file_url' => $dokumen->file_url,
                     'status_verifikasi' => $dokumen->status_verifikasi,
                 ]
             ]);
@@ -1795,25 +2061,6 @@ class PendaftarController extends Controller
                 'message' => 'Gagal upload dokumen: ' . $e->getMessage()
             ], 500);
         }
-    }
-
-    /**
-     * Save base64 image from camera capture
-     */
-    private function saveBase64Image($base64Image, $calonSiswaId, $jenisDokumen)
-    {
-        // Remove data:image prefix
-        $image = preg_replace('#^data:image/\w+;base64,#i', '', $base64Image);
-        $image = base64_decode($image);
-        
-        // Generate filename
-        $filename = $jenisDokumen . '_' . time() . '_' . Str::random(8) . '.jpg';
-        $path = "dokumen/{$calonSiswaId}/{$filename}";
-        
-        // Save to storage
-        Storage::disk('public')->put($path, $image);
-        
-        return $path;
     }
 
     /**

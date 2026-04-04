@@ -249,6 +249,9 @@
                         <input type="hidden" name="token" value="{{ $token }}">
                         <input type="hidden" name="extension" value="{{ $extension }}">
                         <input type="hidden" name="mapel" value="{{ $mapel }}">
+                        <input type="hidden" name="tahun_pelajaran_id" value="{{ $returnContext['tahun_pelajaran_id'] }}">
+                        <input type="hidden" name="jalur_id" value="{{ $returnContext['jalur_id'] }}">
+                        <input type="hidden" name="gelombang_id" value="{{ $returnContext['gelombang_id'] }}">
                         <button type="submit" class="btn btn-success btn-lg" id="btnConfirm"
                             {{ $importable == 0 ? 'disabled' : '' }}>
                             <i class="fas fa-check-circle mr-1"></i>
@@ -261,6 +264,9 @@
                         @csrf
                         <input type="hidden" name="token" value="{{ $token }}">
                         <input type="hidden" name="extension" value="{{ $extension }}">
+                        <input type="hidden" name="tahun_pelajaran_id" value="{{ $returnContext['tahun_pelajaran_id'] }}">
+                        <input type="hidden" name="jalur_id" value="{{ $returnContext['jalur_id'] }}">
+                        <input type="hidden" name="gelombang_id" value="{{ $returnContext['gelombang_id'] }}">
                         <button type="submit" class="btn btn-danger btn-lg">
                             <i class="fas fa-times-circle mr-1"></i> Batalkan
                         </button>

@@ -69,6 +69,69 @@
 
 @section('content')
 <div class="container-fluid">
+    <div class="alert alert-info">
+        <i class="fas fa-layer-group mr-1"></i>
+        <strong>Konteks aktif:</strong>
+        Tahun {{ $contextInfo['tahun'] }},
+        Jalur {{ $contextInfo['jalur'] }},
+        Gelombang {{ $contextInfo['gelombang'] }}.
+    </div>
+
+    <div class="card card-outline card-info">
+        <div class="card-body">
+            <form method="GET" action="{{ route('admin.nilai-seleksi.upload') }}" class="row">
+                <div class="col-md-3">
+                    <div class="form-group mb-md-0">
+                        <label>Tahun Pelajaran</label>
+                        <select name="tahun_pelajaran_id" class="form-control form-control-sm">
+                            @foreach($tahunPelajarans as $tahun)
+                                <option value="{{ $tahun->id }}" {{ $selectedTahunIdInput == $tahun->id ? 'selected' : '' }}>
+                                    {{ $tahun->nama }}{{ $tahun->is_active ? ' (Aktif)' : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group mb-md-0">
+                        <label>Jalur</label>
+                        <select name="jalur_id" class="form-control form-control-sm">
+                            <option value="all" {{ $selectedJalurIdInput === 'all' ? 'selected' : '' }}>Semua Jalur</option>
+                            @foreach($jalurs as $jalur)
+                                <option value="{{ $jalur->id }}" {{ $selectedJalurIdInput == $jalur->id ? 'selected' : '' }}>
+                                    {{ $jalur->nama }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group mb-md-0">
+                        <label>Gelombang</label>
+                        <select name="gelombang_id" class="form-control form-control-sm">
+                            <option value="all" {{ $selectedGelombangIdInput === 'all' ? 'selected' : '' }}>Semua Gelombang</option>
+                            @foreach($gelombangs as $gelombang)
+                                <option value="{{ $gelombang->id }}" {{ $selectedGelombangIdInput == $gelombang->id ? 'selected' : '' }}>
+                                    {{ $gelombang->nama }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <div class="mb-md-0">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="fas fa-filter mr-1"></i>Terapkan
+                        </button>
+                        <a href="{{ route('admin.nilai-seleksi.upload') }}" class="btn btn-default btn-sm">
+                            <i class="fas fa-undo mr-1"></i>Reset
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     {{-- Flash Messages --}}
     @if(session('success'))
     <div class="alert alert-success alert-dismissible fade show">
@@ -153,6 +216,9 @@
                 <div class="card-body">
                     <form method="POST" action="{{ route('admin.nilai-seleksi.upload.process') }}" enctype="multipart/form-data" id="formUploadNilai">
                         @csrf
+                        <input type="hidden" name="tahun_pelajaran_id" value="{{ $selectedTahunIdInput }}">
+                        <input type="hidden" name="jalur_id" value="{{ $selectedJalurIdInput }}">
+                        <input type="hidden" name="gelombang_id" value="{{ $selectedGelombangIdInput }}">
 
                         <div class="form-group">
                             <label for="jadwal_id"><strong>Pilih Jadwal Ujian</strong> <span class="text-danger">*</span></label>
@@ -253,6 +319,9 @@
                     {{-- Filter Bar --}}
                     <div class="filter-bar">
                         <form method="GET" action="{{ route('admin.nilai-seleksi.upload') }}" class="form-inline">
+                            <input type="hidden" name="tahun_pelajaran_id" value="{{ $selectedTahunIdInput }}">
+                            <input type="hidden" name="jalur_id" value="{{ $selectedJalurIdInput }}">
+                            <input type="hidden" name="gelombang_id" value="{{ $selectedGelombangIdInput }}">
                             <div class="form-group mr-2 mb-1">
                                 <select name="jadwal_id" class="form-control form-control-sm">
                                     <option value="">Semua Jadwal</option>

@@ -90,7 +90,7 @@
         </div>
     @endif
 
-    <form action="{{ route('admin.settings.update') }}" method="POST">
+    <form action="{{ route('admin.settings.update') }}" method="POST" enctype="multipart/form-data">
         @csrf
 
         <div class="row">
@@ -270,6 +270,20 @@
                     </div>
                 </div>
 
+                <div class="card card-dark card-outline">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fab fa-google-drive"></i> Storage Dokumen</h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">
+                            Pengaturan penyimpanan dokumen sekarang dipisah ke halaman khusus agar konfigurasi Google Drive, OAuth, dan fallback lokal lebih rapi.
+                        </p>
+                        <a href="{{ route('admin.settings.storage.index') }}" class="btn btn-dark btn-block">
+                            <i class="fab fa-google-drive mr-1"></i> Buka Pengaturan Storage Dokumen
+                        </a>
+                    </div>
+                </div>
+
                 {{-- Quick Links --}}
                 <div class="card card-primary card-outline">
                     <div class="card-header">
@@ -278,6 +292,9 @@
                     <div class="card-body">
                         <a href="{{ route('admin.jalur.index') }}" class="btn btn-outline-primary btn-block mb-2">
                             <i class="fas fa-route"></i> Kelola Jalur Pendaftaran
+                        </a>
+                        <a href="{{ route('admin.settings.nomor-rules.index') }}" class="btn btn-outline-success btn-block mb-2">
+                            <i class="fas fa-hashtag"></i> Pengaturan Penomoran
                         </a>
                         <a href="{{ route('admin.sekolah.index') }}" class="btn btn-outline-info btn-block mb-2">
                             <i class="fas fa-school"></i> Pengaturan Sekolah

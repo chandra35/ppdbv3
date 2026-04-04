@@ -26,30 +26,25 @@
 
         {{-- Pilihan Program --}}
         <td>
+            @if(!($data['program_stats']['enabled'] ?? false))
+            <table>
+                <tr><th class="text-center" style="background:#34495e;color:#fff;">Pilihan Program</th></tr>
+                <tr><td class="text-center">Tidak digunakan pada jalur di konteks ini.</td></tr>
+            </table>
+            @else
             <table>
                 <tr><th colspan="4" class="text-center" style="background:#34495e;color:#fff;">Pilihan Program</th></tr>
                 <tr><th>Program</th><th class="text-center">Total</th><th class="text-center">L</th><th class="text-center">P</th></tr>
-                <tr>
-                    <td>Reguler</td>
-                    <td class="text-center bold">{{ $data['reguler'] }}</td>
-                    <td class="text-center">{{ $data['reguler_l'] }}</td>
-                    <td class="text-center">{{ $data['reguler_p'] }}</td>
+                @foreach($data['program_stats']['items'] as $program)
+                <tr class="{{ $program['label'] === 'Belum Memilih' ? 'row-warning' : '' }}">
+                    <td>{{ $program['label'] }}</td>
+                    <td class="text-center bold">{{ $program['total'] }}</td>
+                    <td class="text-center">{{ $program['l'] }}</td>
+                    <td class="text-center">{{ $program['p'] }}</td>
                 </tr>
-                <tr>
-                    <td>Asrama</td>
-                    <td class="text-center bold">{{ $data['asrama'] }}</td>
-                    <td class="text-center">{{ $data['asrama_l'] }}</td>
-                    <td class="text-center">{{ $data['asrama_p'] }}</td>
-                </tr>
-                @if(($data['belum_memilih'] ?? 0) > 0)
-                <tr class="row-warning">
-                    <td>Belum Memilih</td>
-                    <td class="text-center bold">{{ $data['belum_memilih'] }}</td>
-                    <td class="text-center">{{ $data['belum_memilih_l'] }}</td>
-                    <td class="text-center">{{ $data['belum_memilih_p'] }}</td>
-                </tr>
-                @endif
+                @endforeach
             </table>
+            @endif
         </td>
 
         {{-- Asal Sekolah --}}

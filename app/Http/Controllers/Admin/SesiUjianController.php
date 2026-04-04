@@ -12,6 +12,7 @@ use App\Models\TahunPelajaran;
 use App\Models\User;
 use App\Models\SekolahSettings;
 use App\Services\KopSuratService;
+use App\Support\AdminPpdbContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -23,15 +24,26 @@ class SesiUjianController extends Controller
      */
     public function index(Request $request)
     {
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+        $context = AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
+        $tahunAktif = $context['selectedTahun'];
 
         $query = SesiUjian::with(['tahunPelajaran', 'jalur', 'gelombang', 'creator'])
             ->withCount(['ruangan', 'pesertaRuang']);
 
-        if ($request->tahun_pelajaran_id) {
-            $query->where('tahun_pelajaran_id', $request->tahun_pelajaran_id);
-        } elseif ($tahunAktif) {
+        if ($tahunAktif) {
             $query->where('tahun_pelajaran_id', $tahunAktif->id);
+        }
+
+        if ($context['jalurFilterId']) {
+            $query->where('jalur_pendaftaran_id', $context['jalurFilterId']);
+        }
+
+        if ($context['gelombangFilterId']) {
+            $query->where('gelombang_pendaftaran_id', $context['gelombangFilterId']);
         }
 
         if ($request->status) {
@@ -43,15 +55,22 @@ class SesiUjianController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $tahunPelajarans = TahunPelajaran::orderBy('is_active', 'desc')
-            ->orderBy('nama', 'desc')
-            ->get();
-
         return view('admin.sesi-ujian.index', compact(
             'sesiUjians',
-            'tahunAktif',
-            'tahunPelajarans'
-        ));
+            'tahunAktif'
+        ) + [
+            'tahunPelajarans' => $context['tahunPelajarans'],
+            'jalurs' => $context['jalurs'],
+            'gelombangs' => $context['gelombangs'],
+            'selectedTahunIdInput' => $context['selectedTahunIdInput'],
+            'selectedJalurIdInput' => $context['selectedJalurIdInput'],
+            'selectedGelombangIdInput' => $context['selectedGelombangIdInput'],
+            'contextInfo' => [
+                'tahun' => $context['selectedTahun']?->nama ?? '-',
+                'jalur' => $context['selectedJalur']?->nama ?? 'Semua Jalur',
+                'gelombang' => $context['selectedGelombang']?->nama ?? 'Semua Gelombang',
+            ],
+        ]);
     }
 
     /**

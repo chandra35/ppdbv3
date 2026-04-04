@@ -154,13 +154,13 @@
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
                     @php
                         $docLabels = [
-                            'foto' => 'Pas Foto',
-                            'kk' => 'Kartu Keluarga',
-                            'akta_lahir' => 'Akta Kelahiran',
-                            'ktp_ortu' => 'KTP Orang Tua',
-                            'ijazah' => 'Ijazah/SKL',
-                            'raport' => 'Raport',
-                            'sertifikat_prestasi' => 'Sertifikat Prestasi',
+                            'foto' => \App\Models\CalonDokumen::JENIS_DOKUMEN['foto'],
+                            'kk' => \App\Models\CalonDokumen::JENIS_DOKUMEN['kk'],
+                            'akta_lahir' => \App\Models\CalonDokumen::JENIS_DOKUMEN['akta_lahir'],
+                            'ktp_ortu' => \App\Models\CalonDokumen::JENIS_DOKUMEN['ktp_ortu'],
+                            'ijazah' => \App\Models\CalonDokumen::JENIS_DOKUMEN['ijazah'],
+                            'raport' => \App\Models\CalonDokumen::JENIS_DOKUMEN['raport'],
+                            'sertifikat_prestasi' => \App\Models\CalonDokumen::DOKUMEN_TAMBAHAN['sertifikat_prestasi'],
                         ];
                     @endphp
                     @foreach($uploadedDocs as $key => $doc)

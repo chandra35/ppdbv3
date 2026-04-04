@@ -10,6 +10,7 @@ use App\Models\JalurPendaftaran;
 use App\Models\GelombangPendaftaran;
 use App\Models\SekolahSettings;
 use App\Services\KopSuratService;
+use App\Support\AdminPpdbContext;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -26,25 +27,14 @@ class CetakDokumenController extends Controller
      */
     public function index(Request $request)
     {
-        // Get tahun pelajaran
-        $tahunPelajaranList = TahunPelajaran::orderBy('is_active', 'desc')
-            ->orderBy('nama', 'desc')
-            ->get();
-        
-        $tahunAktif = $request->tahun_pelajaran_id 
-            ? TahunPelajaran::find($request->tahun_pelajaran_id)
-            : TahunPelajaran::where('is_active', true)->first();
-
-        // Get jalur and gelombang for filters
-        $jalurList = $tahunAktif 
-            ? JalurPendaftaran::where('tahun_pelajaran_id', $tahunAktif->id)->get() 
-            : collect();
-        
-        $gelombangList = $tahunAktif 
-            ? GelombangPendaftaran::whereHas('jalur', function($q) use ($tahunAktif) {
-                $q->where('tahun_pelajaran_id', $tahunAktif->id);
-            })->get() 
-            : collect();
+        $context = AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
+        $tahunAktif = $context['selectedTahun'];
+        $jalurList = $context['jalurs'];
+        $gelombangList = $context['gelombangs'];
 
         // Build query - hanya yang sudah finalisasi
         $query = CalonSiswa::with(['jalurPendaftaran', 'gelombangPendaftaran', 'kelulusan'])
@@ -55,13 +45,13 @@ class CetakDokumenController extends Controller
         }
 
         // Filter jalur
-        if ($request->jalur_id) {
-            $query->where('jalur_pendaftaran_id', $request->jalur_id);
+        if ($context['jalurFilterId']) {
+            $query->where('jalur_pendaftaran_id', $context['jalurFilterId']);
         }
 
         // Filter gelombang
-        if ($request->gelombang_id) {
-            $query->where('gelombang_pendaftaran_id', $request->gelombang_id);
+        if ($context['gelombangFilterId']) {
+            $query->where('gelombang_pendaftaran_id', $context['gelombangFilterId']);
         }
 
         // Filter jenis dokumen yang belum dicetak
@@ -97,12 +87,20 @@ class CetakDokumenController extends Controller
 
         return view('admin.cetak-dokumen.index', compact(
             'pendaftarList',
-            'tahunPelajaranList',
             'tahunAktif',
             'jalurList',
             'gelombangList',
             'stats'
-        ));
+        ) + [
+            'tahunPelajaranList' => $context['tahunPelajarans'],
+            'selectedJalurIdInput' => $context['selectedJalurIdInput'],
+            'selectedGelombangIdInput' => $context['selectedGelombangIdInput'],
+            'contextInfo' => [
+                'tahun' => $context['selectedTahun']?->nama ?? '-',
+                'jalur' => $context['selectedJalur']?->nama ?? 'Semua Jalur',
+                'gelombang' => $context['selectedGelombang']?->nama ?? 'Semua Gelombang',
+            ],
+        ]);
     }
 
     /**

@@ -40,13 +40,19 @@
         <div class="card-body">
             <div class="alert alert-info">
                 <i class="fas fa-info-circle"></i>
-                <strong>Info:</strong> Backup akan menyimpan database dan file dokumen pendaftar. Proses ini mungkin membutuhkan waktu beberapa menit tergantung ukuran data.
+                <strong>Info:</strong> Anda bisa membuat backup database saja atau backup lengkap (database + file). Backup database cocok untuk uji coba admin karena lebih cepat dan ringan.
             </div>
             <form action="{{ route('admin.backup.create') }}" method="POST" id="backupForm">
                 @csrf
-                <button type="submit" class="btn btn-primary" id="btnBackup">
-                    <i class="fas fa-plus"></i> Buat Backup Sekarang
-                </button>
+                <input type="hidden" name="backup_type" id="backup_type" value="database">
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary btn-backup" data-backup-type="database">
+                        <i class="fas fa-database"></i> Backup Database
+                    </button>
+                    <button type="submit" class="btn btn-outline-primary btn-backup" data-backup-type="full">
+                        <i class="fas fa-box-open"></i> Backup Lengkap
+                    </button>
+                </div>
             </form>
         </div>
     </div>
@@ -69,6 +75,7 @@
                             <tr>
                                 <th width="50">No</th>
                                 <th>Nama File</th>
+                                <th width="100">Tipe</th>
                                 <th width="120">Ukuran</th>
                                 <th width="150">Tanggal</th>
                                 <th width="150">Aksi</th>
@@ -81,6 +88,11 @@
                                     <td>
                                         <i class="fas fa-file-archive text-warning"></i>
                                         {{ $backup['name'] }}
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-{{ $backup['type'] === 'Database' ? 'info' : 'success' }}">
+                                            {{ $backup['type'] }}
+                                        </span>
                                     </td>
                                     <td>{{ $backup['size'] }}</td>
                                     <td>
@@ -145,10 +157,14 @@
     // Handle backup form submission
     $('#backupForm').submit(function(e) {
         e.preventDefault();
+        const backupType = $('#backup_type').val();
+        const isDatabaseOnly = backupType === 'database';
         
         Swal.fire({
             title: 'Buat Backup?',
-            html: 'Proses backup akan dimulai. Ini mungkin membutuhkan waktu beberapa menit.<br><br><strong>Jangan tutup halaman ini!</strong>',
+            html: isDatabaseOnly
+                ? 'Backup database akan dibuat. Proses ini biasanya lebih cepat.<br><br><strong>Jangan tutup halaman ini!</strong>'
+                : 'Backup lengkap (database + file) akan dibuat. Ini mungkin membutuhkan waktu beberapa menit.<br><br><strong>Jangan tutup halaman ini!</strong>',
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#007bff',
@@ -157,12 +173,13 @@
             cancelButtonText: 'Batal',
             showLoaderOnConfirm: true,
             preConfirm: () => {
+                const formData = new FormData(document.getElementById('backupForm'));
                 return fetch('{{ route("admin.backup.create") }}', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    }
+                    },
+                    body: formData
                 })
                 .then(response => {
                     if (!response.ok) {
@@ -179,7 +196,7 @@
             if (result.isConfirmed) {
                 Swal.fire({
                     title: 'Berhasil!',
-                    text: 'Backup sedang dibuat. Halaman akan dimuat ulang.',
+                    text: isDatabaseOnly ? 'Backup database selesai dibuat. Halaman akan dimuat ulang.' : 'Backup lengkap selesai dibuat. Halaman akan dimuat ulang.',
                     icon: 'success',
                     timer: 2000,
                     showConfirmButton: false
@@ -188,6 +205,10 @@
                 });
             }
         });
+    });
+
+    $('.btn-backup').on('click', function() {
+        $('#backup_type').val($(this).data('backup-type'));
     });
 
     // Delete backup

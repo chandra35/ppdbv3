@@ -534,7 +534,7 @@
                                     $label = $dokumenLabels[$dok->jenis_dokumen] ?? ucfirst(str_replace('_',' ',$dok->jenis_dokumen));
                                 @endphp
                                 <a href="javascript:void(0)" class="dok-btn {{ $isImg ? 'dok-img' : 'dok-pdf' }} doc-preview-trigger"
-                                   data-url="{{ asset('storage/' . $dok->file_path) }}"
+                                   data-url="{{ $dok->file_url }}"
                                    data-title="{{ $label }}"
                                    data-type="{{ $isImg ? 'image' : 'pdf' }}">
                                     <i class="fas {{ $isImg ? 'fa-image' : 'fa-file-pdf' }}"></i>
@@ -550,24 +550,32 @@
                     <div class="info-section">
                         <h6><i class="fas fa-paperclip mr-1"></i>Dokumen Tambahan ({{ $dokumenTambahan->count() }})</h6>
                         @php
-                            $grupPrestasi = $dokumenTambahan->filter(fn($d) => in_array($d->jenis_dokumen, ['sertifikat_prestasi', 'piagam']));
-                            $grupBantuan = $dokumenTambahan->filter(fn($d) => in_array($d->jenis_dokumen, ['kip', 'pip', 'sktm']));
-                            $grupSurat = $dokumenTambahan->filter(fn($d) => in_array($d->jenis_dokumen, ['surat_domisili', 'surat_rekomendasi']));
-                            $grupLain = $dokumenTambahan->filter(fn($d) => in_array($d->jenis_dokumen, ['dokumen_lainnya']));
+                            $dokumenTambahanGroups = \App\Models\CalonDokumen::getDokumenTambahanGroups();
+                            $groupMeta = [
+                                'Prestasi & Akademik' => ['icon' => 'fas fa-trophy', 'class' => 'text-warning'],
+                                'Keagamaan' => ['icon' => 'fas fa-book-open', 'class' => 'text-success'],
+                                'Bantuan & Keterangan' => ['icon' => 'fas fa-hand-holding-heart', 'class' => 'text-info'],
+                                'Lainnya' => ['icon' => 'fas fa-file-alt', 'class' => 'text-muted'],
+                            ];
                         @endphp
 
-                        @if($grupPrestasi->count() > 0)
+                        @foreach($dokumenTambahanGroups as $groupLabel => $groupOptions)
+                        @php
+                            $groupDokumen = $dokumenTambahan->filter(fn($d) => array_key_exists($d->jenis_dokumen, $groupOptions));
+                            $meta = $groupMeta[$groupLabel] ?? ['icon' => 'fas fa-folder', 'class' => 'text-secondary'];
+                        @endphp
+                        @if($groupDokumen->count() > 0)
                         <div class="dok-group">
-                            <div class="dok-group-label"><i class="fas fa-trophy mr-1 text-warning"></i>Prestasi / Sertifikat</div>
+                            <div class="dok-group-label"><i class="{{ $meta['icon'] }} mr-1 {{ $meta['class'] }}"></i>{{ $groupLabel }}</div>
                             <div class="dok-btn-grid">
-                                @foreach($grupPrestasi as $dok)
+                                @foreach($groupDokumen as $dok)
                                     @php
                                         $ext = strtolower(pathinfo($dok->file_path, PATHINFO_EXTENSION));
                                         $isImg = in_array($ext, ['jpg','jpeg','png','gif','webp']);
                                         $label = $dok->nama_dokumen ?? ($dokumenTambahanLabels[$dok->jenis_dokumen] ?? ucfirst(str_replace('_',' ',$dok->jenis_dokumen)));
                                     @endphp
                                     <a href="javascript:void(0)" class="dok-btn {{ $isImg ? 'dok-img' : 'dok-pdf' }} doc-preview-trigger"
-                                       data-url="{{ asset('storage/' . $dok->file_path) }}"
+                                       data-url="{{ $dok->file_url }}"
                                        data-title="{{ $label }}"
                                        data-type="{{ $isImg ? 'image' : 'pdf' }}">
                                         <i class="fas {{ $isImg ? 'fa-image' : 'fa-file-pdf' }}"></i>
@@ -577,72 +585,7 @@
                             </div>
                         </div>
                         @endif
-
-                        @if($grupBantuan->count() > 0)
-                        <div class="dok-group">
-                            <div class="dok-group-label"><i class="fas fa-hand-holding-heart mr-1 text-info"></i>KIP / PIP / SKTM</div>
-                            <div class="dok-btn-grid">
-                                @foreach($grupBantuan as $dok)
-                                    @php
-                                        $ext = strtolower(pathinfo($dok->file_path, PATHINFO_EXTENSION));
-                                        $isImg = in_array($ext, ['jpg','jpeg','png','gif','webp']);
-                                        $label = $dokumenTambahanLabels[$dok->jenis_dokumen] ?? ucfirst(str_replace('_',' ',$dok->jenis_dokumen));
-                                    @endphp
-                                    <a href="javascript:void(0)" class="dok-btn {{ $isImg ? 'dok-img' : 'dok-pdf' }} doc-preview-trigger"
-                                       data-url="{{ asset('storage/' . $dok->file_path) }}"
-                                       data-title="{{ $label }}"
-                                       data-type="{{ $isImg ? 'image' : 'pdf' }}">
-                                        <i class="fas {{ $isImg ? 'fa-image' : 'fa-file-pdf' }}"></i>
-                                        {{ Str::limit($label, 20) }}
-                                    </a>
-                                @endforeach
-                            </div>
-                        </div>
-                        @endif
-
-                        @if($grupSurat->count() > 0)
-                        <div class="dok-group">
-                            <div class="dok-group-label"><i class="fas fa-envelope-open-text mr-1 text-secondary"></i>Surat Keterangan</div>
-                            <div class="dok-btn-grid">
-                                @foreach($grupSurat as $dok)
-                                    @php
-                                        $ext = strtolower(pathinfo($dok->file_path, PATHINFO_EXTENSION));
-                                        $isImg = in_array($ext, ['jpg','jpeg','png','gif','webp']);
-                                        $label = $dokumenTambahanLabels[$dok->jenis_dokumen] ?? ucfirst(str_replace('_',' ',$dok->jenis_dokumen));
-                                    @endphp
-                                    <a href="javascript:void(0)" class="dok-btn {{ $isImg ? 'dok-img' : 'dok-pdf' }} doc-preview-trigger"
-                                       data-url="{{ asset('storage/' . $dok->file_path) }}"
-                                       data-title="{{ $label }}"
-                                       data-type="{{ $isImg ? 'image' : 'pdf' }}">
-                                        <i class="fas {{ $isImg ? 'fa-image' : 'fa-file-pdf' }}"></i>
-                                        {{ Str::limit($label, 20) }}
-                                    </a>
-                                @endforeach
-                            </div>
-                        </div>
-                        @endif
-
-                        @if($grupLain->count() > 0)
-                        <div class="dok-group">
-                            <div class="dok-group-label"><i class="fas fa-file-alt mr-1 text-muted"></i>Lainnya</div>
-                            <div class="dok-btn-grid">
-                                @foreach($grupLain as $dok)
-                                    @php
-                                        $ext = strtolower(pathinfo($dok->file_path, PATHINFO_EXTENSION));
-                                        $isImg = in_array($ext, ['jpg','jpeg','png','gif','webp']);
-                                        $label = $dok->nama_dokumen ?? ($dokumenTambahanLabels[$dok->jenis_dokumen] ?? 'Dokumen Lainnya');
-                                    @endphp
-                                    <a href="javascript:void(0)" class="dok-btn {{ $isImg ? 'dok-img' : 'dok-pdf' }} doc-preview-trigger"
-                                       data-url="{{ asset('storage/' . $dok->file_path) }}"
-                                       data-title="{{ $label }}"
-                                       data-type="{{ $isImg ? 'image' : 'pdf' }}">
-                                        <i class="fas {{ $isImg ? 'fa-image' : 'fa-file-pdf' }}"></i>
-                                        {{ Str::limit($label, 20) }}
-                                    </a>
-                                @endforeach
-                            </div>
-                        </div>
-                        @endif
+                        @endforeach
                     </div>
                     @endif
                 </div>

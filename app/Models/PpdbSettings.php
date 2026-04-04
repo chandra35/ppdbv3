@@ -25,6 +25,15 @@ class PpdbSettings extends Model
         'cegah_pendaftar_ganda',
         'dokumen_aktif',
         'izinkan_dokumen_tambahan',
+        'dokumen_storage_mode',
+        'google_drive_auth_mode',
+        'google_drive_root_folder_id',
+        'google_drive_credentials_path',
+        'google_drive_make_public',
+        'google_drive_oauth_client_id',
+        'google_drive_oauth_client_secret',
+        'google_drive_oauth_refresh_token',
+        'google_drive_oauth_email',
         'nomor_registrasi_prefix',
         'nomor_registrasi_counter',
         'nomor_tes_prefix',
@@ -42,6 +51,7 @@ class PpdbSettings extends Model
         'cegah_pendaftar_ganda' => 'boolean',
         'dokumen_aktif' => 'array',
         'izinkan_dokumen_tambahan' => 'boolean',
+        'google_drive_make_public' => 'boolean',
         'nomor_tes_counter' => 'array',
     ];
 
@@ -51,6 +61,9 @@ class PpdbSettings extends Model
         'wajib_lokasi_registrasi' => false,
         'cegah_pendaftar_ganda' => true,
         'kuota_penerimaan' => 200,
+        'dokumen_storage_mode' => 'local',
+        'google_drive_auth_mode' => 'service_account',
+        'google_drive_make_public' => true,
         'nomor_registrasi_prefix' => 'PPDB',
         'nomor_registrasi_counter' => 0,
         'nomor_tes_prefix' => 'NTS',
@@ -82,6 +95,26 @@ class PpdbSettings extends Model
         $tahun = now()->year;
         $counter = str_pad($this->nomor_registrasi_counter, 5, '0', STR_PAD_LEFT);
         return "{$this->nomor_registrasi_prefix}-{$tahun}-{$counter}";
+    }
+
+    public function isGoogleDrivePrimaryEnabled(): bool
+    {
+        return $this->dokumen_storage_mode === 'gdrive_primary_local_fallback';
+    }
+
+    public function isGoogleDriveConfigured(): bool
+    {
+        if (!$this->isGoogleDrivePrimaryEnabled() || empty($this->google_drive_root_folder_id)) {
+            return false;
+        }
+
+        if ($this->google_drive_auth_mode === 'oauth') {
+            return !empty($this->google_drive_oauth_client_id)
+                && !empty($this->google_drive_oauth_client_secret)
+                && !empty($this->google_drive_oauth_refresh_token);
+        }
+
+        return !empty($this->google_drive_credentials_path);
     }
 
     /**

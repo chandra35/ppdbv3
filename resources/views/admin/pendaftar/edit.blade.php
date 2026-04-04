@@ -170,10 +170,14 @@
                 <li class="nav-item">
                     <span class="nav-link">
                         <i class="fas fa-graduation-cap mr-2"></i><strong>Program:</strong> 
-                        @if($pendaftar->pilihan_program == 'Reguler')
+                        @if(!$pendaftar->jalurPendaftaran?->pilihan_program_aktif)
+                            <span class="badge badge-light">Tidak Digunakan</span>
+                        @elseif($pendaftar->pilihan_program == 'Reguler')
                             <span class="badge badge-info">Reguler</span>
                         @elseif($pendaftar->pilihan_program == 'Asrama')
                             <span class="badge badge-success">Asrama</span>
+                        @elseif($pendaftar->pilihan_program)
+                            <span class="badge badge-primary">{{ $pendaftar->pilihan_program }}</span>
                         @else
                             <span class="badge badge-secondary">Belum Memilih</span>
                         @endif
@@ -216,6 +220,7 @@
         @method('PUT')
         
         <!-- Pilihan Program -->
+        @if($pendaftar->jalurPendaftaran?->pilihan_program_aktif)
         <div class="card card-info card-outline mb-3">
             <div class="card-header py-2">
                 <h3 class="card-title"><i class="fas fa-graduation-cap mr-2"></i>Pilihan Program</h3>
@@ -228,18 +233,22 @@
                             <select name="pilihan_program" id="pilihan_program" 
                                 class="form-control @error('pilihan_program') is-invalid @enderror" required>
                                 <option value="">-- Pilih Program --</option>
-                                <option value="Reguler" {{ old('pilihan_program', $pendaftar->pilihan_program) == 'Reguler' ? 'selected' : '' }}>Reguler</option>
-                                <option value="Asrama" {{ old('pilihan_program', $pendaftar->pilihan_program) == 'Asrama' ? 'selected' : '' }}>Asrama</option>
+                                @foreach($pilihanProgramOptions as $option)
+                                <option value="{{ $option }}" {{ old('pilihan_program', $pendaftar->pilihan_program) == $option ? 'selected' : '' }}>{{ $option }}</option>
+                                @endforeach
                             </select>
                             @error('pilihan_program')
                                 <span class="invalid-feedback">{{ $message }}</span>
                             @enderror
-                            <small class="form-text text-muted">Pilih program yang diinginkan (Reguler atau Asrama)</small>
+                            <small class="form-text text-muted">
+                                {{ $pendaftar->jalurPendaftaran?->pilihan_program_catatan ?: 'Pilih program sesuai pengaturan jalur pendaftaran.' }}
+                            </small>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        @endif
         
         <!-- Data Pribadi -->
         <div class="card card-primary card-outline">

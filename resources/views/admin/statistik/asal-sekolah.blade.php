@@ -29,6 +29,22 @@
                     </option>
                     @endforeach
                 </select>
+                <select name="jalur_id" class="form-control form-control-sm ml-2" onchange="this.form.submit()">
+                    <option value="all" {{ $selectedJalurIdInput === 'all' ? 'selected' : '' }}>Semua Jalur</option>
+                    @foreach($jalurList as $jalur)
+                    <option value="{{ $jalur->id }}" {{ (string) $selectedJalurIdInput === (string) $jalur->id ? 'selected' : '' }}>
+                        {{ $jalur->nama }}
+                    </option>
+                    @endforeach
+                </select>
+                <select name="gelombang_id" class="form-control form-control-sm ml-2" onchange="this.form.submit()">
+                    <option value="all" {{ $selectedGelombangIdInput === 'all' ? 'selected' : '' }}>Semua Gelombang</option>
+                    @foreach($gelombangList as $gelombang)
+                    <option value="{{ $gelombang->id }}" {{ (string) $selectedGelombangIdInput === (string) $gelombang->id ? 'selected' : '' }}>
+                        {{ $gelombang->nama }}
+                    </option>
+                    @endforeach
+                </select>
             </form>
         </div>
     </div>
@@ -36,6 +52,13 @@
 @stop
 
 @section('content')
+<div class="alert alert-info">
+    Statistik asal sekolah sedang menggunakan konteks:
+    Tahun <strong>{{ $contextInfo['tahun'] }}</strong>,
+    Jalur <strong>{{ $contextInfo['jalur'] }}</strong>,
+    Gelombang <strong>{{ $contextInfo['gelombang'] }}</strong>.
+</div>
+
 {{-- Ringkasan --}}
 <div class="row">
     <div class="col-lg-3 col-6">
@@ -123,7 +146,12 @@
                                 @endif
                             </td>
                             <td>
-                                <a href="?sekolah={{ urlencode($sekolah->nama_sekolah_asal) }}&tahun_pelajaran_id={{ $tahunAktif?->id }}">
+                                <a href="{{ route('admin.statistik.asal-sekolah', [
+                                    'tahun_pelajaran_id' => $tahunAktif?->id,
+                                    'jalur_id' => $selectedJalurIdInput,
+                                    'gelombang_id' => $selectedGelombangIdInput,
+                                    'sekolah' => $sekolah->nama_sekolah_asal,
+                                ]) }}">
                                     {{ $sekolah->nama_sekolah_asal ?? 'Tidak Diketahui' }}
                                 </a>
                             </td>
@@ -160,6 +188,8 @@
         <div class="card-tools">
             <form class="search-form form-inline" method="GET">
                 <input type="hidden" name="tahun_pelajaran_id" value="{{ $tahunAktif?->id }}">
+                <input type="hidden" name="jalur_id" value="{{ $selectedJalurIdInput }}">
+                <input type="hidden" name="gelombang_id" value="{{ $selectedGelombangIdInput }}">
                 <div class="input-group input-group-sm">
                     <input type="text" name="search" class="form-control" placeholder="Cari sekolah/NPSN..." value="{{ request('search') }}">
                     <div class="input-group-append">
@@ -187,7 +217,13 @@
                 <tr>
                     <td>{{ ($byAsalSekolah->currentPage() - 1) * $byAsalSekolah->perPage() + $i + 1 }}</td>
                     <td>
-                        <a href="?sekolah={{ urlencode($sekolah->nama_sekolah_asal) }}&tahun_pelajaran_id={{ $tahunAktif?->id }}">
+                        <a href="{{ route('admin.statistik.asal-sekolah', [
+                            'tahun_pelajaran_id' => $tahunAktif?->id,
+                            'jalur_id' => $selectedJalurIdInput,
+                            'gelombang_id' => $selectedGelombangIdInput,
+                            'search' => request('search'),
+                            'sekolah' => $sekolah->nama_sekolah_asal,
+                        ]) }}">
                             {{ $sekolah->nama_sekolah_asal ?? 'Tidak Diketahui' }}
                         </a>
                     </td>
@@ -241,7 +277,12 @@
             <span class="badge badge-secondary mr-1" title="NSM">NSM: {{ $nsmSekolah }}</span>
             @endif
             <span class="badge badge-light">{{ $pendaftarSekolah->total() }} pendaftar</span>
-            <a href="{{ route('admin.statistik.asal-sekolah', ['tahun_pelajaran_id' => $tahunAktif?->id]) }}" class="btn btn-tool">
+            <a href="{{ route('admin.statistik.asal-sekolah', [
+                'tahun_pelajaran_id' => $tahunAktif?->id,
+                'jalur_id' => $selectedJalurIdInput,
+                'gelombang_id' => $selectedGelombangIdInput,
+                'search' => request('search'),
+            ]) }}" class="btn btn-tool">
                 <i class="fas fa-times"></i>
             </a>
         </div>
@@ -316,11 +357,11 @@
             </tbody>
         </table>
     </div>
-    @if($pendaftarSekolah->hasPages())
-    <div class="card-footer clearfix">
-        {{ $pendaftarSekolah->appends(request()->except('pendaftar_page'))->links('pagination::bootstrap-4') }}
-    </div>
-    @endif
+@if($pendaftarSekolah->hasPages())
+<div class="card-footer clearfix">
+    {{ $pendaftarSekolah->appends(request()->except('pendaftar_page'))->links('pagination::bootstrap-4') }}
+</div>
+@endif
 </div>
 @endif
 @stop

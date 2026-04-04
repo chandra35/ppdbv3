@@ -32,6 +32,22 @@
                     </option>
                     @endforeach
                 </select>
+                <select name="jalur_id" class="form-control form-control-sm ml-2" onchange="this.form.submit()">
+                    <option value="all" {{ $selectedJalurIdInput === 'all' ? 'selected' : '' }}>Semua Jalur</option>
+                    @foreach($jalurList as $jalur)
+                    <option value="{{ $jalur->id }}" {{ (string) $selectedJalurIdInput === (string) $jalur->id ? 'selected' : '' }}>
+                        {{ $jalur->nama }}
+                    </option>
+                    @endforeach
+                </select>
+                <select name="gelombang_id" class="form-control form-control-sm ml-2" onchange="this.form.submit()">
+                    <option value="all" {{ $selectedGelombangIdInput === 'all' ? 'selected' : '' }}>Semua Gelombang</option>
+                    @foreach($gelombangList as $gelombang)
+                    <option value="{{ $gelombang->id }}" {{ (string) $selectedGelombangIdInput === (string) $gelombang->id ? 'selected' : '' }}>
+                        {{ $gelombang->nama }}
+                    </option>
+                    @endforeach
+                </select>
             </form>
         </div>
     </div>
@@ -39,6 +55,13 @@
 @stop
 
 @section('content')
+<div class="alert alert-info">
+    Statistik dokumen dan prestasi sedang menggunakan konteks:
+    Tahun <strong>{{ $contextInfo['tahun'] }}</strong>,
+    Jalur <strong>{{ $contextInfo['jalur'] }}</strong>,
+    Gelombang <strong>{{ $contextInfo['gelombang'] }}</strong>.
+</div>
+
 @php
     // Prepare stats from byJenisDokumen
     $dokumenStats = [];
@@ -46,58 +69,56 @@
         $dokumenStats[$dok->jenis_dokumen] = $dok->total;
     }
     $totalDokumen = $byJenisDokumen->sum('total');
+    $prestasiCards = [];
+    $cardThemes = [
+        'bg-gradient-warning',
+        'bg-gradient-info',
+        'bg-gradient-success',
+        'bg-gradient-danger',
+        'bg-gradient-primary',
+        'bg-gradient-secondary',
+        'bg-gradient-dark',
+    ];
+    $cardIcons = [
+        'sertifikat_prestasi' => 'fas fa-trophy',
+        'piagam' => 'fas fa-award',
+        'sertifikat_ksm' => 'fas fa-medal',
+        'piagam_ksm' => 'fas fa-scroll',
+        'sertifikat_osn' => 'fas fa-atom',
+        'piagam_osn' => 'fas fa-star',
+        'sertifikat_olimpiade' => 'fas fa-medal',
+        'piagam_olimpiade' => 'fas fa-certificate',
+        'sertifikat_tahfidz' => 'fas fa-quran',
+        'piagam_tahfidz' => 'fas fa-book-open',
+    ];
+
+    foreach ($dokumenTambahanTypes as $jenis => $label) {
+        $prestasiCards[] = [
+            'jenis' => $jenis,
+            'label' => $label,
+            'total' => $dokumenStats[$jenis] ?? 0,
+            'theme' => $cardThemes[count($prestasiCards) % count($cardThemes)],
+            'icon' => $cardIcons[$jenis] ?? 'fas fa-file-alt',
+        ];
+    }
 @endphp
 
 {{-- Statistik Dokumen Prestasi --}}
 <div class="row">
+    @foreach($prestasiCards as $card)
     <div class="col-lg-3 col-md-6">
-        <div class="card stat-card bg-gradient-warning text-white">
+        <div class="card stat-card {{ $card['theme'] }} text-white">
             <div class="card-body">
-                <i class="fas fa-trophy stat-icon"></i>
-                <div class="stat-number">{{ $dokumenStats['sertifikat_prestasi'] ?? 0 }}</div>
-                <div class="stat-label text-white">Sertifikat Prestasi</div>
+                <i class="{{ $card['icon'] }} stat-icon"></i>
+                <div class="stat-number">{{ $card['total'] }}</div>
+                <div class="stat-label text-white">{{ $card['label'] }}</div>
             </div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6">
-        <div class="card stat-card bg-gradient-info text-white">
-            <div class="card-body">
-                <i class="fas fa-award stat-icon"></i>
-                <div class="stat-number">{{ $dokumenStats['piagam_penghargaan'] ?? 0 }}</div>
-                <div class="stat-label text-white">Piagam Penghargaan</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6">
-        <div class="card stat-card bg-gradient-success text-white">
-            <div class="card-body">
-                <i class="fas fa-quran stat-icon"></i>
-                <div class="stat-number">{{ $dokumenStats['sertifikat_tahfidz'] ?? 0 }}</div>
-                <div class="stat-label text-white">Sertifikat Tahfidz</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6">
-        <div class="card stat-card bg-gradient-danger text-white">
-            <div class="card-body">
-                <i class="fas fa-medal stat-icon"></i>
-                <div class="stat-number">{{ $dokumenStats['sertifikat_olimpiade'] ?? 0 }}</div>
-                <div class="stat-label text-white">Sertifikat Olimpiade</div>
-            </div>
-        </div>
-    </div>
+    @endforeach
 </div>
 
 <div class="row">
-    <div class="col-lg-4 col-md-6">
-        <div class="card stat-card bg-gradient-primary text-white">
-            <div class="card-body">
-                <i class="fas fa-file-alt stat-icon"></i>
-                <div class="stat-number">{{ $dokumenStats['sertifikat_lainnya'] ?? 0 }}</div>
-                <div class="stat-label text-white">Sertifikat Lainnya</div>
-            </div>
-        </div>
-    </div>
     <div class="col-lg-4 col-md-6">
         <div class="card stat-card bg-gradient-secondary text-white">
             <div class="card-body">
@@ -225,7 +246,7 @@
                                 return [
                                     'jenis' => $d->jenis_dokumen,
                                     'keterangan' => $d->keterangan,
-                                    'file' => $d->file_path ? Storage::url($d->file_path) : null,
+                                    'file' => $d->file_url,
                                     'status' => $d->status
                                 ];
                             });
@@ -325,7 +346,7 @@
     var byJenisDokumen = @json($byJenisDokumen);
     var labels = byJenisDokumen.map(d => d.label);
     var data = byJenisDokumen.map(d => d.total);
-    var colors = ['#ffc107', '#17a2b8', '#28a745', '#dc3545', '#007bff'];
+    var colors = ['#ffc107', '#17a2b8', '#28a745', '#dc3545', '#007bff', '#6c757d', '#343a40', '#20c997', '#6610f2', '#fd7e14'];
     
     // Pie Chart
     new Chart(document.getElementById('dokumenPieChart'), {
@@ -371,13 +392,7 @@
     var currentDokumen = [];
     var currentDokIndex = 0;
     
-    var jenisLabels = {
-        'sertifikat_prestasi': 'Sertifikat Prestasi',
-        'piagam_penghargaan': 'Piagam Penghargaan',
-        'sertifikat_tahfidz': 'Sertifikat Tahfidz',
-        'sertifikat_olimpiade': 'Sertifikat Olimpiade',
-        'sertifikat_lainnya': 'Sertifikat Lainnya'
-    };
+    var jenisLabels = @json($dokumenTambahanTypes);
     
     var statusBadge = {
         'pending': '<span class="badge badge-warning">Pending</span>',
@@ -403,13 +418,19 @@
         
         var dok = currentDokumen[index];
         var jenisLabel = jenisLabels[dok.jenis] || dok.jenis;
+        var kategoriLabel = '-';
+        if (['sertifikat_prestasi', 'piagam', 'sertifikat_ksm', 'piagam_ksm', 'sertifikat_osn', 'piagam_osn', 'sertifikat_olimpiade', 'piagam_olimpiade'].includes(dok.jenis)) {
+            kategoriLabel = 'Prestasi & Akademik';
+        } else if (['sertifikat_tahfidz', 'piagam_tahfidz'].includes(dok.jenis)) {
+            kategoriLabel = 'Keagamaan';
+        }
         var status = statusBadge[dok.status] || '<span class="badge badge-secondary">' + (dok.status || '-') + '</span>';
         
         // Update counter
         $('#dokumenCounter').text((index + 1) + ' / ' + currentDokumen.length);
         
         // Update info
-        $('#dokumenJenis').html('<i class="fas fa-file-alt mr-2"></i>' + jenisLabel);
+        $('#dokumenJenis').html('<i class="fas fa-file-alt mr-2"></i>' + jenisLabel + ' <span class="badge badge-light border ml-2" style="font-size:11px;">' + kategoriLabel + '</span>');
         $('#dokumenStatus').html(status);
         $('#dokumenKeterangan').text(dok.keterangan || '-');
         

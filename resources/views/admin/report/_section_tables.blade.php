@@ -51,6 +51,11 @@
                 <h3 class="card-title"><i class="fas fa-heart mr-1"></i> Pilihan Program</h3>
             </div>
             <div class="card-body p-0">
+                @if(!($data['program_stats']['enabled'] ?? false))
+                <div class="p-3 text-muted text-center">
+                    Jalur pada konteks ini tidak menggunakan pilihan program.
+                </div>
+                @else
                 <table class="table table-sm rincian-table mb-0">
                     <thead>
                         <tr class="row-header">
@@ -61,24 +66,14 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>Reguler</td>
-                            <td class="text-center"><strong>{{ $data['reguler'] }}</strong></td>
-                            <td class="text-center">{{ $data['reguler_l'] }}</td>
-                            <td class="text-center">{{ $data['reguler_p'] }}</td>
+                        @foreach($data['program_stats']['items'] as $program)
+                        <tr class="{{ $program['label'] === 'Belum Memilih' ? 'table-warning' : '' }}">
+                            <td>{{ $program['label'] === 'Belum Memilih' ? 'Belum Memilih' : $program['label'] }}</td>
+                            <td class="text-center"><strong>{{ $program['total'] }}</strong></td>
+                            <td class="text-center">{{ $program['l'] }}</td>
+                            <td class="text-center">{{ $program['p'] }}</td>
                         </tr>
-                        <tr>
-                            <td>Asrama</td>
-                            <td class="text-center"><strong>{{ $data['asrama'] }}</strong></td>
-                            <td class="text-center">{{ $data['asrama_l'] }}</td>
-                            <td class="text-center">{{ $data['asrama_p'] }}</td>
-                        </tr>
-                        <tr class="table-warning">
-                            <td><em>Belum Memilih</em></td>
-                            <td class="text-center"><strong>{{ $data['belum_memilih'] }}</strong></td>
-                            <td class="text-center">{{ $data['belum_memilih_l'] }}</td>
-                            <td class="text-center">{{ $data['belum_memilih_p'] }}</td>
-                        </tr>
+                        @endforeach
                         <tr class="row-total">
                             <td>Total</td>
                             <td class="text-center">{{ $total }}</td>
@@ -87,6 +82,7 @@
                         </tr>
                     </tbody>
                 </table>
+                @endif
             </div>
         </div>
     </div>

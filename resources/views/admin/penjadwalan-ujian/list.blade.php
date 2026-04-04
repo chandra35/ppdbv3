@@ -27,6 +27,14 @@
 @stop
 
 @section('content')
+<div class="alert alert-info d-flex justify-content-between align-items-center flex-wrap">
+    <div>
+        Daftar jadwal ujian sedang memakai konteks:
+        Tahun <strong>{{ $contextInfo['tahun'] ?? ($tahunAktif?->nama ?? 'Semua Tahun') }}</strong>,
+        Jalur <strong>{{ $contextInfo['jalur'] ?? 'Semua Jalur' }}</strong>,
+        Gelombang <strong>{{ $contextInfo['gelombang'] ?? 'Semua Gelombang' }}</strong>.
+    </div>
+</div>
 {{-- Alerts --}}
 @if(session('success'))
 <div class="alert alert-success alert-dismissible">
@@ -65,6 +73,28 @@
                 </select>
             </div>
             <div class="form-group mr-3">
+                <label class="mr-2">Jalur:</label>
+                <select name="jalur_id" class="form-control form-control-sm">
+                    <option value="all" {{ ($selectedJalurIdInput ?? '') === 'all' ? 'selected' : '' }}>-- Semua --</option>
+                    @foreach($jalurList ?? [] as $jalur)
+                    <option value="{{ $jalur->id }}" {{ (string) ($selectedJalurIdInput ?? '') === (string) $jalur->id ? 'selected' : '' }}>
+                        {{ $jalur->nama }}
+                    </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="form-group mr-3">
+                <label class="mr-2">Gelombang:</label>
+                <select name="gelombang_id" class="form-control form-control-sm">
+                    <option value="all" {{ ($selectedGelombangIdInput ?? '') === 'all' ? 'selected' : '' }}>-- Semua --</option>
+                    @foreach($gelombangList ?? [] as $gelombang)
+                    <option value="{{ $gelombang->id }}" {{ (string) ($selectedGelombangIdInput ?? '') === (string) $gelombang->id ? 'selected' : '' }}>
+                        {{ $gelombang->nama }}
+                    </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="form-group mr-3">
                 <label class="mr-2">Status:</label>
                 <select name="status" class="form-control form-control-sm">
                     <option value="">-- Semua --</option>
@@ -76,7 +106,7 @@
             <button type="submit" class="btn btn-sm btn-primary">
                 <i class="fas fa-search"></i> Filter
             </button>
-            <a href="{{ route('admin.penjadwalan-ujian.list') }}" class="btn btn-sm btn-secondary ml-2">
+            <a href="{{ route('admin.penjadwalan-ujian.list', ['tahun_pelajaran_id' => $tahunAktif?->id]) }}" class="btn btn-sm btn-secondary ml-2">
                 <i class="fas fa-undo"></i> Reset
             </a>
         </form>

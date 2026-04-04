@@ -17,12 +17,14 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class MoodlePendaftarExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths
 {
     protected string $tahunShort;
+    protected ?string $tahunPelajaranId;
     protected ?string $jalurId;
     protected ?string $gelombangId;
 
-    public function __construct(string $tahunShort, ?string $jalurId = null, ?string $gelombangId = null)
+    public function __construct(string $tahunShort, ?string $tahunPelajaranId = null, ?string $jalurId = null, ?string $gelombangId = null)
     {
         $this->tahunShort = $tahunShort;
+        $this->tahunPelajaranId = $tahunPelajaranId;
         $this->jalurId = $jalurId;
         $this->gelombangId = $gelombangId;
     }
@@ -41,15 +43,18 @@ class MoodlePendaftarExport implements FromArray, WithHeadings, WithStyles, With
 
     public function array(): array
     {
-        $tahunAktif = TahunPelajaran::where('is_active', true)->first();
-
         $query = CalonSiswa::with('user')
             ->where('is_finalisasi', true)
             ->whereNotNull('nomor_tes')
             ->where('nomor_tes', '!=', '');
 
-        if ($tahunAktif) {
-            $query->where('tahun_pelajaran_id', $tahunAktif->id);
+        if ($this->tahunPelajaranId) {
+            $query->where('tahun_pelajaran_id', $this->tahunPelajaranId);
+        } else {
+            $tahunAktif = TahunPelajaran::where('is_active', true)->first();
+            if ($tahunAktif) {
+                $query->where('tahun_pelajaran_id', $tahunAktif->id);
+            }
         }
 
         if ($this->jalurId) {

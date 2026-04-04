@@ -115,6 +115,13 @@
 @section('content')
 <div class="row">
     <div class="col-12">
+        <div class="alert alert-info">
+            Form manual sedang memakai konteks:
+            Tahun <strong>{{ $contextInfo['tahun'] }}</strong>,
+            Jalur <strong>{{ $contextInfo['jalur'] }}</strong>,
+            Gelombang <strong>{{ $contextInfo['gelombang'] }}</strong>.
+        </div>
+
         {{-- Info Box --}}
         <div class="info-box-manual">
             <div class="row align-items-center">
@@ -165,7 +172,7 @@
                     <div class="card-body">
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle mr-2"></i>
-                            <strong>Tahun Pelajaran Aktif:</strong> {{ $tahunPelajaran->nama }}
+                            <strong>Tahun Pelajaran:</strong> {{ $tahunPelajaran->nama }}
                         </div>
 
                         <div class="row">
@@ -176,6 +183,7 @@
                                         <option value="">-- Pilih Jalur --</option>
                                         @foreach($jalurList as $jalur)
                                             <option value="{{ $jalur->id }}" 
+                                                    {{ (string) $selectedJalurIdInput === (string) $jalur->id ? 'selected' : '' }}
                                                     data-gelombang="{{ $jalur->gelombang->toJson() }}"
                                                     data-kuota="{{ $jalur->kuota }}"
                                                     data-terisi="{{ $jalur->kuota_terisi }}">
@@ -233,7 +241,7 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label class="required-field">NISN (Input Manual)</label>
+                                    <label class="required-field">NISN</label>
                                     <div class="input-group">
                                         <div class="input-group-prepend">
                                             <span class="input-group-text bg-warning text-dark">
@@ -243,10 +251,15 @@
                                         <input type="text" name="nisn" id="nisn" class="form-control" 
                                                maxlength="10" pattern="[0-9]{10}" required
                                                placeholder="Masukkan 10 digit NISN">
+                                        <div class="input-group-append">
+                                            <button type="button" class="btn btn-info" id="btnCekNisn">
+                                                <i class="fas fa-search mr-1"></i> Cek NISN
+                                            </button>
+                                        </div>
                                     </div>
-                                    <small class="form-text text-warning">
-                                        <i class="fas fa-exclamation-triangle mr-1"></i>
-                                        NISN diinput manual tanpa validasi API. Pastikan NISN benar!
+                                    <small class="form-text text-muted" id="nisnHelpText">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Gunakan tombol <strong>Cek NISN</strong> untuk menarik data dari Kemdikbud/Kemenag. Jika tidak ditemukan, operator tetap bisa melanjutkan input manual.
                                     </small>
                                 </div>
                             </div>
@@ -258,6 +271,23 @@
                                            placeholder="Masukkan 16 digit NIK">
                                 </div>
                             </div>
+                        </div>
+
+                        <div id="hasilCekNisn" class="alert alert-info mt-2 border-left border-4" style="display: none;">
+                            <div class="d-flex justify-content-between align-items-start flex-wrap">
+                                <div>
+                                    <strong><i class="fas fa-database mr-1"></i> Hasil Cek NISN</strong>
+                                    <div id="hasilCekNisnText" class="small mt-1"></div>
+                                </div>
+                                <div class="mt-2 mt-md-0">
+                                    <span class="badge badge-primary" id="hasilCekNisnSource" style="display: none;"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="warningKelas9" class="alert alert-danger mt-2 shadow-sm" style="display: none; border-left: 5px solid #c82333;">
+                            <strong><i class="fas fa-exclamation-triangle mr-1"></i> Perhatian Kelas Tidak Sesuai</strong>
+                            <div id="warningKelas9Text" class="mt-1 small"></div>
                         </div>
 
                         <div class="form-group">
@@ -408,6 +438,27 @@
                                 <div class="form-group">
                                     <label>Nama Sekolah Asal</label>
                                     <input type="text" name="nama_sekolah_asal" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>NSM Sekolah Asal</label>
+                                    <input type="text" name="nsm_asal_sekolah" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Status Sekolah Asal</label>
+                                    <input type="text" name="status_sekolah_asal" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Akreditasi Sekolah Asal</label>
+                                    <input type="text" name="akreditasi_sekolah_asal" class="form-control">
                                 </div>
                             </div>
                         </div>
@@ -740,6 +791,9 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(document).ready(function() {
+    const selectedGelombangId = @json($selectedGelombangIdInput);
+    const cekNisnUrl = @json(route('admin.pendaftar.cek-nisn'));
+
     // Initialize Select2
     $('.select2').select2({
         theme: 'bootstrap-5',
@@ -859,7 +913,8 @@ $(document).ready(function() {
             // For manual input, show all gelombang including inactive ones with remaining quota
             if (sisa > 0) {
                 const status = g.is_active ? '' : ' (Tidak Aktif)';
-                options += `<option value="${g.id}">${g.nama}${status} (Sisa: ${sisa})</option>`;
+                const selectedAttr = selectedGelombangId && String(selectedGelombangId) === String(g.id) ? ' selected' : '';
+                options += `<option value="${g.id}"${selectedAttr}>${g.nama}${status} (Sisa: ${sisa})</option>`;
             }
         });
         
@@ -875,6 +930,159 @@ $(document).ready(function() {
         } else {
             $('#jalurInfo').hide();
         }
+    });
+
+    if ($('#jalur_pendaftaran_id').val()) {
+        $('#jalur_pendaftaran_id').trigger('change');
+    }
+
+    function showCekNisnResult(type, message, sourceLabel = null) {
+        const box = $('#hasilCekNisn');
+        box.removeClass('alert-info alert-success alert-warning alert-danger')
+            .addClass('alert-' + type)
+            .show();
+        $('#hasilCekNisnText').html(message);
+
+        if (sourceLabel) {
+            $('#hasilCekNisnSource').text(sourceLabel).show();
+        } else {
+            $('#hasilCekNisnSource').hide().text('');
+        }
+    }
+
+    function hideKelas9Warning() {
+        $('#warningKelas9').hide();
+        $('#warningKelas9Text').text('');
+    }
+
+    function showKelas9Warning(message) {
+        $('#warningKelas9Text').text(message);
+        $('#warningKelas9').show();
+    }
+
+    function setValue(selector, value) {
+        if (value !== null && value !== undefined && value !== '') {
+            $(selector).val(value);
+        }
+    }
+
+    function setSelectValue(selector, value) {
+        if (value !== null && value !== undefined && value !== '') {
+            $(selector).val(value).trigger('change');
+        }
+    }
+
+    function loadAddressChain(data) {
+        const province = data.provinsi_id_siswa;
+        const city = data.kabupaten_id_siswa;
+        const district = data.kecamatan_id_siswa;
+        const village = data.kelurahan_id_siswa;
+
+        if (!province) return;
+
+        $('#provinsi_siswa').val(province).trigger('change');
+
+        $.get('/api/indonesia/cities/' + province, function(items) {
+            let options = '<option value="">-- Pilih Kabupaten/Kota --</option>';
+            items.forEach(function(item) {
+                options += `<option value="${item.code}">${item.name}</option>`;
+            });
+            $('#kabupaten_siswa').html(options);
+
+            if (city) {
+                $('#kabupaten_siswa').val(city).trigger('change');
+
+                $.get('/api/indonesia/districts/' + city, function(districts) {
+                    let districtOptions = '<option value="">-- Pilih Kecamatan --</option>';
+                    districts.forEach(function(item) {
+                        districtOptions += `<option value="${item.code}">${item.name}</option>`;
+                    });
+                    $('#kecamatan_siswa').html(districtOptions);
+
+                    if (district) {
+                        $('#kecamatan_siswa').val(district).trigger('change');
+
+                        $.get('/api/indonesia/villages/' + district, function(villages) {
+                            let villageOptions = '<option value="">-- Pilih Kelurahan/Desa --</option>';
+                            villages.forEach(function(item) {
+                                villageOptions += `<option value="${item.code}">${item.name}</option>`;
+                            });
+                            $('#kelurahan_siswa').html(villageOptions);
+
+                            if (village) {
+                                $('#kelurahan_siswa').val(village).trigger('change');
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    function autofillFromNisn(data) {
+        setValue('input[name="nisn"]', data.nisn);
+        setValue('input[name="nik"]', data.nik);
+        setValue('input[name="nama_lengkap"]', data.nama_lengkap);
+        setValue('input[name="tempat_lahir"]', data.tempat_lahir);
+        setValue('input[name="tanggal_lahir"]', data.tanggal_lahir);
+        setSelectValue('select[name="jenis_kelamin"]', data.jenis_kelamin);
+        setSelectValue('select[name="agama"]', data.agama);
+        setValue('textarea[name="alamat_siswa"]', data.alamat_siswa);
+        setValue('input[name="rt_siswa"]', data.rt_siswa);
+        setValue('input[name="rw_siswa"]', data.rw_siswa);
+        setValue('input[name="kodepos_siswa"]', data.kodepos_siswa);
+        loadAddressChain(data);
+
+        setValue('input[name="npsn_asal_sekolah"]', data.npsn_asal_sekolah);
+        setValue('input[name="nama_sekolah_asal"]', data.nama_sekolah_asal);
+        setValue('input[name="nsm_asal_sekolah"]', data.nsm_asal_sekolah);
+        setValue('input[name="status_sekolah_asal"]', data.status_sekolah_asal);
+        setValue('input[name="akreditasi_sekolah_asal"]', data.akreditasi_sekolah_asal);
+
+        setValue('input[name="nama_ayah"]', data.nama_ayah);
+        setValue('input[name="nama_ibu"]', data.nama_ibu);
+    }
+
+    $('#btnCekNisn').on('click', function() {
+        const nisn = $('#nisn').val().trim();
+        const btn = $(this);
+
+        if (!/^[0-9]{10}$/.test(nisn)) {
+            showCekNisnResult('warning', '<i class="fas fa-exclamation-triangle mr-1"></i> NISN harus terdiri dari 10 digit angka.');
+            return;
+        }
+
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Mengecek...');
+
+        $.ajax({
+            url: cekNisnUrl,
+            method: 'POST',
+            dataType: 'json',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                nisn: nisn
+            },
+            success: function(response) {
+                autofillFromNisn(response.data || {});
+                hideKelas9Warning();
+
+                let message = '<i class="fas fa-check-circle mr-1"></i> ' + response.message;
+                if (response.warning) {
+                    showKelas9Warning(response.warning);
+                }
+                showCekNisnResult('success', message, response.source_label || null);
+            },
+            error: function(xhr) {
+                const response = xhr.responseJSON || {};
+                const message = response.message || 'Gagal mengecek NISN. Anda masih bisa melanjutkan input manual.';
+                const type = xhr.status === 404 || xhr.status === 422 ? 'warning' : 'danger';
+                hideKelas9Warning();
+                showCekNisnResult(type, message, response.source_label || null);
+            },
+            complete: function() {
+                btn.prop('disabled', false).html('<i class="fas fa-search mr-1"></i> Cek NISN');
+            }
+        });
     });
 
     // Address cascading - Provinsi

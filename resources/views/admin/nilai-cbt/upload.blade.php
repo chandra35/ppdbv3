@@ -49,6 +49,69 @@
 
 @section('content')
 <div class="container-fluid">
+    <div class="alert alert-info">
+        <i class="fas fa-layer-group mr-1"></i>
+        <strong>Konteks aktif:</strong>
+        Tahun {{ $contextInfo['tahun'] }},
+        Jalur {{ $contextInfo['jalur'] }},
+        Gelombang {{ $contextInfo['gelombang'] }}.
+    </div>
+
+    <div class="card card-outline card-info">
+        <div class="card-body">
+            <form method="GET" action="{{ route('admin.nilai-cbt.upload') }}" class="row">
+                <div class="col-md-3">
+                    <div class="form-group mb-md-0">
+                        <label>Tahun Pelajaran</label>
+                        <select name="tahun_pelajaran_id" class="form-control form-control-sm">
+                            @foreach($tahunPelajarans as $tahun)
+                                <option value="{{ $tahun->id }}" {{ $selectedTahunIdInput == $tahun->id ? 'selected' : '' }}>
+                                    {{ $tahun->nama }}{{ $tahun->is_active ? ' (Aktif)' : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group mb-md-0">
+                        <label>Jalur</label>
+                        <select name="jalur_id" class="form-control form-control-sm">
+                            <option value="all" {{ $selectedJalurIdInput === 'all' ? 'selected' : '' }}>Semua Jalur</option>
+                            @foreach($jalurs as $jalur)
+                                <option value="{{ $jalur->id }}" {{ $selectedJalurIdInput == $jalur->id ? 'selected' : '' }}>
+                                    {{ $jalur->nama }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group mb-md-0">
+                        <label>Gelombang</label>
+                        <select name="gelombang_id" class="form-control form-control-sm">
+                            <option value="all" {{ $selectedGelombangIdInput === 'all' ? 'selected' : '' }}>Semua Gelombang</option>
+                            @foreach($gelombangs as $gelombang)
+                                <option value="{{ $gelombang->id }}" {{ $selectedGelombangIdInput == $gelombang->id ? 'selected' : '' }}>
+                                    {{ $gelombang->nama }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <div>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="fas fa-filter mr-1"></i>Terapkan
+                        </button>
+                        <a href="{{ route('admin.nilai-cbt.upload') }}" class="btn btn-default btn-sm">
+                            <i class="fas fa-undo mr-1"></i>Reset
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     {{-- Step 1: Pilih Mapel --}}
     <div class="card">
         <div class="card-header">
@@ -104,6 +167,9 @@
                     <form action="{{ route('admin.nilai-cbt.upload.process') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
                         @csrf
                         <input type="hidden" name="mapel" id="mapelInput" value="{{ $selectedMapel }}">
+                        <input type="hidden" name="tahun_pelajaran_id" value="{{ $selectedTahunIdInput }}">
+                        <input type="hidden" name="jalur_id" value="{{ $selectedJalurIdInput }}">
+                        <input type="hidden" name="gelombang_id" value="{{ $selectedGelombangIdInput }}">
 
                         <div class="form-group">
                             <label>Tahun Pelajaran Aktif</label>

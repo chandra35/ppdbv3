@@ -39,6 +39,14 @@
 
 @section('content')
 <div class="container-fluid">
+    <div class="alert alert-info">
+        <i class="fas fa-layer-group mr-1"></i>
+        <strong>Konteks aktif:</strong>
+        Tahun {{ $contextInfo['tahun'] }},
+        Jalur {{ $contextInfo['jalur'] }},
+        Gelombang {{ $contextInfo['gelombang'] }}.
+    </div>
+
     @if(session('success'))
         <div class="alert alert-success alert-dismissible">
             <button type="button" class="close" data-dismiss="alert">&times;</button>
@@ -65,10 +73,35 @@
                         <div class="form-group">
                             <label>Tahun Pelajaran</label>
                             <select name="tahun_pelajaran_id" class="form-control select2">
-                                <option value="">-- Semua Tahun --</option>
                                 @foreach($tahunPelajarans as $tp)
-                                    <option value="{{ $tp->id }}" {{ request('tahun_pelajaran_id') == $tp->id ? 'selected' : '' }}>
+                                    <option value="{{ $tp->id }}" {{ $selectedTahunIdInput == $tp->id ? 'selected' : '' }}>
                                         {{ $tp->nama }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>Jalur</label>
+                            <select name="jalur_id" class="form-control">
+                                <option value="all" {{ $selectedJalurIdInput === 'all' ? 'selected' : '' }}>-- Semua Jalur --</option>
+                                @foreach($jalurs as $jalur)
+                                    <option value="{{ $jalur->id }}" {{ $selectedJalurIdInput == $jalur->id ? 'selected' : '' }}>
+                                        {{ $jalur->nama }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Gelombang</label>
+                            <select name="gelombang_id" class="form-control">
+                                <option value="all" {{ $selectedGelombangIdInput === 'all' ? 'selected' : '' }}>-- Semua --</option>
+                                @foreach($gelombangs as $gelombang)
+                                    <option value="{{ $gelombang->id }}" {{ $selectedGelombangIdInput == $gelombang->id ? 'selected' : '' }}>
+                                        {{ $gelombang->nama }}
                                     </option>
                                 @endforeach
                             </select>

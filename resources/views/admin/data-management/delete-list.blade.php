@@ -17,6 +17,13 @@
 @stop
 
 @section('content')
+    <div class="alert alert-info">
+        Data aktif sedang memakai konteks:
+        Tahun <strong>{{ $contextInfo['tahun'] }}</strong>,
+        Jalur <strong>{{ $contextInfo['jalur'] }}</strong>,
+        Gelombang <strong>{{ $contextInfo['gelombang'] }}</strong>.
+    </div>
+
     <!-- Alert Messages -->
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show">
@@ -52,11 +59,36 @@
                 <div class="row">
                     <div class="col-md-3">
                         <div class="form-group">
+                            <label>Tahun Pelajaran</label>
+                            <select name="tahun_pelajaran_id" class="form-control form-control-sm">
+                                @foreach($tahunPelajarans as $tahun)
+                                    <option value="{{ $tahun->id }}" {{ $selectedTahunIdInput == $tahun->id ? 'selected' : '' }}>
+                                        {{ $tahun->nama }} {{ $tahun->is_active ? '(Aktif)' : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>Jalur</label>
+                            <select name="jalur_id" class="form-control form-control-sm">
+                                <option value="all" {{ $selectedJalurIdInput === 'all' ? 'selected' : '' }}>Semua Jalur</option>
+                                @foreach($jalurs as $jalur)
+                                    <option value="{{ $jalur->id }}" {{ (string) $selectedJalurIdInput === (string) $jalur->id ? 'selected' : '' }}>
+                                        {{ $jalur->nama }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
                             <label>Gelombang</label>
                             <select name="gelombang_id" class="form-control form-control-sm">
-                                <option value="">Semua Gelombang</option>
+                                <option value="all" {{ $selectedGelombangIdInput === 'all' ? 'selected' : '' }}>Semua Gelombang</option>
                                 @foreach($gelombangs as $gelombang)
-                                    <option value="{{ $gelombang->id }}" {{ request('gelombang_id') == $gelombang->id ? 'selected' : '' }}>
+                                    <option value="{{ $gelombang->id }}" {{ (string) $selectedGelombangIdInput === (string) $gelombang->id ? 'selected' : '' }}>
                                         {{ $gelombang->nama }}
                                     </option>
                                 @endforeach
@@ -129,7 +161,7 @@
                                 <th width="50">No</th>
                                 <th>Nama Lengkap</th>
                                 <th>NISN</th>
-                                <th>Gelombang</th>
+                                <th>Jalur / Gelombang</th>
                                 <th>Status</th>
                                 <th>Tanggal Daftar</th>
                                 <th width="140">Aksi</th>
@@ -145,6 +177,12 @@
                                     <td>{{ $pendaftar->nama_lengkap }}</td>
                                     <td>{{ $pendaftar->nisn }}</td>
                                     <td>
+                                        @if($pendaftar->jalurPendaftaran)
+                                            <span class="badge badge-primary">
+                                                {{ $pendaftar->jalurPendaftaran->nama }}
+                                            </span>
+                                        @endif
+                                        <br>
                                         @if($pendaftar->gelombangPendaftaran)
                                             <span class="badge badge-info">
                                                 {{ $pendaftar->gelombangPendaftaran->nama }}

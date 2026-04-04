@@ -7,11 +7,17 @@ use App\Models\CalonSiswa;
 use App\Models\TahunPelajaran;
 use App\Models\JalurPendaftaran;
 use App\Models\GelombangPendaftaran;
+use App\Services\NomorService;
+use App\Support\AdminPpdbContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class FinalisasiController extends Controller
 {
+    public function __construct(private readonly NomorService $nomorService)
+    {
+    }
+
     /**
      * Check permission - admin selalu bisa akses
      */
@@ -36,25 +42,14 @@ class FinalisasiController extends Controller
      */
     public function index(Request $request)
     {
-        // Get tahun pelajaran
-        $tahunPelajaranList = TahunPelajaran::orderBy('is_active', 'desc')
-            ->orderBy('nama', 'desc')
-            ->get();
-        
-        $tahunAktif = $request->tahun_pelajaran_id 
-            ? TahunPelajaran::find($request->tahun_pelajaran_id)
-            : TahunPelajaran::where('is_active', true)->first();
-
-        // Get jalur and gelombang for filters
-        $jalurList = $tahunAktif 
-            ? JalurPendaftaran::where('tahun_pelajaran_id', $tahunAktif->id)->get() 
-            : collect();
-        
-        $gelombangList = $tahunAktif 
-            ? GelombangPendaftaran::whereHas('jalur', function($q) use ($tahunAktif) {
-                $q->where('tahun_pelajaran_id', $tahunAktif->id);
-            })->get() 
-            : collect();
+        $context = AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
+        $tahunAktif = $context['selectedTahun'];
+        $jalurList = $context['jalurs'];
+        $gelombangList = $context['gelombangs'];
 
         // Build query
         $query = CalonSiswa::with(['jalurPendaftaran', 'gelombangPendaftaran', 'ortu', 'dokumen'])
@@ -75,13 +70,13 @@ class FinalisasiController extends Controller
         }
 
         // Filter jalur
-        if ($request->jalur_id) {
-            $query->where('jalur_pendaftaran_id', $request->jalur_id);
+        if ($context['jalurFilterId']) {
+            $query->where('jalur_pendaftaran_id', $context['jalurFilterId']);
         }
 
         // Filter gelombang
-        if ($request->gelombang_id) {
-            $query->where('gelombang_pendaftaran_id', $request->gelombang_id);
+        if ($context['gelombangFilterId']) {
+            $query->where('gelombang_pendaftaran_id', $context['gelombangFilterId']);
         }
 
         // Filter kelengkapan
@@ -135,12 +130,20 @@ class FinalisasiController extends Controller
 
         return view('admin.finalisasi.index', compact(
             'pendaftarList',
-            'tahunPelajaranList',
             'tahunAktif',
             'jalurList',
             'gelombangList',
             'stats'
-        ));
+        ) + [
+            'tahunPelajaranList' => $context['tahunPelajarans'],
+            'selectedJalurIdInput' => $context['selectedJalurIdInput'],
+            'selectedGelombangIdInput' => $context['selectedGelombangIdInput'],
+            'contextInfo' => [
+                'tahun' => $context['selectedTahun']?->nama ?? '-',
+                'jalur' => $context['selectedJalur']?->nama ?? 'Semua Jalur',
+                'gelombang' => $context['selectedGelombang']?->nama ?? 'Semua Gelombang',
+            ],
+        ]);
     }
 
     /**
@@ -179,12 +182,12 @@ class FinalisasiController extends Controller
 
             // Generate nomor registrasi jika belum ada
             if (!$pendaftar->nomor_registrasi) {
-                $pendaftar->nomor_registrasi = $this->generateNomorRegistrasi($pendaftar);
+                $pendaftar->nomor_registrasi = $this->nomorService->generateNomorRegistrasi($pendaftar);
             }
 
             // Generate nomor tes
             if (!$pendaftar->nomor_tes) {
-                $pendaftar->nomor_tes = $this->generateNomorTes($pendaftar);
+                $pendaftar->nomor_tes = $this->nomorService->generateNomorTes($pendaftar);
             }
 
             // Generate verification hash
@@ -257,11 +260,11 @@ class FinalisasiController extends Controller
                 DB::beginTransaction();
 
                 if (!$pendaftar->nomor_registrasi) {
-                    $pendaftar->nomor_registrasi = $this->generateNomorRegistrasi($pendaftar);
+                    $pendaftar->nomor_registrasi = $this->nomorService->generateNomorRegistrasi($pendaftar);
                 }
 
                 if (!$pendaftar->nomor_tes) {
-                    $pendaftar->nomor_tes = $this->generateNomorTes($pendaftar);
+                    $pendaftar->nomor_tes = $this->nomorService->generateNomorTes($pendaftar);
                 }
 
                 if (!$pendaftar->verification_hash) {
@@ -374,48 +377,4 @@ class FinalisasiController extends Controller
         return $errors;
     }
 
-    /**
-     * Generate nomor registrasi
-     * Menggunakan method dari CalonSiswa untuk konsistensi
-     */
-    private function generateNomorRegistrasi(CalonSiswa $pendaftar): string
-    {
-        return $pendaftar->generateNomorRegistrasi();
-    }
-
-    /**
-     * Generate nomor tes using settings format
-     */
-    private function generateNomorTes(CalonSiswa $pendaftar): string
-    {
-        // If already has nomor_tes, return it
-        if ($pendaftar->nomor_tes) {
-            return $pendaftar->nomor_tes;
-        }
-
-        $settings = \App\Models\PpdbSettings::first();
-        $tahun = $pendaftar->tahunPelajaran->tahun_mulai ?? date('Y');
-        $jalurCode = strtoupper(substr($pendaftar->jalurPendaftaran->nama ?? 'REG', 0, 3));
-        
-        // Get and update counter for this jalur
-        $counters = $settings->nomor_tes_counter ?? [];
-        $jalurKey = (string) $pendaftar->jalur_pendaftaran_id;
-        $counter = ($counters[$jalurKey] ?? 0) + 1;
-        
-        // Update counter atomically
-        $counters[$jalurKey] = $counter;
-        $settings->update(['nomor_tes_counter' => $counters]);
-        
-        // Generate nomor using format template
-        $format = $settings->nomor_tes_format ?? '{PREFIX}-{TAHUN}-{JALUR}-{NOMOR}';
-        $nomor = str_pad($counter, $settings->nomor_tes_digit ?? 4, '0', STR_PAD_LEFT);
-        
-        $nomorTes = str_replace(
-            ['{PREFIX}', '{TAHUN}', '{JALUR}', '{NOMOR}'],
-            [$settings->nomor_tes_prefix ?? 'NTS', $tahun, $jalurCode, $nomor],
-            $format
-        );
-
-        return $nomorTes;
-    }
 }

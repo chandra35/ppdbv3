@@ -4,11 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Artisan;
-use Symfony\Component\Process\Process;
-use Symfony\Component\Process\Exception\ProcessFailedException;
 use ZipArchive;
 
 class BackupController extends Controller
@@ -30,7 +26,9 @@ class BackupController extends Controller
     {
         try {
             $timestamp = now()->format('Y-m-d_His');
-            $backupName = "backup_{$timestamp}";
+            $type = $request->input('backup_type', 'full');
+            $isDatabaseOnly = $type === 'database';
+            $backupName = ($isDatabaseOnly ? "database_backup_{$timestamp}" : "backup_{$timestamp}");
             $backupPath = storage_path("app/backups/{$backupName}");
             
             // Create backup directory
@@ -42,8 +40,10 @@ class BackupController extends Controller
             $sqlFile = "{$backupPath}/database.sql";
             $this->backupDatabase($sqlFile);
 
-            // 2. Copy important files/folders
-            $this->backupFiles($backupPath);
+            // 2. Copy important files/folders for full backup
+            if (!$isDatabaseOnly) {
+                $this->backupFiles($backupPath);
+            }
 
             // 3. Create ZIP
             $zipFile = storage_path("app/backups/{$backupName}.zip");
@@ -54,7 +54,7 @@ class BackupController extends Controller
 
             return redirect()
                 ->route('admin.backup.index')
-                ->with('success', "Backup berhasil dibuat: {$backupName}.zip");
+                ->with('success', ($isDatabaseOnly ? 'Backup database' : 'Backup lengkap') . " berhasil dibuat: {$backupName}.zip");
         } catch (\Exception $e) {
             return redirect()
                 ->back()
@@ -125,6 +125,7 @@ class BackupController extends Controller
                     'name' => $file,
                     'size' => $this->formatBytes(filesize($filePath)),
                     'date' => date('d/m/Y H:i', filemtime($filePath)),
+                    'type' => str_starts_with($file, 'database_backup_') ? 'Database' : 'Lengkap',
                 ];
             }
         }
@@ -142,26 +143,111 @@ class BackupController extends Controller
      */
     private function backupDatabase($sqlFile)
     {
-        $host = config('database.connections.mysql.host');
-        $database = config('database.connections.mysql.database');
-        $username = config('database.connections.mysql.username');
-        $password = config('database.connections.mysql.password');
+        if ($this->tryMysqlDump($sqlFile)) {
+            return;
+        }
 
-        // Using mysqldump command
+        $this->backupDatabaseWithPhp($sqlFile);
+    }
+
+    private function tryMysqlDump(string $sqlFile): bool
+    {
+        $connection = config('database.default');
+        $config = config("database.connections.{$connection}");
+
+        if (($config['driver'] ?? null) !== 'mysql') {
+            return false;
+        }
+
+        $host = $config['host'] ?? '127.0.0.1';
+        $port = $config['port'] ?? 3306;
+        $database = $config['database'] ?? '';
+        $username = $config['username'] ?? '';
+        $password = $config['password'] ?? '';
+
         $command = sprintf(
-            'mysqldump -h %s -u %s -p%s %s > %s',
+            'mysqldump --host=%s --port=%s --user=%s --password=%s --skip-comments --single-transaction %s',
             escapeshellarg($host),
+            escapeshellarg((string) $port),
             escapeshellarg($username),
             escapeshellarg($password),
-            escapeshellarg($database),
-            escapeshellarg($sqlFile)
+            escapeshellarg($database)
         );
 
-        exec($command, $output, $returnVar);
+        $output = [];
+        $returnVar = 1;
+        exec($command . ' > ' . escapeshellarg($sqlFile) . ' 2>NUL', $output, $returnVar);
 
-        if ($returnVar !== 0) {
-            throw new \Exception("Failed to backup database. Return code: {$returnVar}");
+        return $returnVar === 0 && file_exists($sqlFile) && filesize($sqlFile) > 0;
+    }
+
+    private function backupDatabaseWithPhp(string $sqlFile): void
+    {
+        $connection = DB::connection();
+        $driver = $connection->getDriverName();
+
+        if ($driver !== 'mysql') {
+            throw new \RuntimeException("Backup database otomatis saat ini hanya mendukung MySQL. Driver aktif: {$driver}");
         }
+
+        $pdo = $connection->getPdo();
+        $tables = collect(DB::select('SHOW TABLES'))
+            ->map(fn ($row) => array_values((array) $row)[0])
+            ->all();
+
+        $handle = fopen($sqlFile, 'wb');
+
+        if (!$handle) {
+            throw new \RuntimeException('Tidak dapat membuat file SQL backup.');
+        }
+
+        fwrite($handle, "-- PPDBV3 database backup\n");
+        fwrite($handle, "-- Generated at: " . now()->toDateTimeString() . "\n\n");
+        fwrite($handle, "SET FOREIGN_KEY_CHECKS=0;\n\n");
+
+        foreach ($tables as $table) {
+            $createTable = DB::select("SHOW CREATE TABLE `{$table}`");
+            $createSql = $createTable[0]->{'Create Table'} ?? null;
+
+            if (!$createSql) {
+                continue;
+            }
+
+            fwrite($handle, "-- Table: {$table}\n");
+            fwrite($handle, "DROP TABLE IF EXISTS `{$table}`;\n");
+            fwrite($handle, $createSql . ";\n\n");
+
+            foreach (DB::table($table)->cursor() as $row) {
+                $values = array_map(function ($value) use ($pdo) {
+                    if ($value === null) {
+                        return 'NULL';
+                    }
+
+                    if (is_bool($value)) {
+                        return $value ? '1' : '0';
+                    }
+
+                    return $pdo->quote((string) $value);
+                }, array_values((array) $row));
+
+                $columns = array_map(fn ($column) => "`{$column}`", array_keys((array) $row));
+
+                fwrite(
+                    $handle,
+                    sprintf(
+                        "INSERT INTO `%s` (%s) VALUES (%s);\n",
+                        $table,
+                        implode(', ', $columns),
+                        implode(', ', $values)
+                    )
+                );
+            }
+
+            fwrite($handle, "\n");
+        }
+
+        fwrite($handle, "SET FOREIGN_KEY_CHECKS=1;\n");
+        fclose($handle);
     }
 
     /**

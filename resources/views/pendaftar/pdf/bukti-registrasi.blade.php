@@ -298,10 +298,13 @@
             <div class="foto-box">
                 @php
                     $fotoDokumen = $calonSiswa->dokumen()->where('jenis_dokumen', 'foto')->first();
-                    $fotoPath = $fotoDokumen ? storage_path('app/public/' . $fotoDokumen->file_path) : null;
+                    $fotoPath = ($fotoDokumen && $fotoDokumen->storage_disk === 'public' && $fotoDokumen->file_path) ? storage_path('app/public/' . $fotoDokumen->file_path) : null;
+                    $fotoUrl = $fotoDokumen?->file_url;
                 @endphp
                 @if($fotoPath && file_exists($fotoPath))
                     <img src="{{ $fotoPath }}" alt="Foto">
+                @elseif($fotoUrl)
+                    <img src="{{ $fotoUrl }}" alt="Foto">
                 @else
                     <div class="foto-placeholder">Foto 3x4</div>
                 @endif

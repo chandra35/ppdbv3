@@ -49,6 +49,12 @@
 @stop
 
 @section('content')
+<div class="alert alert-info">
+    Penjadwalan ujian sedang memakai konteks:
+    Tahun <strong>{{ $contextInfo['tahun'] }}</strong>,
+    Jalur <strong>{{ $contextInfo['jalur'] }}</strong>,
+    Gelombang <strong>{{ $contextInfo['gelombang'] }}</strong>.
+</div>
 {{-- Alerts --}}
 @if(session('success'))
 <div class="alert alert-success alert-dismissible">
@@ -291,7 +297,7 @@
                     <div class="form-group">
                         <label>Filter Jalur</label>
                         <select name="jalur_id" class="form-control">
-                            <option value="">-- Semua Jalur --</option>
+                            <option value="all" {{ ($selectedJalurIdInput ?? '') === 'all' ? 'selected' : '' }}>-- Semua Jalur --</option>
                             @foreach($jalurList as $jalur)
                             <option value="{{ $jalur->id }}" {{ ($settings['jalur_id'] ?? '') == $jalur->id ? 'selected' : '' }}>
                                 {{ $jalur->nama }}
@@ -302,7 +308,7 @@
                     <div class="form-group mb-0">
                         <label>Filter Gelombang</label>
                         <select name="gelombang_id" class="form-control">
-                            <option value="">-- Semua Gelombang --</option>
+                            <option value="all" {{ ($selectedGelombangIdInput ?? '') === 'all' ? 'selected' : '' }}>-- Semua Gelombang --</option>
                             @foreach($gelombangList as $gel)
                             <option value="{{ $gel->id }}" {{ ($settings['gelombang_id'] ?? '') == $gel->id ? 'selected' : '' }}>
                                 {{ $gel->nama }}

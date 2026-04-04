@@ -117,7 +117,7 @@
                     <p>Status dokumen Anda:</p>
                     <ul>
                         @forelse($calonSiswa->dokumen as $dok)
-                            <li>{{ $dok->jenis_dokumen }}: <span class="badge badge-{{ $dok->status == 'verified' ? 'success' : 'warning' }}">{{ $dok->status }}</span></li>
+                            <li>{{ $dok->nama_dokumen_lengkap }}: <span class="badge badge-{{ $dok->status == 'verified' ? 'success' : 'warning' }}">{{ $dok->status }}</span></li>
                         @empty
                             <li class="text-muted">Belum ada dokumen</li>
                         @endforelse

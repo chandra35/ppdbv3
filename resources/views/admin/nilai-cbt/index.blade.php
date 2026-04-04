@@ -25,6 +25,12 @@
 
 @section('content')
 <div class="container-fluid">
+    <div class="alert alert-info">
+        Nilai CBT sedang memakai konteks:
+        Tahun <strong>{{ $contextInfo['tahun'] }}</strong>,
+        Jalur <strong>{{ $contextInfo['jalur'] }}</strong>,
+        Gelombang <strong>{{ $contextInfo['gelombang'] }}</strong>.
+    </div>
     <!-- Filter -->
     <div class="card">
         <div class="card-header">
@@ -41,6 +47,32 @@
                                     <option value="{{ $tp->id }}" {{ $selectedTahunId == $tp->id ? 'selected' : '' }}>
                                         {{ $tp->nama }} {{ $tp->is_active ? '(Aktif)' : '' }}
                                     </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Jalur</label>
+                            <select name="jalur_id" class="form-control" onchange="this.form.submit()">
+                                <option value="all" {{ $selectedJalurIdInput === 'all' ? 'selected' : '' }}>-- Semua Jalur --</option>
+                                @foreach($jalurs as $jalur)
+                                <option value="{{ $jalur->id }}" {{ (string) $selectedJalurIdInput === (string) $jalur->id ? 'selected' : '' }}>
+                                    {{ $jalur->nama }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Gelombang</label>
+                            <select name="gelombang_id" class="form-control" onchange="this.form.submit()">
+                                <option value="all" {{ $selectedGelombangIdInput === 'all' ? 'selected' : '' }}>-- Semua Gelombang --</option>
+                                @foreach($gelombangs as $gelombang)
+                                <option value="{{ $gelombang->id }}" {{ (string) $selectedGelombangIdInput === (string) $gelombang->id ? 'selected' : '' }}>
+                                    {{ $gelombang->nama }}
+                                </option>
                                 @endforeach
                             </select>
                         </div>

@@ -43,7 +43,7 @@
                         Silakan cek kembali nanti.
                     </p>
                 @elseif(isset($sembunyikanAdmisi) && $sembunyikanAdmisi)
-                    {{-- Amplop belum dibuka → sembunyikan status admisi --}}
+                    {{-- Amplop belum dibuka, sembunyikan status admisi --}}
                     <div class="mb-4">
                         <span class="bg-gradient-purple rounded-circle d-inline-flex align-items-center justify-content-center" 
                               style="width: 100px; height: 100px;">
@@ -54,8 +54,7 @@
                     <h4 class="mb-3 text-muted">Buka amplop di Dashboard untuk melihat hasilnya</h4>
                     <p class="text-muted mb-4">
                         Pengumuman kelulusan sudah tersedia. Silakan buka amplop pengumuman<br>
-                        di halaman Dashboard terlebih dahulu untuk pengalaman yang lebih seru! ✉️
-                    </p>
+                        di halaman Dashboard terlebih dahulu untuk pengalaman yang lebih seru!</p>
                     <a href="{{ route('pendaftar.dashboard') }}" class="btn btn-primary btn-lg px-4">
                         <i class="fas fa-home mr-2"></i> Ke Dashboard
                     </a>
@@ -147,6 +146,18 @@
                         <td>Gelombang</td>
                         <td>{{ $calonSiswa->gelombangPendaftaran->nama ?? '-' }}</td>
                     </tr>
+                    @if($calonSiswa->nomor_tes)
+                    <tr>
+                        <td>Nomor Tes</td>
+                        <td><strong>{{ $calonSiswa->nomor_tes }}</strong></td>
+                    </tr>
+                    @endif
+                    @if($calonSiswa->jalurPendaftaran?->pilihan_program_aktif && $calonSiswa->pilihan_program)
+                    <tr>
+                        <td>Pilihan Program</td>
+                        <td>{{ $calonSiswa->pilihan_program }}</td>
+                    </tr>
+                    @endif
                     <tr>
                         <td>Tanggal Daftar</td>
                         <td>{{ $calonSiswa->created_at->format('d F Y, H:i') }} WIB</td>
@@ -318,3 +329,5 @@
     </div>
 </div>
 @endsection
+
+

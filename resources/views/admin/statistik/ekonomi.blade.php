@@ -33,6 +33,22 @@
                     </option>
                     @endforeach
                 </select>
+                <select name="jalur_id" class="form-control form-control-sm ml-2" onchange="this.form.submit()">
+                    <option value="all" {{ $selectedJalurIdInput === 'all' ? 'selected' : '' }}>Semua Jalur</option>
+                    @foreach($jalurList as $jalur)
+                    <option value="{{ $jalur->id }}" {{ (string) $selectedJalurIdInput === (string) $jalur->id ? 'selected' : '' }}>
+                        {{ $jalur->nama }}
+                    </option>
+                    @endforeach
+                </select>
+                <select name="gelombang_id" class="form-control form-control-sm ml-2" onchange="this.form.submit()">
+                    <option value="all" {{ $selectedGelombangIdInput === 'all' ? 'selected' : '' }}>Semua Gelombang</option>
+                    @foreach($gelombangList as $gelombang)
+                    <option value="{{ $gelombang->id }}" {{ (string) $selectedGelombangIdInput === (string) $gelombang->id ? 'selected' : '' }}>
+                        {{ $gelombang->nama }}
+                    </option>
+                    @endforeach
+                </select>
             </form>
         </div>
     </div>
@@ -40,6 +56,13 @@
 @stop
 
 @section('content')
+<div class="alert alert-info">
+    Statistik ekonomi sedang menggunakan konteks:
+    Tahun <strong>{{ $contextInfo['tahun'] }}</strong>,
+    Jalur <strong>{{ $contextInfo['jalur'] }}</strong>,
+    Gelombang <strong>{{ $contextInfo['gelombang'] }}</strong>.
+</div>
+
 {{-- Ringkasan Penghasilan --}}
 <div class="row">
     <div class="col-12">

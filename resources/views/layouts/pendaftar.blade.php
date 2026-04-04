@@ -183,7 +183,7 @@
 @php
     $calonSiswaForPhoto = \App\Models\CalonSiswa::where('user_id', auth()->id())->first();
     $fotoProfile = $calonSiswaForPhoto ? $calonSiswaForPhoto->dokumen()->where('jenis_dokumen', 'foto')->first() : null;
-    $fotoProfileUrl = $fotoProfile ? asset('storage/' . $fotoProfile->file_path) : null;
+    $fotoProfileUrl = $fotoProfile?->file_url;
 @endphp
 <div class="wrapper">
 
@@ -398,7 +398,7 @@
                             <p>Info Kelulusan <span class="badge badge-secondary ml-1" style="font-size: 0.6rem;">Belum Dibuka</span></p>
                         </a>
                         @elseif($calonSiswaForMenu && $calonSiswaForMenu->kelulusan && !$envelopeOpenedForMenu)
-                        {{-- Ada kelulusan tapi amplop belum dibuka → arahkan ke dashboard --}}
+                        {{-- Ada kelulusan tapi amplop belum dibuka, arahkan ke dashboard --}}
                         <a href="{{ route('pendaftar.dashboard') }}" class="nav-link {{ request()->routeIs('pendaftar.kelulusan') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-lock text-warning"></i>
                             <p>Info Kelulusan <span class="badge badge-warning ml-1" style="font-size: 0.6rem;">Buka Amplop</span></p>
@@ -491,6 +491,8 @@
 <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
 <!-- Toastr -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
     $.ajaxSetup({
@@ -531,12 +533,17 @@
 </script>
 
 {{-- Modal Preview Kartu Ujian --}}
-@if(isset($calonSiswa) && $calonSiswa && $calonSiswa->is_finalisasi)
+@php
+    $calonSiswaModal = \App\Models\CalonSiswa::with(['user', 'jalurPendaftaran', 'tahunPelajaran'])
+        ->where('user_id', auth()->id())
+        ->first();
+@endphp
+@if($calonSiswaModal && $calonSiswaModal->is_finalisasi)
 @php
     $sekolahSettings = \App\Models\SekolahSettings::first();
-    $fotoDokumen = $calonSiswa->dokumen()->where('jenis_dokumen', 'foto')->first();
-    $fotoUrl = $fotoDokumen ? asset('storage/' . $fotoDokumen->file_path) : null;
-    $password = $calonSiswa->user->readable_password ?? '********';
+    $fotoDokumen = $calonSiswaModal->dokumen()->where('jenis_dokumen', 'foto')->first();
+    $fotoUrl = $fotoDokumen?->file_url;
+    $password = $calonSiswaModal->user->readable_password ?? '********';
 @endphp
 <div class="modal fade" id="kartuUjianModal" tabindex="-1" role="dialog" aria-labelledby="kartuUjianModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 450px;">
@@ -551,104 +558,14 @@
             </div>
             <div class="modal-body text-center" style="background: #f5f5f5; padding: 20px;">
                 <div id="kartuUjianContent">
-                    <div class="card" style="width: 400px; height: 250px; margin: 0 auto; background: #fff; border: 1px solid #999; border-radius: 8px; overflow: hidden; position: relative;">
-                        {{-- Watermark --}}
-                        @if($sekolahSettings && $sekolahSettings->logo)
-                        <div class="watermark" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100px; height: 100px; opacity: 0.12;">
-                            <img src="{{ asset('storage/' . $sekolahSettings->logo) }}" style="width: 100%; height: 100%; object-fit: contain;" alt="Logo">
-                        </div>
-                        @endif
-                        
-                        {{-- Header --}}
-                        <div class="card-header" style="border-bottom: 1px solid #ccc; padding: 8px 12px; background: #fff;">
-                            <table cellpadding="0" cellspacing="0" style="width: 100%;">
-                                <tr>
-                                    <td class="school-name" style="color: #333; font-size: 11px; font-weight: bold; text-transform: uppercase;">{{ Str::limit($sekolahSettings->nama_sekolah ?? config('app.name'), 30) }}</td>
-                                    <td style="text-align: right;"><span class="card-type" style="color: #666; font-size: 9px; border: 1px solid #999; padding: 2px 6px; border-radius: 3px;">KARTU TES PPDB</span></td>
-                                </tr>
-                            </table>
-                        </div>
-                        
-                        {{-- Body --}}
-                        <div class="card-body" style="padding: 10px 12px;">
-                            <table cellpadding="0" cellspacing="0" style="width: 100%;">
-                                <tr>
-                                    <td class="photo-cell" style="width: 80px; vertical-align: top; padding-right: 10px;">
-                                        <div class="photo-box" style="width: 75px; height: 100px; border: 1px solid #999; border-radius: 4px; overflow: hidden; background: #fff;">
-                                            @if($fotoUrl)
-                                                <img src="{{ $fotoUrl }}" style="width: 75px; height: 100px; object-fit: cover;" alt="Foto">
-                                            @else
-                                                <div class="no-photo" style="color: #999; font-size: 10px; text-align: center; padding-top: 35px;">Pas Foto</div>
-                                            @endif
-                                        </div>
-                                    </td>
-                                    <td class="info-cell" style="vertical-align: top;">
-                                        {{-- Nomor Tes --}}
-                                        <div class="nomor-tes-box" style="border: 1px solid #999; border-radius: 4px; padding: 5px; text-align: center; margin-bottom: 8px;">
-                                            <div class="nomor-tes-label" style="color: #666; font-size: 8px; text-transform: uppercase; letter-spacing: 1px;">Nomor Tes</div>
-                                            <div class="nomor-tes-value" style="color: #333; font-size: 16px; font-weight: bold; letter-spacing: 1px;">{{ $calonSiswa->nomor_tes }}</div>
-                                        </div>
-                                        
-                                        {{-- Data --}}
-                                        <table class="data-table" cellpadding="0" cellspacing="0" style="width: 100%; margin-bottom: 8px;">
-                                            <tr>
-                                                <td class="data-label" style="width: 40px; color: #666; font-size: 9px; vertical-align: top; text-align: left;">Nama</td>
-                                                <td class="data-separator" style="width: 8px; color: #666; font-size: 9px; vertical-align: top; text-align: left;">:</td>
-                                                <td class="data-value nama-value" style="font-weight: bold; color: #333; font-size: 9px; text-transform: uppercase; text-align: left;">{{ $calonSiswa->nama_lengkap }}</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="data-label" style="width: 40px; color: #666; font-size: 9px; vertical-align: top; text-align: left;">NISN</td>
-                                                <td class="data-separator" style="width: 8px; color: #666; font-size: 9px; vertical-align: top; text-align: left;">:</td>
-                                                <td class="data-value" style="font-weight: bold; color: #333; font-size: 9px; text-align: left;">{{ $calonSiswa->nisn }}</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="data-label" style="width: 40px; color: #666; font-size: 9px; vertical-align: top; text-align: left;">TTL</td>
-                                                <td class="data-separator" style="width: 8px; color: #666; font-size: 9px; vertical-align: top; text-align: left;">:</td>
-                                                <td class="data-value" style="font-weight: bold; color: #333; font-size: 9px; text-align: left;">{{ $calonSiswa->tempat_lahir ?? '-' }}, {{ $calonSiswa->tanggal_lahir ? \Carbon\Carbon::parse($calonSiswa->tanggal_lahir)->format('d/m/Y') : '-' }}</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="data-label" style="width: 40px; color: #666; font-size: 9px; vertical-align: top; text-align: left;">Program</td>
-                                                <td class="data-separator" style="width: 8px; color: #666; font-size: 9px; vertical-align: top; text-align: left;">:</td>
-                                                <td class="data-value" style="font-weight: bold; color: #333; font-size: 9px; text-align: left;">{{ $calonSiswa->pilihan_program ?? '-' }}</td>
-                                            </tr>
-                                        </table>
-                                        
-                                        {{-- Password --}}
-                                        <div class="password-box" style="border: 1px dashed #999; border-radius: 4px; padding: 5px 8px; display: inline-block;">
-                                            <table cellpadding="0" cellspacing="0">
-                                                <tr>
-                                                    <td class="password-label" style="color: #666; font-size: 9px; padding-right: 8px;">🔑 Password:</td>
-                                                    <td class="password-value" style="color: #c0392b; font-size: 12px; font-weight: bold; letter-spacing: 2px; font-family: Consolas, monospace;">{{ $password }}</td>
-                                                </tr>
-                                            </table>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </table>
-                        </div>
-                        
-                        {{-- Footer --}}
-                        <div class="card-footer" style="position: absolute; bottom: 0; left: 0; right: 0; border-top: 1px solid #ccc; padding: 6px 12px; background: #fff;">
-                            <table cellpadding="0" cellspacing="0" style="width: 100%;">
-                                <tr>
-                                    <td><span class="year-badge" style="border: 1px solid #999; color: #333; padding: 2px 6px; border-radius: 3px; font-size: 9px; font-weight: bold;">{{ $calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y') }}/{{ (($calonSiswa->tahunPelajaran->tahun_mulai ?? date('Y')) + 1) }}</span></td>
-                                    <td class="footer-center" style="text-align: center; color: #666; font-size: 9px;">{{ $calonSiswa->jalurPendaftaran->nama ?? 'Jalur Umum' }}</td>
-                                    <td class="footer-right" style="text-align: right; color: #999; font-size: 8px;">{{ \Carbon\Carbon::now()->format('d/m/Y') }}</td>
-                                </tr>
-                            </table>
-                        </div>
-                        
-                        {{-- QR Code --}}
-                        @php
-                            $hash = $calonSiswa->getOrGenerateHash();
-                            $verifyUrl = route('verify.bukti', $hash);
-                        @endphp
-                        <div style="position: absolute; bottom: 28px; left: 8px; width: 65px; height: 65px; background: #fff; border: 1px solid #ccc; border-radius: 3px; padding: 3px; z-index: 10;">
-                            {!! QrCode::format('svg')->size(60)->margin(0)->generate($verifyUrl) !!}
-                        </div>
-                    </div>
+                    @include('partials.kartu-ujian-preview-card', [
+                        'previewCalonSiswa' => $calonSiswaModal,
+                        'sekolahSettings' => $sekolahSettings,
+                        'fotoUrl' => $fotoUrl,
+                        'password' => $password,
+                    ])
                 </div>
-                <p class="text-muted mt-3 mb-0" style="font-size: 12px;">✂️ Gunting mengikuti tepi kartu setelah dicetak</p>
+                <p class="text-muted mt-3 mb-0" style="font-size: 12px;">Gunting mengikuti tepi kartu setelah dicetak</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">
@@ -670,7 +587,7 @@
 function printKartuUjian() {
     var printContent = document.getElementById('kartuUjianContent').innerHTML;
     var printWindow = window.open('', '_blank', 'width=500,height=400');
-    printWindow.document.write('<html><head><title>Kartu Tes - {{ $calonSiswa->nomor_tes }}</title>');
+    printWindow.document.write('<html><head><title>Kartu Tes - {{ $calonSiswaModal->nomor_tes }}</title>');
     printWindow.document.write('<style>');
     printWindow.document.write('body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }');
     printWindow.document.write('.card { width: 400px; height: 250px; margin: 0 auto; background: #fff; border: 1px solid #999; border-radius: 8px; overflow: hidden; position: relative; }');
@@ -721,3 +638,5 @@ function printKartuUjian() {
 @yield('js')
 </body>
 </html>
+
+

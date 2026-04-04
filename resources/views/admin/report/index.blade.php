@@ -48,9 +48,8 @@
                     <div class="col-md-3">
                         <label class="mb-1 small">Tahun Pelajaran</label>
                         <select name="tahun_pelajaran_id" class="form-control form-control-sm select2">
-                            <option value="">-- Semua --</option>
                             @foreach($tahunPelajarans as $tp)
-                                <option value="{{ $tp->id }}" {{ request('tahun_pelajaran_id', $tahunAktif?->id) == $tp->id ? 'selected' : '' }}>
+                                <option value="{{ $tp->id }}" {{ $selectedTahunIdInput == $tp->id ? 'selected' : '' }}>
                                     {{ $tp->nama }} {{ $tp->is_active ? '(Aktif)' : '' }}
                                 </option>
                             @endforeach
@@ -59,9 +58,9 @@
                     <div class="col-md-2">
                         <label class="mb-1 small">Jalur Pendaftaran</label>
                         <select name="jalur_id" id="jalur_id" class="form-control form-control-sm select2">
-                            <option value="">-- Semua Jalur --</option>
+                            <option value="all" {{ $selectedJalurIdInput === 'all' ? 'selected' : '' }}>-- Semua Jalur --</option>
                             @foreach($jalurs as $jalur)
-                                <option value="{{ $jalur->id }}" {{ request('jalur_id') == $jalur->id ? 'selected' : '' }}>
+                                <option value="{{ $jalur->id }}" {{ (string) $selectedJalurIdInput === (string) $jalur->id ? 'selected' : '' }}>
                                     {{ $jalur->nama }}
                                 </option>
                             @endforeach
@@ -70,9 +69,9 @@
                     <div class="col-md-2">
                         <label class="mb-1 small">Gelombang</label>
                         <select name="gelombang_id" id="gelombang_id" class="form-control form-control-sm select2">
-                            <option value="">-- Semua Gelombang --</option>
+                            <option value="all" {{ $selectedGelombangIdInput === 'all' ? 'selected' : '' }}>-- Semua Gelombang --</option>
                             @foreach($gelombangs as $gel)
-                                <option value="{{ $gel->id }}" {{ request('gelombang_id') == $gel->id ? 'selected' : '' }}>
+                                <option value="{{ $gel->id }}" {{ (string) $selectedGelombangIdInput === (string) $gel->id ? 'selected' : '' }}>
                                     {{ $gel->nama }}
                                 </option>
                             @endforeach
@@ -103,11 +102,11 @@
         <h5 class="mb-0">
             <i class="fas fa-calendar mr-1"></i>
             Laporan PPDB Tahun Pelajaran: <strong>{{ $selectedTahun->nama }}</strong>
-            @if(request('jalur_id'))
-                &mdash; Jalur: <strong>{{ $jalurs->firstWhere('id', request('jalur_id'))?->nama }}</strong>
+            @if($selectedJalur)
+                &mdash; Jalur: <strong>{{ $selectedJalur->nama }}</strong>
             @endif
-            @if(request('gelombang_id'))
-                &mdash; Gelombang: <strong>{{ $gelombangs->firstWhere('id', request('gelombang_id'))?->nama }}</strong>
+            @if($selectedGelombang)
+                &mdash; Gelombang: <strong>{{ $selectedGelombang->nama }}</strong>
             @endif
         </h5>
     </div>
