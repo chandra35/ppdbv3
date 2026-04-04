@@ -38,10 +38,10 @@ class NilaiSeleksiController extends Controller
             ->where('tahun_pelajaran_id', $tahunAktif?->id)
             ->whereIn('status', ['locked', 'in_progress', 'completed'])
             ->when($context['jalurFilterId'], function ($query, $jalurId) {
-                $query->where('jalur_id', $jalurId);
+                $query->where('jalur_pendaftaran_id', $jalurId);
             })
             ->when($context['gelombangFilterId'], function ($query, $gelombangId) {
-                $query->where('gelombang_id', $gelombangId);
+                $query->where('gelombang_pendaftaran_id', $gelombangId);
             })
             ->orderBy('tanggal', 'desc')
             ->get();
@@ -239,7 +239,7 @@ class NilaiSeleksiController extends Controller
         // Filter by jalur (for TBQ records via sesiUjian)
         if ($context['jalurFilterId']) {
             $seleksiQuery->whereHas('sesiUjian', function($q) use ($context) {
-                $q->where('jalur_id', $context['jalurFilterId']);
+                $q->where('jalur_pendaftaran_id', $context['jalurFilterId']);
             });
         }
         if ($context['gelombangFilterId']) {
@@ -465,7 +465,7 @@ class NilaiSeleksiController extends Controller
 
         if ($context['jalurFilterId']) {
             $nilaiQuery->whereHas('sesiUjian', function ($q) use ($context) {
-                $q->where('jalur_id', $context['jalurFilterId']);
+                $q->where('jalur_pendaftaran_id', $context['jalurFilterId']);
             });
         }
 
@@ -506,7 +506,7 @@ class NilaiSeleksiController extends Controller
         });
         if ($context['jalurFilterId']) {
             $allNilaiQuery->whereHas('sesiUjian', function ($q) use ($context) {
-                $q->where('jalur_id', $context['jalurFilterId']);
+                $q->where('jalur_pendaftaran_id', $context['jalurFilterId']);
             });
         }
         if ($context['gelombangFilterId']) {

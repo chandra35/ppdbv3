@@ -44,7 +44,7 @@ class KelulusanController extends Controller
 
         if ($context['jalurFilterId']) {
             $seleksiQuery->whereHas('sesiUjian', function ($q) use ($context) {
-                $q->where('jalur_id', $context['jalurFilterId']);
+                $q->where('jalur_pendaftaran_id', $context['jalurFilterId']);
             });
         }
 
