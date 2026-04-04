@@ -47,6 +47,31 @@
         background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
     }
     .confetti-container { position: relative; overflow: hidden; }
+    .filter-label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #5c6b7a;
+    }
+    .select2-container--bootstrap4 .select2-selection--single {
+        min-height: calc(2.25rem + 2px);
+        border-radius: 0.5rem;
+        border-color: #ced4da;
+        box-shadow: none;
+    }
+    .select2-container--bootstrap4.select2-container--focus .select2-selection--single {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.12);
+    }
+    .select2-container--bootstrap4 .select2-selection__placeholder {
+        color: #7b8794;
+    }
+    .filter-hint {
+        font-size: 0.76rem;
+        color: #8898aa;
+        margin-top: 0.35rem;
+    }
 </style>
 @stop
 
@@ -122,33 +147,40 @@
             <form method="GET" action="{{ route('admin.kelulusan.index') }}">
                 <div class="row">
                     <div class="col-md-3">
-                        <label class="mb-1 small">Tahun Pelajaran</label>
-                        <select name="tahun_pelajaran_id" class="form-control form-control-sm select2">
+                        <label class="mb-1 filter-label">Tahun Pelajaran</label>
+                        <select name="tahun_pelajaran_id" id="tahun_pelajaran_id" class="form-control form-control-sm select2-filter">
                             @foreach($tahunPelajarans as $tp)
                                 <option value="{{ $tp->id }}" {{ $selectedTahunIdInput == $tp->id ? 'selected' : '' }}>{{ $tp->nama }}</option>
                             @endforeach
                         </select>
+                        <div class="filter-hint">Tahun aktif menjadi basis daftar jalur dan gelombang.</div>
                     </div>
                     <div class="col-md-2">
-                        <label class="mb-1 small">Jalur</label>
-                        <select name="jalur_id" class="form-control form-control-sm select2">
-                            <option value="all" {{ $selectedJalurIdInput === 'all' ? 'selected' : '' }}>-- Semua --</option>
+                        <label class="mb-1 filter-label">Jalur</label>
+                        <select name="jalur_id" id="jalur_id" class="form-control form-control-sm select2-filter">
+                            <option value="all" {{ $selectedJalurIdInput === 'all' ? 'selected' : '' }}>Semua Jalur</option>
                             @foreach($jalurs as $jalur)
                                 <option value="{{ $jalur->id }}" {{ (string) $selectedJalurIdInput === (string) $jalur->id ? 'selected' : '' }}>{{ $jalur->nama }}</option>
                             @endforeach
                         </select>
+                        <div class="filter-hint">Memilih jalur akan langsung menyesuaikan pilihan gelombang.</div>
                     </div>
                     <div class="col-md-2">
-                        <label class="mb-1 small">Gelombang</label>
-                        <select name="gelombang_id" class="form-control form-control-sm select2">
-                            <option value="all" {{ $selectedGelombangIdInput === 'all' ? 'selected' : '' }}>-- Semua --</option>
-                            @foreach($gelombangs as $gel)
-                                <option value="{{ $gel->id }}" {{ (string) $selectedGelombangIdInput === (string) $gel->id ? 'selected' : '' }}>{{ $gel->nama }}</option>
+                        <label class="mb-1 filter-label">Gelombang</label>
+                        <select name="gelombang_id" id="gelombang_id" class="form-control form-control-sm select2-filter">
+                            <option value="all" {{ $selectedGelombangIdInput === 'all' ? 'selected' : '' }}>Semua Gelombang</option>
+                            @foreach($allGelombangs as $gel)
+                                <option
+                                    value="{{ $gel->id }}"
+                                    data-jalur-id="{{ $gel->jalur_id }}"
+                                    {{ (string) $selectedGelombangIdInput === (string) $gel->id ? 'selected' : '' }}
+                                >{{ $gel->nama }}</option>
                             @endforeach
                         </select>
+                        <div class="filter-hint">Hanya gelombang milik jalur terpilih yang ditampilkan.</div>
                     </div>
                     <div class="col-md-3">
-                        <label class="mb-1 small">Cari NISN <small class="text-muted">(pisahkan dengan Enter)</small></label>
+                        <label class="mb-1 filter-label">Cari NISN <small class="text-muted">(pisahkan dengan Enter)</small></label>
                         <textarea name="nisn_search" class="form-control form-control-sm" rows="2" placeholder="0012345678&#10;0012345679">{{ $nisnSearch }}</textarea>
                     </div>
                     <div class="col-md-2 d-flex align-items-end">
@@ -321,8 +353,46 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(document).ready(function() {
-    // Select2
-    $('.select2').select2({ theme: 'bootstrap4' });
+    const $jalur = $('#jalur_id');
+    const $gelombang = $('#gelombang_id');
+    const selectedGelombangId = @json((string) ($selectedGelombangIdInput ?? 'all'));
+    const allGelombangOptions = $gelombang.find('option').clone();
+
+    $('.select2-filter').select2({
+        theme: 'bootstrap4',
+        width: '100%',
+        minimumResultsForSearch: 8
+    });
+
+    function refreshGelombangOptions(preferredValue = null) {
+        const jalurId = String($jalur.val() || 'all');
+        const currentValue = preferredValue ?? String($gelombang.val() || 'all');
+
+        $gelombang.empty();
+
+        allGelombangOptions.each(function() {
+            const $option = $(this).clone();
+            const optionValue = String($option.val() || '');
+            const optionJalurId = String($option.data('jalur-id') || '');
+
+            if (optionValue === 'all' || jalurId === 'all' || optionJalurId === jalurId) {
+                $gelombang.append($option);
+            }
+        });
+
+        const hasSpecificOptions = $gelombang.find('option').length > 1;
+        $gelombang.prop('disabled', !hasSpecificOptions && jalurId !== 'all');
+
+        const optionExists = $gelombang.find(`option[value="${currentValue}"]`).length > 0;
+        $gelombang.val(optionExists ? currentValue : 'all');
+        $gelombang.trigger('change.select2');
+    }
+
+    $jalur.on('change', function() {
+        refreshGelombangOptions('all');
+    });
+
+    refreshGelombangOptions(selectedGelombangId);
 
     // Persistent selection store
     var selectedIds = new Set();

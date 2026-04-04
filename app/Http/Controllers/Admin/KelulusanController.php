@@ -190,6 +190,7 @@ class KelulusanController extends Controller
         ) + [
             'tahunPelajarans' => $context['tahunPelajarans'],
             'jalurs' => $context['jalurs'],
+            'allGelombangs' => $context['allGelombangs'],
             'gelombangs' => $context['gelombangs'],
             'selectedTahunIdInput' => $context['selectedTahunIdInput'],
             'selectedJalurIdInput' => $context['selectedJalurIdInput'],
