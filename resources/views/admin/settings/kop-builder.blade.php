@@ -762,12 +762,16 @@ $(document).ready(function() {
                     break;
                     
                 case 'contact':
-                    centerHtml += '<div style="font-size:9pt; text-align:center;">';
-                    if (element.content.alamat) centerHtml += `${element.content.alamat} `;
-                    if (element.content.telepon) centerHtml += `| Telp: ${element.content.telepon} `;
-                    if (element.content.email) centerHtml += `| Email: ${element.content.email} `;
-                    if (element.content.website) centerHtml += `| ${element.content.website}`;
-                    centerHtml += '</div>';
+                    const contactParts = [];
+                    if (element.content.alamat) contactParts.push(element.content.alamat);
+                    if (element.content.telepon) contactParts.push(`Telp: ${element.content.telepon}`);
+                    if (element.content.email) contactParts.push(`Email: ${element.content.email}`);
+                    if (contactParts.length) {
+                        centerHtml += `<div style="font-size:9pt; text-align:center; line-height:1.2;">${contactParts.join(' | ')}</div>`;
+                    }
+                    if (element.content.website) {
+                        centerHtml += `<div style="font-size:9pt; text-align:center; line-height:1.15;">${element.content.website}</div>`;
+                    }
                     break;
             }
         });

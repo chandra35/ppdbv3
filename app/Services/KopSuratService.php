@@ -296,8 +296,6 @@ class KopSuratService
      */
     private function renderContactElement($content)
     {
-        $html = '<div style="font-size: 9pt; text-align: center; margin: 2px 0; padding: 0; line-height: 1.2;">';
-        
         $parts = [];
         if (!empty($content['alamat'])) {
             $parts[] = htmlspecialchars($content['alamat']);
@@ -308,12 +306,20 @@ class KopSuratService
         if (!empty($content['email'])) {
             $parts[] = 'Email: ' . htmlspecialchars($content['email']);
         }
-        if (!empty($content['website'])) {
-            $parts[] = htmlspecialchars($content['website']);
+
+        $html = '';
+
+        if (!empty($parts)) {
+            $html .= '<div style="font-size: 9pt; text-align: center; margin: 2px 0 0 0; padding: 0; line-height: 1.2;">'
+                . implode(' | ', $parts)
+                . '</div>';
         }
 
-        $html .= implode(' | ', $parts);
-        $html .= '</div>';
+        if (!empty($content['website'])) {
+            $html .= '<div style="font-size: 9pt; text-align: center; margin: 1px 0 0 0; padding: 0; line-height: 1.15; word-break: break-word;">'
+                . htmlspecialchars($content['website'])
+                . '</div>';
+        }
 
         return $html;
     }
@@ -336,6 +342,12 @@ class KopSuratService
             if ($sekolah->email) {
                 $html .= ' | Email: ' . htmlspecialchars($sekolah->email);
             }
+            $html .= '</div>';
+        }
+
+        if ($sekolah->website) {
+            $html .= '<div style="font-size: 9pt; margin: 1px 0 0 0; padding: 0; font-weight: normal; line-height: 1.15; word-break: break-word;">';
+            $html .= htmlspecialchars($sekolah->website);
             $html .= '</div>';
         }
         
