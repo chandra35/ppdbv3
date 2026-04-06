@@ -142,6 +142,12 @@ return [
                     'icon' => 'fas fa-fw fa-print',
                     'can' => 'verifikasi.cetak',
                 ],
+                [
+                    'text' => 'Integrasi Moodle',
+                    'route' => 'admin.settings.moodle.index',
+                    'icon' => 'fas fa-fw fa-graduation-cap',
+                    'can' => 'settings.edit',
+                ],
 
                 [
                     'text' => 'Statistik',
@@ -330,12 +336,6 @@ return [
                     'text' => 'Storage Dokumen',
                     'route' => 'admin.settings.storage.index',
                     'icon' => 'fab fa-fw fa-google-drive',
-                    'can' => 'settings.edit',
-                ],
-                [
-                    'text' => 'Integrasi Moodle',
-                    'route' => 'admin.settings.moodle.index',
-                    'icon' => 'fas fa-fw fa-graduation-cap',
                     'can' => 'settings.edit',
                 ],
                 [
