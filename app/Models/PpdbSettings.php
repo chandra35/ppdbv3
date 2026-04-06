@@ -12,6 +12,9 @@ class PpdbSettings extends Model
 {
     use HasUuids;
 
+    public const MOODLE_CONNECTION_WEBSERVICE = 'webservice';
+    public const MOODLE_CONNECTION_BRIDGE = 'bridge';
+
     protected $table = 'ppdb_settings';
 
     protected $fillable = [
@@ -34,6 +37,25 @@ class PpdbSettings extends Model
         'google_drive_oauth_client_secret',
         'google_drive_oauth_refresh_token',
         'google_drive_oauth_email',
+        'moodle_sync_enabled',
+        'moodle_connection_mode',
+        'moodle_sync_mode',
+        'moodle_base_url',
+        'moodle_webservice_token',
+        'moodle_default_cohort_id',
+        'moodle_default_course_id',
+        'moodle_default_course_ids',
+        'moodle_default_category_id',
+        'moodle_lastname_template',
+        'moodle_password_mode',
+        'moodle_password_custom',
+        'moodle_email_mode',
+        'moodle_email_domain',
+        'moodle_course_role_id',
+        'moodle_assign_default_cohort',
+        'moodle_enrol_default_course',
+        'moodle_sync_last_error',
+        'moodle_sync_last_success_at',
         'nomor_registrasi_prefix',
         'nomor_registrasi_counter',
         'nomor_tes_prefix',
@@ -52,6 +74,12 @@ class PpdbSettings extends Model
         'dokumen_aktif' => 'array',
         'izinkan_dokumen_tambahan' => 'boolean',
         'google_drive_make_public' => 'boolean',
+        'moodle_sync_enabled' => 'boolean',
+        'moodle_assign_default_cohort' => 'boolean',
+        'moodle_enrol_default_course' => 'boolean',
+        'moodle_course_role_id' => 'integer',
+        'moodle_default_course_ids' => 'array',
+        'moodle_sync_last_success_at' => 'datetime',
         'nomor_tes_counter' => 'array',
     ];
 
@@ -64,6 +92,14 @@ class PpdbSettings extends Model
         'dokumen_storage_mode' => 'local',
         'google_drive_auth_mode' => 'service_account',
         'google_drive_make_public' => true,
+        'moodle_sync_enabled' => false,
+        'moodle_connection_mode' => self::MOODLE_CONNECTION_WEBSERVICE,
+        'moodle_sync_mode' => 'manual',
+        'moodle_password_mode' => 'account',
+        'moodle_email_mode' => 'account',
+        'moodle_course_role_id' => 5,
+        'moodle_assign_default_cohort' => true,
+        'moodle_enrol_default_course' => false,
         'nomor_registrasi_prefix' => 'PPDB',
         'nomor_registrasi_counter' => 0,
         'nomor_tes_prefix' => 'NTS',
@@ -115,6 +151,18 @@ class PpdbSettings extends Model
         }
 
         return !empty($this->google_drive_credentials_path);
+    }
+
+    public function isMoodleSyncConfigured(): bool
+    {
+        return $this->moodle_sync_enabled
+            && !empty($this->moodle_base_url)
+            && !empty($this->moodle_webservice_token);
+    }
+
+    public function isMoodleBridgeMode(): bool
+    {
+        return $this->moodle_connection_mode === self::MOODLE_CONNECTION_BRIDGE;
     }
 
     /**

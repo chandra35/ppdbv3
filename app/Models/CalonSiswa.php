@@ -125,6 +125,11 @@ class CalonSiswa extends Model
         // Soft delete fields
         'deleted_by',
         'deleted_reason',
+        'moodle_user_id',
+        'moodle_username',
+        'moodle_sync_status',
+        'moodle_synced_at',
+        'moodle_sync_error',
     ];
 
     protected $casts = [
@@ -148,6 +153,8 @@ class CalonSiswa extends Model
         'registration_longitude' => 'decimal:8',
         'registration_altitude' => 'decimal:2',
         'registration_accuracy' => 'decimal:2',
+        'moodle_user_id' => 'integer',
+        'moodle_synced_at' => 'datetime',
     ];
 
     // Relations
@@ -434,6 +441,8 @@ class CalonSiswa extends Model
     {
         $nomorTes = app(NomorService::class)->generateNomorTes($this);
         $this->update(['nomor_tes' => $nomorTes]);
+
+        app(\App\Services\MoodleIntegrationService::class)->syncCandidateIfNeeded($this->fresh(), \App\Services\MoodleIntegrationService::TRIGGER_NOMOR_TES);
 
         // Kirim notifikasi WA ke pendaftar (outside transaction)
         $this->sendVerificationNotification($nomorTes);

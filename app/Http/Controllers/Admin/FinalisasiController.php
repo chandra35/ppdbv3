@@ -206,6 +206,15 @@ class FinalisasiController extends Controller
 
             DB::commit();
 
+            app(\App\Services\MoodleIntegrationService::class)->syncCandidateIfNeeded(
+                $pendaftar->fresh(['user', 'tahunPelajaran', 'jalurPendaftaran', 'gelombangPendaftaran']),
+                \App\Services\MoodleIntegrationService::TRIGGER_FINALISASI
+            );
+            app(\App\Services\MoodleIntegrationService::class)->syncCandidateIfNeeded(
+                $pendaftar->fresh(['user', 'tahunPelajaran', 'jalurPendaftaran', 'gelombangPendaftaran']),
+                \App\Services\MoodleIntegrationService::TRIGGER_NOMOR_TES
+            );
+
             return response()->json([
                 'success' => true,
                 'message' => 'Pendaftar berhasil difinalisasi',
@@ -280,6 +289,15 @@ class FinalisasiController extends Controller
                 $pendaftar->save();
 
                 DB::commit();
+
+                app(\App\Services\MoodleIntegrationService::class)->syncCandidateIfNeeded(
+                    $pendaftar->fresh(['user', 'tahunPelajaran', 'jalurPendaftaran', 'gelombangPendaftaran']),
+                    \App\Services\MoodleIntegrationService::TRIGGER_FINALISASI
+                );
+                app(\App\Services\MoodleIntegrationService::class)->syncCandidateIfNeeded(
+                    $pendaftar->fresh(['user', 'tahunPelajaran', 'jalurPendaftaran', 'gelombangPendaftaran']),
+                    \App\Services\MoodleIntegrationService::TRIGGER_NOMOR_TES
+                );
                 $success++;
             } catch (\Exception $e) {
                 DB::rollBack();

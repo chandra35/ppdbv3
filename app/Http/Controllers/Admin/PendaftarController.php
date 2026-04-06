@@ -768,6 +768,11 @@ class PendaftarController extends Controller
                 'data_ortu_completed' => true,
             ]);
 
+            app(\App\Services\MoodleIntegrationService::class)->syncCandidateIfNeeded(
+                $calonSiswa->fresh(['user', 'tahunPelajaran', 'jalurPendaftaran', 'gelombangPendaftaran']),
+                \App\Services\MoodleIntegrationService::TRIGGER_REGISTER
+            );
+
             // Log activity
             ActivityLog::create([
                 'user_id' => auth()->id(),

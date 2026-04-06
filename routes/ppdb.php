@@ -453,6 +453,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
             // PPDB Settings
             Route::get('/', [SettingsController::class, 'index'])->name('index');
             Route::post('/', [SettingsController::class, 'update'])->name('update');
+            Route::prefix('moodle')->name('moodle.')->group(function () {
+                Route::get('/', [SettingsController::class, 'moodle'])->name('index');
+                Route::post('/', [SettingsController::class, 'updateMoodle'])->name('update');
+                Route::post('/mappings', [SettingsController::class, 'storeMoodleMapping'])->name('mappings.store');
+                Route::put('/mappings/{moodleMapping}', [SettingsController::class, 'updateMoodleMapping'])->name('mappings.update');
+                Route::delete('/mappings/{moodleMapping}', [SettingsController::class, 'destroyMoodleMapping'])->name('mappings.destroy');
+                Route::post('/sync/refresh-status', [SettingsController::class, 'refreshMoodleCandidateStatuses'])->name('sync.refresh-status');
+                Route::post('/sync/candidate/{calonSiswa}', [SettingsController::class, 'syncMoodleCandidate'])->whereUuid('calonSiswa')->name('sync.candidate');
+            });
             Route::prefix('storage-dokumen')->name('storage.')->group(function () {
                 Route::get('/', [SettingsController::class, 'storage'])->name('index');
                 Route::post('/', [SettingsController::class, 'updateStorage'])->name('update');

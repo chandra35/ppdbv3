@@ -1792,6 +1792,11 @@ class DashboardController extends Controller
             'status_admisi' => 'pending'
         ]);
 
+        app(\App\Services\MoodleIntegrationService::class)->syncCandidateIfNeeded(
+            $calonSiswa->fresh(['user', 'tahunPelajaran', 'jalurPendaftaran', 'gelombangPendaftaran']),
+            \App\Services\MoodleIntegrationService::TRIGGER_FINALISASI
+        );
+
         // Jika pendaftar sudah punya status verified (semua dokumen valid), generate nomor tes
         if ($calonSiswa->fresh()->allDokumenValid() && !$calonSiswa->nomor_tes) {
             $calonSiswa = $this->generateNomorTes($calonSiswa);
@@ -1822,6 +1827,11 @@ class DashboardController extends Controller
         $calonSiswa->update([
             'nomor_tes' => $this->nomorService->generateNomorTes($calonSiswa),
         ]);
+
+        app(\App\Services\MoodleIntegrationService::class)->syncCandidateIfNeeded(
+            $calonSiswa->fresh(['user', 'tahunPelajaran', 'jalurPendaftaran', 'gelombangPendaftaran']),
+            \App\Services\MoodleIntegrationService::TRIGGER_NOMOR_TES
+        );
         
         return $calonSiswa->fresh();
     }

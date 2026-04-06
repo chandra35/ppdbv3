@@ -333,6 +333,12 @@ return [
                     'can' => 'settings.edit',
                 ],
                 [
+                    'text' => 'Integrasi Moodle',
+                    'route' => 'admin.settings.moodle.index',
+                    'icon' => 'fas fa-fw fa-graduation-cap',
+                    'can' => 'settings.edit',
+                ],
+                [
                     'text' => 'Pengaturan Penomoran',
                     'route' => 'admin.settings.nomor-rules.index',
                     'icon' => 'fas fa-fw fa-hashtag',

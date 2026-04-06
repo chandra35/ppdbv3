@@ -644,6 +644,11 @@ class AuthController extends Controller
 
             DB::commit();
 
+            app(\App\Services\MoodleIntegrationService::class)->syncCandidateIfNeeded(
+                $calonSiswa->fresh(['user', 'tahunPelajaran', 'jalurPendaftaran', 'gelombangPendaftaran']),
+                \App\Services\MoodleIntegrationService::TRIGGER_REGISTER
+            );
+
             // Prepare credentials data
             $credentials = [
                 'username' => $request->nisn,

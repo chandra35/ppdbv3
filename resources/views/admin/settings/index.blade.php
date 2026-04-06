@@ -284,6 +284,20 @@
                     </div>
                 </div>
 
+                <div class="card card-primary card-outline">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-graduation-cap"></i> Integrasi Moodle</h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">
+                            Atur sinkron akun peserta ke Moodle secara manual, saat registrasi, setelah finalisasi, atau setelah nomor tes terbit.
+                        </p>
+                        <a href="{{ route('admin.settings.moodle.index') }}" class="btn btn-primary btn-block">
+                            <i class="fas fa-plug mr-1"></i> Buka Pengaturan Moodle
+                        </a>
+                    </div>
+                </div>
+
                 {{-- Quick Links --}}
                 <div class="card card-primary card-outline">
                     <div class="card-header">

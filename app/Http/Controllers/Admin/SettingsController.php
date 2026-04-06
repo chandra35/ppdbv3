@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CalonSiswa;
+use App\Models\MoodleSyncMapping;
 use App\Models\PpdbSettings;
+use App\Support\AdminPpdbContext;
 use App\Models\ActivityLog;
 use App\Services\DocumentStorageService;
 use App\Services\GoogleDriveService;
+use App\Services\MoodleIntegrationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -17,7 +21,8 @@ class SettingsController extends Controller
 {
     public function __construct(
         private readonly DocumentStorageService $documentStorageService,
-        private readonly GoogleDriveService $googleDriveService
+        private readonly GoogleDriveService $googleDriveService,
+        private readonly MoodleIntegrationService $moodleIntegrationService
     ) {
     }
 
@@ -114,6 +119,312 @@ class SettingsController extends Controller
         }
 
         return redirect()->back()->with('success', 'Pengaturan PPDB berhasil diupdate.');
+    }
+
+    public function moodle()
+    {
+        $settings = $this->getOrCreateSettings();
+        [$moodleStatus, $moodleStatusMessage] = $this->moodleIntegrationService->getStatusData($settings);
+        $context = AdminPpdbContext::resolve(
+            request('tahun_pelajaran_id'),
+            request('jalur_id'),
+            request('gelombang_id')
+        );
+        $mappings = MoodleSyncMapping::with(['tahunPelajaran', 'jalurPendaftaran', 'gelombangPendaftaran'])
+            ->orderByDesc('is_active')
+            ->orderByDesc('created_at')
+            ->get();
+
+        $moodleCategories = [];
+        $moodleCategoryOptions = [];
+        $moodleCoursesByCategory = [];
+        $moodleCohorts = [];
+        $syncCandidates = $this->buildMoodleSyncCandidateQuery($context)->paginate(50)->withQueryString();
+
+        if ($settings->moodle_sync_enabled && $this->moodleIntegrationService->isConfigured($settings)) {
+            try {
+                $moodleCategories = $this->moodleIntegrationService->listCategories($settings);
+                $moodleCategoryOptions = $this->buildCategoryOptions($moodleCategories);
+                $moodleCohorts = $this->moodleIntegrationService->listCohorts($settings);
+                $categoryIds = collect($moodleCategories)
+                    ->pluck('id')
+                    ->filter()
+                    ->unique()
+                    ->values();
+
+                foreach ($categoryIds as $categoryId) {
+                    $moodleCoursesByCategory[(string) $categoryId] = $this->moodleIntegrationService->listCoursesByCategory($settings, (string) $categoryId);
+                }
+
+                $refreshedStatuses = $this->moodleIntegrationService->refreshCandidatesSyncState(
+                    $syncCandidates->getCollection(),
+                    $settings
+                );
+                $syncCandidates->setCollection($syncCandidates->getCollection()->fresh());
+            } catch (\Throwable $e) {
+                $moodleStatus = 'warning';
+                $moodleStatusMessage = 'Integrasi Moodle aktif, tetapi daftar category/course belum berhasil dimuat. ' . $e->getMessage();
+                $refreshedStatuses = [];
+            }
+        } else {
+            $refreshedStatuses = [];
+        }
+
+        $syncStatusSummary = [
+            'synced' => $syncCandidates->getCollection()->where('moodle_sync_status', 'synced')->count(),
+            'not_synced' => $syncCandidates->getCollection()->where('moodle_sync_status', 'not_synced')->count(),
+            'error' => $syncCandidates->getCollection()->where('moodle_sync_status', 'error')->count(),
+            'total' => $syncCandidates->count(),
+        ];
+
+        return view('admin.settings.moodle', compact(
+            'settings',
+            'moodleStatus',
+            'moodleStatusMessage',
+            'mappings',
+            'moodleCategories',
+            'moodleCategoryOptions',
+            'moodleCoursesByCategory',
+            'syncCandidates',
+            'syncStatusSummary',
+            'refreshedStatuses'
+        ) + [
+            'moodleCohorts' => $moodleCohorts,
+            'tahunPelajaranList' => $context['tahunPelajarans'],
+            'jalurList' => $context['jalurs'],
+            'gelombangList' => $context['allGelombangs'],
+            'selectedTahunId' => $context['selectedTahunIdInput'],
+            'selectedJalurId' => $context['selectedJalurIdInput'],
+            'selectedGelombangId' => $context['selectedGelombangIdInput'],
+        ]);
+    }
+
+    private function buildMoodleSyncCandidateQuery(array $context)
+    {
+        return CalonSiswa::query()
+            ->with(['tahunPelajaran', 'jalurPendaftaran', 'gelombangPendaftaran', 'user'])
+            ->when($context['selectedTahun']?->id, fn ($query, $tahunId) => $query->where('tahun_pelajaran_id', $tahunId))
+            ->when($context['jalurFilterId'], fn ($query, $jalurId) => $query->where('jalur_pendaftaran_id', $jalurId))
+            ->when($context['gelombangFilterId'], fn ($query, $gelombangId) => $query->where('gelombang_pendaftaran_id', $gelombangId))
+            ->orderByDesc('tanggal_registrasi')
+            ->orderByDesc('created_at');
+    }
+
+    private function buildCategoryOptions(array $categories): array
+    {
+        $items = collect($categories)->keyBy('id');
+
+        return collect($categories)->map(function ($category) use ($items) {
+            $depth = max(0, ((int) ($category['depth'] ?? 1)) - 1);
+            $indent = str_repeat('-- ', $depth);
+
+            $parts = [(string) ($category['name'] ?? ('Category ' . $category['id']))];
+            $parentId = (string) ($category['parent'] ?? '0');
+
+            if ($parentId !== '0' && $items->has($parentId)) {
+                $parts[] = 'Parent: ' . ($items->get($parentId)['name'] ?? $parentId);
+            }
+
+            return [
+                'id' => (string) $category['id'],
+                'label' => trim($indent . ($category['name'] ?? ('Category ' . $category['id']))),
+                'meta' => implode(' | ', $parts),
+            ];
+        })->all();
+    }
+
+    public function updateMoodle(Request $request)
+    {
+        $validated = $request->validate([
+            'moodle_connection_mode' => 'required|string|in:webservice,bridge',
+            'moodle_sync_mode' => 'required|string|in:manual,on_register,on_finalisasi,on_nomor_tes',
+            'moodle_base_url' => 'nullable|url|max:255',
+            'moodle_webservice_token' => 'nullable|string',
+            'moodle_default_cohort_id' => 'nullable|string|max:50',
+            'moodle_default_course_id' => 'nullable|string|max:50',
+            'moodle_default_category_id' => 'nullable|string|max:50',
+            'moodle_default_course_ids' => 'nullable|array',
+            'moodle_default_course_ids.*' => 'nullable|string|max:50',
+            'moodle_lastname_template' => 'nullable|string|max:255',
+            'moodle_password_mode' => 'required|string|in:account,custom',
+            'moodle_password_custom' => 'nullable|string|max:255',
+            'moodle_email_mode' => 'required|string|in:account,domain',
+            'moodle_email_domain' => 'nullable|string|max:255',
+            'moodle_course_role_id' => 'nullable|integer|min:1',
+        ]);
+
+        $validated['moodle_sync_enabled'] = $request->has('moodle_sync_enabled');
+        $validated['moodle_assign_default_cohort'] = $request->has('moodle_assign_default_cohort');
+        $validated['moodle_enrol_default_course'] = $request->has('moodle_enrol_default_course');
+        $validated['moodle_base_url'] = filled($validated['moodle_base_url'] ?? null)
+            ? rtrim((string) $validated['moodle_base_url'], '/')
+            : null;
+        $validated['moodle_lastname_template'] = filled($validated['moodle_lastname_template'] ?? null)
+            ? trim((string) $validated['moodle_lastname_template'])
+            : null;
+        $validated['moodle_password_custom'] = filled($validated['moodle_password_custom'] ?? null)
+            ? trim((string) $validated['moodle_password_custom'])
+            : null;
+        $validated['moodle_email_domain'] = filled($validated['moodle_email_domain'] ?? null)
+            ? trim((string) $validated['moodle_email_domain'])
+            : null;
+        $validated['moodle_default_course_ids'] = collect($request->input('moodle_default_course_ids', []))
+            ->map(fn ($value) => trim($value))
+            ->filter()
+            ->values()
+            ->all();
+
+        $settings = $this->getOrCreateSettings();
+        $oldValues = $settings->toArray();
+        $settings->update($validated);
+
+        ActivityLog::log('update', 'Mengupdate pengaturan integrasi Moodle', $settings, $oldValues, $settings->fresh()->toArray());
+
+        return redirect()->route('admin.settings.moodle.index')->with('success', 'Pengaturan integrasi Moodle berhasil diupdate.');
+    }
+
+    public function storeMoodleMapping(Request $request)
+    {
+        $validated = $request->validate([
+            'tahun_pelajaran_id' => 'nullable|exists:tahun_pelajarans,id',
+            'jalur_pendaftaran_id' => 'nullable|exists:jalur_pendaftaran,id',
+            'gelombang_pendaftaran_id' => 'nullable|exists:gelombang_pendaftaran,id',
+            'moodle_cohort_id' => 'nullable|string|max:50',
+            'moodle_category_id' => 'nullable|string|max:50',
+            'moodle_course_ids' => 'nullable|array',
+            'moodle_course_ids.*' => 'nullable|string|max:50',
+            'moodle_lastname_template' => 'nullable|string|max:255',
+            'moodle_password_mode' => 'nullable|string|in:account,custom',
+            'moodle_password_custom' => 'nullable|string|max:255',
+            'moodle_email_mode' => 'nullable|string|in:account,domain',
+            'moodle_email_domain' => 'nullable|string|max:255',
+            'keterangan' => 'nullable|string|max:255',
+        ]);
+
+        $validated['is_active'] = $request->has('is_active');
+        $validated['moodle_lastname_template'] = filled($validated['moodle_lastname_template'] ?? null)
+            ? trim((string) $validated['moodle_lastname_template'])
+            : null;
+        $validated['moodle_password_custom'] = filled($validated['moodle_password_custom'] ?? null)
+            ? trim((string) $validated['moodle_password_custom'])
+            : null;
+        $validated['moodle_email_domain'] = filled($validated['moodle_email_domain'] ?? null)
+            ? trim((string) $validated['moodle_email_domain'])
+            : null;
+        $validated['moodle_course_ids'] = collect($request->input('moodle_course_ids', []))
+            ->map(fn ($value) => trim($value))
+            ->filter()
+            ->values()
+            ->all();
+
+        $mapping = MoodleSyncMapping::create($validated);
+        ActivityLog::log('create', 'Menambahkan mapping integrasi Moodle', $mapping);
+
+        return redirect()->route('admin.settings.moodle.index')->with('success', 'Mapping Moodle berhasil ditambahkan.');
+    }
+
+    public function updateMoodleMapping(Request $request, MoodleSyncMapping $moodleMapping)
+    {
+        $validated = $request->validate([
+            'tahun_pelajaran_id' => 'nullable|exists:tahun_pelajarans,id',
+            'jalur_pendaftaran_id' => 'nullable|exists:jalur_pendaftaran,id',
+            'gelombang_pendaftaran_id' => 'nullable|exists:gelombang_pendaftaran,id',
+            'moodle_cohort_id' => 'nullable|string|max:50',
+            'moodle_category_id' => 'nullable|string|max:50',
+            'moodle_course_ids' => 'nullable|array',
+            'moodle_course_ids.*' => 'nullable|string|max:50',
+            'moodle_lastname_template' => 'nullable|string|max:255',
+            'moodle_password_mode' => 'nullable|string|in:account,custom',
+            'moodle_password_custom' => 'nullable|string|max:255',
+            'moodle_email_mode' => 'nullable|string|in:account,domain',
+            'moodle_email_domain' => 'nullable|string|max:255',
+            'keterangan' => 'nullable|string|max:255',
+        ]);
+
+        $validated['is_active'] = $request->has('is_active');
+        $validated['moodle_lastname_template'] = filled($validated['moodle_lastname_template'] ?? null)
+            ? trim((string) $validated['moodle_lastname_template'])
+            : null;
+        $validated['moodle_password_custom'] = filled($validated['moodle_password_custom'] ?? null)
+            ? trim((string) $validated['moodle_password_custom'])
+            : null;
+        $validated['moodle_email_domain'] = filled($validated['moodle_email_domain'] ?? null)
+            ? trim((string) $validated['moodle_email_domain'])
+            : null;
+        $validated['moodle_course_ids'] = collect($request->input('moodle_course_ids', []))
+            ->map(fn ($value) => trim($value))
+            ->filter()
+            ->values()
+            ->all();
+
+        $oldValues = $moodleMapping->toArray();
+        $moodleMapping->update($validated);
+        ActivityLog::log('update', 'Mengupdate mapping integrasi Moodle', $moodleMapping, $oldValues, $moodleMapping->fresh()->toArray());
+
+        return redirect()->route('admin.settings.moodle.index')->with('success', 'Mapping Moodle berhasil diupdate.');
+    }
+
+    public function destroyMoodleMapping(MoodleSyncMapping $moodleMapping)
+    {
+        $oldValues = $moodleMapping->toArray();
+        $moodleMapping->delete();
+        ActivityLog::log('delete', 'Menghapus mapping integrasi Moodle', $moodleMapping, $oldValues);
+
+        return redirect()->route('admin.settings.moodle.index')->with('success', 'Mapping Moodle berhasil dihapus.');
+    }
+
+    public function refreshMoodleCandidateStatuses(Request $request)
+    {
+        $settings = $this->getOrCreateSettings();
+        $candidateIds = collect($request->input('candidate_ids', []))
+            ->map(fn ($id) => (string) $id)
+            ->filter()
+            ->values()
+            ->all();
+
+        $candidates = empty($candidateIds)
+            ? $this->buildMoodleSyncCandidateQuery(AdminPpdbContext::resolve(
+                $request->input('tahun_pelajaran_id'),
+                $request->input('jalur_id'),
+                $request->input('gelombang_id')
+            ))->limit(200)->get()
+            : CalonSiswa::with(['tahunPelajaran', 'jalurPendaftaran', 'gelombangPendaftaran', 'user'])
+                ->whereIn('id', $candidateIds)
+                ->get();
+
+        $statuses = $this->moodleIntegrationService->refreshCandidatesSyncState($candidates, $settings);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Status sinkron Moodle berhasil diperbarui.',
+            'count' => count($statuses),
+            'statuses' => $statuses,
+        ]);
+    }
+
+    public function syncMoodleCandidate(CalonSiswa $calonSiswa)
+    {
+        $settings = $this->getOrCreateSettings();
+
+        try {
+            $result = $this->moodleIntegrationService->syncCandidate(
+                $calonSiswa->fresh(['user', 'tahunPelajaran', 'jalurPendaftaran', 'gelombangPendaftaran']),
+                $settings
+            );
+
+            ActivityLog::log('update', 'Sinkron manual pendaftar ke Moodle', $calonSiswa->fresh());
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Sinkron Moodle berhasil untuk ' . $calonSiswa->nama_lengkap . '.',
+                'result' => $result,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
     }
 
     public function updateStorage(Request $request)
