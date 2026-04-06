@@ -144,12 +144,12 @@
             text-align: center;
         }
         
-        table {
+        .detail-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 4px;
         }
-        table td {
+        .detail-table td {
             border: none;
             border-bottom: 1px solid #e0e0e0;
             padding: 2px 5px;
@@ -158,16 +158,16 @@
             word-wrap: break-word;
             overflow-wrap: break-word;
         }
-        table td:first-child {
+        .detail-table td:first-child {
             width: 28%;
             font-weight: 600;
             color: #2c3e50;
             padding-left: 25px;
         }
-        table td:last-child {
+        .detail-table td:last-child {
             color: #333;
         }
-        table td:last-child::before {
+        .detail-table td:last-child::before {
             content: ': ';
             font-weight: 600;
             color: #2c3e50;
@@ -318,7 +318,7 @@
         {{-- Data Pribadi --}}
         <div class="section">
             <div class="section-title">DATA PRIBADI</div>
-                <table>
+                <table class="detail-table">
                     <tr>
                         <td>NISN</td>
                         <td>{{ $calonSiswa->nisn }}</td>
@@ -363,7 +363,7 @@
         @if($calonSiswa->ortu)
         <div class="section">
             <div class="section-title">DATA ORANG TUA / WALI</div>
-                <table>
+                <table class="detail-table">
                     <tr>
                         <td>Nama Ayah</td>
                         <td>{{ $calonSiswa->ortu->nama_ayah ?? '-' }}</td>
