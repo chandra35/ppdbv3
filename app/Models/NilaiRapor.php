@@ -64,10 +64,61 @@ class NilaiRapor extends Model
 
     public function getDokumenUrlAttribute(): ?string
     {
+        if ($this->dokumenRecord?->download_url) {
+            return $this->dokumenRecord->download_url;
+        }
+
         if ($this->dokumen_path) {
             return asset('storage/' . $this->dokumen_path);
         }
         return null;
+    }
+
+    public function getDokumenRecordAttribute(): ?CalonDokumen
+    {
+        return CalonDokumen::where('calon_siswa_id', $this->calon_siswa_id)
+            ->where('jenis_dokumen', 'rapor_sem_' . $this->semester)
+            ->first();
+    }
+
+    public function getPreviewUrlAttribute(): ?string
+    {
+        if ($this->dokumenRecord?->preview_url) {
+            return $this->dokumenRecord->preview_url;
+        }
+
+        if ($this->dokumen_path) {
+            return asset('storage/' . $this->dokumen_path);
+        }
+
+        return null;
+    }
+
+    public function getDownloadUrlAttribute(): ?string
+    {
+        if ($this->dokumenRecord?->download_url) {
+            return $this->dokumenRecord->download_url;
+        }
+
+        return $this->dokumen_url;
+    }
+
+    public function getDokumenTypeAttribute(): string
+    {
+        $mimeType = strtolower((string) ($this->dokumenRecord?->mime_type ?? ''));
+
+        if (str_starts_with($mimeType, 'image/')) {
+            return 'image';
+        }
+
+        if ($mimeType === 'application/pdf') {
+            return 'pdf';
+        }
+
+        $path = strtolower((string) ($this->dokumenRecord?->nama_file ?? $this->dokumen_path));
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+
+        return in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp']) ? 'image' : 'pdf';
     }
 
     public function getStatusValidasiBadgeAttribute(): string
@@ -87,7 +138,7 @@ class NilaiRapor extends Model
 
     public function hasDokumen(): bool
     {
-        return !empty($this->dokumen_path);
+        return !empty($this->dokumen_path) || !empty($this->dokumenRecord?->file_path);
     }
 
     public function isValidated(): bool

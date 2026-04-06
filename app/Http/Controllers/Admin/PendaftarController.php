@@ -1441,6 +1441,7 @@ class PendaftarController extends Controller
             // Data Orang Tua
             'no_kk' => 'nullable|digits:16',
             // Data Orang Tua - Ayah
+            'status_ayah' => 'nullable|in:masih_hidup,meninggal',
             'nama_ayah' => 'nullable|string|max:100',
             'nik_ayah' => 'nullable|digits:16',
             'tempat_lahir_ayah' => 'nullable|string|max:100',
@@ -1450,6 +1451,7 @@ class PendaftarController extends Controller
             'penghasilan_ayah' => 'nullable|string|max:50',
             'hp_ayah' => 'nullable|string|regex:/^0[0-9]{9,12}$/|max:20',
             // Data Orang Tua - Ibu
+            'status_ibu' => 'nullable|in:masih_hidup,meninggal',
             'nama_ibu' => 'nullable|string|max:100',
             'nik_ibu' => 'nullable|digits:16',
             'tempat_lahir_ibu' => 'nullable|string|max:100',
@@ -1554,6 +1556,7 @@ class PendaftarController extends Controller
         if ($pendaftar->ortu) {
             $pendaftar->ortu->update([
                 'no_kk' => $validated['no_kk'] ?? null,
+                'status_ayah' => $validated['status_ayah'] ?? 'masih_hidup',
                 'nama_ayah' => $validated['nama_ayah'] ?? null,
                 'nik_ayah' => $validated['nik_ayah'] ?? null,
                 'tempat_lahir_ayah' => $validated['tempat_lahir_ayah'] ?? null,
@@ -1562,6 +1565,7 @@ class PendaftarController extends Controller
                 'pekerjaan_ayah' => $validated['pekerjaan_ayah'] ?? null,
                 'penghasilan_ayah' => $validated['penghasilan_ayah'] ?? null,
                 'hp_ayah' => $validated['hp_ayah'] ?? null,
+                'status_ibu' => $validated['status_ibu'] ?? 'masih_hidup',
                 'nama_ibu' => $validated['nama_ibu'] ?? null,
                 'nik_ibu' => $validated['nik_ibu'] ?? null,
                 'tempat_lahir_ibu' => $validated['tempat_lahir_ibu'] ?? null,
@@ -1574,6 +1578,7 @@ class PendaftarController extends Controller
         } else {
             $pendaftar->ortu()->create([
                 'no_kk' => $validated['no_kk'] ?? null,
+                'status_ayah' => $validated['status_ayah'] ?? 'masih_hidup',
                 'nama_ayah' => $validated['nama_ayah'] ?? null,
                 'nik_ayah' => $validated['nik_ayah'] ?? null,
                 'tempat_lahir_ayah' => $validated['tempat_lahir_ayah'] ?? null,
@@ -1582,6 +1587,7 @@ class PendaftarController extends Controller
                 'pekerjaan_ayah' => $validated['pekerjaan_ayah'] ?? null,
                 'penghasilan_ayah' => $validated['penghasilan_ayah'] ?? null,
                 'hp_ayah' => $validated['hp_ayah'] ?? null,
+                'status_ibu' => $validated['status_ibu'] ?? 'masih_hidup',
                 'nama_ibu' => $validated['nama_ibu'] ?? null,
                 'nik_ibu' => $validated['nik_ibu'] ?? null,
                 'tempat_lahir_ibu' => $validated['tempat_lahir_ibu'] ?? null,

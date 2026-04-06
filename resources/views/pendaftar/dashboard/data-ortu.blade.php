@@ -65,6 +65,18 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Status Ayah</label>
+                                <select name="status_ayah" class="form-control">
+                                    @foreach(\App\Models\CalonOrtu::STATUS_ORTU as $status)
+                                        <option value="{{ $status }}" {{ old('status_ayah', $ortu->status_ayah ?? 'masih_hidup') == $status ? 'selected' : '' }}>
+                                            {{ $status === 'masih_hidup' ? 'Masih Hidup' : 'Meninggal' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>Nama Ayah <span class="text-danger">*</span></label>
@@ -75,7 +87,7 @@
                                 @enderror
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-2">
                             <div class="form-group">
                                 <label>NIK Ayah</label>
                                 <input type="text" name="nik_ayah" class="form-control" 
@@ -162,6 +174,18 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Status Ibu</label>
+                                <select name="status_ibu" class="form-control">
+                                    @foreach(\App\Models\CalonOrtu::STATUS_ORTU as $status)
+                                        <option value="{{ $status }}" {{ old('status_ibu', $ortu->status_ibu ?? 'masih_hidup') == $status ? 'selected' : '' }}>
+                                            {{ $status === 'masih_hidup' ? 'Masih Hidup' : 'Meninggal' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>Nama Ibu <span class="text-danger">*</span></label>
@@ -172,7 +196,7 @@
                                 @enderror
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-2">
                             <div class="form-group">
                                 <label>NIK Ibu</label>
                                 <input type="text" name="nik_ibu" class="form-control" 

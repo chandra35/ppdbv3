@@ -316,6 +316,7 @@ class DashboardController extends Controller
             // KK
             'no_kk' => 'nullable|string|size:16',
             // Ayah
+            'status_ayah' => 'nullable|in:masih_hidup,meninggal',
             'nama_ayah' => 'required|string|max:100',
             'nik_ayah' => 'nullable|string|size:16',
             'tempat_lahir_ayah' => 'nullable|string|max:100',
@@ -325,6 +326,7 @@ class DashboardController extends Controller
             'penghasilan_ayah' => 'nullable|string|max:50',
             'hp_ayah' => 'nullable|string|max:15',
             // Ibu
+            'status_ibu' => 'nullable|in:masih_hidup,meninggal',
             'nama_ibu' => 'required|string|max:100',
             'nik_ibu' => 'nullable|string|size:16',
             'tempat_lahir_ibu' => 'nullable|string|max:100',
@@ -350,6 +352,7 @@ class DashboardController extends Controller
             ['calon_siswa_id' => $calonSiswa->id],
             [
                 'no_kk' => $request->no_kk,
+                'status_ayah' => $request->status_ayah ?: 'masih_hidup',
                 'nama_ayah' => $request->nama_ayah,
                 'nik_ayah' => $request->nik_ayah,
                 'tempat_lahir_ayah' => $request->tempat_lahir_ayah,
@@ -358,6 +361,7 @@ class DashboardController extends Controller
                 'pendidikan_ayah' => $request->pendidikan_ayah,
                 'penghasilan_ayah' => $request->penghasilan_ayah,
                 'hp_ayah' => $request->hp_ayah,
+                'status_ibu' => $request->status_ibu ?: 'masih_hidup',
                 'nama_ibu' => $request->nama_ibu,
                 'nik_ibu' => $request->nik_ibu,
                 'tempat_lahir_ibu' => $request->tempat_lahir_ibu,

@@ -285,7 +285,7 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="form-group">
                             <label for="nik" class="required">NIK</label>
                             <input type="text" name="nik" id="nik" 
@@ -303,7 +303,7 @@
                         </div>
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="form-group">
                             <label for="tempat_lahir" class="required">Tempat Lahir</label>
                             <input type="text" name="tempat_lahir" id="tempat_lahir" 
@@ -564,7 +564,24 @@
                 <div class="subsection-title">Data Ayah</div>
 
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="status_ayah">Status Ayah</label>
+                            <select name="status_ayah" id="status_ayah"
+                                class="form-control @error('status_ayah') is-invalid @enderror">
+                                @foreach(\App\Models\CalonOrtu::STATUS_ORTU as $status)
+                                    <option value="{{ $status }}" {{ old('status_ayah', optional($pendaftar->ortu)->status_ayah ?? 'masih_hidup') === $status ? 'selected' : '' }}>
+                                        {{ $status === 'masih_hidup' ? 'Masih Hidup' : 'Meninggal' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('status_ayah')
+                                <span class="invalid-feedback">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
                         <div class="form-group">
                             <label for="nama_ayah">Nama Ayah</label>
                             <input type="text" name="nama_ayah" id="nama_ayah" 
@@ -576,7 +593,7 @@
                         </div>
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="form-group">
                             <label for="nik_ayah">NIK Ayah</label>
                             <input type="text" name="nik_ayah" id="nik_ayah" 
@@ -687,7 +704,24 @@
                 <div class="subsection-title mt-3">Data Ibu</div>
 
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="status_ibu">Status Ibu</label>
+                            <select name="status_ibu" id="status_ibu"
+                                class="form-control @error('status_ibu') is-invalid @enderror">
+                                @foreach(\App\Models\CalonOrtu::STATUS_ORTU as $status)
+                                    <option value="{{ $status }}" {{ old('status_ibu', optional($pendaftar->ortu)->status_ibu ?? 'masih_hidup') === $status ? 'selected' : '' }}>
+                                        {{ $status === 'masih_hidup' ? 'Masih Hidup' : 'Meninggal' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('status_ibu')
+                                <span class="invalid-feedback">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
                         <div class="form-group">
                             <label for="nama_ibu">Nama Ibu</label>
                             <input type="text" name="nama_ibu" id="nama_ibu" 
@@ -699,7 +733,7 @@
                         </div>
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="form-group">
                             <label for="nik_ibu">NIK Ibu</label>
                             <input type="text" name="nik_ibu" id="nik_ibu" 

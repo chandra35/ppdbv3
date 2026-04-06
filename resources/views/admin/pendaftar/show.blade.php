@@ -952,32 +952,28 @@ dl.row dt {
                                                 </span>
                                             </td>
                                             <td class="text-center">
-                                                @if($nilai->dokumen_path)
-                                                    @php
-                                                        $raporExtension = strtolower(pathinfo($nilai->dokumen_path, PATHINFO_EXTENSION));
-                                                        $isRaporImage = in_array($raporExtension, ['jpg', 'jpeg', 'png', 'gif']);
-                                                    @endphp
+                                                @if($nilai->hasDokumen())
                                                     <a href="javascript:void(0);"
                                                        class="btn btn-xs btn-info dokumen-link"
-                                                       data-url="{{ asset('storage/' . $nilai->dokumen_path) }}"
+                                                       data-url="{{ $nilai->preview_url }}"
                                                        data-title="Rapor Semester {{ $nilai->semester }}"
                                                        data-dokumen-id="rapor-{{ $nilai->id }}"
                                                        data-dokumen-status="{{ $nilai->status_validasi }}"
                                                        data-jenis-dokumen="rapor_sem_{{ $nilai->semester }}"
-                                                       data-type="{{ $isRaporImage ? 'image' : 'pdf' }}"
+                                                       data-type="{{ $nilai->dokumen_type }}"
                                                        data-nilai-matematika="{{ $nilai->matematika }}"
                                                        data-nilai-ipa="{{ $nilai->ipa }}"
                                                        data-nilai-ips="{{ $nilai->ips }}"
                                                        data-nilai-rata="{{ number_format($nilai->rata_rata, 2) }}"
                                                        title="Lihat Dokumen">
-                                                        <i class="fas fa-{{ $isRaporImage ? 'image' : 'file-pdf' }}"></i> Lihat
+                                                        <i class="fas fa-{{ $nilai->dokumen_type === 'image' ? 'image' : 'file-pdf' }}"></i> Lihat
                                                     </a>
                                                 @else
                                                     <span class="text-muted"><i class="fas fa-minus-circle"></i> Belum ada</span>
                                                 @endif
                                             </td>
                                             <td class="text-center" id="rapor-validasi-{{ $nilai->id }}">
-                                                @if($nilai->dokumen_path)
+                                                @if($nilai->hasDokumen())
                                                     @if($nilai->status_validasi === 'pending')
                                                         <div class="btn-group btn-group-sm">
                                                             <button type="button" class="btn btn-success btn-xs btn-validasi-rapor" 
