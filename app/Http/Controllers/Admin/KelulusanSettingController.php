@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Kelulusan;
 use App\Models\KelulusanSetting;
 use App\Models\EnvelopeOpenLog;
-use App\Models\TahunPelajaran;
 use App\Support\AdminPpdbContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -18,33 +17,56 @@ class KelulusanSettingController extends Controller
      */
     public function index(Request $request)
     {
-        $context = AdminPpdbContext::resolve($request->get('tahun_pelajaran_id'));
+        $context = AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
         $tahunAktif = $context['selectedTahun'];
         if (!$tahunAktif) {
             return redirect()->route('admin.dashboard')->with('error', 'Tahun pelajaran aktif tidak ditemukan');
         }
 
-        $setting = KelulusanSetting::firstOrCreate(
-            ['tahun_pelajaran_id' => $tahunAktif->id],
-            [
-                'judul_pengumuman' => 'Pengumuman Kelulusan PPDB',
-                'pesan_lulus' => 'Selamat! Anda dinyatakan LULUS seleksi PPDB. Silakan bergabung ke grup WhatsApp dan lengkapi persyaratan daftar ulang.',
-                'pesan_tidak_lulus' => 'Mohon maaf, Anda belum dinyatakan lulus pada seleksi PPDB tahun ini. Tetap semangat dan jangan menyerah!',
-            ]
+        $scopeJalurId = $context['selectedGelombang']?->jalur_id ?? $context['jalurFilterId'];
+
+        $setting = KelulusanSetting::getOrCreateForContext(
+            $tahunAktif->id,
+            $scopeJalurId,
+            $context['gelombangFilterId']
         );
+
+        $kelulusanBaseQuery = Kelulusan::where('tahun_pelajaran_id', $tahunAktif->id);
+        if ($scopeJalurId || $context['gelombangFilterId']) {
+            $kelulusanBaseQuery->whereHas('calonSiswa', function ($query) use ($context) {
+                $scopeJalurId = $context['selectedGelombang']?->jalur_id ?? $context['jalurFilterId'];
+                if ($scopeJalurId) {
+                    $query->where('jalur_pendaftaran_id', $scopeJalurId);
+                }
+                if ($context['gelombangFilterId']) {
+                    $query->where('gelombang_pendaftaran_id', $context['gelombangFilterId']);
+                }
+            });
+        }
 
         // Stats kelulusan
         $stats = [
-            'total_lulus' => Kelulusan::where('tahun_pelajaran_id', $tahunAktif->id)->lulus()->count(),
-            'total_tidak_lulus' => Kelulusan::where('tahun_pelajaran_id', $tahunAktif->id)->tidakLulus()->count(),
-            'total_cadangan' => Kelulusan::where('tahun_pelajaran_id', $tahunAktif->id)->cadangan()->count(),
+            'total_lulus' => (clone $kelulusanBaseQuery)->lulus()->count(),
+            'total_tidak_lulus' => (clone $kelulusanBaseQuery)->tidakLulus()->count(),
+            'total_cadangan' => (clone $kelulusanBaseQuery)->cadangan()->count(),
         ];
 
         return view('admin.kelulusan.setting', compact('setting', 'tahunAktif', 'stats') + [
             'tahunPelajaranList' => $context['tahunPelajarans'],
+            'jalurs' => $context['jalurs'],
+            'allGelombangs' => $context['allGelombangs'],
+            'gelombangs' => $context['gelombangs'],
             'selectedTahunIdInput' => $context['selectedTahunIdInput'],
+            'selectedJalurIdInput' => $context['selectedJalurIdInput'],
+            'selectedGelombangIdInput' => $context['selectedGelombangIdInput'],
             'contextInfo' => [
                 'tahun' => $tahunAktif->nama,
+                'jalur' => $context['selectedJalur']?->nama ?? 'Semua Jalur',
+                'gelombang' => $context['selectedGelombang']?->nama ?? 'Semua Gelombang',
             ],
         ]);
     }
@@ -54,11 +76,18 @@ class KelulusanSettingController extends Controller
      */
     public function update(Request $request)
     {
-        $context = AdminPpdbContext::resolve($request->input('tahun_pelajaran_id'));
+        $context = AdminPpdbContext::resolve(
+            $request->input('tahun_pelajaran_id'),
+            $request->input('jalur_id'),
+            $request->input('gelombang_id')
+        );
         $tahunAktif = $context['selectedTahun'];
+        $scopeJalurId = $context['selectedGelombang']?->jalur_id ?? $context['jalurFilterId'];
 
         $request->validate([
             'tahun_pelajaran_id' => 'nullable',
+            'jalur_id' => 'nullable',
+            'gelombang_id' => 'nullable',
             'judul_pengumuman' => 'required|string|max:255',
             'pesan_lulus' => 'nullable|string',
             'pesan_tidak_lulus' => 'nullable|string',
@@ -73,12 +102,26 @@ class KelulusanSettingController extends Controller
             'catatan_daftar_ulang' => 'nullable|string',
         ]);
 
-        $setting = KelulusanSetting::where('tahun_pelajaran_id', $tahunAktif->id)->first();
+        if (
+            $context['selectedGelombang']
+            && $context['selectedJalur']
+            && $context['selectedGelombang']->jalur_id !== $context['selectedJalur']->id
+        ) {
+            return redirect()->back()->with('error', 'Gelombang tidak sesuai dengan jalur yang dipilih.');
+        }
+
+        $setting = KelulusanSetting::getOrCreateForContext(
+            $tahunAktif->id,
+            $scopeJalurId,
+            $context['gelombangFilterId']
+        );
 
         // Filter out empty dokumen_persyaratan entries
         $dokumen = $request->dokumen_persyaratan ? array_values(array_filter($request->dokumen_persyaratan)) : [];
 
         $setting->update([
+            'jalur_pendaftaran_id' => $scopeJalurId,
+            'gelombang_pendaftaran_id' => $context['gelombangFilterId'],
             'judul_pengumuman' => $request->judul_pengumuman,
             'pesan_lulus' => $request->pesan_lulus,
             'pesan_tidak_lulus' => $request->pesan_tidak_lulus,
@@ -97,6 +140,8 @@ class KelulusanSettingController extends Controller
 
         return redirect()->route('admin.kelulusan.setting', [
                 'tahun_pelajaran_id' => $tahunAktif?->id,
+                'jalur_id' => $context['selectedJalurIdInput'],
+                'gelombang_id' => $context['selectedGelombangIdInput'],
             ])
             ->with('success', 'Pengaturan kelulusan berhasil diperbarui');
     }
@@ -114,13 +159,22 @@ class KelulusanSettingController extends Controller
             'file_konsider.max' => 'Ukuran file maksimal 10MB.',
         ]);
 
-        $context = AdminPpdbContext::resolve($request->input('tahun_pelajaran_id'));
+        $context = AdminPpdbContext::resolve(
+            $request->input('tahun_pelajaran_id'),
+            $request->input('jalur_id'),
+            $request->input('gelombang_id')
+        );
         $tahunAktif = $context['selectedTahun'];
+        $scopeJalurId = $context['selectedGelombang']?->jalur_id ?? $context['jalurFilterId'];
         if (!$tahunAktif) {
             return response()->json(['success' => false, 'message' => 'Tahun pelajaran aktif tidak ditemukan.'], 422);
         }
 
-        $setting = KelulusanSetting::where('tahun_pelajaran_id', $tahunAktif->id)->first();
+        $setting = KelulusanSetting::getOrCreateForContext(
+            $tahunAktif->id,
+            $scopeJalurId,
+            $context['gelombangFilterId']
+        );
         if (!$setting) {
             return response()->json(['success' => false, 'message' => 'Setting kelulusan tidak ditemukan.'], 422);
         }
@@ -150,13 +204,22 @@ class KelulusanSettingController extends Controller
      */
     public function deleteKonsider(Request $request)
     {
-        $context = AdminPpdbContext::resolve($request->input('tahun_pelajaran_id'));
+        $context = AdminPpdbContext::resolve(
+            $request->input('tahun_pelajaran_id'),
+            $request->input('jalur_id'),
+            $request->input('gelombang_id')
+        );
         $tahunAktif = $context['selectedTahun'];
+        $scopeJalurId = $context['selectedGelombang']?->jalur_id ?? $context['jalurFilterId'];
         if (!$tahunAktif) {
             return response()->json(['success' => false, 'message' => 'Tahun pelajaran aktif tidak ditemukan.'], 422);
         }
 
-        $setting = KelulusanSetting::where('tahun_pelajaran_id', $tahunAktif->id)->first();
+        $setting = KelulusanSetting::resolveFor(
+            $tahunAktif->id,
+            $scopeJalurId,
+            $context['gelombangFilterId']
+        );
         if (!$setting || !$setting->file_konsider) {
             return response()->json(['success' => false, 'message' => 'Tidak ada file konsider untuk dihapus.'], 422);
         }
@@ -185,7 +248,11 @@ class KelulusanSettingController extends Controller
      */
     public function envelopeLogs(Request $request)
     {
-        $context = AdminPpdbContext::resolve($request->get('tahun_pelajaran_id'));
+        $context = AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
         $tahunAktif = $context['selectedTahun'];
         if (!$tahunAktif) {
             return redirect()->route('admin.dashboard')->with('error', 'Tahun pelajaran aktif tidak ditemukan');
@@ -196,6 +263,20 @@ class KelulusanSettingController extends Controller
         // ===== Tab: Sudah Buka Amplop =====
         $query = EnvelopeOpenLog::with(['calonSiswa.jalurPendaftaran', 'calonSiswa.kelulusan', 'calonSiswa.gelombangPendaftaran'])
             ->where('tahun_pelajaran_id', $tahunAktif->id);
+
+        $scopeJalurId = $context['selectedGelombang']?->jalur_id ?? $context['jalurFilterId'];
+
+        if ($scopeJalurId || $context['gelombangFilterId']) {
+            $query->whereHas('calonSiswa', function ($q) use ($context) {
+                $scopeJalurId = $context['selectedGelombang']?->jalur_id ?? $context['jalurFilterId'];
+                if ($scopeJalurId) {
+                    $q->where('jalur_pendaftaran_id', $scopeJalurId);
+                }
+                if ($context['gelombangFilterId']) {
+                    $q->where('gelombang_pendaftaran_id', $context['gelombangFilterId']);
+                }
+            });
+        }
 
         // Filter pencarian
         if ($request->search) {
@@ -230,11 +311,34 @@ class KelulusanSettingController extends Controller
 
         // ===== Tab: Belum Buka Amplop =====
         $openedCalonSiswaIds = EnvelopeOpenLog::where('tahun_pelajaran_id', $tahunAktif->id)
+            ->when($context['jalurFilterId'] || $context['gelombangFilterId'], function ($query) use ($context) {
+                $query->whereHas('calonSiswa', function ($q) use ($context) {
+                    $scopeJalurId = $context['selectedGelombang']?->jalur_id ?? $context['jalurFilterId'];
+                    if ($scopeJalurId) {
+                        $q->where('jalur_pendaftaran_id', $scopeJalurId);
+                    }
+                    if ($context['gelombangFilterId']) {
+                        $q->where('gelombang_pendaftaran_id', $context['gelombangFilterId']);
+                    }
+                });
+            })
             ->pluck('calon_siswa_id');
 
         $belumBukaQuery = Kelulusan::with(['calonSiswa.jalurPendaftaran', 'calonSiswa.gelombangPendaftaran', 'calonSiswa.user'])
             ->where('tahun_pelajaran_id', $tahunAktif->id)
             ->whereNotIn('calon_siswa_id', $openedCalonSiswaIds);
+
+        if ($scopeJalurId || $context['gelombangFilterId']) {
+            $belumBukaQuery->whereHas('calonSiswa', function ($q) use ($context) {
+                $scopeJalurId = $context['selectedGelombang']?->jalur_id ?? $context['jalurFilterId'];
+                if ($scopeJalurId) {
+                    $q->where('jalur_pendaftaran_id', $scopeJalurId);
+                }
+                if ($context['gelombangFilterId']) {
+                    $q->where('gelombang_pendaftaran_id', $context['gelombangFilterId']);
+                }
+            });
+        }
 
         // Filter pencarian belum buka
         if ($request->search_belum) {
@@ -273,8 +377,21 @@ class KelulusanSettingController extends Controller
         $belumBuka = $belumBukaQuery->paginate(25, ['*'], 'page_belum')->withQueryString();
 
         // Stats
-        $totalKelulusan = Kelulusan::where('tahun_pelajaran_id', $tahunAktif->id)->count();
-        $totalOpened = EnvelopeOpenLog::where('tahun_pelajaran_id', $tahunAktif->id)->count();
+        $kelulusanStatsQuery = Kelulusan::where('tahun_pelajaran_id', $tahunAktif->id);
+        if ($scopeJalurId || $context['gelombangFilterId']) {
+            $kelulusanStatsQuery->whereHas('calonSiswa', function ($q) use ($context) {
+                $scopeJalurId = $context['selectedGelombang']?->jalur_id ?? $context['jalurFilterId'];
+                if ($scopeJalurId) {
+                    $q->where('jalur_pendaftaran_id', $scopeJalurId);
+                }
+                if ($context['gelombangFilterId']) {
+                    $q->where('gelombang_pendaftaran_id', $context['gelombangFilterId']);
+                }
+            });
+        }
+
+        $totalKelulusan = (clone $kelulusanStatsQuery)->count();
+        $totalOpened = $logs->total();
         $totalBelumBuka = $totalKelulusan - $totalOpened;
         if ($totalBelumBuka < 0) $totalBelumBuka = 0;
 
@@ -283,6 +400,11 @@ class KelulusanSettingController extends Controller
         ) + [
             'tahunPelajaranList' => $context['tahunPelajarans'],
             'selectedTahunIdInput' => $context['selectedTahunIdInput'],
+            'jalurs' => $context['jalurs'],
+            'allGelombangs' => $context['allGelombangs'],
+            'gelombangs' => $context['gelombangs'],
+            'selectedJalurIdInput' => $context['selectedJalurIdInput'],
+            'selectedGelombangIdInput' => $context['selectedGelombangIdInput'],
         ]);
     }
 }

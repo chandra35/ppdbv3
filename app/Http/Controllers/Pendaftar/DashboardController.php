@@ -73,7 +73,7 @@ class DashboardController extends Controller
         }
 
         // Kelulusan info for dashboard
-        $kelulusanSetting = \App\Models\KelulusanSetting::getActive();
+        $kelulusanSetting = \App\Models\KelulusanSetting::getActive($calonSiswa);
         $kelulusanData = null;
         if ($kelulusanSetting && $kelulusanSetting->isPengumumanAktif()) {
             $envelopeAlreadyOpened = EnvelopeOpenLog::hasOpened($calonSiswa->id, $calonSiswa->tahun_pelajaran_id);
@@ -756,7 +756,7 @@ class DashboardController extends Controller
             ->first();
 
         // Cek apakah ada kelulusan & pengumuman aktif tapi amplop belum dibuka
-        $kelulusanSetting = \App\Models\KelulusanSetting::getActive();
+        $kelulusanSetting = \App\Models\KelulusanSetting::getActive($calonSiswa);
         $sembunyikanAdmisi = false;
         $pengumumanBelumWaktunya = false;
         $tidakAdaKelulusan = false;
@@ -774,8 +774,9 @@ class DashboardController extends Controller
                 $pengumumanBelumWaktunya = true;
             }
         } elseif (!$calonSiswa->kelulusan && $kelulusanSetting && $kelulusanSetting->isPengumumanAktif()) {
-            // Pengumuman aktif tapi pendaftar tidak punya record kelulusan
-            // (tidak mengikuti tes / dianggap mundur)
+            // Pengumuman aktif tetapi hasil untuk pendaftar ini belum ditetapkan.
+            // Untuk model one day one service, tampilkan status "masih diproses"
+            // agar tidak terkesan pendaftar dikeluarkan dari pengumuman.
             $tidakAdaKelulusan = true;
             $sembunyikanAdmisi = true;
         }
@@ -2057,7 +2058,7 @@ class DashboardController extends Controller
         }
 
         // Get kelulusan setting
-        $setting = \App\Models\KelulusanSetting::where('tahun_pelajaran_id', $calonSiswa->tahun_pelajaran_id)->first();
+        $setting = \App\Models\KelulusanSetting::getActive($calonSiswa);
 
         // Check if pengumuman is enabled
         if (!$setting || !$setting->isPengumumanAktif()) {
@@ -2236,7 +2237,7 @@ class DashboardController extends Controller
                 ->with('error', 'File konsider hanya tersedia untuk peserta yang dinyatakan lulus.');
         }
 
-        $setting = \App\Models\KelulusanSetting::where('tahun_pelajaran_id', $calonSiswa->tahun_pelajaran_id)->first();
+        $setting = \App\Models\KelulusanSetting::getActive($calonSiswa);
 
         if (!$setting || !$setting->file_konsider) {
             return redirect()->route('pendaftar.kelulusan')

@@ -315,20 +315,20 @@
             @endif
 
         @else
-            {{-- Tidak ada data kelulusan → pendaftar tidak mengikuti seleksi --}}
+            {{-- Pengumuman aktif tetapi hasil pendaftar ini masih diproses --}}
             <div class="kelulusan-hero belum">
                 <div class="kelulusan-icon">
-                    <i class="fas fa-user-slash fa-4x"></i>
+                    <i class="fas fa-hourglass-half fa-4x"></i>
                 </div>
                 <div class="kelulusan-status-text mb-3" style="font-size: 1.8rem;">
-                    TIDAK TERMASUK DALAM PENGUMUMAN
+                    HASIL SELEKSI MASIH DIPROSES
                 </div>
                 <p style="font-size: 1.1rem; opacity: 0.9;">
-                    Anda tidak terdaftar dalam pengumuman hasil seleksi PPDB.<br>
-                    Hal ini bisa terjadi karena tidak mengikuti tes atau tidak melengkapi persyaratan.
+                    Pengumuman untuk jalur atau gelombang Anda sudah dibuka,<br>
+                    tetapi hasil seleksi Anda belum ditetapkan oleh panitia.
                 </p>
                 <p style="font-size: 0.95rem; opacity: 0.8;">
-                    <i class="fas fa-phone-alt mr-1"></i> Silakan hubungi panitia PPDB untuk informasi lebih lanjut.
+                    <i class="fas fa-phone-alt mr-1"></i> Silakan cek kembali beberapa saat lagi atau hubungi panitia bila diperlukan.
                 </p>
             </div>
         @endif

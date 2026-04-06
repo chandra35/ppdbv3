@@ -9,6 +9,7 @@ use App\Models\NilaiSeleksi;
 use App\Models\BobotNilaiSeleksi;
 use App\Models\TahunPelajaran;
 use App\Models\CalonSiswa;
+use App\Models\Kelulusan;
 use App\Models\JadwalUjian;
 use App\Models\ActivityLog;
 use App\Imports\NilaiPenilaianImport;
@@ -21,6 +22,42 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class NilaiSeleksiController extends Controller
 {
+    private function mapStatusAdmisiToKelulusan(?string $statusAdmisi): ?string
+    {
+        return match ($statusAdmisi) {
+            'diterima' => 'lulus',
+            'ditolak' => 'tidak_lulus',
+            'cadangan' => 'cadangan',
+            default => null,
+        };
+    }
+
+    private function syncKelulusanFromAdmisi(CalonSiswa $calonSiswa, string $statusAdmisi, ?string $catatan = null): void
+    {
+        $statusKelulusan = $this->mapStatusAdmisiToKelulusan($statusAdmisi);
+
+        if ($statusKelulusan === null) {
+            Kelulusan::where('calon_siswa_id', $calonSiswa->id)
+                ->where('tahun_pelajaran_id', $calonSiswa->tahun_pelajaran_id)
+                ->delete();
+
+            return;
+        }
+
+        Kelulusan::updateOrCreate(
+            [
+                'calon_siswa_id' => $calonSiswa->id,
+                'tahun_pelajaran_id' => $calonSiswa->tahun_pelajaran_id,
+            ],
+            [
+                'status' => $statusKelulusan,
+                'catatan' => $catatan,
+                'diluluskan_oleh' => auth()->id(),
+                'tanggal_kelulusan' => now(),
+            ]
+        );
+    }
+
     /**
      * Display nilai seleksi list for admin
      */
@@ -741,12 +778,17 @@ class NilaiSeleksiController extends Controller
         $oldStatus = $calonSiswa->status_admisi;
         $newStatus = $request->status_admisi;
 
-        $calonSiswa->update([
-            'status_admisi' => $newStatus,
-            'catatan_admisi' => $request->catatan_admisi,
-            'approved_by' => auth()->id(),
-            'approved_at' => now(),
-        ]);
+        DB::transaction(function () use ($calonSiswa, $newStatus, $request) {
+            $calonSiswa->update([
+                'status_admisi' => $newStatus,
+                'catatan_admisi' => $request->catatan_admisi,
+                'approved_by' => auth()->id(),
+                'approved_at' => now(),
+            ]);
+
+            // Sinkronkan ke tabel kelulusan agar amplop & halaman kelulusan pendaftar langsung mengikuti.
+            $this->syncKelulusanFromAdmisi($calonSiswa->fresh(), $newStatus, $request->catatan_admisi);
+        });
 
         // Log activity
         ActivityLog::log(
@@ -787,29 +829,32 @@ class NilaiSeleksiController extends Controller
         
         $calonSiswas = CalonSiswa::whereIn('id', $request->calon_siswa_ids)->get();
         
-        foreach ($calonSiswas as $calonSiswa) {
-            $oldStatus = $calonSiswa->status_admisi;
-            
-            $calonSiswa->update([
-                'status_admisi' => $request->status_admisi,
-                'catatan_admisi' => $request->catatan_admisi,
-                'approved_by' => auth()->id(),
-                'approved_at' => now(),
-            ]);
-            
-            $count++;
-            
-            // Kirim email jika diminta dan status bukan pending
-            if ($request->kirim_email && in_array($request->status_admisi, ['diterima', 'ditolak'])) {
-                if (EmailNotificationService::sendHasilSeleksi(
-                    $calonSiswa, 
-                    $request->status_admisi, 
-                    $request->catatan_admisi
-                )) {
-                    $emailSent++;
+        DB::transaction(function () use ($calonSiswas, $request, &$count, &$emailSent) {
+            foreach ($calonSiswas as $calonSiswa) {
+                $calonSiswa->update([
+                    'status_admisi' => $request->status_admisi,
+                    'catatan_admisi' => $request->catatan_admisi,
+                    'approved_by' => auth()->id(),
+                    'approved_at' => now(),
+                ]);
+
+                // Sinkronkan ke tabel kelulusan agar admin & pendaftar membaca hasil yang sama.
+                $this->syncKelulusanFromAdmisi($calonSiswa->fresh(), $request->status_admisi, $request->catatan_admisi);
+
+                $count++;
+
+                // Kirim email jika diminta dan status bukan pending
+                if ($request->kirim_email && in_array($request->status_admisi, ['diterima', 'ditolak'])) {
+                    if (EmailNotificationService::sendHasilSeleksi(
+                        $calonSiswa,
+                        $request->status_admisi,
+                        $request->catatan_admisi
+                    )) {
+                        $emailSent++;
+                    }
                 }
             }
-        }
+        });
 
         $message = "{$count} pendaftar berhasil diubah statusnya menjadi {$request->status_admisi}.";
         if ($emailSent > 0) {

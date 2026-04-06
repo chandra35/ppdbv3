@@ -31,6 +31,11 @@ class KelulusanController extends Controller
         );
         $tahunAktif = $context['selectedTahun'];
         $selectedTahunId = $tahunAktif?->id;
+        $setting = KelulusanSetting::resolveFor(
+            $selectedTahunId,
+            $context['jalurFilterId'],
+            $context['gelombangFilterId']
+        ) ?? KelulusanSetting::resolveFor($selectedTahunId, null, null);
 
         // ---- 1. Load NilaiSeleksi (TBQ) data ----
         $seleksiQuery = NilaiSeleksi::with(['calonSiswa.jalurPendaftaran', 'calonSiswa.gelombangPendaftaran', 'ruangUjian', 'sesiUjian.jalur'])
@@ -175,6 +180,21 @@ class KelulusanController extends Controller
         $kelulusanData = (clone $kelulusanBaseQuery)
             ->pluck('status', 'calon_siswa_id');
 
+        // Fallback dari status admisi agar hasil "pengumuman cepat" tetap terlihat di halaman kelulusan.
+        $fallbackKelulusanData = CalonSiswa::whereIn('id', $allCalonIds)
+            ->pluck('status_admisi', 'id')
+            ->map(function ($statusAdmisi) {
+                return match ($statusAdmisi) {
+                    'diterima' => 'lulus',
+                    'ditolak' => 'tidak_lulus',
+                    'cadangan' => 'cadangan',
+                    default => null,
+                };
+            })
+            ->filter();
+
+        $kelulusanData = $fallbackKelulusanData->merge($kelulusanData);
+
         // Stats
         $stats = [
             'total' => $rekapData->count(),
@@ -185,7 +205,7 @@ class KelulusanController extends Controller
         ];
 
         return view('admin.kelulusan.index', compact(
-            'rekapData', 'cbtData', 'raporData', 'kelulusanData', 'stats',
+            'rekapData', 'cbtData', 'raporData', 'kelulusanData', 'stats', 'setting',
             'tahunAktif', 'nisnSearch'
         ) + [
             'tahunPelajarans' => $context['tahunPelajarans'],

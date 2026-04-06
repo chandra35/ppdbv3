@@ -461,18 +461,18 @@
                         <div class="mb-3">
                             <span class="bg-secondary rounded-circle d-inline-flex align-items-center justify-content-center" 
                                   style="width: 80px; height: 80px;">
-                                <i class="fas fa-user-slash fa-2x text-white"></i>
+                                <i class="fas fa-hourglass-half fa-2x text-white"></i>
                             </span>
                         </div>
                         <h5 class="font-weight-bold text-secondary">
-                            <i class="fas fa-info-circle mr-1"></i> Tidak Termasuk Dalam Pengumuman
+                            <i class="fas fa-info-circle mr-1"></i> Hasil Seleksi Masih Diproses
                         </h5>
                         <p class="text-muted mb-3">
-                            Anda tidak terdaftar dalam pengumuman hasil seleksi PPDB.<br>
-                            Hal ini bisa terjadi karena tidak mengikuti tes atau tidak melengkapi persyaratan.
+                            Pengumuman untuk jalur atau gelombang Anda sudah dibuka,<br>
+                            tetapi hasil seleksi Anda belum ditetapkan oleh panitia.
                         </p>
                         <p class="text-muted mb-0" style="font-size: 0.85rem;">
-                            <i class="fas fa-phone-alt mr-1"></i> Silakan hubungi panitia PPDB untuk informasi lebih lanjut.
+                            <i class="fas fa-phone-alt mr-1"></i> Silakan cek kembali beberapa saat lagi atau hubungi panitia bila diperlukan.
                         </p>
                     </div>
                 </div>

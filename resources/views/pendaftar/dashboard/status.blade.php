@@ -14,19 +14,19 @@
         <div class="card">
             <div class="card-body text-center py-5">
                 @if(isset($tidakAdaKelulusan) && $tidakAdaKelulusan)
-                    {{-- Pendaftar tidak punya record kelulusan (tidak ikut tes / mundur) --}}
+                    {{-- Pengumuman aktif tetapi hasil pendaftar ini masih diproses --}}
                     <div class="mb-4">
                         <span class="bg-secondary rounded-circle d-inline-flex align-items-center justify-content-center" 
                               style="width: 100px; height: 100px;">
-                            <i class="fas fa-user-slash fa-3x text-white"></i>
+                            <i class="fas fa-hourglass-half fa-3x text-white"></i>
                         </span>
                     </div>
-                    <h2 class="text-secondary">Tidak Termasuk Dalam Pengumuman</h2>
-                    <h4 class="mb-3 text-muted">Anda tidak termasuk dalam daftar peserta seleksi</h4>
+                    <h2 class="text-secondary">Hasil Seleksi Masih Diproses</h2>
+                    <h4 class="mb-3 text-muted">Panitia sedang menyelesaikan penetapan hasil Anda</h4>
                     <p class="text-muted mb-4">
-                        Anda tidak terdaftar dalam pengumuman hasil seleksi PPDB.<br>
-                        Hal ini bisa terjadi karena tidak mengikuti tes atau tidak melengkapi persyaratan.<br>
-                        Silakan hubungi panitia PPDB untuk informasi lebih lanjut.
+                        Pengumuman untuk jalur atau gelombang Anda sudah dibuka,<br>
+                        tetapi hasil seleksi Anda belum ditetapkan oleh panitia.<br>
+                        Silakan cek kembali beberapa saat lagi atau hubungi panitia bila diperlukan.
                     </p>
                 @elseif(isset($pengumumanBelumWaktunya) && $pengumumanBelumWaktunya)
                     {{-- Pengumuman belum waktunya --}}
@@ -174,7 +174,7 @@
                         <td>Status Admisi</td>
                         <td>
                             @if(isset($tidakAdaKelulusan) && $tidakAdaKelulusan)
-                                <span class="badge badge-secondary px-2 py-1"><i class="fas fa-user-slash mr-1"></i> Tidak Mengikuti Seleksi</span>
+                                <span class="badge badge-secondary px-2 py-1"><i class="fas fa-hourglass-half mr-1"></i> Masih Diproses</span>
                             @elseif(isset($pengumumanBelumWaktunya) && $pengumumanBelumWaktunya)
                                 <span class="badge badge-secondary px-2 py-1"><i class="fas fa-clock mr-1"></i> Menunggu Pengumuman</span>
                             @elseif(isset($sembunyikanAdmisi) && $sembunyikanAdmisi)
@@ -197,7 +197,7 @@
                         <td>Catatan Admisi</td>
                         <td>
                             @if(isset($tidakAdaKelulusan) && $tidakAdaKelulusan)
-                                <span class="text-muted"><i class="fas fa-user-slash mr-1"></i> Tidak mengikuti seleksi</span>
+                                <span class="text-muted"><i class="fas fa-hourglass-half mr-1"></i> Menunggu penetapan hasil panitia</span>
                             @elseif(isset($pengumumanBelumWaktunya) && $pengumumanBelumWaktunya)
                                 <span class="text-muted"><i class="fas fa-clock mr-1"></i> -</span>
                             @elseif(isset($sembunyikanAdmisi) && $sembunyikanAdmisi)
@@ -287,7 +287,7 @@
                     <!-- Step 4: Pengumuman -->
                     <div class="time-label">
                         @if(isset($tidakAdaKelulusan) && $tidakAdaKelulusan)
-                            <span class="bg-secondary">Tidak Mengikuti</span>
+                            <span class="bg-secondary">Diproses</span>
                         @elseif(isset($pengumumanBelumWaktunya) && $pengumumanBelumWaktunya)
                             <span class="bg-secondary">Menunggu</span>
                         @elseif(isset($sembunyikanAdmisi) && $sembunyikanAdmisi)
@@ -306,7 +306,7 @@
                             <h3 class="timeline-header">Pengumuman Hasil Seleksi</h3>
                             <div class="timeline-body text-muted">
                                 @if(isset($tidakAdaKelulusan) && $tidakAdaKelulusan)
-                                    <i class="fas fa-user-slash mr-1"></i> Anda tidak termasuk dalam pengumuman hasil seleksi
+                                    <i class="fas fa-hourglass-half mr-1"></i> Hasil seleksi Anda masih diproses panitia
                                 @elseif(isset($pengumumanBelumWaktunya) && $pengumumanBelumWaktunya)
                                     <i class="fas fa-clock mr-1"></i> Pengumuman hasil seleksi belum dibuka
                                 @elseif(isset($sembunyikanAdmisi) && $sembunyikanAdmisi)

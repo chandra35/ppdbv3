@@ -270,7 +270,7 @@
                 @php
                     $calonSiswaForMenu = \App\Models\CalonSiswa::where('user_id', auth()->id())->with(['jalurPendaftaran', 'kelulusan'])->first();
                     // Cek apakah pengumuman aktif (toggle + tanggal/jam)
-                    $kelulusanSettingForMenu = \App\Models\KelulusanSetting::getActive();
+                    $kelulusanSettingForMenu = \App\Models\KelulusanSetting::getActive($calonSiswaForMenu);
                     $pengumumanAktifForMenu = $kelulusanSettingForMenu && $kelulusanSettingForMenu->isPengumumanAktif();
                     // Cek apakah amplop sudah dibuka (untuk hide/show kelulusan info)
                     $envelopeOpenedForMenu = false;

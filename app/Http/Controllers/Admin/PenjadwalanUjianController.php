@@ -35,6 +35,7 @@ class PenjadwalanUjianController extends Controller
             $request->get('jalur_id'),
             $request->get('gelombang_id')
         );
+        $tahunPelajaranList = $context['tahunPelajarans'];
         $tahunAktif = $context['selectedTahun'];
         $jalurList = $context['jalurs'];
         $gelombangList = $context['gelombangs'];

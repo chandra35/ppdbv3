@@ -118,6 +118,34 @@
         Gelombang <strong>{{ $contextInfo['gelombang'] }}</strong>.
     </div>
 
+    <div class="card card-outline card-info">
+        <div class="card-body py-3">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="text-muted text-uppercase small font-weight-bold">Status Pengumuman Scope Aktif</div>
+                    <div class="d-flex align-items-center flex-wrap mt-1">
+                        @if($setting && $setting->isPengumumanAktif())
+                            <span class="badge badge-success px-3 py-2 mr-2 mb-2"><i class="fas fa-broadcast-tower mr-1"></i>Sudah Dipublish</span>
+                        @elseif($setting && $setting->tampilkan_pengumuman && $setting->tanggal_pengumuman && now()->lt($setting->tanggal_pengumuman))
+                            <span class="badge badge-warning px-3 py-2 mr-2 mb-2"><i class="fas fa-clock mr-1"></i>Terjadwal {{ $setting->tanggal_pengumuman->format('d/m/Y H:i') }} WIB</span>
+                        @else
+                            <span class="badge badge-secondary px-3 py-2 mr-2 mb-2"><i class="fas fa-eye-slash mr-1"></i>Belum Dipublish</span>
+                        @endif
+
+                        @if($setting)
+                            <small class="text-muted mb-2">{{ $setting->scope_description }}</small>
+                        @endif
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-right mt-3 mt-md-0">
+                    <a href="{{ route('admin.kelulusan.setting', ['tahun_pelajaran_id' => $selectedTahunIdInput, 'jalur_id' => $selectedJalurIdInput, 'gelombang_id' => $selectedGelombangIdInput]) }}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-bullhorn mr-1"></i>Atur Pengumuman Scope Ini
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Stats -->
     <div class="row">
         <div class="col-lg-3 col-6">
@@ -226,8 +254,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h3 class="card-title"><i class="fas fa-table mr-2"></i>Data Peserta Seleksi</h3>
             <div>
-                <a href="{{ route('admin.kelulusan.setting') }}" class="btn btn-outline-info btn-sm">
-                <a href="{{ route('admin.kelulusan.setting', ['tahun_pelajaran_id' => $selectedTahunIdInput]) }}" class="btn btn-outline-info btn-sm">
+                <a href="{{ route('admin.kelulusan.setting', ['tahun_pelajaran_id' => $selectedTahunIdInput, 'jalur_id' => $selectedJalurIdInput, 'gelombang_id' => $selectedGelombangIdInput]) }}" class="btn btn-outline-info btn-sm">
                     <i class="fas fa-cog mr-1"></i>Pengaturan Kelulusan
                 </a>
             </div>

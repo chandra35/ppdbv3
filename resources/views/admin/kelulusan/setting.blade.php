@@ -26,7 +26,9 @@
     <div class="alert alert-info">
         <i class="fas fa-layer-group mr-1"></i>
         <strong>Konteks aktif:</strong>
-        Tahun {{ $contextInfo['tahun'] }}.
+        Tahun {{ $contextInfo['tahun'] }},
+        Jalur {{ $contextInfo['jalur'] }},
+        Gelombang {{ $contextInfo['gelombang'] }}.
     </div>
 
     <div class="card card-outline card-info">
@@ -44,7 +46,37 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4 d-flex align-items-end">
+                <div class="col-md-3 mt-3 mt-md-0">
+                    <div class="form-group mb-md-0">
+                        <label>Jalur</label>
+                        <select name="jalur_id" id="filter_jalur_id" class="form-control">
+                            <option value="all" {{ $selectedJalurIdInput === 'all' ? 'selected' : '' }}>Semua Jalur</option>
+                            @foreach($jalurs as $jalur)
+                                <option value="{{ $jalur->id }}" {{ (string) $selectedJalurIdInput === (string) $jalur->id ? 'selected' : '' }}>
+                                    {{ $jalur->nama }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3 mt-3 mt-md-0">
+                    <div class="form-group mb-md-0">
+                        <label>Gelombang</label>
+                        <select name="gelombang_id" id="filter_gelombang_id" class="form-control">
+                            <option value="all" {{ $selectedGelombangIdInput === 'all' ? 'selected' : '' }}>Semua Gelombang</option>
+                            @foreach($allGelombangs as $gel)
+                                <option
+                                    value="{{ $gel->id }}"
+                                    data-jalur-id="{{ $gel->jalur_id }}"
+                                    {{ (string) $selectedGelombangIdInput === (string) $gel->id ? 'selected' : '' }}
+                                >
+                                    {{ $gel->nama }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end mt-3 mt-md-0">
                     <div class="mb-md-0">
                         <button type="submit" class="btn btn-primary btn-sm">
                             <i class="fas fa-filter mr-1"></i>Terapkan
@@ -105,6 +137,8 @@
         @csrf
         @method('PUT')
         <input type="hidden" name="tahun_pelajaran_id" value="{{ $selectedTahunIdInput }}">
+        <input type="hidden" name="jalur_id" value="{{ $selectedJalurIdInput }}">
+        <input type="hidden" name="gelombang_id" value="{{ $selectedGelombangIdInput }}">
 
         <div class="row">
             <!-- Pengumuman -->
@@ -114,6 +148,24 @@
                         <h3 class="card-title"><i class="fas fa-bullhorn mr-2"></i>Pengumuman Kelulusan</h3>
                     </div>
                     <div class="card-body">
+                        <div class="alert alert-light border">
+                            <div class="d-flex justify-content-between align-items-start flex-wrap">
+                                <div>
+                                    <div class="text-muted text-uppercase small font-weight-bold">Scope Pengaturan</div>
+                                    <div class="font-weight-bold">{{ $setting->scope_label }}</div>
+                                    <small class="text-muted">{{ $setting->scope_description }}</small>
+                                </div>
+                                <div class="mt-2 mt-md-0">
+                                    @if($setting->isPengumumanAktif())
+                                        <span class="badge badge-success px-3 py-2"><i class="fas fa-broadcast-tower mr-1"></i>Sudah Dipublish</span>
+                                    @elseif($setting->tampilkan_pengumuman && $setting->tanggal_pengumuman && now()->lt($setting->tanggal_pengumuman))
+                                        <span class="badge badge-warning px-3 py-2"><i class="fas fa-clock mr-1"></i>Terjadwal</span>
+                                    @else
+                                        <span class="badge badge-secondary px-3 py-2"><i class="fas fa-eye-slash mr-1"></i>Masih Disembunyikan</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
                         <div class="form-group">
                             <label>Judul Pengumuman</label>
                             <input type="text" name="judul_pengumuman" class="form-control" value="{{ old('judul_pengumuman', $setting->judul_pengumuman) }}" required>
@@ -146,6 +198,14 @@
                                     </div>
                                 @endif
                             @endif
+                            <div class="mt-3">
+                                <button type="button" class="btn btn-outline-success btn-sm mr-1" id="btnPublishNow">
+                                    <i class="fas fa-bolt mr-1"></i>Publish Sekarang
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="btnHideAnnouncement">
+                                    <i class="fas fa-eye-slash mr-1"></i>Sembunyikan Lagi
+                                </button>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Pesan untuk yang <span class="text-success font-weight-bold">LULUS</span></label>
@@ -330,6 +390,37 @@
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.js"></script>
 <script>
 $(document).ready(function() {
+    const $jalur = $('#filter_jalur_id');
+    const $gelombang = $('#filter_gelombang_id');
+    const selectedGelombangId = @json((string) ($selectedGelombangIdInput ?? 'all'));
+    const allGelombangOptions = $gelombang.find('option').clone();
+
+    function refreshGelombangOptions(preferredValue = null) {
+        const jalurId = String($jalur.val() || 'all');
+        const currentValue = preferredValue ?? String($gelombang.val() || 'all');
+
+        $gelombang.empty();
+
+        allGelombangOptions.each(function() {
+            const $option = $(this).clone();
+            const optionValue = String($option.val() || '');
+            const optionJalurId = String($option.data('jalur-id') || '');
+
+            if (optionValue === 'all' || jalurId === 'all' || optionJalurId === jalurId) {
+                $gelombang.append($option);
+            }
+        });
+
+        const optionExists = $gelombang.find(`option[value="${currentValue}"]`).length > 0;
+        $gelombang.val(optionExists ? currentValue : 'all');
+    }
+
+    $jalur.on('change', function() {
+        refreshGelombangOptions('all');
+    });
+
+    refreshGelombangOptions(selectedGelombangId);
+
     // Summernote editor for Info Penting
     $('#infoPentingEditor').summernote({
         height: 250,
@@ -382,6 +473,17 @@ $(document).ready(function() {
     }
     toggleTanggalPengumuman();
     $('#tampilkanPengumuman').on('change', toggleTanggalPengumuman);
+
+    $('#btnPublishNow').on('click', function() {
+        $('#tampilkanPengumuman').prop('checked', true);
+        $('input[name="tanggal_pengumuman"]').val('');
+        toggleTanggalPengumuman();
+    });
+
+    $('#btnHideAnnouncement').on('click', function() {
+        $('#tampilkanPengumuman').prop('checked', false);
+        toggleTanggalPengumuman();
+    });
 
     // ============================================
     // AJAX Upload File Konsider with Progress
@@ -451,6 +553,8 @@ $(document).ready(function() {
         formData.append('file_konsider', file);
         formData.append('_token', '{{ csrf_token() }}');
         formData.append('tahun_pelajaran_id', '{{ $selectedTahunIdInput }}');
+        formData.append('jalur_id', '{{ $selectedJalurIdInput }}');
+        formData.append('gelombang_id', '{{ $selectedGelombangIdInput }}');
 
         // Show progress
         $('#konsiderProgress').show();
@@ -540,7 +644,9 @@ $(document).ready(function() {
             type: 'DELETE',
             data: {
                 _token: '{{ csrf_token() }}',
-                tahun_pelajaran_id: '{{ $selectedTahunIdInput }}'
+                tahun_pelajaran_id: '{{ $selectedTahunIdInput }}',
+                jalur_id: '{{ $selectedJalurIdInput }}',
+                gelombang_id: '{{ $selectedGelombangIdInput }}'
             },
             success: function(res) {
                 $('#konsiderFileInfo').slideUp(300);
