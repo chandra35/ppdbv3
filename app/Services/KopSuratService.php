@@ -76,27 +76,23 @@ class KopSuratService
         // Build center content from config
         $centerContent = $this->buildCenterContent($sekolah);
 
-        // Build HTML with flexbox-style positioning for better centering
-        $html = '<div style="position: relative; width: 100%; margin-bottom: 5px;">';
-        
-        // Logo Kemenag (Left - Absolute)
-        if ($logoKemenagSrc) {
-            $html .= '<div style="position: absolute; left: 0; top: 0; width: 75px; text-align: center;">
-                        <img src="' . $logoKemenagSrc . '" alt="Logo Kemenag" style="height: ' . $logoKemenagHeight . 'px;">
-                      </div>';
-        }
-        
-        // Center Content (Centered with margin auto)
-        $html .= '<div style="margin: 0 80px; text-align: center;">' . $centerContent . '</div>';
-        
-        // Logo Sekolah (Right - Absolute)
-        if ($logoSekolahSrc) {
-            $html .= '<div style="position: absolute; right: 0; top: 0; width: 75px; text-align: center;">
-                        <img src="' . $logoSekolahSrc . '" alt="Logo Sekolah" style="height: ' . $logoSekolahHeight . 'px;">
-                      </div>';
-        }
-        
-        $html .= '</div>';
+        // Table layout is more stable in DOMPDF than absolute positioning.
+        $logoCellStyle = 'width: 82px; text-align: center; vertical-align: top; padding-top: 2px;';
+        $centerCellStyle = 'text-align: center; vertical-align: top; padding: 0 10px;';
+        $leftLogoHtml = $logoKemenagSrc
+            ? '<img src="' . $logoKemenagSrc . '" alt="Logo Kemenag" style="max-width: 72px; height: ' . $logoKemenagHeight . 'px; width: auto;">'
+            : '&nbsp;';
+        $rightLogoHtml = $logoSekolahSrc
+            ? '<img src="' . $logoSekolahSrc . '" alt="Logo Sekolah" style="max-width: 72px; height: ' . $logoSekolahHeight . 'px; width: auto;">'
+            : '&nbsp;';
+
+        $html = '<table style="width: 100%; border-collapse: collapse; margin-bottom: 5px;" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                        <td style="' . $logoCellStyle . ' padding-left: 4px;">' . $leftLogoHtml . '</td>
+                        <td style="' . $centerCellStyle . '">' . $centerContent . '</td>
+                        <td style="' . $logoCellStyle . ' padding-right: 8px;">' . $rightLogoHtml . '</td>
+                    </tr>
+                </table>';
 
         // Add divider line with precise spacing
         $html .= '<div style="border-bottom: 3px double #000; margin: 5px 0 10px 0; clear: both;"></div>';
