@@ -183,7 +183,7 @@
 @php
     $calonSiswaForPhoto = \App\Models\CalonSiswa::where('user_id', auth()->id())->first();
     $fotoProfile = $calonSiswaForPhoto ? $calonSiswaForPhoto->dokumen()->where('jenis_dokumen', 'foto')->first() : null;
-    $fotoProfileUrl = $fotoProfile?->file_url;
+    $fotoProfileUrl = $fotoProfile?->preview_url;
 @endphp
 <div class="wrapper">
 
@@ -542,7 +542,7 @@
 @php
     $sekolahSettings = \App\Models\SekolahSettings::first();
     $fotoDokumen = $calonSiswaModal->dokumen()->where('jenis_dokumen', 'foto')->first();
-    $fotoUrl = $fotoDokumen?->file_url;
+    $fotoUrl = $fotoDokumen?->preview_url;
     $password = $calonSiswaModal->user->readable_password ?? '********';
 @endphp
 <div class="modal fade" id="kartuUjianModal" tabindex="-1" role="dialog" aria-labelledby="kartuUjianModalLabel" aria-hidden="true">

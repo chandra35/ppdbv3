@@ -176,7 +176,11 @@ class CalonDokumen extends Model
     public function getFileUrlAttribute(): ?string
     {
         if ($this->storage_disk === 'gdrive' && $this->remote_file_id) {
-            return $this->getDownloadUrlAttribute();
+            if ($this->isImage()) {
+                return $this->getPreviewUrlAttribute();
+            }
+
+            return $this->getPreviewUrlAttribute();
         }
 
         if ($this->file_path) {
@@ -190,7 +194,7 @@ class CalonDokumen extends Model
     {
         if ($this->storage_disk === 'gdrive' && $this->remote_file_id) {
             if ($this->isImage()) {
-                return 'https://lh3.googleusercontent.com/d/' . $this->remote_file_id . '=w1600';
+                return 'https://drive.google.com/thumbnail?id=' . $this->remote_file_id . '&sz=w1600';
             }
 
             return 'https://drive.google.com/file/d/' . $this->remote_file_id . '/preview';
@@ -202,7 +206,7 @@ class CalonDokumen extends Model
     public function getDownloadUrlAttribute(): ?string
     {
         if ($this->storage_disk === 'gdrive' && $this->remote_file_id) {
-            return 'https://drive.usercontent.google.com/download?id=' . $this->remote_file_id . '&export=view';
+            return 'https://drive.google.com/uc?export=download&id=' . $this->remote_file_id;
         }
 
         if ($this->file_path) {

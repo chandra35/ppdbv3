@@ -1113,7 +1113,7 @@ dl.row dt {
                                             $isPdf = $extension === 'pdf';
                                         @endphp
                                         @if($isImage)
-                                            <a href="{{ $dokumen->file_url }}" 
+                                            <a href="{{ $dokumen->preview_url }}" 
                                                class="dokumen-link"
                                                data-url="{{ $dokumen->preview_url }}"
                                                data-title="{{ $docLabel }}"
@@ -1388,7 +1388,7 @@ dl.row dt {
                         <div class="col-xl-2 col-lg-3 col-md-3 col-sm-4 col-6 mb-2" style="padding: 0 3px;">
                             <div class="box box-widget dokumen-card" style="margin-bottom: 0; border: 1px solid #28a745;">
                                 @if($isImage)
-                                    <a href="{{ $dokTambahan->file_url }}" 
+                                    <a href="{{ $dokTambahan->preview_url }}" 
                                        class="dokumen-link"
                                        data-url="{{ $dokTambahan->preview_url }}"
                                        data-title="{{ $docLabel }} (Opsional)"

@@ -850,7 +850,7 @@
         <!-- Profile Card -->
         @php
             $fotoProfileDashboard = $calonSiswa->dokumen()->where('jenis_dokumen', 'foto')->first();
-            $fotoProfileDashboardUrl = $fotoProfileDashboard?->file_url;
+            $fotoProfileDashboardUrl = $fotoProfileDashboard?->preview_url;
         @endphp
         <div class="card">
             <div class="card-body text-center">

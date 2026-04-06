@@ -18,6 +18,7 @@ use App\Services\DocumentStorageService;
 use App\Support\AdminPpdbContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -1098,6 +1099,10 @@ class DashboardController extends Controller
                 ->with('error', 'Data belum difinalisasi');
         }
 
+        // Stabilkan render PDF di hosting saat resource remote sedang lambat.
+        ini_set('memory_limit', '256M');
+        @set_time_limit(120);
+
         $sekolahSettings = \App\Models\SekolahSettings::with(['province', 'city'])->first();
         
         // Generate kop surat HTML
@@ -1120,13 +1125,49 @@ class DashboardController extends Controller
             'email' => $sekolahSettings->email ?? config('app.school_email', '-'),
             'kota' => $sekolahSettings->city->name ?? config('app.school_city', ''),
         ];
+
+        $fotoPdfSrc = $this->resolveFotoPdfSource($calonSiswa);
         
-        $pdf = Pdf::loadView('pendaftar.pdf.bukti-registrasi', compact('calonSiswa', 'sekolah', 'kopHtml', 'qrCode', 'sekolahSettings'))
+        $pdf = Pdf::loadView('pendaftar.pdf.bukti-registrasi', compact('calonSiswa', 'sekolah', 'kopHtml', 'qrCode', 'sekolahSettings', 'fotoPdfSrc'))
             ->setOption('isRemoteEnabled', true);
         
         $filename = 'bukti-registrasi-' . preg_replace('/[\/\\\:*?"<>|]/', '-', $calonSiswa->nomor_registrasi) . '.pdf';
         
         return $mode === 'stream' ? $pdf->stream($filename) : $pdf->download($filename);
+    }
+
+    private function resolveFotoPdfSource(CalonSiswa $calonSiswa): ?string
+    {
+        $fotoDokumen = $calonSiswa->dokumen()->where('jenis_dokumen', 'foto')->first();
+        if (!$fotoDokumen) {
+            return null;
+        }
+
+        if ($fotoDokumen->storage_disk === 'public' && $fotoDokumen->file_path) {
+            $fotoPath = storage_path('app/public/' . $fotoDokumen->file_path);
+            return file_exists($fotoPath) ? $fotoPath : null;
+        }
+
+        if ($fotoDokumen->storage_disk === 'gdrive') {
+            try {
+                $response = Http::timeout(20)->get($fotoDokumen->preview_url ?: $fotoDokumen->download_url);
+
+                if ($response->successful()) {
+                    $mimeType = $fotoDokumen->mime_type ?: 'image/jpeg';
+                    return 'data:' . $mimeType . ';base64,' . base64_encode($response->body());
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('Gagal memuat foto PDF dari Google Drive', [
+                    'calon_siswa_id' => $calonSiswa->id,
+                    'dokumen_id' => $fotoDokumen->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            return $fotoDokumen->preview_url ?: $fotoDokumen->download_url;
+        }
+
+        return null;
     }
 
     /**

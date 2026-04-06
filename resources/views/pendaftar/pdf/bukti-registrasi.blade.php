@@ -299,7 +299,7 @@
                 @php
                     $fotoDokumen = $calonSiswa->dokumen()->where('jenis_dokumen', 'foto')->first();
                     $fotoPath = ($fotoDokumen && $fotoDokumen->storage_disk === 'public' && $fotoDokumen->file_path) ? storage_path('app/public/' . $fotoDokumen->file_path) : null;
-                    $fotoUrl = $fotoDokumen?->file_url;
+                    $fotoUrl = $fotoPdfSrc ?? $fotoDokumen?->preview_url ?? $fotoDokumen?->download_url;
                 @endphp
                 @if($fotoPath && file_exists($fotoPath))
                     <img src="{{ $fotoPath }}" alt="Foto">
