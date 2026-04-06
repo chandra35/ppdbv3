@@ -529,6 +529,39 @@ $(document).ready(function() {
             $('#kelurahan_ortu').html(options);
         });
     }
+
+    function toggleOrtuFields(prefix) {
+        const isMeninggal = $(`select[name="status_${prefix}"]`).val() === 'meninggal';
+        const selectors = [
+            `input[name="nik_${prefix}"]`,
+            `input[name="tempat_lahir_${prefix}"]`,
+            `input[name="tanggal_lahir_${prefix}"]`,
+            `select[name="pendidikan_${prefix}"]`,
+            `select[name="pekerjaan_${prefix}"]`,
+            `select[name="penghasilan_${prefix}"]`,
+            `input[name="hp_${prefix}"]`
+        ];
+
+        selectors.forEach(selector => {
+            const $field = $(selector);
+            if (!$field.length) return;
+
+            if (isMeninggal) {
+                $field.val('');
+                $field.prop('disabled', true).addClass('bg-light');
+                if ($field.hasClass('select2-hidden-accessible')) {
+                    $field.trigger('change.select2');
+                }
+            } else {
+                $field.prop('disabled', false).removeClass('bg-light');
+            }
+        });
+    }
+
+    $('select[name="status_ayah"]').on('change', function() { toggleOrtuFields('ayah'); });
+    $('select[name="status_ibu"]').on('change', function() { toggleOrtuFields('ibu'); });
+    toggleOrtuFields('ayah');
+    toggleOrtuFields('ibu');
 });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>

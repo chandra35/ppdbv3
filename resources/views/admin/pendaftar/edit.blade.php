@@ -1133,6 +1133,39 @@ $(document).ready(function() {
         });
     });
 
+    function toggleOrtuFields(prefix) {
+        const isMeninggal = $(`#status_${prefix}`).val() === 'meninggal';
+        const selectors = [
+            `#nik_${prefix}`,
+            `#tempat_lahir_${prefix}`,
+            `#tanggal_lahir_${prefix}`,
+            `#pendidikan_${prefix}`,
+            `#pekerjaan_${prefix}`,
+            `#penghasilan_${prefix}`,
+            `#hp_${prefix}`
+        ];
+
+        selectors.forEach(selector => {
+            const $field = $(selector);
+            if (!$field.length) return;
+
+            if (isMeninggal) {
+                $field.val('');
+                $field.prop('disabled', true).addClass('bg-light');
+                if ($field.hasClass('select2-hidden-accessible')) {
+                    $field.trigger('change.select2');
+                }
+            } else {
+                $field.prop('disabled', false).removeClass('bg-light');
+            }
+        });
+    }
+
+    $('#status_ayah').on('change', function() { toggleOrtuFields('ayah'); });
+    $('#status_ibu').on('change', function() { toggleOrtuFields('ibu'); });
+    toggleOrtuFields('ayah');
+    toggleOrtuFields('ibu');
+
     // ============================================
     // NIK VALIDATION - HANYA ANGKA
     // ============================================
