@@ -76,8 +76,6 @@ class MoodleIntegrationService
         try {
             return $this->syncCandidate($calonSiswa, $settings);
         } catch (\Throwable $e) {
-            $this->markSyncFailed($calonSiswa, $settings, $e->getMessage());
-
             Log::warning('Sinkron Moodle gagal', [
                 'calon_siswa_id' => $calonSiswa->id,
                 'trigger' => $trigger,
@@ -108,82 +106,76 @@ class MoodleIntegrationService
         $password = $profile['password'];
         $email = $profile['email'];
 
-        if ($this->isBridgeMode($settings)) {
-            $result = $this->syncCandidateViaBridge($settings, $calonSiswa, $mapping, [
-                'username' => $username,
-                'password' => $password,
-                'firstname' => $calonSiswa->nama_lengkap,
-                'lastname' => $profile['lastname'],
-                'email' => $email,
-            ]);
-            $moodleUserId = (int) ($result['moodle_user_id'] ?? 0);
-            $existing = !empty($result['existing']);
-            if (!$moodleUserId) {
-                throw new RuntimeException('Bridge converter tidak mengembalikan user id Moodle.');
-            }
-        } else {
-            $existing = $this->findUserByUsername($settings, $username);
-            if ($existing) {
-                $moodleUserId = (int) $existing['id'];
-            } else {
-                $created = $this->createUser($settings, [
+        try {
+            if ($this->isBridgeMode($settings)) {
+                $result = $this->syncCandidateViaBridge($settings, $calonSiswa, $mapping, [
                     'username' => $username,
                     'password' => $password,
                     'firstname' => $calonSiswa->nama_lengkap,
                     'lastname' => $profile['lastname'],
                     'email' => $email,
                 ]);
-
-                $moodleUserId = (int) ($created['id'] ?? 0);
+                $moodleUserId = (int) ($result['moodle_user_id'] ?? 0);
+                $existing = !empty($result['existing']);
                 if (!$moodleUserId) {
-                    throw new RuntimeException('Moodle tidak mengembalikan user id setelah create user.');
+                    throw new RuntimeException('Bridge converter tidak mengembalikan user id Moodle.');
+                }
+            } else {
+                $existing = $this->findUserByUsername($settings, $username);
+                if ($existing) {
+                    $moodleUserId = (int) $existing['id'];
+                } else {
+                    $created = $this->createUser($settings, [
+                        'username' => $username,
+                        'password' => $password,
+                        'firstname' => $calonSiswa->nama_lengkap,
+                        'lastname' => $profile['lastname'],
+                        'email' => $email,
+                    ]);
+
+                    $moodleUserId = (int) ($created['id'] ?? 0);
+                    if (!$moodleUserId) {
+                        throw new RuntimeException('Moodle tidak mengembalikan user id setelah create user.');
+                    }
+                }
+
+                if ($settings->moodle_assign_default_cohort) {
+                    $cohortId = $mapping?->moodle_cohort_id ?: $settings->moodle_default_cohort_id;
+
+                    if (filled($cohortId)) {
+                        $this->addUserToCohort($settings, $moodleUserId, (int) $cohortId);
+                    }
+                }
+
+                if ($settings->moodle_enrol_default_course) {
+                    $courseIds = $mapping?->moodle_course_ids ?: ($settings->moodle_default_course_ids ?? []);
+
+                    if (empty($courseIds) && filled($settings->moodle_default_course_id)) {
+                        $courseIds = [(int) $settings->moodle_default_course_id];
+                    }
+
+                    foreach (collect($courseIds)->filter()->map(fn ($id) => (int) $id)->unique() as $courseId) {
+                        $this->enrolUserToCourse(
+                            $settings,
+                            $moodleUserId,
+                            $courseId,
+                            (int) ($settings->moodle_course_role_id ?: 5)
+                        );
+                    }
                 }
             }
 
-            if ($settings->moodle_assign_default_cohort) {
-                $cohortId = $mapping?->moodle_cohort_id ?: $settings->moodle_default_cohort_id;
-
-                if (filled($cohortId)) {
-                    $this->addUserToCohort($settings, $moodleUserId, (int) $cohortId);
-                }
+            return $this->persistSyncSuccess($calonSiswa, $settings, $username, $moodleUserId, (bool) $existing);
+        } catch (\Throwable $e) {
+            $reconciled = $this->reconcileExistingUser($settings, $calonSiswa, $username);
+            if ($reconciled) {
+                return $reconciled;
             }
 
-            if ($settings->moodle_enrol_default_course) {
-                $courseIds = $mapping?->moodle_course_ids ?: ($settings->moodle_default_course_ids ?? []);
+            $this->markSyncFailed($calonSiswa, $settings, $e->getMessage());
 
-                if (empty($courseIds) && filled($settings->moodle_default_course_id)) {
-                    $courseIds = [(int) $settings->moodle_default_course_id];
-                }
-
-                foreach (collect($courseIds)->filter()->map(fn ($id) => (int) $id)->unique() as $courseId) {
-                    $this->enrolUserToCourse(
-                        $settings,
-                        $moodleUserId,
-                        $courseId,
-                        (int) ($settings->moodle_course_role_id ?: 5)
-                    );
-                }
-            }
+            throw $e;
         }
-
-        $calonSiswa->forceFill([
-            'moodle_user_id' => $moodleUserId,
-            'moodle_username' => $username,
-            'moodle_sync_status' => 'synced',
-            'moodle_synced_at' => now(),
-            'moodle_sync_error' => null,
-        ])->save();
-
-        $settings->forceFill([
-            'moodle_sync_last_error' => null,
-            'moodle_sync_last_success_at' => now(),
-        ])->save();
-
-        return [
-            'moodle_user_id' => $moodleUserId,
-            'moodle_username' => $username,
-            'existing' => (bool) $existing,
-        ];
     }
 
     public function testConnection(?PpdbSettings $settings = null): array
@@ -650,5 +642,54 @@ class MoodleIntegrationService
         $settings->forceFill([
             'moodle_sync_last_error' => $message,
         ])->save();
+    }
+
+    private function persistSyncSuccess(
+        CalonSiswa $calonSiswa,
+        PpdbSettings $settings,
+        string $username,
+        int $moodleUserId,
+        bool $existing
+    ): array {
+        $calonSiswa->forceFill([
+            'moodle_user_id' => $moodleUserId,
+            'moodle_username' => $username,
+            'moodle_sync_status' => 'synced',
+            'moodle_synced_at' => now(),
+            'moodle_sync_error' => null,
+        ])->save();
+
+        $settings->forceFill([
+            'moodle_sync_last_error' => null,
+            'moodle_sync_last_success_at' => now(),
+        ])->save();
+
+        return [
+            'moodle_user_id' => $moodleUserId,
+            'moodle_username' => $username,
+            'existing' => $existing,
+        ];
+    }
+
+    private function reconcileExistingUser(PpdbSettings $settings, CalonSiswa $calonSiswa, string $username): ?array
+    {
+        try {
+            $existingUsers = $this->findExistingUsersByUsernames([$username], $settings);
+            $existingUser = $existingUsers[$username] ?? null;
+
+            if (!$existingUser || empty($existingUser['id'])) {
+                return null;
+            }
+
+            return $this->persistSyncSuccess(
+                $calonSiswa,
+                $settings,
+                $username,
+                (int) $existingUser['id'],
+                true
+            );
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }
