@@ -326,7 +326,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     });
 
     // ---- SESI UJIAN & SELEKSI ----
-    Route::prefix('sesi-ujian')->name('sesi-ujian.')->group(function () {
+    Route::prefix('sesi-ujian')->name('sesi-ujian.')->middleware('permission:seleksi.sesi')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\SesiUjianController::class, 'index'])->name('index');
         Route::get('/{sesiUjian}', [\App\Http\Controllers\Admin\SesiUjianController::class, 'show'])->name('show');
         Route::post('/{sesiUjian}/update-status', [\App\Http\Controllers\Admin\SesiUjianController::class, 'updateStatus'])->name('update-status');
@@ -354,31 +354,31 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     
     // ---- NILAI SELEKSI ----
     Route::prefix('nilai-seleksi')->name('nilai-seleksi.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'index'])->name('index');
-        Route::get('/upload', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'uploadNilai'])->name('upload');
-        Route::post('/upload', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'processUpload'])->name('upload.process');
-        Route::post('/upload/confirm', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'confirmUpload'])->name('upload.confirm');
-        Route::post('/upload/cancel', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'cancelUpload'])->name('upload.cancel');
-        Route::get('/rekap', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'rekap'])->name('rekap');
-        Route::get('/rekap/export', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'exportRekap'])->name('rekap.export');
-        Route::get('/bobot', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'bobotIndex'])->name('bobot');
-        Route::post('/bobot', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'bobotUpdate'])->name('bobot.update');
-        Route::get('/pengumuman', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'pengumuman'])->name('pengumuman');
-        Route::post('/update-admisi/{calonSiswa}', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'updateAdmisi'])->name('update-admisi');
-        Route::post('/bulk-update-admisi', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'bulkUpdateAdmisi'])->name('bulk-update-admisi');
-        Route::get('/{sesiUjian}', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'show'])->name('show');
-        Route::post('/{sesiUjian}/verify/{nilaiSeleksi}', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'verify'])->name('verify');
-        Route::post('/{sesiUjian}/bulk-verify', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'bulkVerify'])->name('bulk-verify');
+        Route::get('/', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'index'])->middleware('permission:seleksi.nilai')->name('index');
+        Route::get('/upload', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'uploadNilai'])->middleware('permission:seleksi.upload')->name('upload');
+        Route::post('/upload', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'processUpload'])->middleware('permission:seleksi.upload')->name('upload.process');
+        Route::post('/upload/confirm', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'confirmUpload'])->middleware('permission:seleksi.upload')->name('upload.confirm');
+        Route::post('/upload/cancel', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'cancelUpload'])->middleware('permission:seleksi.upload')->name('upload.cancel');
+        Route::get('/rekap', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'rekap'])->middleware('permission:seleksi.rekap')->name('rekap');
+        Route::get('/rekap/export', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'exportRekap'])->middleware('permission:seleksi.rekap')->name('rekap.export');
+        Route::get('/bobot', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'bobotIndex'])->middleware('permission:seleksi.bobot')->name('bobot');
+        Route::post('/bobot', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'bobotUpdate'])->middleware('permission:seleksi.bobot')->name('bobot.update');
+        Route::get('/pengumuman', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'pengumuman'])->middleware('permission:seleksi.pengumuman')->name('pengumuman');
+        Route::post('/update-admisi/{calonSiswa}', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'updateAdmisi'])->middleware('permission:seleksi.pengumuman')->name('update-admisi');
+        Route::post('/bulk-update-admisi', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'bulkUpdateAdmisi'])->middleware('permission:seleksi.pengumuman')->name('bulk-update-admisi');
+        Route::get('/{sesiUjian}', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'show'])->middleware('permission:seleksi.nilai')->name('show');
+        Route::post('/{sesiUjian}/verify/{nilaiSeleksi}', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'verify'])->middleware('permission:seleksi.nilai')->name('verify');
+        Route::post('/{sesiUjian}/bulk-verify', [\App\Http\Controllers\Admin\NilaiSeleksiController::class, 'bulkVerify'])->middleware('permission:seleksi.nilai')->name('bulk-verify');
     });
 
     // ---- NILAI CBT ----
     Route::prefix('nilai-cbt')->name('nilai-cbt.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'index'])->name('index');
-        Route::get('/upload', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'upload'])->name('upload');
-        Route::post('/upload', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'processUpload'])->name('upload.process');
-        Route::post('/upload/confirm', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'confirmUpload'])->name('upload.confirm');
-        Route::post('/upload/cancel', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'cancelUpload'])->name('upload.cancel');
-        Route::delete('/{nilaiCbt}', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'destroy'])->name('destroy');
+        Route::get('/', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'index'])->middleware('permission:seleksi.cbt')->name('index');
+        Route::get('/upload', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'upload'])->middleware('permission:seleksi.upload')->name('upload');
+        Route::post('/upload', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'processUpload'])->middleware('permission:seleksi.upload')->name('upload.process');
+        Route::post('/upload/confirm', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'confirmUpload'])->middleware('permission:seleksi.upload')->name('upload.confirm');
+        Route::post('/upload/cancel', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'cancelUpload'])->middleware('permission:seleksi.upload')->name('upload.cancel');
+        Route::delete('/{nilaiCbt}', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'destroy'])->middleware('permission:seleksi.cbt')->name('destroy');
     });
 
     // ---- STATISTIK PENDAFTAR ----

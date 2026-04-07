@@ -166,57 +166,67 @@ return [
         [
             'text' => 'Seleksi',
             'icon' => 'fas fa-fw fa-clipboard-list',
-            'can' => 'admin',
+            'can' => 'seleksi.*',
             'submenu' => [
                 [
                     'text' => 'Penjadwalan Ujian',
                     'route' => 'admin.penjadwalan-ujian.index',
                     'icon' => 'fas fa-fw fa-calendar-alt',
+                    'can' => 'seleksi.schedule',
                 ],
                 [
                     'text' => 'Sesi Ujian',
                     'route' => 'admin.sesi-ujian.index',
                     'icon' => 'fas fa-fw fa-calendar-check',
+                    'can' => 'seleksi.sesi',
                 ],
                 [
                     'text' => 'Manajemen Penguji',
                     'route' => 'admin.penguji.index',
                     'icon' => 'fas fa-fw fa-user-tie',
+                    'can' => 'seleksi.penguji',
                 ],
                 [
                     'text' => 'Nilai TBQ',
                     'route' => 'admin.nilai-seleksi.index',
                     'icon' => 'fas fa-fw fa-chart-bar',
+                    'can' => 'seleksi.nilai',
                 ],
                 [
                     'text' => 'Upload Nilai TBQ',
                     'route' => 'admin.nilai-seleksi.upload',
                     'icon' => 'fas fa-fw fa-file-upload',
+                    'can' => 'seleksi.upload',
                 ],
                 [
                     'text' => 'Bobot Nilai',
                     'route' => 'admin.nilai-seleksi.bobot',
                     'icon' => 'fas fa-fw fa-balance-scale',
+                    'can' => 'seleksi.bobot',
                 ],
                 [
                     'text' => 'Rekap Nilai',
                     'route' => 'admin.nilai-seleksi.rekap',
                     'icon' => 'fas fa-fw fa-file-excel',
+                    'can' => 'seleksi.rekap',
                 ],
                 [
                     'text' => 'Nilai CBT',
                     'route' => 'admin.nilai-cbt.index',
                     'icon' => 'fas fa-fw fa-laptop',
+                    'can' => 'seleksi.cbt',
                 ],
                 [
                     'text' => 'Upload Nilai CBT',
                     'route' => 'admin.nilai-cbt.upload',
                     'icon' => 'fas fa-fw fa-cloud-upload-alt',
+                    'can' => 'seleksi.upload',
                 ],
                 [
                     'text' => 'Pengumuman',
                     'route' => 'admin.nilai-seleksi.pengumuman',
                     'icon' => 'fas fa-fw fa-bullhorn',
+                    'can' => 'seleksi.pengumuman',
                 ],
             ],
         ],

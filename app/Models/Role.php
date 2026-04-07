@@ -120,6 +120,18 @@ class Role extends Model
                 'kelulusan.setting' => 'Atur Pengumuman Kelulusan',
                 'kelulusan.logs' => 'Lihat Log Amplop Kelulusan',
             ],
+            'seleksi' => [
+                'seleksi.view' => 'Lihat Menu Seleksi',
+                'seleksi.schedule' => 'Akses Penjadwalan Ujian',
+                'seleksi.sesi' => 'Akses Sesi Ujian',
+                'seleksi.penguji' => 'Kelola Penguji',
+                'seleksi.nilai' => 'Kelola Nilai TBQ',
+                'seleksi.upload' => 'Upload Nilai Seleksi/CBT',
+                'seleksi.bobot' => 'Atur Bobot Nilai',
+                'seleksi.rekap' => 'Lihat Rekap Nilai',
+                'seleksi.cbt' => 'Lihat Nilai CBT',
+                'seleksi.pengumuman' => 'Kelola Pengumuman Hasil Seleksi',
+            ],
             'logs' => [
                 'logs.view' => 'Lihat Activity Log',
                 'logs.clear' => 'Hapus Activity Log',
