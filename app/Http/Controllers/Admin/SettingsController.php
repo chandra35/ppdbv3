@@ -155,15 +155,22 @@ class SettingsController extends Controller
                 foreach ($categoryIds as $categoryId) {
                     $moodleCoursesByCategory[(string) $categoryId] = $this->moodleIntegrationService->listCoursesByCategory($settings, (string) $categoryId);
                 }
+            } catch (\Throwable $e) {
+                $moodleStatus = 'warning';
+                $moodleStatusMessage = 'Integrasi Moodle aktif, tetapi daftar category/course belum berhasil dimuat. ' . $e->getMessage();
+            }
 
+            try {
                 $refreshedStatuses = $this->moodleIntegrationService->refreshCandidatesSyncState(
                     $syncCandidates->getCollection(),
                     $settings
                 );
                 $syncCandidates->setCollection($syncCandidates->getCollection()->fresh());
             } catch (\Throwable $e) {
-                $moodleStatus = 'warning';
-                $moodleStatusMessage = 'Integrasi Moodle aktif, tetapi daftar category/course belum berhasil dimuat. ' . $e->getMessage();
+                if ($moodleStatus !== 'warning') {
+                    $moodleStatus = 'warning';
+                    $moodleStatusMessage = 'Integrasi Moodle aktif, tetapi cek status sinkron belum berhasil. ' . $e->getMessage();
+                }
                 $refreshedStatuses = [];
             }
         } else {
