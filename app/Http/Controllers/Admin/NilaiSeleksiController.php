@@ -12,6 +12,7 @@ use App\Models\CalonSiswa;
 use App\Models\Kelulusan;
 use App\Models\JadwalUjian;
 use App\Models\ActivityLog;
+use App\Models\PengaturanEmail;
 use App\Imports\NilaiPenilaianImport;
 use App\Exports\RekapNilaiExport;
 use App\Services\EmailNotificationService;
@@ -22,6 +23,44 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class NilaiSeleksiController extends Controller
 {
+    private function dispatchHasilSeleksiEmail(CalonSiswa $calonSiswa, string $statusAdmisi, ?string $catatan = null): array
+    {
+        if (!in_array($statusAdmisi, ['diterima', 'ditolak'], true)) {
+            return [
+                'attempted' => false,
+                'status' => 'not_applicable',
+                'message' => 'Email hanya berlaku untuk status diterima atau ditolak.',
+            ];
+        }
+
+        if (!PengaturanEmail::isEnabled($statusAdmisi)) {
+            return [
+                'attempted' => false,
+                'status' => 'disabled',
+                'message' => 'Template email untuk status ini sedang nonaktif di Pengaturan Email.',
+            ];
+        }
+
+        $email = $calonSiswa->user?->email ?? $calonSiswa->email ?? null;
+        if (!$email) {
+            return [
+                'attempted' => false,
+                'status' => 'missing_email',
+                'message' => 'Email pendaftar belum tersedia, jadi notifikasi tidak dikirim.',
+            ];
+        }
+
+        $sent = EmailNotificationService::sendHasilSeleksi($calonSiswa, $statusAdmisi, $catatan);
+
+        return [
+            'attempted' => true,
+            'status' => $sent ? 'sent' : 'failed',
+            'message' => $sent
+                ? "Email notifikasi berhasil dikirim ke {$email}."
+                : 'Gagal mengirim email notifikasi. Silakan cek Pengaturan Email atau Email Log.',
+        ];
+    }
+
     private function mapStatusAdmisiToKelulusan(?string $statusAdmisi): ?string
     {
         return match ($statusAdmisi) {
@@ -799,16 +838,20 @@ class NilaiSeleksiController extends Controller
             ['status_admisi' => $newStatus]
         );
 
+        $emailMessage = null;
+
         // Kirim email jika diminta dan status bukan pending
         if ($request->kirim_email && in_array($newStatus, ['diterima', 'ditolak'])) {
-            EmailNotificationService::sendHasilSeleksi(
-                $calonSiswa, 
-                $newStatus, 
-                $request->catatan_admisi
-            );
+            $emailResult = $this->dispatchHasilSeleksiEmail($calonSiswa, $newStatus, $request->catatan_admisi);
+            $emailMessage = $emailResult['message'];
         }
 
-        return redirect()->back()->with('success', "Status admisi {$calonSiswa->nama_lengkap} berhasil diubah menjadi {$newStatus}.");
+        $message = "Status admisi {$calonSiswa->nama_lengkap} berhasil diubah menjadi {$newStatus}.";
+        if ($emailMessage) {
+            $message .= ' ' . $emailMessage;
+        }
+
+        return redirect()->back()->with('success', $message);
     }
 
     /**
@@ -826,10 +869,21 @@ class NilaiSeleksiController extends Controller
 
         $count = 0;
         $emailSent = 0;
+        $emailSkippedNoAddress = 0;
+        $emailSkippedDisabled = 0;
+        $emailFailed = 0;
         
         $calonSiswas = CalonSiswa::whereIn('id', $request->calon_siswa_ids)->get();
         
-        DB::transaction(function () use ($calonSiswas, $request, &$count, &$emailSent) {
+        DB::transaction(function () use (
+            $calonSiswas,
+            $request,
+            &$count,
+            &$emailSent,
+            &$emailSkippedNoAddress,
+            &$emailSkippedDisabled,
+            &$emailFailed
+        ) {
             foreach ($calonSiswas as $calonSiswa) {
                 $calonSiswa->update([
                     'status_admisi' => $request->status_admisi,
@@ -845,12 +899,20 @@ class NilaiSeleksiController extends Controller
 
                 // Kirim email jika diminta dan status bukan pending
                 if ($request->kirim_email && in_array($request->status_admisi, ['diterima', 'ditolak'])) {
-                    if (EmailNotificationService::sendHasilSeleksi(
+                    $emailResult = $this->dispatchHasilSeleksiEmail(
                         $calonSiswa,
                         $request->status_admisi,
                         $request->catatan_admisi
-                    )) {
-                        $emailSent++;
+                    );
+
+                    if ($emailResult['status'] === 'sent') {
+                        ++$emailSent;
+                    } elseif ($emailResult['status'] === 'missing_email') {
+                        ++$emailSkippedNoAddress;
+                    } elseif ($emailResult['status'] === 'disabled') {
+                        ++$emailSkippedDisabled;
+                    } elseif ($emailResult['status'] === 'failed') {
+                        ++$emailFailed;
                     }
                 }
             }
@@ -859,6 +921,15 @@ class NilaiSeleksiController extends Controller
         $message = "{$count} pendaftar berhasil diubah statusnya menjadi {$request->status_admisi}.";
         if ($emailSent > 0) {
             $message .= " {$emailSent} email notifikasi terkirim.";
+        }
+        if ($emailSkippedNoAddress > 0) {
+            $message .= " {$emailSkippedNoAddress} pendaftar dilewati karena email belum tersedia.";
+        }
+        if ($emailSkippedDisabled > 0) {
+            $message .= " Template email nonaktif untuk {$emailSkippedDisabled} pendaftar.";
+        }
+        if ($emailFailed > 0) {
+            $message .= " {$emailFailed} email gagal dikirim. Silakan cek Email Log.";
         }
 
         return redirect()->back()->with('success', $message);

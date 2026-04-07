@@ -61,6 +61,20 @@
         Gelombang {{ $contextInfo['gelombang'] }}.
     </div>
 
+    <div class="alert alert-primary">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+            <div class="mb-2 mb-md-0">
+                <i class="fas fa-envelope-open-text mr-1"></i>
+                <strong>One Day Service Kelulusan:</strong>
+                Saat admin menetapkan status <code>Diterima</code> atau <code>Ditolak</code>, email notifikasi bisa langsung dikirim dari halaman ini.
+                Isi email mengikuti template di Pengaturan Email, jadi setiap perubahan template admin akan ikut dipakai untuk pengiriman berikutnya.
+            </div>
+            <a href="{{ route('admin.email.index') }}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-cog mr-1"></i> Atur Template Email
+            </a>
+        </div>
+    </div>
+
     <div class="card card-outline card-info">
         <div class="card-body">
             <form method="GET" action="{{ route('admin.nilai-seleksi.pengumuman') }}" class="row">
@@ -203,6 +217,7 @@
                                     <i class="fas fa-envelope mr-1"></i> Kirim Email
                                 </label>
                             </div>
+                            <small class="text-muted d-block mt-1">Template email mengikuti Pengaturan Email dan hanya dikirim untuk status diterima/ditolak.</small>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -443,7 +458,15 @@ $(document).ready(function() {
             alert('Pilih status admisi!');
             return false;
         }
-        return confirm('Yakin ingin mengubah status ' + $('.kandidat-check:checked').length + ' kandidat?');
+        var sendEmail = $('#kirimEmail').is(':checked');
+        var statusLabel = $('[name="status_admisi"]', this).val();
+        var confirmMessage = 'Yakin ingin mengubah status ' + $('.kandidat-check:checked').length + ' kandidat menjadi ' + statusLabel + '?';
+
+        if (sendEmail && (statusLabel === 'diterima' || statusLabel === 'ditolak')) {
+            confirmMessage += '\n\nSistem juga akan mencoba mengirim email notifikasi hasil seleksi sesuai template yang aktif.';
+        }
+
+        return confirm(confirmMessage);
     });
 });
 
@@ -452,8 +475,23 @@ function showDetailModal(id, nama, status, catatan) {
     $('#modalNama').val(nama);
     $('#modalStatus').val(status);
     $('#modalCatatan').val(catatan || '');
+    $('#modalKirimEmail').prop('checked', true);
     $('#updateForm').attr('action', '{{ url("admin/nilai-seleksi/update-admisi") }}/' + id);
     $('#updateModal').modal('show');
 }
+
+$('#updateForm').on('submit', function(e) {
+    var status = $('#modalStatus').val();
+    var sendEmail = $('#modalKirimEmail').is(':checked');
+    var message = 'Simpan perubahan status admisi untuk pendaftar ini?';
+
+    if (sendEmail && (status === 'diterima' || status === 'ditolak')) {
+        message += '\n\nEmail notifikasi juga akan dikirim sesuai template aktif.';
+    }
+
+    if (!confirm(message)) {
+        e.preventDefault();
+    }
+});
 </script>
 @stop
