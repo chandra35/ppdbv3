@@ -114,6 +114,12 @@ class Role extends Model
                 'settings.view' => 'Lihat Pengaturan',
                 'settings.edit' => 'Edit Pengaturan',
             ],
+            'kelulusan' => [
+                'kelulusan.view' => 'Lihat Kelulusan',
+                'kelulusan.manage' => 'Kelola Status Kelulusan',
+                'kelulusan.setting' => 'Atur Pengumuman Kelulusan',
+                'kelulusan.logs' => 'Lihat Log Amplop Kelulusan',
+            ],
             'logs' => [
                 'logs.view' => 'Lihat Activity Log',
                 'logs.clear' => 'Hapus Activity Log',

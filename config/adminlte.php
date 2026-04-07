@@ -235,17 +235,19 @@ return [
         [
             'text' => 'Kelulusan',
             'icon' => 'fas fa-fw fa-graduation-cap',
-            'can' => 'admin',
+            'can' => 'kelulusan.*',
             'submenu' => [
                 [
                     'text' => 'Data Kelulusan',
                     'route' => 'admin.kelulusan.index',
                     'icon' => 'fas fa-fw fa-check-double',
+                    'can' => 'kelulusan.view',
                 ],
                 [
                     'text' => 'Pengaturan Kelulusan',
                     'route' => 'admin.kelulusan.setting',
                     'icon' => 'fas fa-fw fa-cogs',
+                    'can' => 'kelulusan.setting',
                 ],
             ],
         ],

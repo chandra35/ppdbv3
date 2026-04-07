@@ -406,14 +406,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // ---- KELULUSAN ----
     Route::prefix('kelulusan')->name('kelulusan.')->group(function () {
-        Route::get('/', [KelulusanController::class, 'index'])->name('index');
-        Route::post('/luluskan', [KelulusanController::class, 'luluskan'])->name('luluskan');
-        Route::post('/batalkan', [KelulusanController::class, 'batalkan'])->name('batalkan');
-        Route::get('/setting', [KelulusanSettingController::class, 'index'])->name('setting');
-        Route::put('/setting', [KelulusanSettingController::class, 'update'])->name('setting.update');
-        Route::post('/setting/upload-konsider', [KelulusanSettingController::class, 'uploadKonsider'])->name('setting.upload-konsider');
-        Route::delete('/setting/delete-konsider', [KelulusanSettingController::class, 'deleteKonsider'])->name('setting.delete-konsider');
-        Route::get('/envelope-logs', [KelulusanSettingController::class, 'envelopeLogs'])->name('envelope-logs');
+        Route::get('/', [KelulusanController::class, 'index'])->middleware('permission:kelulusan.view')->name('index');
+        Route::post('/luluskan', [KelulusanController::class, 'luluskan'])->middleware('permission:kelulusan.manage')->name('luluskan');
+        Route::post('/batalkan', [KelulusanController::class, 'batalkan'])->middleware('permission:kelulusan.manage')->name('batalkan');
+        Route::get('/setting', [KelulusanSettingController::class, 'index'])->middleware('permission:kelulusan.setting')->name('setting');
+        Route::put('/setting', [KelulusanSettingController::class, 'update'])->middleware('permission:kelulusan.setting')->name('setting.update');
+        Route::post('/setting/upload-konsider', [KelulusanSettingController::class, 'uploadKonsider'])->middleware('permission:kelulusan.setting')->name('setting.upload-konsider');
+        Route::delete('/setting/delete-konsider', [KelulusanSettingController::class, 'deleteKonsider'])->middleware('permission:kelulusan.setting')->name('setting.delete-konsider');
+        Route::get('/envelope-logs', [KelulusanSettingController::class, 'envelopeLogs'])->middleware('permission:kelulusan.logs')->name('envelope-logs');
     });
 
     // ============================================
