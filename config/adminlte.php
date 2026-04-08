@@ -166,7 +166,7 @@ return [
         [
             'text' => 'Seleksi',
             'icon' => 'fas fa-fw fa-clipboard-list',
-            'can' => 'seleksi.*',
+            'can' => 'seleksi.view',
             'submenu' => [
                 [
                     'text' => 'Penjadwalan Ujian',
@@ -245,7 +245,7 @@ return [
         [
             'text' => 'Kelulusan',
             'icon' => 'fas fa-fw fa-graduation-cap',
-            'can' => 'kelulusan.*',
+            'can' => 'kelulusan.view',
             'submenu' => [
                 [
                     'text' => 'Data Kelulusan',
