@@ -286,6 +286,116 @@ class MoodleIntegrationService
             ->all();
     }
 
+    public function listQuizzes(?PpdbSettings $settings = null, ?string $categoryId = null, array $courseIds = []): array
+    {
+        $settings ??= PpdbSettings::getActive();
+
+        if (!$this->isConfigured($settings)) {
+            return [];
+        }
+
+        $normalizedCourseIds = collect($courseIds)
+            ->map(fn ($id) => trim((string) $id))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($this->isBridgeMode($settings)) {
+            $quizzes = collect();
+
+            if (!empty($normalizedCourseIds)) {
+                foreach ($normalizedCourseIds as $courseId) {
+                    $response = $this->bridgeCall($settings, 'quizzes', [
+                        'course_id' => $courseId,
+                    ]);
+
+                    $quizzes = $quizzes->merge($response['quizzes'] ?? []);
+                }
+            } elseif (filled($categoryId)) {
+                $response = $this->bridgeCall($settings, 'quizzes', [
+                    'category_id' => (string) $categoryId,
+                ]);
+
+                $quizzes = $quizzes->merge($response['quizzes'] ?? []);
+            }
+
+            return $quizzes
+                ->filter(fn ($quiz) => is_array($quiz) && isset($quiz['id']))
+                ->map(fn ($quiz) => [
+                    'id' => (string) $quiz['id'],
+                    'name' => $quiz['name'] ?? ('Quiz ' . $quiz['id']),
+                    'courseid' => (string) ($quiz['courseid'] ?? ''),
+                    'course_fullname' => $quiz['course_fullname'] ?? '',
+                    'course_shortname' => $quiz['course_shortname'] ?? '',
+                    'categoryid' => (string) ($quiz['categoryid'] ?? ''),
+                    'category_name' => $quiz['category_name'] ?? '',
+                ])
+                ->unique('id')
+                ->values()
+                ->all();
+        }
+
+        return [];
+    }
+
+    public function fetchQuizGrades(
+        ?PpdbSettings $settings = null,
+        array $usernames = [],
+        ?string $categoryId = null,
+        array $courseIds = [],
+        array $quizIds = []
+    ): array {
+        $settings ??= PpdbSettings::getActive();
+
+        if (!$this->isConfigured($settings)) {
+            return [];
+        }
+
+        $normalizedUsernames = collect($usernames)
+            ->map(fn ($username) => trim((string) $username))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($normalizedUsernames)) {
+            return [];
+        }
+
+        if ($this->isBridgeMode($settings)) {
+            $response = $this->bridgeCall($settings, 'quiz-grades', [
+                'usernames' => $normalizedUsernames,
+                'category_id' => filled($categoryId) ? (string) $categoryId : null,
+                'course_ids' => collect($courseIds)->map(fn ($id) => trim((string) $id))->filter()->values()->all(),
+                'quiz_ids' => collect($quizIds)->map(fn ($id) => trim((string) $id))->filter()->values()->all(),
+            ]);
+
+            return collect($response['grades'] ?? [])
+                ->filter(fn ($row) => is_array($row) && !empty($row['username']) && !empty($row['quizid']))
+                ->map(fn ($row) => [
+                    'username' => (string) $row['username'],
+                    'quizid' => (string) $row['quizid'],
+                    'quiz_name' => $row['quiz_name'] ?? ('Quiz ' . $row['quizid']),
+                    'courseid' => (string) ($row['courseid'] ?? ''),
+                    'course_fullname' => $row['course_fullname'] ?? '',
+                    'course_shortname' => $row['course_shortname'] ?? '',
+                    'categoryid' => (string) ($row['categoryid'] ?? ''),
+                    'category_name' => $row['category_name'] ?? '',
+                    'attempt' => (int) ($row['attempt'] ?? 0),
+                    'state' => (string) ($row['state'] ?? ''),
+                    'raw_grade' => isset($row['raw_grade']) ? (float) $row['raw_grade'] : null,
+                    'max_grade' => isset($row['max_grade']) ? (float) $row['max_grade'] : null,
+                    'score_percent' => isset($row['score_percent']) ? (float) $row['score_percent'] : null,
+                    'timefinish' => isset($row['timefinish']) ? (int) $row['timefinish'] : null,
+                ])
+                ->values()
+                ->all();
+        }
+
+        return [];
+    }
+
     public function usernameForCandidate(CalonSiswa $calonSiswa): string
     {
         return $this->buildUsername($calonSiswa);

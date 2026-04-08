@@ -5,6 +5,117 @@
 @section('css')
 <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap4.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.bootstrap4.min.css">
+<style>
+    .cbt-scan-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.58);
+        backdrop-filter: blur(5px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 3000;
+        padding: 1rem;
+    }
+    .cbt-scan-overlay.show {
+        display: flex;
+    }
+    .cbt-scan-card {
+        width: min(680px, 100%);
+        border-radius: 20px;
+        overflow: hidden;
+        background: #fff;
+        box-shadow: 0 28px 90px rgba(15, 23, 42, .32);
+    }
+    .cbt-scan-head {
+        padding: 1.1rem 1.35rem;
+        background: linear-gradient(135deg, #0f766e 0%, #2563eb 55%, #1d4ed8 100%);
+        color: #fff;
+    }
+    .cbt-scan-body {
+        padding: 1.35rem;
+    }
+    .cbt-scan-steps {
+        display: grid;
+        gap: .9rem;
+    }
+    .cbt-scan-step {
+        display: flex;
+        align-items: center;
+        gap: .9rem;
+        padding: .8rem .95rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+    }
+    .cbt-scan-dot {
+        width: 36px;
+        height: 36px;
+        flex: 0 0 36px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+        color: #1d4ed8;
+        font-weight: 700;
+    }
+    .cbt-scan-progress {
+        height: 12px;
+        background: #e2e8f0;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+    .cbt-scan-progress > span {
+        display: block;
+        width: 45%;
+        height: 100%;
+        background: linear-gradient(90deg, #0f766e, #2563eb, #0f766e);
+        background-size: 220% 100%;
+        animation: cbtScanBar 1.5s linear infinite, cbtScanWidth 1.8s ease-in-out infinite;
+    }
+    .cbt-scan-pulse {
+        width: 12px;
+        height: 12px;
+        border-radius: 999px;
+        background: #22c55e;
+        box-shadow: 0 0 0 rgba(34, 197, 94, 0.5);
+        animation: cbtScanPulse 1.6s infinite;
+    }
+    @keyframes cbtScanBar {
+        0% { background-position: 0% 0; }
+        100% { background-position: 220% 0; }
+    }
+    @keyframes cbtScanWidth {
+        0% { width: 28%; }
+        50% { width: 86%; }
+        100% { width: 38%; }
+    }
+    @keyframes cbtScanPulse {
+        0% { transform: scale(.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, .45); }
+        70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(34, 197, 94, 0); }
+        100% { transform: scale(.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+    .cbt-scan-statusline {
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:1rem;
+        margin-top:1rem;
+        font-size:.88rem;
+        color:#475569;
+    }
+    .cbt-scan-badge {
+        display:inline-flex;
+        align-items:center;
+        gap:.4rem;
+        padding:.35rem .7rem;
+        border-radius:999px;
+        background:#ecfeff;
+        color:#0f766e;
+        font-weight:700;
+    }
+</style>
 @stop
 
 @section('content_header')
@@ -127,6 +238,9 @@
         <div class="card-header">
             <h3 class="card-title"><i class="fas fa-tasks mr-2"></i>Progress Import per Mapel</h3>
             <div class="card-tools">
+                <a href="{{ route('admin.nilai-cbt.moodle-scan', request()->query()) }}" class="btn btn-outline-info btn-sm mr-2" id="btnScanMoodle" data-scan-url="{{ route('admin.nilai-cbt.moodle-scan', request()->query()) }}">
+                    <i class="fas fa-cloud-download-alt mr-1"></i> Scan dari Moodle
+                </a>
                 <a href="{{ route('admin.nilai-cbt.upload') }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-file-upload mr-1"></i> Upload Nilai CBT
                 </a>
@@ -193,7 +307,7 @@
             @if($data->isEmpty())
                 <div class="text-center py-5">
                     <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">Belum ada data nilai CBT. <a href="{{ route('admin.nilai-cbt.upload') }}">Upload sekarang</a></p>
+                    <p class="text-muted">Belum ada data nilai CBT. <a href="{{ route('admin.nilai-cbt.moodle-scan', request()->query()) }}">Scan dari Moodle</a> atau <a href="{{ route('admin.nilai-cbt.upload') }}">upload sekarang</a>.</p>
                 </div>
             @else
                 <table id="cbtTable" class="table table-bordered table-striped">
@@ -253,6 +367,59 @@
         </div>
     </div>
 </div>
+
+<div class="cbt-scan-overlay" id="cbtScanOverlay" aria-hidden="true">
+    <div class="cbt-scan-card">
+        <div class="cbt-scan-head">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h4 class="mb-1"><i class="fas fa-cloud-download-alt mr-2"></i>Memindai Nilai CBT dari Moodle</h4>
+                    <div class="small text-white-50">Mohon tunggu, sistem sedang menyiapkan preview hasil scan sesuai filter aktif.</div>
+                </div>
+                <div class="cbt-scan-pulse"></div>
+            </div>
+        </div>
+        <div class="cbt-scan-body">
+            <div class="cbt-scan-progress mb-4">
+                <span></span>
+            </div>
+            <div class="cbt-scan-statusline">
+                <span id="cbtScanLiveText">Menyiapkan koneksi ke Moodle dan membaca mapping aktif...</span>
+                <span class="cbt-scan-badge"><i class="fas fa-bolt"></i><span id="cbtScanPercentText">0%</span></span>
+            </div>
+            <div class="cbt-scan-steps">
+                <div class="cbt-scan-step">
+                    <span class="cbt-scan-dot">1</span>
+                    <div>
+                        <div class="font-weight-bold">Membaca filter PPDB</div>
+                        <small class="text-muted">Tahun, jalur, dan gelombang aktif dipakai sebagai konteks scan.</small>
+                    </div>
+                </div>
+                <div class="cbt-scan-step">
+                    <span class="cbt-scan-dot">2</span>
+                    <div>
+                        <div class="font-weight-bold">Mencocokkan user Moodle</div>
+                        <small class="text-muted">Sistem membandingkan pendaftar dengan akun Moodle berdasarkan username NISN.</small>
+                    </div>
+                </div>
+                <div class="cbt-scan-step">
+                    <span class="cbt-scan-dot">3</span>
+                    <div>
+                        <div class="font-weight-bold">Mengambil quiz dan nilai</div>
+                        <small class="text-muted">Semua quiz dari course yang dipetakan dibaca untuk membentuk preview nilai CBT.</small>
+                    </div>
+                </div>
+                <div class="cbt-scan-step">
+                    <span class="cbt-scan-dot">4</span>
+                    <div>
+                        <div class="font-weight-bold">Menyiapkan preview sebelum simpan</div>
+                        <small class="text-muted">Hasil scan tidak langsung disimpan. Anda tetap meninjau preview terlebih dahulu.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('js')
@@ -265,6 +432,40 @@
 <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js"></script>
 <script>
 $(document).ready(function() {
+    let cbtScanTicker = null;
+    const cbtScanMessages = [
+        'Menyiapkan koneksi ke Moodle dan membaca mapping aktif...',
+        'Mencocokkan pendaftar dengan username Moodle berbasis NISN...',
+        'Mengambil daftar quiz dan attempt yang relevan...',
+        'Menyusun preview nilai CBT sebelum proses simpan...'
+    ];
+
+    function startCbtScanFeedback() {
+        $('#cbtScanOverlay').addClass('show');
+        let progress = 7;
+        let messageIndex = 0;
+        $('#cbtScanPercentText').text(progress + '%');
+        $('#cbtScanLiveText').text(cbtScanMessages[0]);
+        if (cbtScanTicker) {
+            clearInterval(cbtScanTicker);
+        }
+        cbtScanTicker = setInterval(function () {
+            progress = Math.min(progress + Math.floor(Math.random() * 11) + 5, 92);
+            messageIndex = (messageIndex + 1) % cbtScanMessages.length;
+            $('#cbtScanPercentText').text(progress + '%');
+            $('#cbtScanLiveText').text(cbtScanMessages[messageIndex]);
+        }, 700);
+    }
+
+    $('#btnScanMoodle').on('click', function (event) {
+        event.preventDefault();
+        const targetUrl = $(this).data('scan-url') || this.href;
+        startCbtScanFeedback();
+        setTimeout(function () {
+            window.location.href = targetUrl;
+        }, 550);
+    });
+
     @if($data->isNotEmpty())
     $('#cbtTable').DataTable({
         dom: 'Bfrtip',

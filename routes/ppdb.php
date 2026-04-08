@@ -374,6 +374,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // ---- NILAI CBT ----
     Route::prefix('nilai-cbt')->name('nilai-cbt.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'index'])->middleware('permission:seleksi.cbt')->name('index');
+        Route::get('/moodle-scan', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'moodleScan'])->middleware('permission:seleksi.cbt')->name('moodle-scan');
+        Route::post('/moodle-scan/confirm', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'confirmMoodleScan'])->middleware('permission:seleksi.cbt')->name('moodle-scan.confirm');
         Route::get('/upload', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'upload'])->middleware('permission:seleksi.upload')->name('upload');
         Route::post('/upload', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'processUpload'])->middleware('permission:seleksi.upload')->name('upload.process');
         Route::post('/upload/confirm', [\App\Http\Controllers\Admin\NilaiCbtController::class, 'confirmUpload'])->middleware('permission:seleksi.upload')->name('upload.confirm');
