@@ -124,6 +124,21 @@ class LaporanPpdbExport implements WithMultipleSheets
                 $this->nilaiSeleksiMap,
                 $this->nilaiCbtMap
             );
+
+            // Sheet: Pendaftar Diterima (kelulusan status = lulus)
+            $diterima = $this->pendaftar->filter(fn($p) => $p->relationLoaded('kelulusan') && $p->kelulusan?->status === 'lulus');
+            if ($diterima->isNotEmpty()) {
+                $sheets[] = new DataPendaftarSheet(
+                    'Data Pendaftar Diterima',
+                    $diterima,
+                    $this->selectedTahun,
+                    $this->selectedJalur,
+                    $this->selectedGelombang,
+                    $this->sekolah,
+                    $this->nilaiSeleksiMap,
+                    $this->nilaiCbtMap
+                );
+            }
         }
 
         return $sheets;
