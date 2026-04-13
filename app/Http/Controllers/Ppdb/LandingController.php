@@ -11,6 +11,7 @@ use App\Models\PpdbSettings;
 use App\Models\SekolahSettings;
 use App\Models\JalurPendaftaran;
 use App\Models\AlurPendaftaran;
+use App\Models\InformasiPendaftar;
 use App\Models\User;
 use App\Models\ActivityLog;
 use Illuminate\Http\Request;
@@ -100,6 +101,9 @@ class LandingController extends Controller
         // Get active alur pendaftaran
         $alurPendaftaran = AlurPendaftaran::getActiveOrdered();
         
+        // Get informasi pendaftar untuk modal publik
+        $informasiPendaftar = InformasiPendaftar::getModalInfo();
+        
         return view('ppdb.landing', compact(
             'siteSettings',
             'ppdbSettings',
@@ -112,7 +116,8 @@ class LandingController extends Controller
             'beritas',
             'featuredBeritas',
             'jadwals',
-            'alurPendaftaran'
+            'alurPendaftaran',
+            'informasiPendaftar'
         ));
     }
 

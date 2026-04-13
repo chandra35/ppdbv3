@@ -598,29 +598,23 @@
             }
         }
         
-        /* Location Box Styles */
-        .location-detecting {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
+        /* Location Status - subtle background style */
+        .location-status-subtle {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-bottom: 1rem;
+            transition: color 0.3s ease;
         }
-        .location-success {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
+        .location-status-subtle.detected {
+            color: #28a745;
         }
-        .location-success #locationIcon { color: #28a745; }
-        .location-success #locationText { color: #155724; }
-        .location-warning {
-            background: #fff3cd;
-            border: 1px solid #ffeeba;
+        .location-status-subtle.via-ip {
+            color: #17a2b8;
         }
-        .location-warning #locationIcon { color: #856404; }
-        .location-warning #locationText { color: #856404; }
-        .location-info {
-            background: #d1ecf1;
-            border: 1px solid #bee5eb;
+        .location-status-subtle.failed {
+            color: #dc3545;
         }
-        .location-info #locationIcon { color: #0c5460; }
-        .location-info #locationText { color: #0c5460; }
     </style>
 </head>
 <body>
@@ -693,21 +687,9 @@
                 <h2 class="card-title">Mulai Pendaftaran</h2>
                 <p class="card-subtitle">Masukkan NISN untuk memulai</p>
 
-                {{-- Location Detection Box --}}
-                <div id="locationBox" style="margin-bottom: 1.5rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.9rem;" class="location-detecting">
-                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                        <i id="locationIcon" class="fas fa-spinner fa-spin" style="color: #6c757d;"></i>
-                        <span id="locationText" style="color: #6c757d;">mendeteksi lokasi...</span>
-                        @if($wajibLokasi ?? false)
-                        <span style="margin-left: auto; background: #dc3545; color: white; padding: 2px 8px; border-radius: 3px; font-size: 0.7rem;">wajib</span>
-                        @endif
-                    </div>
-                    <div id="locationAddress" style="display: none; margin-top: 0.25rem; padding-left: 1.5rem; font-size: 0.8rem; color: #6c757d;"></div>
-                    <div id="locationRetry" style="display: none; margin-top: 0.5rem; padding-left: 1.5rem;">
-                        <button type="button" onclick="requestLocationLanding()" style="background: #667eea; color: white; border: none; padding: 4px 12px; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">
-                            <i class="fas fa-location-arrow"></i> aktifkan lokasi
-                        </button>
-                    </div>
+                {{-- Location Detection - Background/Subtle --}}
+                <div id="locationStatus" class="location-status-subtle">
+                    <i class="fas fa-map-marker-alt"></i> <span id="locationText">Mendeteksi lokasi...</span>
                 </div>
                 
                 {{-- Hidden fields to store location data --}}
@@ -1387,124 +1369,72 @@
                 }, 300);
             });
             
-            // Auto-detect location on page load
+            // Auto-detect location on page load (background/silent)
             requestLocationLanding();
         });
         
-        // Location detection for landing page
+        // Background location detection (silent, like simansa)
         function requestLocationLanding() {
-            const box = document.getElementById('locationBox');
-            const icon = document.getElementById('locationIcon');
-            const text = document.getElementById('locationText');
-            const addressDiv = document.getElementById('locationAddress');
-            const retryDiv = document.getElementById('locationRetry');
+            const statusEl = document.getElementById('locationStatus');
+            const textEl = document.getElementById('locationText');
             
-            // Reset to detecting state
-            box.className = 'location-detecting';
-            icon.className = 'fas fa-spinner fa-spin';
-            text.textContent = 'mendeteksi lokasi...';
-            addressDiv.style.display = 'none';
-            retryDiv.style.display = 'none';
-            
-            // Check if geolocation is available
             if (!navigator.geolocation) {
-                handleLocationFallback('browser tidak mendukung gps');
+                handleLocationFallback();
                 return;
             }
             
             navigator.geolocation.getCurrentPosition(
                 function(position) {
-                    // GPS success
+                    // GPS success - store silently
                     document.getElementById('landing_latitude').value = position.coords.latitude;
                     document.getElementById('landing_longitude').value = position.coords.longitude;
                     document.getElementById('landing_accuracy').value = position.coords.accuracy;
                     document.getElementById('landing_location_source').value = 'gps';
                     
-                    const accuracy = Math.round(position.coords.accuracy);
+                    statusEl.classList.add('detected');
+                    textEl.innerHTML = '<i class="fas fa-check-circle"></i> Lokasi terdeteksi';
                     
-                    box.className = 'location-success';
-                    icon.className = 'fas fa-map-marker-alt';
-                    text.innerHTML = 'lokasi terdeteksi <span style="background:#28a745;color:white;padding:1px 6px;border-radius:3px;font-size:0.7rem;margin-left:4px;">gps</span>';
-                    
-                    // Reverse geocode
-                    reverseGeocodeLanding(position.coords.latitude, position.coords.longitude, function(address) {
-                        if (address) {
-                            addressDiv.innerHTML = '<i class="fas fa-map-pin"></i> ' + address + ' <small style="color:#999;">(±' + accuracy + 'm)</small>';
-                            addressDiv.style.display = 'block';
-                        }
-                    });
+                    // Silent reverse geocode for form fields
+                    reverseGeocodeLanding(position.coords.latitude, position.coords.longitude);
                 },
-                function(error) {
-                    let errorMsg = 'gagal mendapatkan lokasi';
-                    switch(error.code) {
-                        case error.PERMISSION_DENIED:
-                            errorMsg = 'izin lokasi ditolak';
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            errorMsg = 'lokasi tidak tersedia';
-                            break;
-                        case error.TIMEOUT:
-                            errorMsg = 'waktu habis';
-                            break;
-                    }
-                    handleLocationFallback(errorMsg);
+                function() {
+                    handleLocationFallback();
                 },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
-                }
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
             );
         }
         
-        function handleLocationFallback(errorMsg) {
-            const box = document.getElementById('locationBox');
-            const icon = document.getElementById('locationIcon');
-            const text = document.getElementById('locationText');
-            const addressDiv = document.getElementById('locationAddress');
-            const retryDiv = document.getElementById('locationRetry');
-            const wajibLokasi = {{ ($wajibLokasi ?? false) ? 'true' : 'false' }};
+        function handleLocationFallback() {
+            const statusEl = document.getElementById('locationStatus');
+            const textEl = document.getElementById('locationText');
             
             document.getElementById('landing_location_source').value = 'ip';
             
-            if (wajibLokasi) {
-                // Try IP geolocation
-                box.className = 'location-info';
-                icon.className = 'fas fa-globe';
-                text.innerHTML = 'lokasi via ip <span style="background:#17a2b8;color:white;padding:1px 6px;border-radius:3px;font-size:0.7rem;margin-left:4px;">ip</span>';
-                
-                // Fetch IP location - using ipwho.is (free HTTPS API)
-                fetch('https://ipwho.is/?fields=city,region,latitude,longitude,success&lang=id')
-                .then(r => r.json())
-                .then(data => {
-                    if (data && data.success) {
-                        // Store IP-based coordinates
-                        if (data.latitude && data.longitude) {
-                            document.getElementById('landing_latitude').value = data.latitude;
-                            document.getElementById('landing_longitude').value = data.longitude;
-                            document.getElementById('landing_accuracy').value = 5000; // IP accuracy ~5km
-                        }
-                        
-                        if (data.city) {
-                            addressDiv.innerHTML = '<i class="fas fa-map-pin"></i> ' + [data.city, data.region].filter(Boolean).join(', ').toLowerCase();
-                            addressDiv.style.display = 'block';
-                        }
+            // Try IP geolocation silently
+            fetch('https://ipwho.is/?fields=city,region,latitude,longitude,success&lang=id')
+            .then(r => r.json())
+            .then(data => {
+                if (data && data.success) {
+                    if (data.latitude && data.longitude) {
+                        document.getElementById('landing_latitude').value = data.latitude;
+                        document.getElementById('landing_longitude').value = data.longitude;
+                        document.getElementById('landing_accuracy').value = 5000;
                     }
-                })
-                .catch(() => {});
-                
-                retryDiv.style.display = 'block';
-            } else {
-                // Show warning but allow to continue
-                box.className = 'location-warning';
-                icon.className = 'fas fa-exclamation-triangle';
-                text.textContent = errorMsg;
-                retryDiv.style.display = 'block';
-            }
+                    statusEl.classList.add('via-ip');
+                    textEl.innerHTML = '<i class="fas fa-check-circle"></i> Lokasi dari IP digunakan';
+                } else {
+                    statusEl.classList.add('failed');
+                    textEl.innerHTML = '<i class="fas fa-info-circle"></i> Lokasi tidak tersedia';
+                }
+            })
+            .catch(function() {
+                statusEl.classList.add('failed');
+                textEl.innerHTML = '<i class="fas fa-info-circle"></i> Lokasi tidak tersedia';
+            });
         }
         
-        function reverseGeocodeLanding(lat, lng, callback) {
-            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+        function reverseGeocodeLanding(lat, lng) {
+            fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1', {
                 headers: { 'Accept-Language': 'id' }
             })
             .then(r => r.json())
@@ -1515,7 +1445,6 @@
                     const region = addr.state || '';
                     const displayAddress = data.display_name || '';
                     
-                    // Store location data in hidden fields for form submission
                     const regCity = document.getElementById('reg_city');
                     const regRegion = document.getElementById('reg_region');
                     const regAddress = document.getElementById('reg_address');
@@ -1523,18 +1452,9 @@
                     if (regCity) regCity.value = city;
                     if (regRegion) regRegion.value = region;
                     if (regAddress) regAddress.value = displayAddress;
-                    
-                    const parts = [
-                        addr.village || addr.suburb || addr.neighbourhood,
-                        city,
-                        region
-                    ].filter(Boolean);
-                    callback(parts.join(', ').toLowerCase());
-                } else {
-                    callback(null);
                 }
             })
-            .catch(() => callback(null));
+            .catch(function() {});
         }
     </script>
 </body>

@@ -1747,6 +1747,57 @@
         @endif
     </script>
     
+    {{-- Modal Informasi Pendaftar (publik, tanpa login) --}}
+    @if(isset($informasiPendaftar) && count($informasiPendaftar) > 0)
+    <div class="modal fade" id="modalInfoPublik" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content" style="border-radius: 16px; overflow: hidden;">
+                <div class="modal-header" style="background: linear-gradient(135deg, var(--primary-color), #6f42c1); color: white; border: none; padding: 1.25rem 1.5rem;">
+                    <h5 class="modal-title" style="font-weight: 600;">
+                        <i class="fas fa-bullhorn me-2"></i> Informasi Penting
+                    </h5>
+                </div>
+                <div class="modal-body" style="max-height: 60vh; padding: 1.5rem;">
+                    @foreach($informasiPendaftar as $index => $info)
+                        <div class="{{ $index > 0 ? 'mt-4 pt-4 border-top' : '' }}">
+                            <h5 style="color: var(--primary-color); font-weight: 600; margin-bottom: 0.75rem;">
+                                <i class="fas fa-info-circle me-2"></i>{{ $info->judul }}
+                            </h5>
+                            <div style="padding-left: 1.75rem; line-height: 1.7; color: #374151;">
+                                {!! nl2br(e($info->isi)) !!}
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+                <div class="modal-footer" style="border: none; padding: 1rem 1.5rem;">
+                    <button type="button" class="btn btn-primary w-100" id="btnInfoDismiss" style="border-radius: 8px; padding: 0.75rem; font-weight: 600;">
+                        <i class="fas fa-check me-2"></i> Saya Mengerti
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    (function() {
+        // Gunakan hash dari judul+isi untuk detect perubahan konten
+        var infoHash = '{{ md5($informasiPendaftar->pluck("judul","isi")->toJson()) }}';
+        var storageKey = 'ppdb_info_seen_' + infoHash;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (localStorage.getItem(storageKey)) return;
+
+            var modal = new bootstrap.Modal(document.getElementById('modalInfoPublik'));
+            modal.show();
+
+            document.getElementById('btnInfoDismiss').addEventListener('click', function() {
+                localStorage.setItem(storageKey, '1');
+                modal.hide();
+            });
+        });
+    })();
+    </script>
+    @endif
+
     {{-- GPS Permission Component --}}
     @include('components.gps-permission')
 </body>

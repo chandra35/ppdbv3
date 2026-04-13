@@ -102,8 +102,20 @@ class ReportController extends Controller
             'kabupatenSiswa',
             'kecamatanSiswa',
             'kelulusan',
+            'nilaiRapor',
         ])->get();
         $stats = $this->buildComprehensiveStatistics($pendaftar, $context['selectedTahun']?->id);
+
+        // Pre-load nilai seleksi & CBT keyed by calon_siswa_id
+        $calonIds = $pendaftar->pluck('id');
+        $nilaiSeleksiMap = NilaiSeleksi::whereIn('calon_siswa_id', $calonIds)
+            ->whereIn('status', ['submitted', 'verified'])
+            ->get()
+            ->keyBy('calon_siswa_id');
+        $nilaiCbtMap = NilaiCbt::whereIn('calon_siswa_id', $calonIds)
+            ->when($context['selectedTahun'], fn($q, $t) => $q->where('tahun_pelajaran_id', $t->id))
+            ->get()
+            ->keyBy('calon_siswa_id');
 
         $selectedTahun = $context['selectedTahun'];
         $selectedJalur = $context['selectedJalur'];
@@ -114,7 +126,7 @@ class ReportController extends Controller
         $filename = 'Laporan_PPDB_' . $tahunNama . '_' . date('Y-m-d_His') . '.xlsx';
 
         return Excel::download(
-            new \App\Exports\LaporanPpdbExport($stats, $selectedTahun, $selectedJalur, $selectedGelombang, $sekolah),
+            new \App\Exports\LaporanPpdbExport($stats, $selectedTahun, $selectedJalur, $selectedGelombang, $sekolah, $pendaftar, $nilaiSeleksiMap, $nilaiCbtMap),
             $filename
         );
     }
