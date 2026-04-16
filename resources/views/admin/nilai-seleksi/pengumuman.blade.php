@@ -31,6 +31,16 @@
         font-size: 1.1rem;
         font-weight: bold;
     }
+    .cbt-badge {
+        font-size: 0.78rem;
+        padding: 0.35rem 0.55rem;
+    }
+    .row-cbt-missing {
+        background: rgba(255, 193, 7, 0.09);
+    }
+    .row-cbt-missing:hover {
+        background: rgba(255, 193, 7, 0.16) !important;
+    }
 </style>
 @stop
 
@@ -71,6 +81,19 @@
             </div>
             <a href="{{ route('admin.email.index') }}" class="btn btn-sm btn-outline-primary">
                 <i class="fas fa-cog mr-1"></i> Atur Template Email
+            </a>
+        </div>
+    </div>
+
+    <div class="alert alert-warning">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+            <div class="mb-2 mb-md-0">
+                <i class="fas fa-exclamation-triangle mr-1"></i>
+                <strong>Pengaman CBT:</strong>
+                Kandidat yang belum memiliki nilai CBT sekarang ditandai jelas, dan status <code>Diterima</code> akan ditolak otomatis sampai nilai CBT tersedia.
+            </div>
+            <a href="{{ route('admin.nilai-cbt.moodle-scan', request()->query()) }}" class="btn btn-sm btn-outline-warning">
+                <i class="fas fa-cloud-download-alt mr-1"></i> Ambil CBT dari Moodle
             </a>
         </div>
     </div>
@@ -180,6 +203,15 @@
                 <div class="icon"><i class="fas fa-clock"></i></div>
             </div>
         </div>
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-warning">
+                <div class="inner">
+                    <h3>{{ $stats['belum_cbt'] }}</h3>
+                    <p>Belum Ada Nilai CBT</p>
+                </div>
+                <div class="icon"><i class="fas fa-laptop-code"></i></div>
+            </div>
+        </div>
     </div>
 
     <!-- Bulk Action Card -->
@@ -257,13 +289,15 @@
                         <th>Jalur</th>
                         <th>No. Tes</th>
                         <th class="text-center">Nilai Akhir</th>
+                        <th class="text-center">Nilai CBT</th>
+                        <th class="text-center">Status CBT</th>
                         <th class="text-center">Status</th>
                         <th class="text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($kandidat as $index => $cs)
-                    <tr data-id="{{ $cs->id }}" data-status="{{ $cs->status_admisi }}">
+                    <tr data-id="{{ $cs->id }}" data-status="{{ $cs->status_admisi }}" data-cbt-ready="{{ $cs->has_nilai_cbt ? '1' : '0' }}" class="{{ $cs->has_nilai_cbt ? '' : 'row-cbt-missing' }}">
                         <td class="text-center">
                             <input type="checkbox" class="kandidat-check" value="{{ $cs->id }}">
                         </td>
@@ -297,6 +331,25 @@
                             @endif
                         </td>
                         <td class="text-center">
+                            @if($cs->has_nilai_cbt)
+                                <span class="badge badge-info cbt-badge">
+                                    {{ number_format((float) ($cs->nilai_cbt_rata ?? 0), 2) }}
+                                </span>
+                                @if($cs->nilai_cbt_total !== null)
+                                    <small class="text-muted d-block">Total {{ number_format((float) $cs->nilai_cbt_total, 2) }}</small>
+                                @endif
+                            @else
+                                <span class="badge badge-danger cbt-badge">Belum ikut CBT</span>
+                            @endif
+                        </td>
+                        <td class="text-center">
+                            @if($cs->has_nilai_cbt)
+                                <span class="badge badge-success cbt-badge"><i class="fas fa-check-circle mr-1"></i>Sudah ada nilai</span>
+                            @else
+                                <span class="badge badge-warning cbt-badge"><i class="fas fa-exclamation-circle mr-1"></i>Belum ada nilai</span>
+                            @endif
+                        </td>
+                        <td class="text-center">
                             <span class="badge status-badge status-{{ $cs->status_admisi }}">
                                 @switch($cs->status_admisi)
                                     @case('diterima')
@@ -315,14 +368,14 @@
                         </td>
                         <td class="text-center">
                             <button type="button" class="btn btn-sm btn-outline-primary" 
-                                    onclick="showDetailModal('{{ $cs->id }}', '{{ $cs->nama_lengkap }}', '{{ $cs->status_admisi }}', '{{ $cs->catatan_admisi }}')">
+                                    onclick="showDetailModal('{{ $cs->id }}', @js($cs->nama_lengkap), '{{ $cs->status_admisi }}', @js($cs->catatan_admisi), '{{ $cs->has_nilai_cbt ? '1' : '0' }}')">
                                 <i class="fas fa-edit"></i>
                             </button>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="9" class="text-center text-muted py-4">
+                        <td colspan="11" class="text-center text-muted py-4">
                             <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
                             Tidak ada kandidat yang memenuhi syarat untuk pengumuman.
                         </td>
@@ -399,7 +452,7 @@ $(document).ready(function() {
         responsive: true,
         order: [[6, 'desc']], // Sort by nilai_akhir desc
         columnDefs: [
-            { orderable: false, targets: [0, 8] }
+            { orderable: false, targets: [0, 10] }
         ],
         language: {
             url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json'
@@ -460,6 +513,19 @@ $(document).ready(function() {
         }
         var sendEmail = $('#kirimEmail').is(':checked');
         var statusLabel = $('[name="status_admisi"]', this).val();
+
+        if (statusLabel === 'diterima') {
+            var missingCbt = $('.kandidat-check:checked').filter(function() {
+                return $(this).closest('tr').data('cbt-ready') != 1;
+            }).length;
+
+            if (missingCbt > 0) {
+                e.preventDefault();
+                alert('Ada ' + missingCbt + ' kandidat terpilih yang belum memiliki nilai CBT. Status diterima tidak dapat diterapkan sebelum nilai CBT tersedia.');
+                return false;
+            }
+        }
+
         var confirmMessage = 'Yakin ingin mengubah status ' + $('.kandidat-check:checked').length + ' kandidat menjadi ' + statusLabel + '?';
 
         if (sendEmail && (statusLabel === 'diterima' || statusLabel === 'ditolak')) {
@@ -471,11 +537,12 @@ $(document).ready(function() {
 });
 
 // Show detail modal
-function showDetailModal(id, nama, status, catatan) {
+function showDetailModal(id, nama, status, catatan, hasCbt) {
     $('#modalNama').val(nama);
     $('#modalStatus').val(status);
     $('#modalCatatan').val(catatan || '');
     $('#modalKirimEmail').prop('checked', true);
+    $('#updateForm').data('cbt-ready', hasCbt === '1');
     $('#updateForm').attr('action', '{{ url("admin/nilai-seleksi/update-admisi") }}/' + id);
     $('#updateModal').modal('show');
 }
@@ -483,6 +550,13 @@ function showDetailModal(id, nama, status, catatan) {
 $('#updateForm').on('submit', function(e) {
     var status = $('#modalStatus').val();
     var sendEmail = $('#modalKirimEmail').is(':checked');
+
+    if (status === 'diterima' && !$(this).data('cbt-ready')) {
+        e.preventDefault();
+        alert('Pendaftar ini belum memiliki nilai CBT. Status diterima tidak dapat disimpan sebelum nilai CBT tersedia.');
+        return false;
+    }
+
     var message = 'Simpan perubahan status admisi untuk pendaftar ini?';
 
     if (sendEmail && (status === 'diterima' || status === 'ditolak')) {

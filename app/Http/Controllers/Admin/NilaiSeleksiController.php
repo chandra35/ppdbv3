@@ -10,6 +10,7 @@ use App\Models\BobotNilaiSeleksi;
 use App\Models\TahunPelajaran;
 use App\Models\CalonSiswa;
 use App\Models\Kelulusan;
+use App\Models\NilaiCbt;
 use App\Models\JadwalUjian;
 use App\Models\ActivityLog;
 use App\Models\PengaturanEmail;
@@ -774,6 +775,21 @@ class NilaiSeleksiController extends Controller
             })
             ->orderBy('nilai_akhir', 'desc')
             ->get();
+
+        $cbtMap = NilaiCbt::query()
+            ->where('tahun_pelajaran_id', $tahunAktif?->id)
+            ->whereIn('calon_siswa_id', $kandidat->pluck('id'))
+            ->get()
+            ->keyBy('calon_siswa_id');
+
+        $kandidat->each(function (CalonSiswa $calonSiswa) use ($cbtMap) {
+            $nilaiCbt = $cbtMap->get($calonSiswa->id);
+
+            $calonSiswa->setAttribute('nilai_cbt_record', $nilaiCbt);
+            $calonSiswa->setAttribute('nilai_cbt_rata', $nilaiCbt?->rata_rata);
+            $calonSiswa->setAttribute('nilai_cbt_total', $nilaiCbt?->total_nilai);
+            $calonSiswa->setAttribute('has_nilai_cbt', $this->candidateHasCbt($nilaiCbt));
+        });
         
         // Hitung statistik
         $stats = [
@@ -782,6 +798,7 @@ class NilaiSeleksiController extends Controller
             'diterima' => $kandidat->where('status_admisi', 'diterima')->count(),
             'ditolak' => $kandidat->where('status_admisi', 'ditolak')->count(),
             'cadangan' => $kandidat->where('status_admisi', 'cadangan')->count(),
+            'belum_cbt' => $kandidat->where('has_nilai_cbt', false)->count(),
         ];
         
         return view('admin.nilai-seleksi.pengumuman', compact(
@@ -816,6 +833,17 @@ class NilaiSeleksiController extends Controller
 
         $oldStatus = $calonSiswa->status_admisi;
         $newStatus = $request->status_admisi;
+
+        if ($newStatus === 'diterima') {
+            $nilaiCbt = $this->getCandidateCbt($calonSiswa);
+
+            if (!$this->candidateHasCbt($nilaiCbt)) {
+                return redirect()->back()->with(
+                    'error',
+                    "Status admisi {$calonSiswa->nama_lengkap} tidak bisa diubah menjadi diterima karena nilai CBT belum tersedia."
+                );
+            }
+        }
 
         DB::transaction(function () use ($calonSiswa, $newStatus, $request) {
             $calonSiswa->update([
@@ -874,6 +902,31 @@ class NilaiSeleksiController extends Controller
         $emailFailed = 0;
         
         $calonSiswas = CalonSiswa::whereIn('id', $request->calon_siswa_ids)->get();
+
+        if ($request->status_admisi === 'diterima') {
+            $cbtMap = NilaiCbt::query()
+                ->whereIn('calon_siswa_id', $calonSiswas->pluck('id'))
+                ->get()
+                ->keyBy('calon_siswa_id');
+
+            $missingCbt = $calonSiswas
+                ->filter(fn (CalonSiswa $calonSiswa) => !$this->candidateHasCbt($cbtMap->get($calonSiswa->id)))
+                ->pluck('nama_lengkap')
+                ->take(5)
+                ->values();
+
+            if ($missingCbt->isNotEmpty()) {
+                $suffix = $calonSiswas->count() > 5 ? ' dan lainnya' : '';
+
+                return redirect()->back()->with(
+                    'error',
+                    'Status diterima tidak dapat diterapkan karena beberapa pendaftar belum memiliki nilai CBT: '
+                    . $missingCbt->implode(', ')
+                    . $suffix
+                    . '.'
+                );
+            }
+        }
         
         DB::transaction(function () use (
             $calonSiswas,
@@ -933,5 +986,26 @@ class NilaiSeleksiController extends Controller
         }
 
         return redirect()->back()->with('success', $message);
+    }
+
+    private function getCandidateCbt(CalonSiswa $calonSiswa): ?NilaiCbt
+    {
+        return NilaiCbt::query()
+            ->where('tahun_pelajaran_id', $calonSiswa->tahun_pelajaran_id)
+            ->where('calon_siswa_id', $calonSiswa->id)
+            ->first();
+    }
+
+    private function candidateHasCbt(?NilaiCbt $nilaiCbt): bool
+    {
+        if (!$nilaiCbt) {
+            return false;
+        }
+
+        return collect(NilaiCbt::komponenList())
+            ->keys()
+            ->contains(fn ($field) => $nilaiCbt->{$field} !== null)
+            || $nilaiCbt->rata_rata !== null
+            || $nilaiCbt->total_nilai !== null;
     }
 }
