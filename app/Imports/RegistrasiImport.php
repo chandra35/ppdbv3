@@ -58,20 +58,20 @@ class RegistrasiImport
     }
 
     /**
-     * Muat kandidat = pendaftar yang LULUS pada tahun aktif.
+     * Muat kandidat = SEMUA pendaftar pada tahun aktif (ditandai status lulus).
      */
     protected function loadCandidates(): void
     {
         $lulusIds = Kelulusan::where('tahun_pelajaran_id', $this->tahunPelajaranId)
             ->where('status', 'lulus')
             ->pluck('calon_siswa_id')
-            ->all();
+            ->flip();
 
         $siswa = CalonSiswa::with('gelombangPendaftaran:id,nama')
-            ->whereIn('id', $lulusIds)
+            ->where('tahun_pelajaran_id', $this->tahunPelajaranId)
             ->get(['id', 'nomor_tes', 'nama_lengkap', 'pilihan_program', 'gelombang_pendaftaran_id', 'nisn']);
 
-        $this->candidates = $siswa->map(function ($s) {
+        $this->candidates = $siswa->map(function ($s) use ($lulusIds) {
             return (object) [
                 'id' => $s->id,
                 'nomor_tes' => $s->nomor_tes,
@@ -81,6 +81,7 @@ class RegistrasiImport
                 'pilihan_program' => $s->pilihan_program,
                 'nisn' => $s->nisn,
                 'gelombang' => $s->gelombangPendaftaran?->nama,
+                'lulus' => isset($lulusIds[$s->id]),
             ];
         })->all();
 
@@ -183,6 +184,7 @@ class RegistrasiImport
                 'gelombang' => $s->cand->gelombang,
                 'name_score' => $s->name_score,
                 'note_match' => $s->note_match,
+                'lulus' => $s->cand->lulus ?? false,
                 'already_registered' => isset($this->alreadyRegistered[$s->cand->id]),
             ];
         }
@@ -200,7 +202,6 @@ class RegistrasiImport
             $selectedProgram = $best->cand->pilihan_program;
             $matchScore = $best->confidence;
             $alreadyRegistered = isset($this->alreadyRegistered[$selectedId]);
-
             $jurusanMatch = $this->jurusanMatch($jurusanExcel, $best->cand->pilihan_program);
 
             if ($best->note_match && $best->name_score >= 80) {
@@ -234,6 +235,10 @@ class RegistrasiImport
 
         if ($alreadyRegistered) {
             $issues[] = 'Pendaftar ini sudah pernah diregistrasi pada tahun ini (akan diperbarui jika disimpan).';
+        }
+
+        if ($best && $selectedId && !($best->cand->lulus ?? false)) {
+            $issues[] = 'Catatan: pendaftar ini BELUM ditandai lulus di data Kelulusan.';
         }
 
         $status = match ($matchStatus) {

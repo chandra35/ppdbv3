@@ -244,10 +244,11 @@ class RegistrasiController extends Controller
 
         $lulusIds = Kelulusan::where('tahun_pelajaran_id', $tahunAktif->id)
             ->where('status', 'lulus')
-            ->pluck('calon_siswa_id');
+            ->pluck('calon_siswa_id')
+            ->flip();
 
         $query = CalonSiswa::with('gelombangPendaftaran:id,nama')
-            ->whereIn('id', $lulusIds);
+            ->where('tahun_pelajaran_id', $tahunAktif->id);
 
         if ($term !== '') {
             $query->where(function ($q) use ($term) {
@@ -264,13 +265,14 @@ class RegistrasiController extends Controller
         $results = $query->orderBy('nama_lengkap')
             ->limit(30)
             ->get(['id', 'nomor_tes', 'nama_lengkap', 'pilihan_program', 'gelombang_pendaftaran_id'])
-            ->map(function ($s) use ($registeredIds) {
+            ->map(function ($s) use ($registeredIds, $lulusIds) {
                 $reg = isset($registeredIds[$s->id]) ? ' [terdaftar]' : '';
+                $lulus = isset($lulusIds[$s->id]) ? ' [lulus]' : ' [belum lulus]';
                 $prog = $s->pilihan_program ?: '-';
                 $tes = $s->nomor_tes ?: '-';
                 return [
                     'id' => $s->id,
-                    'text' => "{$s->nama_lengkap} ({$tes}) · {$prog}{$reg}",
+                    'text' => "{$s->nama_lengkap} ({$tes}) · {$prog}{$lulus}{$reg}",
                     'nama_lengkap' => $s->nama_lengkap,
                     'nomor_tes' => $s->nomor_tes,
                     'pilihan_program' => $s->pilihan_program,

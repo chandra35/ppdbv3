@@ -191,11 +191,11 @@
                                         @foreach($row['candidates'] as $c)
                                             <option value="{{ $c['id'] }}" {{ $row['selected_id'] === $c['id'] ? 'selected' : '' }}
                                                 data-program="{{ $c['pilihan_program'] }}">
-                                                {{ $c['nama_lengkap'] }} ({{ $c['nomor_tes'] ?: '-' }}) &middot; {{ $c['pilihan_program'] ?: '-' }} &middot; {{ $c['name_score'] }}%{{ $c['note_match'] ? ' ✓tes' : '' }}{{ $c['already_registered'] ? ' [terdaftar]' : '' }}
+                                                {{ $c['nama_lengkap'] }} ({{ $c['nomor_tes'] ?: '-' }}) &middot; {{ $c['pilihan_program'] ?: '-' }} &middot; {{ $c['name_score'] }}%{{ $c['note_match'] ? ' ✓tes' : '' }}{{ ($c['lulus'] ?? false) ? ' [lulus]' : ' [belum lulus]' }}{{ $c['already_registered'] ? ' [terdaftar]' : '' }}
                                             </option>
                                         @endforeach
                                     </select>
-                                    <small class="text-muted d-block mt-1"><i class="fas fa-search"></i> Ketik untuk cari semua pendaftar lulus</small>
+                                    <small class="text-muted d-block mt-1"><i class="fas fa-search"></i> Ketik untuk cari semua pendaftar</small>
                                 </td>
                                 <td>
                                     <input type="text" name="rows[{{ $i }}][jurusan_final]" class="form-control form-control-sm jurusan-final" value="{{ $row['jurusan_final'] }}">
