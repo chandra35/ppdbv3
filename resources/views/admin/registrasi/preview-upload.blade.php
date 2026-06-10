@@ -120,6 +120,7 @@
     <form action="{{ route('admin.registrasi.upload.confirm') }}" method="POST" id="confirmForm">
         @csrf
         <input type="hidden" name="tahun_pelajaran_id" value="{{ $returnTahunId }}">
+        <input type="hidden" name="payload" id="payloadInput">
 
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -304,6 +305,30 @@ $(document).ready(function () {
             alert('Tidak ada baris yang dipilih untuk disimpan.');
             return false;
         }
+
+        // Gabungkan SEMUA baris terpilih ke satu field JSON agar tidak terbentur
+        // batas PHP max_input_vars (yang sebelumnya memotong di baris ke-125).
+        var payload = [];
+        $('.preview-row').each(function () {
+            var $row = $(this);
+            if (!$row.find('.row-include').is(':checked')) { return; }
+            var calonId = $row.find('select[name$="[calon_siswa_id]"]').val();
+            if (!calonId) { return; }
+            payload.push({
+                calon_siswa_id: calonId,
+                notes: $row.find('input[name$="[notes]"]').val() || '',
+                nama_excel: $row.find('input[name$="[nama_excel]"]').val() || '',
+                jurusan_excel: $row.find('input[name$="[jurusan_excel]"]').val() || '',
+                jurusan_final: $row.find('input[name$="[jurusan_final]"]').val() || '',
+                match_status: $row.find('input[name$="[match_status]"]').val() || 'manual',
+                match_score: $row.find('input[name$="[match_score]"]').val() || 0
+            });
+        });
+        $('#payloadInput').val(JSON.stringify(payload));
+
+        // Nonaktifkan input per-baris agar tidak ikut terkirim (hemat jumlah POST var).
+        $('#confirmForm [name^="rows["]').prop('disabled', true);
+
         $('#btnConfirm').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Menyimpan...');
         $('#progressOverlay').addClass('show');
 

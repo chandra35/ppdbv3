@@ -93,9 +93,14 @@
                         <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter mr-1"></i>Terapkan</button>
                         <a href="{{ route('admin.registrasi.index') }}" class="btn btn-default btn-sm"><i class="fas fa-undo"></i></a>
                     </div>
-                    <a href="{{ route('admin.registrasi.upload', ['tahun_pelajaran_id' => $selectedTahunIdInput]) }}" class="btn btn-success btn-sm">
-                        <i class="fas fa-file-import mr-1"></i>Import Excel
-                    </a>
+                    <div class="btn-group">
+                        <a href="{{ route('admin.registrasi.export', ['tahun_pelajaran_id' => $selectedTahunIdInput]) }}" class="btn btn-info btn-sm">
+                            <i class="fas fa-file-excel mr-1"></i>Export Excel
+                        </a>
+                        <a href="{{ route('admin.registrasi.upload', ['tahun_pelajaran_id' => $selectedTahunIdInput]) }}" class="btn btn-success btn-sm">
+                            <i class="fas fa-file-import mr-1"></i>Import Excel
+                        </a>
+                    </div>
                 </div>
             </form>
         </div>

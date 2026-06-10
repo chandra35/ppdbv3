@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Exports\RegistrasiExport;
 use App\Imports\RegistrasiImport;
 use App\Models\ActivityLog;
 use App\Models\CalonSiswa;
@@ -13,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
 
 class RegistrasiController extends Controller
 {
@@ -142,6 +144,17 @@ class RegistrasiController extends Controller
         }
 
         $rows = $request->input('rows', []);
+        // Form preview mengirim seluruh baris sebagai satu field JSON ("payload")
+        // untuk menghindari batas PHP max_input_vars. Fallback ke array "rows" lama.
+        if ($json = $request->input('payload')) {
+            $decoded = json_decode($json, true);
+            if (is_array($decoded)) {
+                $rows = array_map(function ($r) {
+                    $r['include'] = true; // payload hanya berisi baris terpilih
+                    return $r;
+                }, $decoded);
+            }
+        }
         $userId = Auth::id();
 
         $saved = 0;
@@ -280,6 +293,27 @@ class RegistrasiController extends Controller
             });
 
         return response()->json(['results' => $results]);
+    }
+
+    /**
+     * Export Excel lengkap pendaftar yang sudah registrasi/bayar.
+     */
+    public function export(Request $request)
+    {
+        $context = AdminPpdbContext::resolve(
+            $request->get('tahun_pelajaran_id'),
+            $request->get('jalur_id'),
+            $request->get('gelombang_id')
+        );
+        $tahunAktif = $context['selectedTahun'];
+        $tahunLabel = $tahunAktif ? str_replace('/', '-', $tahunAktif->nama) : date('Y');
+
+        $filename = "Data_Registrasi_PPDB_{$tahunLabel}.xlsx";
+
+        return Excel::download(
+            new RegistrasiExport($tahunAktif?->id, $context['jalurFilterId'], $context['gelombangFilterId']),
+            $filename
+        );
     }
 
     /**
