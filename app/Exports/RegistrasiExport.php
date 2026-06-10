@@ -14,9 +14,14 @@ use App\Models\Registrasi;
  */
 class RegistrasiExport extends PendaftarExport
 {
-    public function __construct($tahunPelajaranId = null, $jalurId = null, $gelombangId = null)
+    protected $matchStatus;
+    protected $search;
+
+    public function __construct($tahunPelajaranId = null, $jalurId = null, $gelombangId = null, $matchStatus = null, $search = null)
     {
         parent::__construct('all', $tahunPelajaranId, $jalurId, $gelombangId);
+        $this->matchStatus = $matchStatus;
+        $this->search = $search;
     }
 
     public function collection()
@@ -35,6 +40,22 @@ class RegistrasiExport extends PendaftarExport
 
         if ($this->tahunPelajaranId) {
             $query->where('tahun_pelajaran_id', $this->tahunPelajaranId);
+        }
+
+        if ($this->matchStatus) {
+            $query->where('match_status', $this->matchStatus);
+        }
+
+        if ($this->search) {
+            $search = $this->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_excel', 'like', "%{$search}%")
+                    ->orWhere('notes', 'like', "%{$search}%")
+                    ->orWhereHas('calonSiswa', function ($cs) use ($search) {
+                        $cs->where('nama_lengkap', 'like', "%{$search}%")
+                            ->orWhere('nomor_tes', 'like', "%{$search}%");
+                    });
+            });
         }
 
         $regs = $query->get();

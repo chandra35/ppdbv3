@@ -300,18 +300,22 @@ class RegistrasiController extends Controller
      */
     public function export(Request $request)
     {
-        $context = AdminPpdbContext::resolve(
-            $request->get('tahun_pelajaran_id'),
-            $request->get('jalur_id'),
-            $request->get('gelombang_id')
-        );
+        $context = AdminPpdbContext::resolve($request->get('tahun_pelajaran_id'));
         $tahunAktif = $context['selectedTahun'];
         $tahunLabel = $tahunAktif ? str_replace('/', '-', $tahunAktif->nama) : date('Y');
 
         $filename = "Data_Registrasi_PPDB_{$tahunLabel}.xlsx";
 
+        // Samakan dengan halaman Data Registrasi: hanya filter per tahun.
+        // Jalur/gelombang hanya diterapkan bila DIPILIH eksplisit di query string.
         return Excel::download(
-            new RegistrasiExport($tahunAktif?->id, $context['jalurFilterId'], $context['gelombangFilterId']),
+            new RegistrasiExport(
+                $tahunAktif?->id,
+                $request->get('jalur_id') ?: null,
+                $request->get('gelombang_id') ?: null,
+                $request->get('match_status') ?: null,
+                trim((string) $request->get('q')) ?: null
+            ),
             $filename
         );
     }

@@ -63,9 +63,9 @@
     {{-- Filter & Aksi --}}
     <div class="card card-outline card-info">
         <div class="card-body">
-            <form method="GET" action="{{ route('admin.registrasi.index') }}" class="row">
-                <div class="col-md-3">
-                    <label class="mb-1">Tahun Pelajaran</label>
+            <form method="GET" action="{{ route('admin.registrasi.index') }}" class="form-row align-items-end">
+                <div class="form-group col-lg-3 col-md-6 mb-2">
+                    <label class="mb-1 small font-weight-bold">Tahun Pelajaran</label>
                     <select name="tahun_pelajaran_id" class="form-control form-control-sm">
                         @foreach($tahunPelajarans as $tahun)
                             <option value="{{ $tahun->id }}" {{ $selectedTahunIdInput == $tahun->id ? 'selected' : '' }}>
@@ -74,8 +74,8 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <label class="mb-1">Status Match</label>
+                <div class="form-group col-lg-3 col-md-6 mb-2">
+                    <label class="mb-1 small font-weight-bold">Status Match</label>
                     <select name="match_status" class="form-control form-control-sm">
                         <option value="">Semua</option>
                         <option value="matched_exact" {{ $filterStatus === 'matched_exact' ? 'selected' : '' }}>Cocok Persis</option>
@@ -84,23 +84,14 @@
                         <option value="manual" {{ $filterStatus === 'manual' ? 'selected' : '' }}>Manual</option>
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <label class="mb-1">Cari (nama / no. tes / notes)</label>
+                <div class="form-group col-lg-4 col-md-8 mb-2">
+                    <label class="mb-1 small font-weight-bold">Cari (nama / no. tes / notes)</label>
                     <input type="text" name="q" value="{{ $searchQ }}" class="form-control form-control-sm" placeholder="Ketik kata kunci...">
                 </div>
-                <div class="col-md-3 d-flex align-items-end justify-content-between">
-                    <div>
-                        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter mr-1"></i>Terapkan</button>
-                        <a href="{{ route('admin.registrasi.index') }}" class="btn btn-default btn-sm"><i class="fas fa-undo"></i></a>
-                    </div>
-                    <div class="btn-group">
-                        <a href="{{ route('admin.registrasi.export', ['tahun_pelajaran_id' => $selectedTahunIdInput]) }}" class="btn btn-info btn-sm">
-                            <i class="fas fa-file-excel mr-1"></i>Export Excel
-                        </a>
-                        <a href="{{ route('admin.registrasi.upload', ['tahun_pelajaran_id' => $selectedTahunIdInput]) }}" class="btn btn-success btn-sm">
-                            <i class="fas fa-file-import mr-1"></i>Import Excel
-                        </a>
-                    </div>
+                <div class="form-group col-lg-2 col-md-4 mb-2">
+                    <label class="mb-1 small font-weight-bold d-block">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter mr-1"></i>Terapkan</button>
+                    <a href="{{ route('admin.registrasi.index') }}" class="btn btn-default btn-sm" title="Reset"><i class="fas fa-undo"></i></a>
                 </div>
             </form>
         </div>
@@ -108,8 +99,16 @@
 
     {{-- Tabel data --}}
     <div class="card">
-        <div class="card-header">
-            <h3 class="card-title"><i class="fas fa-table mr-2"></i>Daftar Pendaftar Teregistrasi ({{ $registrasis->total() }})</h3>
+        <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
+            <h3 class="card-title mb-0"><i class="fas fa-table mr-2"></i>Daftar Pendaftar Teregistrasi ({{ $registrasis->total() }})</h3>
+            <div class="btn-group">
+                <a href="{{ route('admin.registrasi.export', ['tahun_pelajaran_id' => $selectedTahunIdInput, 'match_status' => $filterStatus, 'q' => $searchQ]) }}" class="btn btn-info btn-sm">
+                    <i class="fas fa-file-excel mr-1"></i>Export Excel
+                </a>
+                <a href="{{ route('admin.registrasi.upload', ['tahun_pelajaran_id' => $selectedTahunIdInput]) }}" class="btn btn-success btn-sm">
+                    <i class="fas fa-file-import mr-1"></i>Import Excel
+                </a>
+            </div>
         </div>
         <div class="card-body p-0" style="overflow-x:auto;">
             <table class="table table-bordered table-hover table-sm mb-0">
