@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Imports\RegistrasiImport;
+use App\Models\ActivityLog;
 use App\Models\CalonSiswa;
 use App\Models\Kelulusan;
 use App\Models\Registrasi;
@@ -164,7 +165,11 @@ class RegistrasiController extends Controller
                     continue;
                 }
 
-                $jurusanFinal = trim((string) ($row['jurusan_final'] ?? '')) ?: null;
+                // Jurusan asal = pilihan_program pendaftar saat ini (sebelum diubah).
+                $jurusanAwal = trim((string) $calon->pilihan_program) ?: null;
+                $jurusanFinal = trim((string) ($row['jurusan_final'] ?? '')) ?: $jurusanAwal;
+                $pindahJurusan = $jurusanAwal && $jurusanFinal
+                    && strcasecmp($jurusanAwal, $jurusanFinal) !== 0;
 
                 $existing = Registrasi::where('calon_siswa_id', $calonId)
                     ->where('tahun_pelajaran_id', $tahunAktif->id)
@@ -175,7 +180,9 @@ class RegistrasiController extends Controller
                     'notes' => $row['notes'] ?? null,
                     'nama_excel' => $row['nama_excel'] ?? null,
                     'jurusan_excel' => $row['jurusan_excel'] ?? null,
+                    'jurusan_awal' => $jurusanAwal,
                     'jurusan_final' => $jurusanFinal,
+                    'pindah_jurusan' => $pindahJurusan,
                     'match_status' => $row['match_status'] ?? 'manual',
                     'match_score' => (int) ($row['match_score'] ?? 0),
                     'tanggal_registrasi' => now(),
@@ -190,18 +197,28 @@ class RegistrasiController extends Controller
                     $saved++;
                 }
 
-                // Jurusan Excel jadi acuan akhir: perbarui pilihan_program pendaftar bila berbeda.
-                if ($jurusanFinal && strcasecmp(trim((string) $calon->pilihan_program), $jurusanFinal) !== 0) {
+                // Jurusan final (dari Excel) jadi acuan akhir: perbarui pilihan_program
+                // pendaftar bila berbeda, dan catat jejak perpindahannya ke ActivityLog.
+                if ($pindahJurusan) {
                     $calon->pilihan_program = $jurusanFinal;
                     $calon->save();
                     $jurusanUpdated++;
+
+                    ActivityLog::log(
+                        'update',
+                        "Perpindahan jurusan saat registrasi: {$calon->nama_lengkap} ({$calon->nomor_tes}) "
+                            . "dari \"{$jurusanAwal}\" menjadi \"{$jurusanFinal}\".",
+                        $calon,
+                        ['pilihan_program' => $jurusanAwal],
+                        ['pilihan_program' => $jurusanFinal]
+                    );
                 }
             }
         });
 
         $message = "Registrasi tersimpan: {$saved} baru, {$updated} diperbarui.";
         if ($jurusanUpdated > 0) {
-            $message .= " {$jurusanUpdated} jurusan pendaftar diperbarui.";
+            $message .= " {$jurusanUpdated} pendaftar pindah jurusan (tercatat di Activity Log).";
         }
         if ($skipped > 0) {
             $message .= " {$skipped} dilewati.";
@@ -210,6 +227,57 @@ class RegistrasiController extends Controller
         return redirect()->route('admin.registrasi.index', [
             'tahun_pelajaran_id' => $request->input('tahun_pelajaran_id'),
         ])->with('success', $message);
+    }
+
+    /**
+     * Endpoint pencarian kandidat (Select2 AJAX) — pendaftar LULUS pada tahun aktif.
+     */
+    public function searchCandidates(Request $request)
+    {
+        $context = AdminPpdbContext::resolve($request->get('tahun_pelajaran_id'));
+        $tahunAktif = $context['selectedTahun'];
+        if (!$tahunAktif) {
+            return response()->json(['results' => []]);
+        }
+
+        $term = trim((string) $request->get('q'));
+
+        $lulusIds = Kelulusan::where('tahun_pelajaran_id', $tahunAktif->id)
+            ->where('status', 'lulus')
+            ->pluck('calon_siswa_id');
+
+        $query = CalonSiswa::with('gelombangPendaftaran:id,nama')
+            ->whereIn('id', $lulusIds);
+
+        if ($term !== '') {
+            $query->where(function ($q) use ($term) {
+                $q->where('nama_lengkap', 'like', "%{$term}%")
+                    ->orWhere('nomor_tes', 'like', "%{$term}%");
+            });
+        }
+
+        $registeredIds = Registrasi::where('tahun_pelajaran_id', $tahunAktif->id)
+            ->whereNotNull('calon_siswa_id')
+            ->pluck('calon_siswa_id')
+            ->flip();
+
+        $results = $query->orderBy('nama_lengkap')
+            ->limit(30)
+            ->get(['id', 'nomor_tes', 'nama_lengkap', 'pilihan_program', 'gelombang_pendaftaran_id'])
+            ->map(function ($s) use ($registeredIds) {
+                $reg = isset($registeredIds[$s->id]) ? ' [terdaftar]' : '';
+                $prog = $s->pilihan_program ?: '-';
+                $tes = $s->nomor_tes ?: '-';
+                return [
+                    'id' => $s->id,
+                    'text' => "{$s->nama_lengkap} ({$tes}) · {$prog}{$reg}",
+                    'nama_lengkap' => $s->nama_lengkap,
+                    'nomor_tes' => $s->nomor_tes,
+                    'pilihan_program' => $s->pilihan_program,
+                ];
+            });
+
+        return response()->json(['results' => $results]);
     }
 
     /**

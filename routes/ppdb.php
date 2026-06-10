@@ -424,6 +424,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/upload', [\App\Http\Controllers\Admin\RegistrasiController::class, 'upload'])->middleware('permission:registrasi.manage')->name('upload');
         Route::post('/upload', [\App\Http\Controllers\Admin\RegistrasiController::class, 'processUpload'])->middleware('permission:registrasi.manage')->name('upload.process');
         Route::post('/upload/confirm', [\App\Http\Controllers\Admin\RegistrasiController::class, 'confirmUpload'])->middleware('permission:registrasi.manage')->name('upload.confirm');
+        Route::get('/search-candidates', [\App\Http\Controllers\Admin\RegistrasiController::class, 'searchCandidates'])->middleware('permission:registrasi.manage')->name('search-candidates');
         Route::delete('/{registrasi}', [\App\Http\Controllers\Admin\RegistrasiController::class, 'destroy'])->middleware('permission:registrasi.manage')->name('destroy');
     });
 

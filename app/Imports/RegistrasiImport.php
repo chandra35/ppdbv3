@@ -171,8 +171,8 @@ class RegistrasiImport
 
         $best = $scored[0] ?? null;
         $candidatesList = [];
-        foreach (array_slice($scored, 0, 6) as $s) {
-            if ($s->name_score < 35 && !$s->note_match) {
+        foreach (array_slice($scored, 0, 10) as $s) {
+            if ($s->name_score < 25 && !$s->note_match) {
                 continue;
             }
             $candidatesList[] = [
@@ -254,6 +254,7 @@ class RegistrasiImport
             'status' => $status,
             'selected_id' => $selectedId,
             'selected_program' => $selectedProgram,
+            'jurusan_awal' => $selectedProgram,
             'jurusan_final' => $jurusanExcel !== '' ? $jurusanExcel : $selectedProgram,
             'candidates' => $candidatesList,
             'already_registered' => $alreadyRegistered,
@@ -287,6 +288,12 @@ class RegistrasiImport
 
     /**
      * Kemiripan dua nama (0-100).
+     *
+     * Menggabungkan dua pendekatan dan mengambil skor tertinggi:
+     *  1. similar_text pada string penuh (peka urutan karakter).
+     *  2. Token/kata: tiap kata pada nama lebih pendek dicocokkan ke kata
+     *     terbaik pada nama lain (tahan terhadap urutan kata yang berbeda,
+     *     nama tertukar, atau salah ketik ringan).
      */
     protected function nameSimilarity(string $a, string $b): int
     {
@@ -296,9 +303,52 @@ class RegistrasiImport
         if ($a === $b) {
             return 100;
         }
-        $percent = 0.0;
-        similar_text($a, $b, $percent);
-        return (int) round($percent);
+
+        // Pendekatan 1: string penuh
+        $full = 0.0;
+        similar_text($a, $b, $full);
+
+        // Pendekatan 2: berbasis token (urutan kata diabaikan)
+        $token = $this->tokenSimilarity($a, $b);
+
+        return (int) round(max($full, $token));
+    }
+
+    /**
+     * Kemiripan berbasis kata: untuk tiap kata pada nama yang lebih sedikit
+     * katanya, ambil kecocokan terbaik di nama lain, lalu rata-rata.
+     */
+    protected function tokenSimilarity(string $a, string $b): float
+    {
+        $wa = array_values(array_filter(explode(' ', $a)));
+        $wb = array_values(array_filter(explode(' ', $b)));
+        if (empty($wa) || empty($wb)) {
+            return 0.0;
+        }
+
+        // Pastikan $wa adalah set yang lebih kecil
+        if (count($wa) > count($wb)) {
+            [$wa, $wb] = [$wb, $wa];
+        }
+
+        $total = 0.0;
+        foreach ($wa as $word) {
+            $best = 0.0;
+            foreach ($wb as $cand) {
+                if ($word === $cand) {
+                    $best = 100.0;
+                    break;
+                }
+                $p = 0.0;
+                similar_text($word, $cand, $p);
+                if ($p > $best) {
+                    $best = $p;
+                }
+            }
+            $total += $best;
+        }
+
+        return $total / count($wa);
     }
 
     /**

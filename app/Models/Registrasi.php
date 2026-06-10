@@ -19,7 +19,9 @@ class Registrasi extends Model
         'notes',
         'nama_excel',
         'jurusan_excel',
+        'jurusan_awal',
         'jurusan_final',
+        'pindah_jurusan',
         'match_status',
         'match_score',
         'catatan',
@@ -30,6 +32,7 @@ class Registrasi extends Model
     protected $casts = [
         'tanggal_registrasi' => 'datetime',
         'match_score' => 'integer',
+        'pindah_jurusan' => 'boolean',
     ];
 
     public function calonSiswa(): BelongsTo

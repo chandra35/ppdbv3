@@ -144,7 +144,9 @@
                             <td>{{ $reg->calonSiswa?->gelombangPendaftaran?->nama ?? '-' }}</td>
                             <td>
                                 {{ $reg->jurusan_final ?: '-' }}
-                                @if($reg->match_status === 'conflict_jurusan' && $reg->jurusan_excel)
+                                @if($reg->pindah_jurusan)
+                                    <br><small class="text-warning"><i class="fas fa-exchange-alt"></i> dari {{ $reg->jurusan_awal ?: '-' }}</small>
+                                @elseif($reg->match_status === 'conflict_jurusan' && $reg->jurusan_excel)
                                     <i class="fas fa-info-circle text-warning" title="Pindah jurusan dari hasil seleksi"></i>
                                 @endif
                             </td>

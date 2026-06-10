@@ -2,6 +2,8 @@
 
 @section('title', 'Preview Import Registrasi')
 
+@section('plugins.Select2', true)
+
 @section('css')
 <style>
     .preview-table { font-size: .82rem; }
@@ -184,7 +186,7 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <select name="rows[{{ $i }}][calon_siswa_id]" class="form-control form-control-sm cand-select">
+                                    <select name="rows[{{ $i }}][calon_siswa_id]" class="form-control form-control-sm cand-select" style="width:100%;">
                                         <option value="">-- Lewati / Tidak dipilih --</option>
                                         @foreach($row['candidates'] as $c)
                                             <option value="{{ $c['id'] }}" {{ $row['selected_id'] === $c['id'] ? 'selected' : '' }}
@@ -193,9 +195,13 @@
                                             </option>
                                         @endforeach
                                     </select>
+                                    <small class="text-muted d-block mt-1"><i class="fas fa-search"></i> Ketik untuk cari semua pendaftar lulus</small>
                                 </td>
                                 <td>
-                                    <input type="text" name="rows[{{ $i }}][jurusan_final]" class="form-control form-control-sm" value="{{ $row['jurusan_final'] }}">
+                                    <input type="text" name="rows[{{ $i }}][jurusan_final]" class="form-control form-control-sm jurusan-final" value="{{ $row['jurusan_final'] }}">
+                                    @if($row['jurusan_excel'] && $row['selected_program'] && strcasecmp($row['jurusan_excel'], $row['selected_program']) !== 0)
+                                        <small class="d-block text-warning mt-1"><i class="fas fa-exchange-alt"></i> Awal: <strong>{{ $row['selected_program'] }}</strong> &rarr; <strong>{{ $row['jurusan_excel'] }}</strong></small>
+                                    @endif
                                 </td>
                                 <td class="text-center"><span class="badge badge-{{ $badge[0] }}">{{ $badge[1] }}</span></td>
                                 <td>
@@ -260,12 +266,38 @@ $(document).ready(function () {
     $('#uncheckAll').on('click', function () { $('.preview-row:visible .row-include').prop('checked', false); updateCount(); });
     $(document).on('change', '.row-include', updateCount);
 
-    // Saat memilih kandidat, isi jurusan final dengan program kandidat bila kolom kosong
-    $(document).on('change', '.cand-select', function () {
+    // Select2 AJAX: cari di SELURUH pendaftar lulus tahun aktif
+    $('.cand-select').select2({
+        width: '100%',
+        placeholder: '-- Lewati / Tidak dipilih --',
+        allowClear: true,
+        ajax: {
+            url: '{{ route('admin.registrasi.search-candidates') }}',
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return { q: params.term, tahun_pelajaran_id: '{{ $returnTahunId }}' };
+            },
+            processResults: function (data) {
+                return { results: data.results };
+            },
+            cache: true
+        },
+        minimumInputLength: 0
+    });
+
+    // Saat memilih kandidat, centang baris & isi jurusan final bila kosong
+    $(document).on('select2:select', '.cand-select', function (e) {
         var $row = $(this).closest('tr');
-        if ($(this).val()) { $row.find('.row-include').prop('checked', true); }
+        $row.find('.row-include').prop('checked', true);
+        var data = e.params.data || {};
+        var $final = $row.find('.jurusan-final');
+        if (!$final.val() && data.pilihan_program) {
+            $final.val(data.pilihan_program);
+        }
         updateCount();
     });
+    $(document).on('change', '.cand-select', updateCount);
 
     $('#confirmForm').on('submit', function () {
         if ($('.row-include:checked').length === 0) {
