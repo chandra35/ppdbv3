@@ -261,7 +261,25 @@ return [
                 ],
             ],
         ],
-
+        [
+            'text' => 'Registrasi',
+            'icon' => 'fas fa-fw fa-clipboard-check',
+            'can' => 'registrasi.view',
+            'submenu' => [
+                [
+                    'text' => 'Data Registrasi',
+                    'route' => 'admin.registrasi.index',
+                    'icon' => 'fas fa-fw fa-user-check',
+                    'can' => 'registrasi.view',
+                ],
+                [
+                    'text' => 'Import Registrasi',
+                    'route' => 'admin.registrasi.upload',
+                    'icon' => 'fas fa-fw fa-file-import',
+                    'can' => 'registrasi.manage',
+                ],
+            ],
+        ],
         [
             'header' => 'PENGATURAN',
             'can' => 'settings.view',

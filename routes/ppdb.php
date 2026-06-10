@@ -418,6 +418,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/envelope-logs', [KelulusanSettingController::class, 'envelopeLogs'])->middleware('permission:kelulusan.logs')->name('envelope-logs');
     });
 
+    // ---- REGISTRASI (Daftar Ulang Administrasi Pendaftar Lulus) ----
+    Route::prefix('registrasi')->name('registrasi.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\RegistrasiController::class, 'index'])->middleware('permission:registrasi.view')->name('index');
+        Route::get('/upload', [\App\Http\Controllers\Admin\RegistrasiController::class, 'upload'])->middleware('permission:registrasi.manage')->name('upload');
+        Route::post('/upload', [\App\Http\Controllers\Admin\RegistrasiController::class, 'processUpload'])->middleware('permission:registrasi.manage')->name('upload.process');
+        Route::post('/upload/confirm', [\App\Http\Controllers\Admin\RegistrasiController::class, 'confirmUpload'])->middleware('permission:registrasi.manage')->name('upload.confirm');
+        Route::delete('/{registrasi}', [\App\Http\Controllers\Admin\RegistrasiController::class, 'destroy'])->middleware('permission:registrasi.manage')->name('destroy');
+    });
+
     // ============================================
     // SETTINGS ROUTES - dengan permission settings.edit
     // ============================================

@@ -120,6 +120,10 @@ class Role extends Model
                 'kelulusan.setting' => 'Atur Pengumuman Kelulusan',
                 'kelulusan.logs' => 'Lihat Log Amplop Kelulusan',
             ],
+            'registrasi' => [
+                'registrasi.view' => 'Lihat Data Registrasi',
+                'registrasi.manage' => 'Kelola & Import Registrasi',
+            ],
             'seleksi' => [
                 'seleksi.view' => 'Lihat Menu Seleksi',
                 'seleksi.schedule' => 'Akses Penjadwalan Ujian',
