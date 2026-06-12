@@ -4,6 +4,150 @@
 
 @section('plugins.Select2', true)
 
+@section('css')
+<style>
+    /* ===== Modal Tambah Registrasi — Tampilan Modern ===== */
+    #modalTambahRegistrasi .modal-content {
+        border: none;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, .28);
+    }
+    #modalTambahRegistrasi .modal-header {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        border-bottom: none;
+        padding: 1.4rem 1.6rem;
+        position: relative;
+    }
+    #modalTambahRegistrasi .modal-header .modal-title {
+        font-weight: 700;
+        letter-spacing: .2px;
+        display: flex;
+        align-items: center;
+        gap: .85rem;
+    }
+    #modalTambahRegistrasi .header-avatar {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, .2);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .25);
+    }
+    #modalTambahRegistrasi .header-sub {
+        font-size: .76rem;
+        font-weight: 400;
+        opacity: .85;
+        margin-top: 2px;
+    }
+    #modalTambahRegistrasi .modal-header .close {
+        opacity: .9;
+        text-shadow: none;
+        font-size: 1.6rem;
+        transition: transform .2s ease;
+    }
+    #modalTambahRegistrasi .modal-header .close:hover { transform: rotate(90deg); opacity: 1; }
+    #modalTambahRegistrasi .modal-body { padding: 1.5rem 1.6rem .5rem; }
+    #modalTambahRegistrasi .info-banner {
+        background: #eef3ff;
+        border: 1px solid #d6e0ff;
+        border-radius: 12px;
+        padding: .65rem .9rem;
+        font-size: .82rem;
+        color: #2c3e75;
+    }
+    #modalTambahRegistrasi label.field-label {
+        font-weight: 600;
+        font-size: .82rem;
+        color: #4a4a6a;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+        margin-bottom: .4rem;
+    }
+    #modalTambahRegistrasi .input-group-text {
+        background: #f4f6fb;
+        border-right: none;
+        color: #4e73df;
+    }
+    #modalTambahRegistrasi .form-control { border-radius: 10px; }
+    #modalTambahRegistrasi .input-group .form-control {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+    #modalTambahRegistrasi .input-group-prepend .input-group-text {
+        border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
+    }
+    /* Select2 menyatu dengan tema */
+    #modalTambahRegistrasi .select2-container--bootstrap4 .select2-selection {
+        border-radius: 10px;
+        min-height: calc(2.25rem + 2px);
+        border-color: #ced4da;
+    }
+    #modalTambahRegistrasi .select2-container--bootstrap4.select2-container--focus .select2-selection {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 .2rem rgba(78, 115, 223, .25);
+    }
+    /* Kartu info pendaftar */
+    #infoPendaftar {
+        border: none;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #f8faff 0%, #eef3ff 100%);
+        box-shadow: 0 2px 10px rgba(78, 115, 223, .08);
+        animation: fadeUp .35s ease;
+    }
+    #infoPendaftar .info-item { display: flex; flex-direction: column; gap: 2px; }
+    #infoPendaftar .info-item .lbl {
+        font-size: .68rem;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        color: #8a92b2;
+        font-weight: 600;
+    }
+    #infoPendaftar .info-item .val { font-weight: 700; color: #2c3e75; font-size: .92rem; }
+    #infoPendaftar .info-icon {
+        width: 38px; height: 38px; border-radius: 10px;
+        background: #4e73df; color: #fff;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 1.05rem;
+    }
+    #warnPindahBox {
+        background: #fff8e6;
+        border: 1px solid #ffe2a8;
+        border-radius: 12px;
+        padding: .6rem .85rem;
+        font-size: .82rem;
+        color: #8a6d1a;
+        animation: fadeUp .3s ease;
+    }
+    #modalTambahRegistrasi .modal-footer {
+        border-top: 1px solid #eef0f5;
+        padding: 1rem 1.6rem 1.3rem;
+    }
+    #modalTambahRegistrasi .btn-simpan {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        border: none;
+        border-radius: 10px;
+        padding: .5rem 1.4rem;
+        font-weight: 600;
+        box-shadow: 0 6px 16px rgba(34, 74, 190, .3);
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+    #modalTambahRegistrasi .btn-simpan:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 22px rgba(34, 74, 190, .4);
+    }
+    #modalTambahRegistrasi .btn-batal { border-radius: 10px; padding: .5rem 1.2rem; font-weight: 600; }
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+@endsection
+
 @section('content_header')
 <div class="row mb-2">
     <div class="col-sm-6">
@@ -183,26 +327,32 @@
 {{-- Modal Tambah Registrasi --}}
 <div class="modal fade" id="modalTambahRegistrasi" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content shadow-lg border-0">
+        <div class="modal-content">
             <form action="{{ route('admin.registrasi.store') }}" method="POST" id="formTambahRegistrasi">
                 @csrf
                 <input type="hidden" name="tahun_pelajaran_id" value="{{ $selectedTahunIdInput }}">
 
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title"><i class="fas fa-user-plus mr-2"></i>Tambah Registrasi Baru</h5>
+                <div class="modal-header text-white">
+                    <h5 class="modal-title">
+                        <span class="header-avatar"><i class="fas fa-user-plus"></i></span>
+                        <span>
+                            Tambah Registrasi Baru
+                            <span class="d-block header-sub">Catat pendaftar yang melakukan daftar ulang</span>
+                        </span>
+                    </h5>
                     <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
 
                 <div class="modal-body">
-                    <div class="alert alert-info py-2 small mb-3">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        Daftar hanya menampilkan pendaftar yang <strong>belum registrasi</strong> agar tidak terjadi duplikasi.
+                    <div class="info-banner mb-3">
+                        <i class="fas fa-shield-alt mr-1"></i>
+                        Hanya menampilkan pendaftar yang <strong>belum registrasi</strong> — duplikasi otomatis dicegah.
                     </div>
 
                     <div class="form-group">
-                        <label class="font-weight-bold">Pilih Pendaftar <span class="text-danger">*</span></label>
+                        <label class="field-label"><i class="fas fa-search mr-1"></i> Pilih Pendaftar <span class="text-danger">*</span></label>
                         <select name="calon_siswa_id" id="selectPendaftar" class="form-control" style="width:100%;" required>
                             <option value=""></option>
                         </select>
@@ -210,32 +360,46 @@
                     </div>
 
                     {{-- Kartu info pendaftar terpilih --}}
-                    <div id="infoPendaftar" class="card bg-light border mb-3 d-none">
-                        <div class="card-body py-2 px-3">
-                            <div class="row small">
-                                <div class="col-6"><span class="text-muted">No. Tes:</span> <strong id="infoTes">-</strong></div>
-                                <div class="col-6"><span class="text-muted">Gelombang:</span> <strong id="infoGelombang">-</strong></div>
-                                <div class="col-12 mt-1"><span class="text-muted">Jurusan saat ini:</span> <strong id="infoJurusan">-</strong></div>
+                    <div id="infoPendaftar" class="card mb-3 d-none">
+                        <div class="card-body py-3 px-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="info-icon mr-2"><i class="fas fa-id-card"></i></span>
+                                <strong id="infoNama" class="text-dark">-</strong>
+                            </div>
+                            <div class="row">
+                                <div class="col-4 info-item"><span class="lbl">No. Tes</span><span class="val" id="infoTes">-</span></div>
+                                <div class="col-4 info-item"><span class="lbl">Gelombang</span><span class="val" id="infoGelombang">-</span></div>
+                                <div class="col-4 info-item"><span class="lbl">Jurusan</span><span class="val" id="infoJurusan">-</span></div>
                             </div>
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label class="font-weight-bold">Jurusan Final</label>
-                            <input type="text" name="jurusan_final" id="inputJurusanFinal" class="form-control" placeholder="Mis. Asrama / Reguler">
-                            <small class="form-text text-warning d-none" id="warnPindah"><i class="fas fa-exchange-alt"></i> Berbeda dari jurusan awal — akan dicatat sebagai pindah jurusan.</small>
+                            <label class="field-label">Jurusan Final</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-graduation-cap"></i></span></div>
+                                <input type="text" name="jurusan_final" id="inputJurusanFinal" class="form-control" placeholder="Asrama / Reguler">
+                            </div>
                         </div>
                         <div class="form-group col-md-6">
-                            <label class="font-weight-bold">Bukti Bayar / Notes</label>
-                            <input type="text" name="notes" id="inputNotes" class="form-control" maxlength="20" placeholder="4 digit terakhir no. tes">
+                            <label class="field-label">Bukti Bayar / Notes</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-receipt"></i></span></div>
+                                <input type="text" name="notes" id="inputNotes" class="form-control" maxlength="20" placeholder="4 digit terakhir no. tes">
+                            </div>
                         </div>
+                    </div>
+
+                    <div id="warnPindahBox" class="d-none mb-2">
+                        <i class="fas fa-exchange-alt mr-1"></i>
+                        Jurusan final berbeda dari jurusan awal (<strong id="warnAwal">-</strong> &rarr; <strong id="warnFinal">-</strong>). Akan dicatat sebagai <strong>pindah jurusan</strong> di Activity Log.
                     </div>
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fas fa-times mr-1"></i>Batal</button>
-                    <button type="submit" class="btn btn-primary" id="btnSimpanTambah"><i class="fas fa-save mr-1"></i>Simpan Registrasi</button>
+                    <button type="button" class="btn btn-light btn-batal" data-dismiss="modal"><i class="fas fa-times mr-1"></i>Batal</button>
+                    <button type="submit" class="btn btn-primary btn-simpan text-white" id="btnSimpanTambah"><i class="fas fa-save mr-1"></i>Simpan Registrasi</button>
                 </div>
             </form>
         </div>
@@ -276,6 +440,7 @@ $(function () {
     $select.on('select2:select', function (e) {
         var d = e.params.data || {};
         jurusanAwal = d.pilihan_program || '';
+        $('#infoNama').text(d.nama_lengkap || '-');
         $('#infoTes').text(d.nomor_tes || '-');
         $('#infoGelombang').text(d.gelombang || '-');
         $('#infoJurusan').text(d.pilihan_program || '-');
@@ -295,15 +460,17 @@ $(function () {
         $('#infoPendaftar').addClass('d-none');
         $('#inputJurusanFinal').val('');
         $('#inputNotes').val('');
-        $('#warnPindah').addClass('d-none');
+        $('#warnPindahBox').addClass('d-none');
     });
 
     function checkPindah() {
         var final = ($('#inputJurusanFinal').val() || '').trim();
         if (jurusanAwal && final && final.toLowerCase() !== jurusanAwal.toLowerCase()) {
-            $('#warnPindah').removeClass('d-none');
+            $('#warnAwal').text(jurusanAwal);
+            $('#warnFinal').text(final);
+            $('#warnPindahBox').removeClass('d-none');
         } else {
-            $('#warnPindah').addClass('d-none');
+            $('#warnPindahBox').addClass('d-none');
         }
     }
     $('#inputJurusanFinal').on('input', checkPindah);
@@ -322,7 +489,7 @@ $(function () {
         $('#infoPendaftar').addClass('d-none');
         $('#inputJurusanFinal').val('');
         $('#inputNotes').val('');
-        $('#warnPindah').addClass('d-none');
+        $('#warnPindahBox').addClass('d-none');
         $('#btnSimpanTambah').prop('disabled', false).html('<i class="fas fa-save mr-1"></i>Simpan Registrasi');
     });
 });
