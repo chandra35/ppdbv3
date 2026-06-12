@@ -275,6 +275,11 @@ class RegistrasiController extends Controller
             ->pluck('calon_siswa_id')
             ->flip();
 
+        // Mode tambah manual: hanya tampilkan yang BELUM registrasi (cegah duplikasi).
+        if ($request->boolean('exclude_registered') && $registeredIds->isNotEmpty()) {
+            $query->whereNotIn('id', $registeredIds->keys()->all());
+        }
+
         $results = $query->orderBy('nama_lengkap')
             ->limit(30)
             ->get(['id', 'nomor_tes', 'nama_lengkap', 'pilihan_program', 'gelombang_pendaftaran_id'])
@@ -289,10 +294,91 @@ class RegistrasiController extends Controller
                     'nama_lengkap' => $s->nama_lengkap,
                     'nomor_tes' => $s->nomor_tes,
                     'pilihan_program' => $s->pilihan_program,
+                    'gelombang' => $s->gelombangPendaftaran?->nama,
                 ];
             });
 
         return response()->json(['results' => $results]);
+    }
+
+    /**
+     * Simpan satu registrasi baru secara manual (dari modal Tambah).
+     */
+    public function store(Request $request)
+    {
+        $context = AdminPpdbContext::resolve($request->input('tahun_pelajaran_id'));
+        $tahunAktif = $context['selectedTahun'];
+        if (!$tahunAktif) {
+            return back()->with('error', 'Tahun pelajaran aktif tidak ditemukan.');
+        }
+
+        $validated = $request->validate([
+            'calon_siswa_id' => 'required|string',
+            'jurusan_final' => 'nullable|string|max:100',
+            'notes' => 'nullable|string|max:20',
+        ], [], [
+            'calon_siswa_id' => 'pendaftar',
+        ]);
+
+        $calon = CalonSiswa::find($validated['calon_siswa_id']);
+        if (!$calon) {
+            return back()->with('error', 'Pendaftar tidak ditemukan.');
+        }
+
+        // Cegah duplikasi.
+        $existing = Registrasi::where('calon_siswa_id', $calon->id)
+            ->where('tahun_pelajaran_id', $tahunAktif->id)
+            ->first();
+        if ($existing) {
+            return redirect()->route('admin.registrasi.index', [
+                'tahun_pelajaran_id' => $request->input('tahun_pelajaran_id'),
+            ])->with('error', "{$calon->nama_lengkap} sudah terdaftar registrasi pada tahun ini.");
+        }
+
+        $jurusanAwal = trim((string) $calon->pilihan_program) ?: null;
+        $jurusanFinal = trim((string) ($validated['jurusan_final'] ?? '')) ?: $jurusanAwal;
+        $pindahJurusan = $jurusanAwal && $jurusanFinal
+            && strcasecmp($jurusanAwal, $jurusanFinal) !== 0;
+
+        DB::transaction(function () use ($calon, $tahunAktif, $validated, $jurusanAwal, $jurusanFinal, $pindahJurusan) {
+            Registrasi::create([
+                'calon_siswa_id' => $calon->id,
+                'tahun_pelajaran_id' => $tahunAktif->id,
+                'notes' => $validated['notes'] ?? null,
+                'nama_excel' => $calon->nama_lengkap,
+                'jurusan_excel' => $jurusanFinal,
+                'jurusan_awal' => $jurusanAwal,
+                'jurusan_final' => $jurusanFinal,
+                'pindah_jurusan' => $pindahJurusan,
+                'match_status' => 'manual',
+                'match_score' => 100,
+                'tanggal_registrasi' => now(),
+                'created_by' => Auth::id(),
+            ]);
+
+            if ($pindahJurusan) {
+                $calon->pilihan_program = $jurusanFinal;
+                $calon->save();
+
+                ActivityLog::log(
+                    'update',
+                    "Perpindahan jurusan saat registrasi (tambah manual): {$calon->nama_lengkap} ({$calon->nomor_tes}) "
+                        . "dari \"{$jurusanAwal}\" menjadi \"{$jurusanFinal}\".",
+                    $calon,
+                    ['pilihan_program' => $jurusanAwal],
+                    ['pilihan_program' => $jurusanFinal]
+                );
+            }
+        });
+
+        $message = "Registrasi {$calon->nama_lengkap} berhasil ditambahkan.";
+        if ($pindahJurusan) {
+            $message .= " (Pindah jurusan dari \"{$jurusanAwal}\" ke \"{$jurusanFinal}\", tercatat di Activity Log.)";
+        }
+
+        return redirect()->route('admin.registrasi.index', [
+            'tahun_pelajaran_id' => $request->input('tahun_pelajaran_id'),
+        ])->with('success', $message);
     }
 
     /**

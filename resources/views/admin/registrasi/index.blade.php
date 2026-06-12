@@ -2,6 +2,8 @@
 
 @section('title', 'Data Registrasi')
 
+@section('plugins.Select2', true)
+
 @section('content_header')
 <div class="row mb-2">
     <div class="col-sm-6">
@@ -102,6 +104,9 @@
         <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
             <h3 class="card-title mb-0"><i class="fas fa-table mr-2"></i>Daftar Pendaftar Teregistrasi ({{ $registrasis->total() }})</h3>
             <div class="btn-group">
+                <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modalTambahRegistrasi">
+                    <i class="fas fa-plus mr-1"></i>Tambah
+                </button>
                 <a href="{{ route('admin.registrasi.export', ['tahun_pelajaran_id' => $selectedTahunIdInput, 'match_status' => $filterStatus, 'q' => $searchQ]) }}" class="btn btn-info btn-sm">
                     <i class="fas fa-file-excel mr-1"></i>Export Excel
                 </a>
@@ -174,4 +179,152 @@
         @endif
     </div>
 </div>
+
+{{-- Modal Tambah Registrasi --}}
+<div class="modal fade" id="modalTambahRegistrasi" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content shadow-lg border-0">
+            <form action="{{ route('admin.registrasi.store') }}" method="POST" id="formTambahRegistrasi">
+                @csrf
+                <input type="hidden" name="tahun_pelajaran_id" value="{{ $selectedTahunIdInput }}">
+
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fas fa-user-plus mr-2"></i>Tambah Registrasi Baru</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="alert alert-info py-2 small mb-3">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Daftar hanya menampilkan pendaftar yang <strong>belum registrasi</strong> agar tidak terjadi duplikasi.
+                    </div>
+
+                    <div class="form-group">
+                        <label class="font-weight-bold">Pilih Pendaftar <span class="text-danger">*</span></label>
+                        <select name="calon_siswa_id" id="selectPendaftar" class="form-control" style="width:100%;" required>
+                            <option value=""></option>
+                        </select>
+                        <small class="form-text text-muted">Ketik nama atau nomor tes untuk mencari.</small>
+                    </div>
+
+                    {{-- Kartu info pendaftar terpilih --}}
+                    <div id="infoPendaftar" class="card bg-light border mb-3 d-none">
+                        <div class="card-body py-2 px-3">
+                            <div class="row small">
+                                <div class="col-6"><span class="text-muted">No. Tes:</span> <strong id="infoTes">-</strong></div>
+                                <div class="col-6"><span class="text-muted">Gelombang:</span> <strong id="infoGelombang">-</strong></div>
+                                <div class="col-12 mt-1"><span class="text-muted">Jurusan saat ini:</span> <strong id="infoJurusan">-</strong></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label class="font-weight-bold">Jurusan Final</label>
+                            <input type="text" name="jurusan_final" id="inputJurusanFinal" class="form-control" placeholder="Mis. Asrama / Reguler">
+                            <small class="form-text text-warning d-none" id="warnPindah"><i class="fas fa-exchange-alt"></i> Berbeda dari jurusan awal — akan dicatat sebagai pindah jurusan.</small>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label class="font-weight-bold">Bukti Bayar / Notes</label>
+                            <input type="text" name="notes" id="inputNotes" class="form-control" maxlength="20" placeholder="4 digit terakhir no. tes">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fas fa-times mr-1"></i>Batal</button>
+                    <button type="submit" class="btn btn-primary" id="btnSimpanTambah"><i class="fas fa-save mr-1"></i>Simpan Registrasi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endsection
+
+@section('js')
+<script>
+$(function () {
+    var $modal = $('#modalTambahRegistrasi');
+    var jurusanAwal = '';
+
+    var $select = $('#selectPendaftar').select2({
+        theme: 'bootstrap4',
+        dropdownParent: $modal,
+        placeholder: 'Cari nama atau nomor tes...',
+        allowClear: true,
+        ajax: {
+            url: '{{ route('admin.registrasi.search-candidates') }}',
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    q: params.term,
+                    tahun_pelajaran_id: '{{ $selectedTahunIdInput }}',
+                    exclude_registered: 1
+                };
+            },
+            processResults: function (data) {
+                return { results: data.results };
+            },
+            cache: true
+        },
+        minimumInputLength: 0
+    });
+
+    $select.on('select2:select', function (e) {
+        var d = e.params.data || {};
+        jurusanAwal = d.pilihan_program || '';
+        $('#infoTes').text(d.nomor_tes || '-');
+        $('#infoGelombang').text(d.gelombang || '-');
+        $('#infoJurusan').text(d.pilihan_program || '-');
+        $('#infoPendaftar').removeClass('d-none');
+        if (!$('#inputJurusanFinal').val()) {
+            $('#inputJurusanFinal').val(d.pilihan_program || '');
+        }
+        if (!$('#inputNotes').val() && d.nomor_tes) {
+            var digits = (d.nomor_tes + '').replace(/\D/g, '');
+            $('#inputNotes').val(digits.slice(-4));
+        }
+        checkPindah();
+    });
+
+    $select.on('select2:clear', function () {
+        jurusanAwal = '';
+        $('#infoPendaftar').addClass('d-none');
+        $('#inputJurusanFinal').val('');
+        $('#inputNotes').val('');
+        $('#warnPindah').addClass('d-none');
+    });
+
+    function checkPindah() {
+        var final = ($('#inputJurusanFinal').val() || '').trim();
+        if (jurusanAwal && final && final.toLowerCase() !== jurusanAwal.toLowerCase()) {
+            $('#warnPindah').removeClass('d-none');
+        } else {
+            $('#warnPindah').addClass('d-none');
+        }
+    }
+    $('#inputJurusanFinal').on('input', checkPindah);
+
+    $('#formTambahRegistrasi').on('submit', function () {
+        if (!$select.val()) {
+            alert('Silakan pilih pendaftar terlebih dahulu.');
+            return false;
+        }
+        $('#btnSimpanTambah').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Menyimpan...');
+        return true;
+    });
+
+    $modal.on('hidden.bs.modal', function () {
+        $select.val(null).trigger('change');
+        $('#infoPendaftar').addClass('d-none');
+        $('#inputJurusanFinal').val('');
+        $('#inputNotes').val('');
+        $('#warnPindah').addClass('d-none');
+        $('#btnSimpanTambah').prop('disabled', false).html('<i class="fas fa-save mr-1"></i>Simpan Registrasi');
+    });
+});
+</script>
 @endsection
