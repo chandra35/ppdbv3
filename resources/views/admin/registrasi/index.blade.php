@@ -383,11 +383,12 @@
                             </div>
                         </div>
                         <div class="form-group col-md-6">
-                            <label class="field-label">Bukti Bayar / Notes</label>
+                            <label class="field-label">Bukti Bayar <span class="text-muted" style="text-transform:none;font-weight:400;">(opsional)</span></label>
                             <div class="input-group">
                                 <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-receipt"></i></span></div>
-                                <input type="text" name="notes" id="inputNotes" class="form-control" maxlength="20" placeholder="4 digit terakhir no. tes">
+                                <input type="text" name="notes" id="inputNotes" class="form-control" maxlength="20" placeholder="Kode ref / ID transaksi">
                             </div>
+                            <small class="form-text text-muted">Kode referensi dari struk ATM / bukti transfer, jika ada.</small>
                         </div>
                     </div>
 
@@ -447,10 +448,6 @@ $(function () {
         $('#infoPendaftar').removeClass('d-none');
         if (!$('#inputJurusanFinal').val()) {
             $('#inputJurusanFinal').val(d.pilihan_program || '');
-        }
-        if (!$('#inputNotes').val() && d.nomor_tes) {
-            var digits = (d.nomor_tes + '').replace(/\D/g, '');
-            $('#inputNotes').val(digits.slice(-4));
         }
         checkPindah();
     });
