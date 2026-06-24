@@ -61,8 +61,41 @@ class AuthServiceProvider extends ServiceProvider
             return $user->hasRole('penguji') || $user->isAdmin();
         });
 
+        Gate::define('viewLogViewer', function (?User $user) {
+            if (!$user || !$user->canAccessAdminPanel()) {
+                return false;
+            }
+
+            return $user->isAdmin() || $user->hasPermission('logs.view');
+        });
+
+        Gate::define('downloadLogFile', function (?User $user, mixed $file = null) {
+            return $this->canManageLogViewer($user, 'logs.view');
+        });
+
+        Gate::define('downloadLogFolder', function (?User $user, mixed $folder = null) {
+            return $this->canManageLogViewer($user, 'logs.view');
+        });
+
+        Gate::define('deleteLogFile', function (?User $user, mixed $file = null) {
+            return $this->canManageLogViewer($user, 'logs.clear');
+        });
+
+        Gate::define('deleteLogFolder', function (?User $user, mixed $folder = null) {
+            return $this->canManageLogViewer($user, 'logs.clear');
+        });
+
         // Register Gate untuk setiap permission dari database
         $this->registerPermissionGates();
+    }
+
+    protected function canManageLogViewer(?User $user, string $permission): bool
+    {
+        if (!$user || !$user->canAccessAdminPanel()) {
+            return false;
+        }
+
+        return $user->isAdmin() || $user->hasPermission($permission);
     }
 
     /**

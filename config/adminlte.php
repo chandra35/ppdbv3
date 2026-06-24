@@ -474,6 +474,12 @@ return [
             'can' => 'logs.view',
         ],
         [
+            'text' => 'Laravel Log',
+            'url' => 'admin/log-viewer',
+            'icon' => 'fas fa-fw fa-file-code',
+            'can' => 'logs.view',
+        ],
+        [
             'text' => 'Log Email',
             'route' => 'admin.email-logs.index',
             'icon' => 'fas fa-fw fa-envelope',
