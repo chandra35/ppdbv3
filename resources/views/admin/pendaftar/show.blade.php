@@ -536,6 +536,67 @@ dl.row dt {
         </div>
     </div>
 
+    @if($pendaftar->nomor_tes && auth()->user()->hasPermission('verifikasi.verify'))
+    <div class="card card-outline {{ $nomorTesUndoInfo['can_undo'] ? 'card-warning' : 'card-secondary' }} mb-3">
+        <div class="card-header">
+            <h3 class="card-title mb-0">
+                <i class="fas fa-history"></i> Generate Nomor Tes Terakhir
+            </h3>
+        </div>
+        <div class="card-body p-2">
+            <div class="row">
+                <div class="col-md-3">
+                    <small class="text-muted d-block">Nomor tes pendaftar</small>
+                    <strong>{{ $pendaftar->nomor_tes }}</strong>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted d-block">Nomor terakhir sequence</small>
+                    <strong>{{ $nomorTesUndoInfo['sequence']?->last_generated_value ?? '-' }}</strong>
+                    <small class="text-muted d-block">
+                        {{ $nomorTesUndoInfo['sequence']?->last_generated_at ? $nomorTesUndoInfo['sequence']->last_generated_at->format('d/m/Y H:i') : '-' }}
+                    </small>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted d-block">Pemilik nomor terakhir</small>
+                    <strong>{{ $nomorTesUndoInfo['last_owner']?->nama_lengkap ?? '-' }}</strong>
+                    <small class="text-muted d-block">{{ $nomorTesUndoInfo['last_owner']?->nisn ?? '-' }}</small>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted d-block">Nomor sebelumnya</small>
+                    <strong>{{ $nomorTesUndoInfo['previous_owner']?->nomor_tes ?? '-' }}</strong>
+                    <small class="text-muted d-block">{{ $nomorTesUndoInfo['previous_owner']?->nama_lengkap ?? '-' }}</small>
+                </div>
+            </div>
+            <div class="row mt-2 align-items-center">
+                <div class="col-md-9">
+                    <small class="text-muted d-block">Log cetak kartu ujian terakhir</small>
+                    @if($nomorTesUndoInfo['latest_print_log'])
+                        <span>
+                            {{ $nomorTesUndoInfo['latest_print_log']->description }}
+                            <small class="text-muted">({{ $nomorTesUndoInfo['latest_print_log']->created_at->format('d/m/Y H:i') }})</small>
+                        </span>
+                    @else
+                        <span class="text-muted">Belum ada log cetak kartu ujian untuk pendaftar ini.</span>
+                    @endif
+                    @if(!$nomorTesUndoInfo['can_undo'])
+                        <div class="text-muted mt-1">
+                            <i class="fas fa-info-circle"></i> {{ $nomorTesUndoInfo['reason'] }}
+                        </div>
+                    @endif
+                </div>
+                <div class="col-md-3 text-right">
+                    <button type="button"
+                            class="btn btn-warning btn-sm"
+                            onclick="batalGenerateNomorTes()"
+                            {{ $nomorTesUndoInfo['can_undo'] ? '' : 'disabled' }}>
+                        <i class="fas fa-undo"></i> Batal Nomor Tes Terakhir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     @php
         // Exclude dokumen tambahan dari statistik verifikasi (hanya hitung dokumen yang diperlukan/required)
         $dokumenTambahanKeys = array_keys(\App\Models\CalonDokumen::DOKUMEN_TAMBAHAN);
@@ -3123,6 +3184,56 @@ function batalFinalisasi() {
                         errorMsg = xhr.responseJSON.message;
                     }
                     Swal.fire('Error!', errorMsg, 'error');
+                }
+            });
+        }
+    });
+}
+
+function batalGenerateNomorTes() {
+    Swal.fire({
+        title: 'Batalkan Nomor Tes Terakhir?',
+        html: '<div class="text-left">' +
+              '<p>Fitur ini hanya untuk membatalkan nomor tes yang benar-benar terakhir digenerate.</p>' +
+              '<ul>' +
+              '<li>Nomor tes pendaftar akan dikosongkan</li>' +
+              '<li>Status finalisasi akan dibatalkan</li>' +
+              '<li>Status verifikasi kembali ke pending</li>' +
+              '<li>Counter nomor tes dikembalikan ke nomor sebelumnya</li>' +
+              '</ul>' +
+              '<p class="text-danger"><strong>Perhatian:</strong> Sistem akan menolak jika nomor sudah dipakai di jadwal, ruang, nilai, atau kelulusan.</p>' +
+              '</div>',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#f39c12',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="fas fa-undo"></i> Ya, Batalkan Nomor',
+        cancelButtonText: '<i class="fas fa-times"></i> Batal',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '{{ route("admin.pendaftar.batal-generate-nomor-tes", $pendaftar->id) }}',
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(response) {
+                    Swal.fire({
+                        title: 'Berhasil!',
+                        text: response.message,
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        location.reload();
+                    });
+                },
+                error: function(xhr) {
+                    let errorMsg = 'Terjadi kesalahan saat membatalkan nomor tes.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    Swal.fire('Tidak Bisa Dibatalkan', errorMsg, 'error');
                 }
             });
         }

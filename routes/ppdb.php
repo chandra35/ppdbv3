@@ -246,6 +246,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/pendaftar/{id}/reject', [PendaftarController::class, 'reject'])->whereUuid('id')->name('pendaftar.reject');
         Route::post('/pendaftar/{id}/approve', [PendaftarController::class, 'approve'])->whereUuid('id')->name('pendaftar.approve');
         Route::post('/pendaftar/{id}/batal-finalisasi', [PendaftarController::class, 'batalFinalisasi'])->whereUuid('id')->name('pendaftar.batal-finalisasi');
+        Route::post('/pendaftar/{id}/batal-generate-nomor-tes', [PendaftarController::class, 'batalGenerateNomorTes'])->whereUuid('id')->name('pendaftar.batal-generate-nomor-tes');
         Route::post('/pendaftar/dokumen/{id}/approve', [PendaftarController::class, 'approveDokumen'])->name('pendaftar.dokumen.approve');
         Route::post('/pendaftar/dokumen/{id}/reject', [PendaftarController::class, 'rejectDokumen'])->name('pendaftar.dokumen.reject');
         Route::post('/pendaftar/dokumen/{id}/revisi', [PendaftarController::class, 'revisiDokumen'])->name('pendaftar.dokumen.revisi');

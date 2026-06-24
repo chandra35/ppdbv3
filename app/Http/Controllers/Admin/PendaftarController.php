@@ -27,6 +27,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravolt\Indonesia\Models\Province;
@@ -890,8 +891,9 @@ class PendaftarController extends Controller
         $dokumenTambahan = $pendaftar->dokumen
             ->whereIn('jenis_dokumen', array_keys($dokumenTambahanOptions))
             ->values();
+        $nomorTesUndoInfo = $this->getNomorTesUndoInfo($pendaftar);
         
-        return view('admin.pendaftar.show', compact('pendaftar', 'requiredDocs', 'dokumenLabels', 'dokumenTambahanOptions', 'dokumenTambahan', 'wajibLokasiRegistrasi', 'adminUploadDokumenOptions', 'adminUploadDokumenGroups'));
+        return view('admin.pendaftar.show', compact('pendaftar', 'requiredDocs', 'dokumenLabels', 'dokumenTambahanOptions', 'dokumenTambahan', 'wajibLokasiRegistrasi', 'adminUploadDokumenOptions', 'adminUploadDokumenGroups', 'nomorTesUndoInfo'));
     }
 
     public function verify(Request $request, $id)
@@ -1755,6 +1757,241 @@ class PendaftarController extends Controller
                 'message' => 'Gagal membatalkan finalisasi: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Batalkan nomor tes terakhir yang baru digenerate.
+     */
+    public function batalGenerateNomorTes($id)
+    {
+        $this->checkPermission('verifikasi.verify');
+
+        try {
+            $result = DB::transaction(function () use ($id) {
+                $pendaftar = CalonSiswa::lockForUpdate()->findOrFail($id);
+
+                if (!$pendaftar->nomor_tes) {
+                    throw new \RuntimeException('Pendaftar belum memiliki nomor tes.');
+                }
+
+                $rule = $this->nomorService->resolveRule(\App\Models\NomorRule::JENIS_TES, $pendaftar);
+                if (!$rule) {
+                    throw new \RuntimeException('Rule nomor tes untuk pendaftar ini tidak ditemukan.');
+                }
+
+                $sequence = \App\Models\NomorSequence::where('nomor_rule_id', $rule->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$sequence || $sequence->last_generated_value !== $pendaftar->nomor_tes) {
+                    throw new \RuntimeException('Nomor tes pendaftar bukan nomor terakhir yang digenerate.');
+                }
+
+                $currentNumber = $this->extractNomorUrut($pendaftar->nomor_tes);
+                if (!$currentNumber || $currentNumber !== (int) $sequence->last_number) {
+                    throw new \RuntimeException('Nomor tes tidak cocok dengan counter terakhir.');
+                }
+
+                $previous = $this->getPreviousNomorTesRecord($pendaftar);
+                $previousNumber = $previous ? $this->extractNomorUrut($previous->nomor_tes) : 0;
+
+                if ($previousNumber !== $currentNumber - 1) {
+                    throw new \RuntimeException('Ada ketidaksesuaian urutan nomor terakhir. Undo dibatalkan agar data aman.');
+                }
+
+                $relations = $this->getNomorTesBlockingRelations($pendaftar->id);
+                if (!empty($relations)) {
+                    throw new \RuntimeException('Nomor tes sudah dipakai pada data lain: ' . implode(', ', $relations));
+                }
+
+                $oldValues = [
+                    'nomor_tes' => $pendaftar->nomor_tes,
+                    'is_finalisasi' => $pendaftar->is_finalisasi,
+                    'tanggal_finalisasi' => optional($pendaftar->tanggal_finalisasi)->toDateTimeString(),
+                    'status_verifikasi' => $pendaftar->status_verifikasi,
+                    'verification_hash' => $pendaftar->verification_hash,
+                    'sequence_last_number' => $sequence->last_number,
+                    'sequence_last_generated_value' => $sequence->last_generated_value,
+                ];
+
+                $nomorDibatalkan = $pendaftar->nomor_tes;
+
+                $pendaftar->forceFill([
+                    'nomor_tes' => null,
+                    'is_finalisasi' => false,
+                    'tanggal_finalisasi' => null,
+                    'status_verifikasi' => 'pending',
+                    'verification_hash' => null,
+                ])->save();
+
+                $sequence->forceFill([
+                    'last_number' => $previousNumber,
+                    'last_generated_value' => $previous?->nomor_tes,
+                    'last_generated_at' => $previous?->updated_at,
+                ])->save();
+
+                ActivityLog::create([
+                    'user_id' => auth()->id(),
+                    'action' => 'update',
+                    'model_type' => CalonSiswa::class,
+                    'model_id' => $pendaftar->id,
+                    'description' => "Membatalkan generate nomor tes terakhir: {$nomorDibatalkan} untuk {$pendaftar->nama_lengkap} (NISN: {$pendaftar->nisn})",
+                    'old_values' => json_encode($oldValues),
+                    'new_values' => json_encode([
+                        'nomor_tes' => null,
+                        'is_finalisasi' => false,
+                        'tanggal_finalisasi' => null,
+                        'status_verifikasi' => 'pending',
+                        'verification_hash' => null,
+                        'sequence_last_number' => $previousNumber,
+                        'sequence_last_generated_value' => $previous?->nomor_tes,
+                    ]),
+                    'ip_address' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ]);
+
+                return [
+                    'nomor_dibatalkan' => $nomorDibatalkan,
+                    'sequence_kembali_ke' => $previous?->nomor_tes,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Nomor tes terakhir berhasil dibatalkan. Status finalisasi ikut dibatalkan.',
+                'data' => $result,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    private function getNomorTesUndoInfo(CalonSiswa $pendaftar): array
+    {
+        $info = [
+            'available' => false,
+            'can_undo' => false,
+            'reason' => null,
+            'rule' => null,
+            'sequence' => null,
+            'last_owner' => null,
+            'previous_owner' => null,
+            'blocking_relations' => [],
+            'latest_print_log' => null,
+        ];
+
+        if (!$pendaftar->nomor_tes) {
+            $info['reason'] = 'Pendaftar belum memiliki nomor tes.';
+            return $info;
+        }
+
+        $rule = $this->nomorService->resolveRule(\App\Models\NomorRule::JENIS_TES, $pendaftar);
+        if (!$rule) {
+            $info['reason'] = 'Rule nomor tes tidak ditemukan.';
+            return $info;
+        }
+
+        $sequence = \App\Models\NomorSequence::where('nomor_rule_id', $rule->id)->first();
+        if (!$sequence) {
+            $info['reason'] = 'Sequence nomor tes belum tersedia.';
+            return $info;
+        }
+
+        $lastOwner = $sequence->last_generated_value
+            ? CalonSiswa::where('nomor_tes', $sequence->last_generated_value)->first()
+            : null;
+        $previousOwner = $this->getPreviousNomorTesRecord($lastOwner ?: $pendaftar);
+        $blockingRelations = $this->getNomorTesBlockingRelations($pendaftar->id);
+        $latestPrintLog = ActivityLog::where('model_type', CalonSiswa::class)
+            ->where('model_id', $pendaftar->id)
+            ->where('action', 'print')
+            ->where('description', 'like', '%kartu ujian%')
+            ->latest()
+            ->first();
+
+        $info = array_merge($info, [
+            'available' => true,
+            'rule' => $rule,
+            'sequence' => $sequence,
+            'last_owner' => $lastOwner,
+            'previous_owner' => $previousOwner,
+            'blocking_relations' => $blockingRelations,
+            'latest_print_log' => $latestPrintLog,
+        ]);
+
+        if (!$lastOwner || $lastOwner->id !== $pendaftar->id) {
+            $info['reason'] = 'Nomor tes pendaftar bukan nomor terakhir yang digenerate.';
+            return $info;
+        }
+
+        if (!empty($blockingRelations)) {
+            $info['reason'] = 'Nomor tes sudah dipakai pada data lain: ' . implode(', ', $blockingRelations);
+            return $info;
+        }
+
+        $currentNumber = $this->extractNomorUrut($pendaftar->nomor_tes);
+        $previousNumber = $previousOwner ? $this->extractNomorUrut($previousOwner->nomor_tes) : 0;
+        if (!$currentNumber || $previousNumber !== $currentNumber - 1) {
+            $info['reason'] = 'Urutan nomor terakhir tidak bersebelahan dengan nomor sebelumnya.';
+            return $info;
+        }
+
+        $info['can_undo'] = true;
+        return $info;
+    }
+
+    private function getPreviousNomorTesRecord(CalonSiswa $pendaftar): ?CalonSiswa
+    {
+        if (!$pendaftar->nomor_tes) {
+            return null;
+        }
+
+        $currentNumber = $this->extractNomorUrut($pendaftar->nomor_tes);
+        $prefix = preg_replace('/-\d+$/', '', $pendaftar->nomor_tes);
+
+        if (!$currentNumber || !$prefix) {
+            return null;
+        }
+
+        return CalonSiswa::where('id', '!=', $pendaftar->id)
+            ->where('nomor_tes', 'like', $prefix . '-%')
+            ->select('*')
+            ->selectRaw("CAST(SUBSTRING_INDEX(nomor_tes, '-', -1) AS UNSIGNED) as nomor_urut_tes")
+            ->having('nomor_urut_tes', '<', $currentNumber)
+            ->orderByDesc('nomor_urut_tes')
+            ->first();
+    }
+
+    private function extractNomorUrut(?string $nomor): ?int
+    {
+        if (!$nomor || !preg_match('/-(\d+)$/', $nomor, $matches)) {
+            return null;
+        }
+
+        return (int) $matches[1];
+    }
+
+    private function getNomorTesBlockingRelations(string $calonSiswaId): array
+    {
+        $checks = [
+            'jadwal peserta' => ['jadwal_peserta', 'calon_siswa_id'],
+            'peserta ruang' => ['peserta_ruang', 'calon_siswa_id'],
+            'nilai seleksi' => ['nilai_seleksi', 'calon_siswa_id'],
+            'nilai CBT' => ['nilai_cbt', 'calon_siswa_id'],
+            'kelulusan' => ['kelulusan', 'calon_siswa_id'],
+        ];
+
+        $blocked = [];
+        foreach ($checks as $label => [$table, $column]) {
+            if (Schema::hasTable($table) && Schema::hasColumn($table, $column) && DB::table($table)->where($column, $calonSiswaId)->exists()) {
+                $blocked[] = $label;
+            }
+        }
+
+        return $blocked;
     }
 
     /**
