@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\VerificationController;
+use App\Http\Controllers\Api\Internal\SimansaSyncController;
 
 Route::get('/', function () {
     return redirect()->route('ppdb.landing');
@@ -11,6 +12,11 @@ Route::get('/', function () {
 Route::prefix('verify')->group(function () {
     Route::get('/bukti/{hash}', [VerificationController::class, 'verifyBukti'])->name('verify.bukti');
     Route::get('/admin/{hash}', [VerificationController::class, 'adminAccess'])->name('verify.admin')->middleware('auth');
+});
+
+Route::prefix('api/internal/simansa')->name('api.internal.simansa.')->group(function () {
+    Route::get('/pendaftar', [SimansaSyncController::class, 'pendaftar'])->name('pendaftar');
+    Route::get('/dokumen/{dokumen}/download', [SimansaSyncController::class, 'dokumen'])->name('dokumen');
 });
 
 // Laravolt Indonesia AJAX Routes

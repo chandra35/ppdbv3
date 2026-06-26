@@ -51,4 +51,8 @@ return [
         'ssl_verify' => env('EMIS_SSL_VERIFY', false), // Set true di production jika tidak ada masalah SSL
     ],
 
+    'simansa_sync' => [
+        'token' => env('SIMANSA_SYNC_TOKEN'),
+    ],
+
 ];
