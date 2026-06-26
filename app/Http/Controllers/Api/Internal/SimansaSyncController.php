@@ -24,6 +24,8 @@ class SimansaSyncController extends Controller
             'tahun_mulai' => 'nullable|integer|min:2000|max:2100',
             'tahun_selesai' => 'nullable|integer|min:2000|max:2100',
             'limit' => 'nullable|integer|min:1|max:100',
+            'per_page' => 'nullable|integer|min:1|max:200',
+            'page' => 'nullable|integer|min:1|max:1000',
             'include_documents' => 'nullable|boolean',
         ]);
 
@@ -57,13 +59,39 @@ class SimansaSyncController extends Controller
 
         $this->applyTahunFilter($query, $validated);
 
-        $rows = $query
+        $limit = (int) ($validated['limit'] ?? 0);
+        $perPage = (int) ($validated['per_page'] ?? ($limit ?: 20));
+        $perPage = max(1, min($perPage, 200));
+        $page = (int) ($validated['page'] ?? 1);
+
+        if ($ids->isNotEmpty()) {
+            $rows = $query->orderBy('nama_lengkap')->limit($perPage)->get();
+
+            return response()->json([
+                'data' => $rows->map(fn ($calon) => $this->formatCalon($calon, (bool) ($validated['include_documents'] ?? false)))->values(),
+                'meta' => [
+                    'current_page' => 1,
+                    'per_page' => $perPage,
+                    'total' => $rows->count(),
+                    'last_page' => 1,
+                ],
+            ]);
+        }
+
+        $paginator = $query
             ->orderBy('nama_lengkap')
-            ->limit((int) ($validated['limit'] ?? 20))
-            ->get();
+            ->paginate($perPage, ['*'], 'page', $page);
 
         return response()->json([
-            'data' => $rows->map(fn ($calon) => $this->formatCalon($calon, (bool) ($validated['include_documents'] ?? false)))->values(),
+            'data' => $paginator->getCollection()
+                ->map(fn ($calon) => $this->formatCalon($calon, (bool) ($validated['include_documents'] ?? false)))
+                ->values(),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'last_page' => $paginator->lastPage(),
+            ],
         ]);
     }
 
