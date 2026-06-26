@@ -108,20 +108,10 @@ class SimansaSyncController extends Controller
         }
 
         $normalizedName = preg_replace('/[^0-9]/', '', (string) ($validated['tahun_nama'] ?? ''));
-        $tahunMulai = $validated['tahun_mulai'] ?? null;
-        $tahunSelesai = $validated['tahun_selesai'] ?? null;
-
-        $query->whereHas('tahunPelajaran', function ($q) use ($normalizedName, $tahunMulai, $tahunSelesai) {
-            $q->where(function ($yearQ) use ($normalizedName, $tahunMulai, $tahunSelesai) {
+        $query->whereHas('tahunPelajaran', function ($q) use ($normalizedName) {
+            $q->where(function ($yearQ) use ($normalizedName) {
                 if ($normalizedName !== '') {
                     $yearQ->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(nama, ' ', ''), '/', ''), '-', ''), '.', '') = ?", [$normalizedName]);
-                }
-
-                if ($tahunMulai && $tahunSelesai) {
-                    $yearQ->orWhere(function ($rangeQ) use ($tahunMulai, $tahunSelesai) {
-                        $rangeQ->where('tahun_mulai', $tahunMulai)
-                            ->where('tahun_selesai', $tahunSelesai);
-                    });
                 }
             });
         });
