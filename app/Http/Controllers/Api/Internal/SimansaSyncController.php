@@ -27,8 +27,10 @@ class SimansaSyncController extends Controller
             'per_page' => 'nullable|integer|min:1|max:200',
             'page' => 'nullable|integer|min:1|max:1000',
             'include_documents' => 'nullable|boolean',
+            'scope' => 'nullable|in:eligible,all',
         ]);
 
+        $scope = $validated['scope'] ?? 'eligible';
         $ids = collect(explode(',', (string) ($validated['ids'] ?? '')))
             ->map(fn ($id) => trim($id))
             ->filter()
@@ -36,14 +38,17 @@ class SimansaSyncController extends Controller
 
         $query = CalonSiswa::query()
             ->with(['tahunPelajaran', 'jalurPendaftaran', 'gelombangPendaftaran', 'kelulusan'])
-            ->whereNull('deleted_at')
-            ->whereHas('kelulusan', fn ($q) => $q->where('status', 'lulus'))
-            ->whereExists(function ($q) {
+            ->whereNull('deleted_at');
+
+        if ($scope === 'eligible') {
+            $query->whereHas('kelulusan', fn ($q) => $q->where('status', 'lulus'))
+                ->whereExists(function ($q) {
                 $q->select(DB::raw(1))
                     ->from('registrasis')
                     ->whereColumn('registrasis.calon_siswa_id', 'calon_siswas.id')
                     ->whereNull('registrasis.deleted_at');
             });
+        }
 
         if ($ids->isNotEmpty()) {
             $query->whereIn('id', $ids);
@@ -152,6 +157,7 @@ class SimansaSyncController extends Controller
             ->whereNull('deleted_at')
             ->latest('tanggal_registrasi')
             ->first();
+        $kelulusan = $calon->kelulusan;
 
         $documents = $includeDocuments
             ? $calon->dokumen()->whereNull('deleted_at')->orderBy('jenis_dokumen')->get()
@@ -203,8 +209,11 @@ class SimansaSyncController extends Controller
             'jurusan_awal' => $registrasi?->jurusan_awal,
             'jurusan_final' => $registrasi?->jurusan_final,
             'pindah_jurusan' => (bool) ($registrasi?->pindah_jurusan ?? false),
+            'status_kelulusan' => $kelulusan?->status,
+            'is_lulus' => $kelulusan?->status === 'lulus',
+            'has_registrasi_komite' => (bool) $registrasi,
             'tanggal_registrasi_komite' => optional($registrasi?->tanggal_registrasi)->toDateTimeString(),
-            'tanggal_kelulusan' => optional($calon->kelulusan?->tanggal_kelulusan)->toDateTimeString(),
+            'tanggal_kelulusan' => optional($kelulusan?->tanggal_kelulusan)->toDateTimeString(),
             'ortu' => $calon->ortu ? $calon->ortu->toArray() : null,
             'documents_count' => $calon->dokumen()->whereNull('deleted_at')->count(),
             'documents' => $documents->map(fn ($dokumen) => $this->formatDokumen($dokumen))->values(),
