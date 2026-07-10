@@ -1882,6 +1882,7 @@ class PendaftarController extends Controller
         $validated = $request->validate([
             'gelombang_nomor_tes_id' => ['required', 'uuid', 'exists:gelombang_pendaftaran,id'],
             'regenerate_nomor_tes' => ['nullable', 'boolean'],
+            'allow_unfinalized_print' => ['nullable', 'boolean'],
         ]);
 
         try {
@@ -1905,12 +1906,14 @@ class PendaftarController extends Controller
                 }
 
                 $regenerate = (bool) ($validated['regenerate_nomor_tes'] ?? false);
+                $allowUnfinalizedPrint = (bool) ($validated['allow_unfinalized_print'] ?? false);
+                $willCreateNomorTes = $regenerate || !$pendaftar->nomor_tes;
                 if ($pendaftar->nomor_tes && !$regenerate) {
                     throw new \RuntimeException('Pendaftar sudah punya nomor tes. Aktifkan opsi generate ulang untuk membuat nomor pengganti.');
                 }
 
-                if (!$pendaftar->nomor_tes && !in_array($pendaftar->status_verifikasi, ['verified', 'approved'], true)) {
-                    throw new \RuntimeException('Pendaftar belum terverifikasi. Verifikasi dokumen terlebih dahulu sebelum generate nomor tes.');
+                if ($willCreateNomorTes && !in_array($pendaftar->status_verifikasi, ['verified', 'approved'], true) && !$allowUnfinalizedPrint) {
+                    throw new \RuntimeException('Pendaftar belum terverifikasi. Centang opsi cetak tanpa finalisasi jika nomor tes perlu dibuat untuk layanan langsung.');
                 }
 
                 $oldValues = [
@@ -1931,11 +1934,16 @@ class PendaftarController extends Controller
                 if (!$nomorTesBaru) {
                     $pendaftar->refresh();
                     $nomorTesBaru = $this->nomorService->generateNomorTes($pendaftar);
-                    $pendaftar->forceFill([
+                    $updates = [
                         'nomor_tes' => $nomorTesBaru,
-                        'is_finalisasi' => true,
-                        'tanggal_finalisasi' => $pendaftar->tanggal_finalisasi ?: now(),
-                    ])->save();
+                    ];
+
+                    if (!$allowUnfinalizedPrint) {
+                        $updates['is_finalisasi'] = true;
+                        $updates['tanggal_finalisasi'] = $pendaftar->tanggal_finalisasi ?: now();
+                    }
+
+                    $pendaftar->forceFill($updates)->save();
                 }
 
                 ActivityLog::create([
@@ -1947,15 +1955,17 @@ class PendaftarController extends Controller
                         . ($pendaftar->gelombangPendaftaran?->nama ?? '-')
                         . " -> {$targetGelombang->nama}; nomor lama: "
                         . ($nomorTesLama ?: '-')
-                        . ", nomor baru: {$nomorTesBaru}",
+                        . ", nomor baru: {$nomorTesBaru}"
+                        . ($allowUnfinalizedPrint ? ' (cetak tanpa finalisasi)' : ''),
                     'old_values' => json_encode($oldValues),
                     'new_values' => json_encode([
                         'gelombang_pendaftaran_id' => $pendaftar->gelombang_pendaftaran_id,
                         'gelombang_nomor_tes_id' => $targetGelombang->id,
                         'nomor_tes' => $nomorTesBaru,
                         'nomor_tes_void' => $nomorTesLama ?: null,
-                        'is_finalisasi' => true,
+                        'is_finalisasi' => $allowUnfinalizedPrint ? $pendaftar->is_finalisasi : true,
                         'status_verifikasi' => $pendaftar->status_verifikasi,
+                        'allow_unfinalized_print' => $allowUnfinalizedPrint,
                     ]),
                     'ip_address' => request()->ip(),
                     'user_agent' => request()->userAgent(),
@@ -1966,12 +1976,16 @@ class PendaftarController extends Controller
                     'gelombang_nomor_tes' => $targetGelombang->nama,
                     'nomor_tes_lama' => $nomorTesLama,
                     'nomor_tes_baru' => $nomorTesBaru,
+                    'is_finalisasi' => $pendaftar->fresh()->is_finalisasi,
+                    'allow_unfinalized_print' => $allowUnfinalizedPrint,
                 ];
             });
 
             return response()->json([
                 'success' => true,
-                'message' => 'Gelombang nomor tes berhasil diatur dan nomor tes sudah digenerate sesuai gelombang tujuan.',
+                'message' => ($result['allow_unfinalized_print'] ?? false)
+                    ? 'Nomor tes berhasil digenerate untuk cetak kartu tanpa finalisasi. Status pendaftar tetap belum final.'
+                    : 'Gelombang nomor tes berhasil diatur dan nomor tes sudah digenerate sesuai gelombang tujuan.',
                 'data' => $result,
             ]);
         } catch (\Throwable $e) {
@@ -2257,7 +2271,8 @@ class PendaftarController extends Controller
             'user'
         ])->findOrFail($id);
 
-        if (!$calonSiswa->is_finalisasi) {
+        $allowUnfinalized = request()->boolean('allow_unfinalized') && $calonSiswa->nomor_tes;
+        if (!$calonSiswa->is_finalisasi && !$allowUnfinalized) {
             return redirect()->route('admin.pendaftar.show', $id)
                 ->with('error', 'Pendaftar belum difinalisasi, tidak dapat mencetak kartu ujian');
         }
@@ -2294,7 +2309,8 @@ class PendaftarController extends Controller
             'user'
         ])->findOrFail($id);
 
-        if (!$calonSiswa->is_finalisasi) {
+        $allowUnfinalized = request()->boolean('allow_unfinalized') && $calonSiswa->nomor_tes;
+        if (!$calonSiswa->is_finalisasi && !$allowUnfinalized) {
             return redirect()->route('admin.pendaftar.show', $id)
                 ->with('error', 'Pendaftar belum difinalisasi, tidak dapat mencetak kartu ujian');
         }

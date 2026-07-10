@@ -515,10 +515,16 @@ dl.row dt {
                             <i class="fas fa-print"></i> Cetak Registrasi
                         </a>
                         @endif
-                        @if($pendaftar->is_finalisasi && $pendaftar->nomor_tes && auth()->user()->hasPermission('pendaftar.cetak-ujian'))
-                        <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#kartuUjianModal">
-                            <i class="fas fa-id-card"></i> Cetak Kartu Ujian
-                        </button>
+                        @if($pendaftar->nomor_tes && auth()->user()->hasPermission('pendaftar.cetak-ujian'))
+                            @if($pendaftar->is_finalisasi)
+                            <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#kartuUjianModal">
+                                <i class="fas fa-id-card"></i> Cetak Kartu Ujian
+                            </button>
+                            @else
+                            <a href="{{ route('admin.pendaftar.cetak-ujian', $pendaftar->id) }}?allow_unfinalized=1" class="btn btn-warning btn-sm" target="_blank" title="Cetak kartu ujian sementara tanpa finalisasi">
+                                <i class="fas fa-id-card"></i> Cetak Kartu <small>(Belum Final)</small>
+                            </a>
+                            @endif
                         @endif
                         @if(auth()->user()->hasPermission('pendaftar.upload-dokumen'))
                         <button type="button" class="btn btn-purple btn-sm" data-toggle="modal" data-target="#uploadDokumenModal">
@@ -3317,6 +3323,10 @@ function setGelombangNomorTes(hasNomorTes) {
     const previewNomor = escapeHtml(selectedOption.data('preview-nomor') || '');
     const previewRule = escapeHtml(selectedOption.data('preview-rule') || '');
     const previewMessage = escapeHtml(selectedOption.data('preview-message') || '');
+    const isFinalisasi = {{ $pendaftar->is_finalisasi ? 'true' : 'false' }};
+    const statusVerifikasi = '{{ $pendaftar->status_verifikasi }}';
+    const needsUnfinalizedOption = !isFinalisasi;
+    const cetakKartuUrl = '{{ route("admin.pendaftar.cetak-ujian", $pendaftar->id) }}?allow_unfinalized=1';
 
     if (!gelombangId) {
         Swal.fire('Belum Ada Gelombang', 'Pilih gelombang aktif tujuan nomor tes terlebih dahulu.', 'warning');
@@ -3340,8 +3350,22 @@ function setGelombangNomorTes(hasNomorTes) {
               '<ul>' +
               '<li>Gelombang asal pendaftaran tetap disimpan sebagai histori</li>' +
               '<li>Rule dan sequence nomor tes memakai gelombang tujuan</li>' +
-              (hasNomorTes ? '<li>Nomor tes lama akan dicatat sebagai void pada log audit</li>' : '<li>Pendaftar akan difinalisasi dan diberi nomor tes</li>') +
+              (hasNomorTes ? '<li>Nomor tes lama akan dicatat sebagai void pada log audit</li>' : '<li>Nomor tes akan dibuat dari rule gelombang tujuan</li>') +
               '</ul>' +
+              (needsUnfinalizedOption
+                ? '<div class="alert alert-warning py-2 px-3 mb-3">' +
+                  '<div class="form-check">' +
+                  '<input class="form-check-input" type="checkbox" id="swalAllowUnfinalizedPrint">' +
+                  '<label class="form-check-label" for="swalAllowUnfinalizedPrint">' +
+                  '<strong>Tetap cetak meskipun belum finalisasi</strong>' +
+                  '</label>' +
+                  '</div>' +
+                  '<small class="d-block mt-1">Gunakan jika pendaftar belum upload dokumen/lengkap, tetapi kartu ujian perlu dicetak untuk layanan langsung. Status finalisasi dan verifikasi tidak akan diubah.</small>' +
+                  (statusVerifikasi !== 'verified' && statusVerifikasi !== 'approved'
+                    ? '<small class="d-block mt-1 text-danger">Karena status masih belum terverifikasi, opsi ini wajib dicentang agar nomor dapat dibuat.</small>'
+                    : '') +
+                  '</div>'
+                : '') +
               '<p class="text-danger"><strong>Perhatian:</strong> setelah nomor baru dibuat, gunakan nomor baru untuk cetak kartu ujian dan sinkronisasi berikutnya.</p>' +
               '</div>',
         icon: 'question',
@@ -3350,11 +3374,17 @@ function setGelombangNomorTes(hasNomorTes) {
         cancelButtonColor: '#6c757d',
         confirmButtonText: '<i class="fas fa-sync-alt"></i> Ya, Proses',
         cancelButtonText: '<i class="fas fa-times"></i> Batal',
-        reverseButtons: true
+        reverseButtons: true,
+        preConfirm: () => {
+            return {
+                allowUnfinalizedPrint: needsUnfinalizedOption && $('#swalAllowUnfinalizedPrint').is(':checked')
+            };
+        }
     }).then((result) => {
         if (!result.isConfirmed) {
             return;
         }
+        const allowUnfinalizedPrint = result.value?.allowUnfinalizedPrint ? 1 : 0;
 
         Swal.fire({
             title: 'Memproses nomor tes',
@@ -3371,16 +3401,22 @@ function setGelombangNomorTes(hasNomorTes) {
             data: {
                 _token: '{{ csrf_token() }}',
                 gelombang_nomor_tes_id: gelombangId,
-                regenerate_nomor_tes: hasNomorTes ? 1 : 0
+                regenerate_nomor_tes: hasNomorTes ? 1 : 0,
+                allow_unfinalized_print: allowUnfinalizedPrint
             },
             success: function(response) {
                 const data = response.data || {};
+                const printButton = data.allow_unfinalized_print
+                    ? '<p class="mt-3 mb-0"><a href="' + cetakKartuUrl + '" target="_blank" class="btn btn-warning btn-sm"><i class="fas fa-id-card"></i> Cetak Kartu Ujian Sekarang</a></p>'
+                    : '';
                 Swal.fire({
                     title: 'Berhasil!',
                     html: '<div class="text-left">' +
                           '<p>' + response.message + '</p>' +
                           '<p class="mb-1"><strong>Nomor lama:</strong> <code>' + (data.nomor_tes_lama || '-') + '</code></p>' +
                           '<p class="mb-0"><strong>Nomor baru:</strong> <code>' + (data.nomor_tes_baru || '-') + '</code></p>' +
+                          (data.allow_unfinalized_print ? '<p class="mt-2 mb-0 text-warning"><strong>Status:</strong> belum finalisasi, kartu dicetak sementara.</p>' : '') +
+                          printButton +
                           '</div>',
                     icon: 'success',
                     confirmButtonText: 'OK'
