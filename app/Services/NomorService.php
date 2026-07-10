@@ -42,6 +42,32 @@ class NomorService
         return $this->generateFromRule($rule, $calonSiswa);
     }
 
+    public function previewNomorTes(CalonSiswa $calonSiswa): array
+    {
+        $rule = $this->resolveRule(NomorRule::JENIS_TES, $calonSiswa);
+
+        if ($rule) {
+            $rule->loadMissing(['sequence', 'sourceRule.sequence']);
+            $nextNumber = ($rule->sequence?->last_number ?? $this->initialLastNumber($rule)) + 1;
+
+            if ($rule->nomor_akhir && $nextNumber > $rule->nomor_akhir) {
+                return [
+                    'nomor' => null,
+                    'rule' => $rule->nama_rule,
+                    'message' => "Range nomor untuk rule {$rule->nama_rule} sudah habis.",
+                ];
+            }
+
+            return [
+                'nomor' => strtr($rule->format, $this->buildContext($rule, $calonSiswa, $nextNumber)),
+                'rule' => $rule->nama_rule,
+                'message' => null,
+            ];
+        }
+
+        return $this->previewLegacyNomorTes($calonSiswa);
+    }
+
     public function preview(NomorRule $rule, ?CalonSiswa $calonSiswa = null): string
     {
         $nextNumber = max(1, (int) ($rule->nomor_awal ?: 1));
@@ -238,5 +264,39 @@ class NomorService
                 $format
             );
         });
+    }
+
+    protected function previewLegacyNomorTes(CalonSiswa $calonSiswa): array
+    {
+        $settings = PpdbSettings::first();
+        if (!$settings) {
+            return [
+                'nomor' => null,
+                'rule' => 'Legacy',
+                'message' => 'Pengaturan PPDB belum tersedia untuk preview nomor tes.',
+            ];
+        }
+
+        $tahunNama = $calonSiswa->tahunPelajaran?->nama ?? date('Y');
+        $tahun = explode('/', (string) $tahunNama)[0] ?? date('Y');
+        $gelombang = $calonSiswa->gelombangNomorTes ?: $calonSiswa->gelombangPendaftaran;
+        $jalur = $gelombang?->jalur ?: $calonSiswa->jalurPendaftaran;
+        $jalurCode = $jalur?->kode ?: strtoupper(substr($jalur?->nama ?? 'REG', 0, 3));
+        $gelombangCode = 'G' . ($gelombang?->urutan ?? 1);
+        $counters = $settings->nomor_tes_counter ?? [];
+        $counterKey = (string) ($calonSiswa->gelombang_nomor_tes_id ?: $calonSiswa->jalur_pendaftaran_id);
+        $counter = ((int) ($counters[$counterKey] ?? 0)) + 1;
+        $nomor = str_pad((string) $counter, (int) ($settings->nomor_tes_digit ?? 4), '0', STR_PAD_LEFT);
+        $format = $settings->nomor_tes_format ?? '{PREFIX}-{TAHUN}-{JALUR}-{NOMOR}';
+
+        return [
+            'nomor' => str_replace(
+                ['{PREFIX}', '{TAHUN}', '{JALUR}', '{GELOMBANG}', '{NOMOR}'],
+                [$settings->nomor_tes_prefix ?? 'NTS', $tahun, $jalurCode, $gelombangCode, $nomor],
+                $format
+            ),
+            'rule' => 'Legacy',
+            'message' => null,
+        ];
     }
 }

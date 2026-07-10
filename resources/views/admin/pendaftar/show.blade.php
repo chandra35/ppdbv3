@@ -622,8 +622,14 @@ dl.row dt {
                     <select id="gelombangNomorTesId" class="form-control form-control-sm" {{ $gelombangNomorTesOptions->isEmpty() ? 'disabled' : '' }}>
                         @forelse($gelombangNomorTesOptions as $gelombangOption)
                             <option value="{{ $gelombangOption->id }}"
+                                data-preview-nomor="{{ $gelombangOption->preview_nomor_tes }}"
+                                data-preview-rule="{{ $gelombangOption->preview_nomor_tes_rule }}"
+                                data-preview-message="{{ $gelombangOption->preview_nomor_tes_message }}"
                                 {{ ($pendaftar->gelombang_nomor_tes_id ?: $pendaftar->gelombang_pendaftaran_id) === $gelombangOption->id ? 'selected' : '' }}>
                                 {{ $gelombangOption->nama }} - {{ $gelombangOption->jalur?->nama ?? 'Jalur' }}
+                                @if($gelombangOption->preview_nomor_tes)
+                                    ({{ $gelombangOption->preview_nomor_tes }})
+                                @endif
                             </option>
                         @empty
                             <option value="">Tidak ada gelombang aktif untuk jalur ini</option>
@@ -3305,7 +3311,12 @@ function batalGenerateNomorTes() {
 
 function setGelombangNomorTes(hasNomorTes) {
     const gelombangId = $('#gelombangNomorTesId').val();
-    const gelombangText = $('#gelombangNomorTesId option:selected').text().trim();
+    const selectedOption = $('#gelombangNomorTesId option:selected');
+    const escapeHtml = (value) => $('<div>').text(value || '').html();
+    const gelombangText = escapeHtml(selectedOption.text().trim());
+    const previewNomor = escapeHtml(selectedOption.data('preview-nomor') || '');
+    const previewRule = escapeHtml(selectedOption.data('preview-rule') || '');
+    const previewMessage = escapeHtml(selectedOption.data('preview-message') || '');
 
     if (!gelombangId) {
         Swal.fire('Belum Ada Gelombang', 'Pilih gelombang aktif tujuan nomor tes terlebih dahulu.', 'warning');
@@ -3317,6 +3328,15 @@ function setGelombangNomorTes(hasNomorTes) {
         html: '<div class="text-left">' +
               '<p>Gelombang tujuan nomor tes:</p>' +
               '<p><strong>' + gelombangText + '</strong></p>' +
+              '<div class="alert alert-info py-2 px-3 mb-3">' +
+              '<small class="text-muted d-block">Nomor yang akan digenerate</small>' +
+              (previewNomor
+                ? '<code style="font-size:18px;font-weight:700;">' + previewNomor + '</code>'
+                : '<strong class="text-danger">Belum bisa dipreview</strong>') +
+              (previewRule ? '<small class="d-block mt-1">Rule: ' + previewRule + '</small>' : '') +
+              (previewMessage ? '<small class="d-block mt-1 text-danger">' + previewMessage + '</small>' : '') +
+              '<small class="d-block mt-1 text-muted">Nomor final dapat berubah jika ada admin lain generate nomor bersamaan.</small>' +
+              '</div>' +
               '<ul>' +
               '<li>Gelombang asal pendaftaran tetap disimpan sebagai histori</li>' +
               '<li>Rule dan sequence nomor tes memakai gelombang tujuan</li>' +

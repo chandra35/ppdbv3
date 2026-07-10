@@ -2069,7 +2069,19 @@ class PendaftarController extends Controller
                 }
             })
             ->ordered()
-            ->get();
+            ->get()
+            ->map(function (GelombangPendaftaran $gelombang) use ($pendaftar) {
+                $previewPendaftar = clone $pendaftar;
+                $previewPendaftar->setAttribute('gelombang_nomor_tes_id', $gelombang->id);
+                $previewPendaftar->setRelation('gelombangNomorTes', $gelombang);
+
+                $preview = $this->nomorService->previewNomorTes($previewPendaftar);
+                $gelombang->preview_nomor_tes = $preview['nomor'] ?? null;
+                $gelombang->preview_nomor_tes_rule = $preview['rule'] ?? null;
+                $gelombang->preview_nomor_tes_message = $preview['message'] ?? null;
+
+                return $gelombang;
+            });
     }
 
     private function getPreviousNomorTesRecord(CalonSiswa $pendaftar): ?CalonSiswa
