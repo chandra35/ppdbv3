@@ -28,6 +28,7 @@ class SimansaSyncController extends Controller
             'page' => 'nullable|integer|min:1|max:1000',
             'include_documents' => 'nullable|boolean',
             'scope' => 'nullable|in:eligible,all',
+            'smart' => 'nullable|boolean',
         ]);
 
         $scope = $validated['scope'] ?? 'eligible';
@@ -53,13 +54,17 @@ class SimansaSyncController extends Controller
         if ($ids->isNotEmpty()) {
             $query->whereIn('id', $ids);
         } elseif (!empty($validated['q'])) {
-            $like = '%' . str_replace(' ', '%', trim($validated['q'])) . '%';
-            $query->where(function ($q) use ($like) {
-                $q->where('nama_lengkap', 'like', $like)
-                    ->orWhere('nisn', 'like', $like)
-                    ->orWhere('nomor_registrasi', 'like', $like)
-                    ->orWhere('nomor_tes', 'like', $like);
-            });
+            if (!empty($validated['smart'])) {
+                $this->applySmartSearch($query, $validated['q']);
+            } else {
+                $like = '%' . str_replace(' ', '%', trim($validated['q'])) . '%';
+                $query->where(function ($q) use ($like) {
+                    $q->where('nama_lengkap', 'like', $like)
+                        ->orWhere('nisn', 'like', $like)
+                        ->orWhere('nomor_registrasi', 'like', $like)
+                        ->orWhere('nomor_tes', 'like', $like);
+                });
+            }
         }
 
         $this->applyTahunFilter($query, $validated);
@@ -148,6 +153,66 @@ class SimansaSyncController extends Controller
                 }
             });
         });
+    }
+
+    private function applySmartSearch($query, string $term): void
+    {
+        $normalized = $this->normalizeSearchTerm($term);
+        $compact = str_replace(' ', '', $normalized);
+        $tokens = collect(explode(' ', $normalized))
+            ->map(fn ($token) => trim($token))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($normalized === '') {
+            return;
+        }
+
+        $looseLike = '%' . str_replace(' ', '%', $normalized) . '%';
+        $compactLike = '%' . $compact . '%';
+
+        $query->where(function ($q) use ($term, $normalized, $compact, $tokens, $looseLike, $compactLike) {
+            $q->where('nama_lengkap', 'like', $looseLike)
+                ->orWhere('nisn', 'like', '%' . $term . '%')
+                ->orWhere('nomor_registrasi', 'like', '%' . $term . '%')
+                ->orWhere('nomor_tes', 'like', '%' . $term . '%')
+                ->orWhereRaw("LOWER(REPLACE(REPLACE(REPLACE(nama_lengkap, ' ', ''), '.', ''), '''', '')) LIKE ?", [$compactLike]);
+
+            if ($tokens->count() > 1) {
+                $q->orWhere(function ($nameQ) use ($tokens) {
+                    foreach ($tokens as $token) {
+                        if (strlen($token) === 1) {
+                            $nameQ->whereRaw('LOWER(nama_lengkap) REGEXP ?', ['(^|[[:space:].])' . preg_quote($token, '/')]);
+                        } else {
+                            $nameQ->where('nama_lengkap', 'like', '%' . $token . '%');
+                        }
+                    }
+                });
+            }
+
+            if (strlen($compact) > 1 && strlen($compact) <= 8) {
+                $q->orWhereRaw($this->initialsExpression() . ' LIKE ?', [$compact . '%']);
+            }
+        });
+    }
+
+    private function normalizeSearchTerm(?string $value): string
+    {
+        $value = strtolower(trim((string) $value));
+        $value = preg_replace('/[^a-z0-9]+/', ' ', $value);
+
+        return trim(preg_replace('/\s+/', ' ', $value));
+    }
+
+    private function initialsExpression(): string
+    {
+        return "LOWER(CONCAT(" .
+            "LEFT(SUBSTRING_INDEX(nama_lengkap, ' ', 1), 1)," .
+            "IF(LOCATE(' ', nama_lengkap) > 0, LEFT(SUBSTRING_INDEX(SUBSTRING_INDEX(nama_lengkap, ' ', 2), ' ', -1), 1), '')," .
+            "IF(LENGTH(nama_lengkap) - LENGTH(REPLACE(nama_lengkap, ' ', '')) >= 2, LEFT(SUBSTRING_INDEX(SUBSTRING_INDEX(nama_lengkap, ' ', 3), ' ', -1), 1), '')," .
+            "IF(LENGTH(nama_lengkap) - LENGTH(REPLACE(nama_lengkap, ' ', '')) >= 3, LEFT(SUBSTRING_INDEX(SUBSTRING_INDEX(nama_lengkap, ' ', 4), ' ', -1), 1), '')" .
+        "))";
     }
 
     private function formatCalon(CalonSiswa $calon, bool $includeDocuments): array
