@@ -597,6 +597,56 @@ dl.row dt {
     </div>
     @endif
 
+    @if(auth()->user()->hasPermission('verifikasi.verify'))
+    <div class="card card-outline card-info mb-3">
+        <div class="card-header">
+            <h3 class="card-title mb-0">
+                <i class="fas fa-route"></i> Konteks Gelombang Nomor Tes
+            </h3>
+        </div>
+        <div class="card-body p-2">
+            <div class="row align-items-end">
+                <div class="col-md-3">
+                    <small class="text-muted d-block">Gelombang asal daftar</small>
+                    <strong>{{ $pendaftar->gelombangPendaftaran?->nama ?? '-' }}</strong>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted d-block">Gelombang nomor tes</small>
+                    <strong>{{ $pendaftar->gelombangNomorTes?->nama ?? $pendaftar->gelombangPendaftaran?->nama ?? '-' }}</strong>
+                    @if(!$pendaftar->gelombang_nomor_tes_id)
+                        <small class="text-muted d-block">Mengikuti gelombang asal</small>
+                    @endif
+                </div>
+                <div class="col-md-3">
+                    <label class="mb-1">Gelombang aktif tujuan</label>
+                    <select id="gelombangNomorTesId" class="form-control form-control-sm" {{ $gelombangNomorTesOptions->isEmpty() ? 'disabled' : '' }}>
+                        @forelse($gelombangNomorTesOptions as $gelombangOption)
+                            <option value="{{ $gelombangOption->id }}"
+                                {{ ($pendaftar->gelombang_nomor_tes_id ?: $pendaftar->gelombang_pendaftaran_id) === $gelombangOption->id ? 'selected' : '' }}>
+                                {{ $gelombangOption->nama }} - {{ $gelombangOption->jalur?->nama ?? 'Jalur' }}
+                            </option>
+                        @empty
+                            <option value="">Tidak ada gelombang aktif untuk jalur ini</option>
+                        @endforelse
+                    </select>
+                </div>
+                <div class="col-md-3 text-right">
+                    <button type="button"
+                            class="btn btn-info btn-sm"
+                            onclick="setGelombangNomorTes({{ $pendaftar->nomor_tes ? 'true' : 'false' }})"
+                            {{ $gelombangNomorTesOptions->isEmpty() ? 'disabled' : '' }}>
+                        <i class="fas fa-sync-alt"></i>
+                        {{ $pendaftar->nomor_tes ? 'Generate Ulang Nomor Tes' : 'Generate Nomor Tes' }}
+                    </button>
+                </div>
+            </div>
+            <small class="text-muted d-block mt-2">
+                Gelombang asal tetap disimpan untuk histori. Nomor tes akan memakai rule gelombang aktif yang dipilih.
+            </small>
+        </div>
+    </div>
+    @endif
+
     @php
         // Exclude dokumen tambahan dari statistik verifikasi (hanya hitung dokumen yang diperlukan/required)
         $dokumenTambahanKeys = array_keys(\App\Models\CalonDokumen::DOKUMEN_TAMBAHAN);
@@ -691,6 +741,19 @@ dl.row dt {
                                     </span>
                                 @else
                                     -
+                                @endif
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><i class="fas fa-layer-group text-muted"></i> <strong>Gelombang Asal</strong></td>
+                            <td class="text-right">{{ $pendaftar->gelombangPendaftaran?->nama ?? '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td><i class="fas fa-ticket-alt text-muted"></i> <strong>Gelombang No. Tes</strong></td>
+                            <td class="text-right">
+                                {{ $pendaftar->gelombangNomorTes?->nama ?? $pendaftar->gelombangPendaftaran?->nama ?? '-' }}
+                                @if(!$pendaftar->gelombang_nomor_tes_id)
+                                    <small class="text-muted d-block">default asal</small>
                                 @endif
                             </td>
                         </tr>
@@ -3237,6 +3300,82 @@ function batalGenerateNomorTes() {
                 }
             });
         }
+    });
+}
+
+function setGelombangNomorTes(hasNomorTes) {
+    const gelombangId = $('#gelombangNomorTesId').val();
+    const gelombangText = $('#gelombangNomorTesId option:selected').text().trim();
+
+    if (!gelombangId) {
+        Swal.fire('Belum Ada Gelombang', 'Pilih gelombang aktif tujuan nomor tes terlebih dahulu.', 'warning');
+        return;
+    }
+
+    Swal.fire({
+        title: hasNomorTes ? 'Generate Ulang Nomor Tes?' : 'Generate Nomor Tes?',
+        html: '<div class="text-left">' +
+              '<p>Gelombang tujuan nomor tes:</p>' +
+              '<p><strong>' + gelombangText + '</strong></p>' +
+              '<ul>' +
+              '<li>Gelombang asal pendaftaran tetap disimpan sebagai histori</li>' +
+              '<li>Rule dan sequence nomor tes memakai gelombang tujuan</li>' +
+              (hasNomorTes ? '<li>Nomor tes lama akan dicatat sebagai void pada log audit</li>' : '<li>Pendaftar akan difinalisasi dan diberi nomor tes</li>') +
+              '</ul>' +
+              '<p class="text-danger"><strong>Perhatian:</strong> setelah nomor baru dibuat, gunakan nomor baru untuk cetak kartu ujian dan sinkronisasi berikutnya.</p>' +
+              '</div>',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#17a2b8',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="fas fa-sync-alt"></i> Ya, Proses',
+        cancelButtonText: '<i class="fas fa-times"></i> Batal',
+        reverseButtons: true
+    }).then((result) => {
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        Swal.fire({
+            title: 'Memproses nomor tes',
+            html: 'Mohon tunggu, sistem sedang mengambil rule gelombang tujuan dan membuat nomor tes.',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        $.ajax({
+            url: '{{ route("admin.pendaftar.gelombang-nomor-tes", $pendaftar->id) }}',
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                gelombang_nomor_tes_id: gelombangId,
+                regenerate_nomor_tes: hasNomorTes ? 1 : 0
+            },
+            success: function(response) {
+                const data = response.data || {};
+                Swal.fire({
+                    title: 'Berhasil!',
+                    html: '<div class="text-left">' +
+                          '<p>' + response.message + '</p>' +
+                          '<p class="mb-1"><strong>Nomor lama:</strong> <code>' + (data.nomor_tes_lama || '-') + '</code></p>' +
+                          '<p class="mb-0"><strong>Nomor baru:</strong> <code>' + (data.nomor_tes_baru || '-') + '</code></p>' +
+                          '</div>',
+                    icon: 'success',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    location.reload();
+                });
+            },
+            error: function(xhr) {
+                let errorMsg = 'Terjadi kesalahan saat mengatur gelombang nomor tes.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                Swal.fire('Gagal Diproses', errorMsg, 'error');
+            }
+        });
     });
 }
 

@@ -52,8 +52,12 @@ class NomorService
 
     public function resolveRule(string $jenisNomor, CalonSiswa $calonSiswa): ?NomorRule
     {
+        $gelombangId = $jenisNomor === NomorRule::JENIS_TES
+            ? ($calonSiswa->gelombang_nomor_tes_id ?: $calonSiswa->gelombang_pendaftaran_id)
+            : $calonSiswa->gelombang_pendaftaran_id;
+
         $scopeCandidates = array_filter([
-            [NomorRule::SCOPE_GELOMBANG, $calonSiswa->gelombang_pendaftaran_id],
+            [NomorRule::SCOPE_GELOMBANG, $gelombangId],
             [NomorRule::SCOPE_JALUR, $calonSiswa->jalur_pendaftaran_id],
             [NomorRule::SCOPE_TAHUN, $calonSiswa->tahun_pelajaran_id],
             [NomorRule::SCOPE_GLOBAL, null],
@@ -121,7 +125,10 @@ class NomorService
         $tahun = explode('/', $tahunNama)[0] ?? date('Y');
         $jalur = $calonSiswa?->jalurPendaftaran?->kode
             ?? strtoupper(substr($calonSiswa?->jalurPendaftaran?->nama ?? 'REG', 0, 3));
-        $gelombang = 'G' . ($calonSiswa?->gelombangPendaftaran?->urutan ?? 1);
+        $gelombangModel = $rule->jenis_nomor === NomorRule::JENIS_TES
+            ? ($calonSiswa?->gelombangNomorTes ?: $calonSiswa?->gelombangPendaftaran)
+            : $calonSiswa?->gelombangPendaftaran;
+        $gelombang = 'G' . ($gelombangModel?->urutan ?? 1);
 
         return [
             '{PREFIX}' => strtoupper((string) ($rule->prefix ?? 'NUM')),
@@ -203,8 +210,10 @@ class NomorService
             $tahunNama = $calonSiswa->tahunPelajaran?->nama ?? date('Y');
             $tahun = explode('/', (string) $tahunNama)[0] ?? date('Y');
             $jalurCode = strtoupper(substr($calonSiswa->jalurPendaftaran->nama ?? 'REG', 0, 3));
+            $gelombang = $calonSiswa->gelombangNomorTes ?: $calonSiswa->gelombangPendaftaran;
+            $gelombangCode = 'G' . ($gelombang?->urutan ?? 1);
             $counters = $settings->nomor_tes_counter ?? [];
-            $jalurKey = (string) $calonSiswa->jalur_pendaftaran_id;
+            $jalurKey = (string) ($calonSiswa->gelombang_nomor_tes_id ?: $calonSiswa->jalur_pendaftaran_id);
             $counter = ((int) ($counters[$jalurKey] ?? 0)) + 1;
 
             $counters[$jalurKey] = $counter;
@@ -214,8 +223,8 @@ class NomorService
             $nomor = str_pad((string) $counter, (int) ($settings->nomor_tes_digit ?? 4), '0', STR_PAD_LEFT);
 
             return str_replace(
-                ['{PREFIX}', '{TAHUN}', '{JALUR}', '{NOMOR}'],
-                [$settings->nomor_tes_prefix ?? 'NTS', $tahun, $jalurCode, $nomor],
+                ['{PREFIX}', '{TAHUN}', '{JALUR}', '{GELOMBANG}', '{NOMOR}'],
+                [$settings->nomor_tes_prefix ?? 'NTS', $tahun, $jalurCode, $gelombangCode, $nomor],
                 $format
             );
         });

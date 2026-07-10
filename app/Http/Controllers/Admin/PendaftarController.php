@@ -865,6 +865,7 @@ class PendaftarController extends Controller
             'dokumen.cancelledBy',
             'jalurPendaftaran', 
             'gelombangPendaftaran',
+            'gelombangNomorTes',
             'riwayatGelombang.dariGelombang',
             'riwayatGelombang.keGelombang',
             'provinsiSiswa',
@@ -892,8 +893,9 @@ class PendaftarController extends Controller
             ->whereIn('jenis_dokumen', array_keys($dokumenTambahanOptions))
             ->values();
         $nomorTesUndoInfo = $this->getNomorTesUndoInfo($pendaftar);
+        $gelombangNomorTesOptions = $this->getGelombangNomorTesOptions($pendaftar);
         
-        return view('admin.pendaftar.show', compact('pendaftar', 'requiredDocs', 'dokumenLabels', 'dokumenTambahanOptions', 'dokumenTambahan', 'wajibLokasiRegistrasi', 'adminUploadDokumenOptions', 'adminUploadDokumenGroups', 'nomorTesUndoInfo'));
+        return view('admin.pendaftar.show', compact('pendaftar', 'requiredDocs', 'dokumenLabels', 'dokumenTambahanOptions', 'dokumenTambahan', 'wajibLokasiRegistrasi', 'adminUploadDokumenOptions', 'adminUploadDokumenGroups', 'nomorTesUndoInfo', 'gelombangNomorTesOptions'));
     }
 
     public function verify(Request $request, $id)
@@ -1869,6 +1871,120 @@ class PendaftarController extends Controller
         }
     }
 
+    /**
+     * Set gelombang yang dipakai untuk rule nomor tes, tanpa mengubah gelombang asal pendaftaran.
+     * Jika pendaftar sudah punya nomor tes, nomor lama dibuat void secara audit dan nomor baru digenerate.
+     */
+    public function setGelombangNomorTes(Request $request, $id)
+    {
+        $this->checkPermission('verifikasi.verify');
+
+        $validated = $request->validate([
+            'gelombang_nomor_tes_id' => ['required', 'uuid', 'exists:gelombang_pendaftaran,id'],
+            'regenerate_nomor_tes' => ['nullable', 'boolean'],
+        ]);
+
+        try {
+            $result = DB::transaction(function () use ($id, $validated) {
+                $pendaftar = CalonSiswa::with(['gelombangPendaftaran', 'gelombangNomorTes', 'jalurPendaftaran'])
+                    ->lockForUpdate()
+                    ->findOrFail($id);
+
+                $targetGelombang = GelombangPendaftaran::with('jalur')
+                    ->lockForUpdate()
+                    ->findOrFail($validated['gelombang_nomor_tes_id']);
+
+                if (!$targetGelombang->is_active || !in_array($targetGelombang->computed_status, [GelombangPendaftaran::STATUS_OPEN], true)) {
+                    throw new \RuntimeException('Gelombang tujuan nomor tes harus sedang aktif/dibuka.');
+                }
+
+                if ($pendaftar->jalur_pendaftaran_id && $targetGelombang->jalur_id !== $pendaftar->jalur_pendaftaran_id) {
+                    throw new \RuntimeException('Gelombang tujuan harus berada pada jalur pendaftaran yang sama.');
+                }
+
+                $targetTahunId = $targetGelombang->jalur?->tahun_pelajaran_id;
+                if ($pendaftar->tahun_pelajaran_id && $targetTahunId && $targetTahunId !== $pendaftar->tahun_pelajaran_id) {
+                    throw new \RuntimeException('Gelombang tujuan harus berada pada tahun pelajaran yang sama.');
+                }
+
+                $regenerate = (bool) ($validated['regenerate_nomor_tes'] ?? false);
+                if ($pendaftar->nomor_tes && !$regenerate) {
+                    throw new \RuntimeException('Pendaftar sudah punya nomor tes. Aktifkan opsi generate ulang untuk membuat nomor pengganti.');
+                }
+
+                if (!$pendaftar->nomor_tes && !in_array($pendaftar->status_verifikasi, ['verified', 'approved'], true)) {
+                    throw new \RuntimeException('Pendaftar belum terverifikasi. Verifikasi dokumen terlebih dahulu sebelum generate nomor tes.');
+                }
+
+                $oldValues = [
+                    'gelombang_pendaftaran_id' => $pendaftar->gelombang_pendaftaran_id,
+                    'gelombang_nomor_tes_id' => $pendaftar->gelombang_nomor_tes_id,
+                    'nomor_tes' => $pendaftar->nomor_tes,
+                    'is_finalisasi' => $pendaftar->is_finalisasi,
+                    'status_verifikasi' => $pendaftar->status_verifikasi,
+                ];
+
+                $nomorTesLama = $pendaftar->nomor_tes;
+                $pendaftar->forceFill([
+                    'gelombang_nomor_tes_id' => $targetGelombang->id,
+                    'nomor_tes' => $regenerate ? null : $pendaftar->nomor_tes,
+                ])->save();
+
+                $nomorTesBaru = $pendaftar->nomor_tes;
+                if (!$nomorTesBaru) {
+                    $pendaftar->refresh();
+                    $nomorTesBaru = $this->nomorService->generateNomorTes($pendaftar);
+                    $pendaftar->forceFill([
+                        'nomor_tes' => $nomorTesBaru,
+                        'is_finalisasi' => true,
+                        'tanggal_finalisasi' => $pendaftar->tanggal_finalisasi ?: now(),
+                    ])->save();
+                }
+
+                ActivityLog::create([
+                    'user_id' => auth()->id(),
+                    'action' => 'update',
+                    'model_type' => CalonSiswa::class,
+                    'model_id' => $pendaftar->id,
+                    'description' => "Mengatur gelombang nomor tes {$pendaftar->nama_lengkap}: "
+                        . ($pendaftar->gelombangPendaftaran?->nama ?? '-')
+                        . " -> {$targetGelombang->nama}; nomor lama: "
+                        . ($nomorTesLama ?: '-')
+                        . ", nomor baru: {$nomorTesBaru}",
+                    'old_values' => json_encode($oldValues),
+                    'new_values' => json_encode([
+                        'gelombang_pendaftaran_id' => $pendaftar->gelombang_pendaftaran_id,
+                        'gelombang_nomor_tes_id' => $targetGelombang->id,
+                        'nomor_tes' => $nomorTesBaru,
+                        'nomor_tes_void' => $nomorTesLama ?: null,
+                        'is_finalisasi' => true,
+                        'status_verifikasi' => $pendaftar->status_verifikasi,
+                    ]),
+                    'ip_address' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ]);
+
+                return [
+                    'gelombang_asal' => $pendaftar->gelombangPendaftaran?->nama,
+                    'gelombang_nomor_tes' => $targetGelombang->nama,
+                    'nomor_tes_lama' => $nomorTesLama,
+                    'nomor_tes_baru' => $nomorTesBaru,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Gelombang nomor tes berhasil diatur dan nomor tes sudah digenerate sesuai gelombang tujuan.',
+                'data' => $result,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
     private function getNomorTesUndoInfo(CalonSiswa $pendaftar): array
     {
         $info = [
@@ -1941,6 +2057,23 @@ class PendaftarController extends Controller
 
         $info['can_undo'] = true;
         return $info;
+    }
+
+    private function getGelombangNomorTesOptions(CalonSiswa $pendaftar)
+    {
+        return GelombangPendaftaran::with('jalur.tahunPelajaran')
+            ->where('is_active', true)
+            ->where('status', GelombangPendaftaran::STATUS_OPEN)
+            ->when($pendaftar->jalur_pendaftaran_id, fn ($query) => $query->where('jalur_id', $pendaftar->jalur_pendaftaran_id))
+            ->whereHas('jalur', function ($query) use ($pendaftar) {
+                $query->where('is_active', true);
+
+                if ($pendaftar->tahun_pelajaran_id) {
+                    $query->where('tahun_pelajaran_id', $pendaftar->tahun_pelajaran_id);
+                }
+            })
+            ->ordered()
+            ->get();
     }
 
     private function getPreviousNomorTesRecord(CalonSiswa $pendaftar): ?CalonSiswa

@@ -25,6 +25,7 @@ class CalonSiswa extends Model
         // PPDB fields
         'jalur_pendaftaran_id',
         'gelombang_pendaftaran_id',
+        'gelombang_nomor_tes_id',
         'nomor_registrasi',
         'status_verifikasi',
         'status_admisi',
@@ -201,6 +202,16 @@ class CalonSiswa extends Model
     public function gelombangPendaftaran(): BelongsTo
     {
         return $this->belongsTo(GelombangPendaftaran::class, 'gelombang_pendaftaran_id');
+    }
+
+    public function gelombangNomorTes(): BelongsTo
+    {
+        return $this->belongsTo(GelombangPendaftaran::class, 'gelombang_nomor_tes_id');
+    }
+
+    public function gelombangUntukNomorTes(): BelongsTo
+    {
+        return $this->gelombangNomorTes();
     }
 
     public function riwayatGelombang()
