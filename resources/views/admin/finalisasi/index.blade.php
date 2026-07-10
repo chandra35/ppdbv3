@@ -249,7 +249,7 @@
                             </span>
                             @elseif($isComplete)
                             <button type="button" class="btn btn-xs btn-success btn-finalisasi" 
-                                    data-id="{{ $p->id }}" data-nama="{{ $p->nama_lengkap }}" title="Finalisasi">
+                                    data-id="{{ $p->id }}" data-nama="{{ $p->nama_lengkap }}" data-noreg="{{ $p->nomor_registrasi }}" title="Finalisasi">
                                 <i class="fas fa-check"></i> Finalisasi
                             </button>
                             @else
@@ -292,6 +292,32 @@
                 <p>Apakah Anda yakin ingin memfinalisasi pendaftar:</p>
                 <h5 class="text-center text-primary" id="modalNamaPendaftar"></h5>
                 <hr>
+                <div id="singlePreviewLoading" class="text-center py-3">
+                    <i class="fas fa-spinner fa-spin"></i> Memuat preview nomor...
+                </div>
+                <div id="singlePreviewContent" style="display:none;">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Jalur</small>
+                            <strong id="singlePreviewJalur">-</strong>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Gelombang</small>
+                            <strong id="singlePreviewGelombang">-</strong>
+                        </div>
+                    </div>
+                    <div class="alert alert-success mt-3 mb-3">
+                        <small class="text-muted d-block">Nomor tes yang akan dipakai</small>
+                        <code id="singlePreviewNomorTes" style="font-size:18px;font-weight:700;">-</code>
+                        <small class="d-block mt-1">Rule/format: <span id="singlePreviewRule">-</span></small>
+                        <small class="d-block mt-1 text-muted" id="singlePreviewMessage"></small>
+                    </div>
+                    <div class="alert alert-light border mb-3">
+                        <small class="text-muted d-block">Nomor registrasi</small>
+                        <strong id="singlePreviewNomorRegistrasi">-</strong>
+                        <small class="d-block text-muted" id="singlePreviewNomorRegistrasiStatus"></small>
+                    </div>
+                </div>
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle"></i> Setelah difinalisasi:
                     <ul class="mb-0 mt-2">
@@ -304,7 +330,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-success" id="btnConfirmFinalisasi">
+                <button type="button" class="btn btn-success" id="btnConfirmFinalisasi" disabled>
                     <i class="fas fa-check"></i> Ya, Finalisasi
                 </button>
             </div>
@@ -324,13 +350,45 @@
             </div>
             <div class="modal-body">
                 <p>Apakah Anda yakin ingin memfinalisasi <strong id="batchCount">0</strong> pendaftar terpilih?</p>
+                <div id="batchPreviewLoading" class="text-center py-3">
+                    <i class="fas fa-spinner fa-spin"></i> Memuat preview batch...
+                </div>
+                <div id="batchPreviewContent" style="display:none;">
+                    <div class="row text-center mb-3">
+                        <div class="col-md-4">
+                            <small class="text-muted d-block">Valid</small>
+                            <strong class="text-success" id="batchPreviewValid">0</strong>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted d-block">Tidak valid</small>
+                            <strong class="text-danger" id="batchPreviewInvalid">0</strong>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted d-block">Nomor tes baru</small>
+                            <strong class="text-primary" id="batchPreviewGenerateCount">0</strong>
+                        </div>
+                    </div>
+                    <div class="table-responsive" style="max-height:260px;overflow:auto;">
+                        <table class="table table-sm table-bordered mb-2">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Nama</th>
+                                    <th>No. Tes Preview</th>
+                                    <th>Rule</th>
+                                </tr>
+                            </thead>
+                            <tbody id="batchPreviewRows"></tbody>
+                        </table>
+                    </div>
+                    <small class="text-muted d-block">Ditampilkan maksimal 10 pendaftar pertama. Nomor final dapat bergeser jika ada admin lain generate nomor bersamaan.</small>
+                </div>
                 <div class="alert alert-warning">
                     <i class="fas fa-exclamation-triangle"></i> Pastikan semua data pendaftar sudah benar sebelum difinalisasi.
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-success" id="btnConfirmBatch">
+                <button type="button" class="btn btn-success" id="btnConfirmBatch" disabled>
                     <i class="fas fa-check-double"></i> Ya, Finalisasi Semua
                 </button>
             </div>
@@ -343,6 +401,7 @@
 <script>
 $(function() {
     let selectedId = null;
+    const escapeHtml = (value) => $('<div>').text(value || '').html();
     
     // Update selected count
     function updateSelectedCount() {
@@ -366,7 +425,44 @@ $(function() {
     $('.btn-finalisasi').click(function() {
         selectedId = $(this).data('id');
         $('#modalNamaPendaftar').text($(this).data('nama'));
+        $('#btnConfirmFinalisasi').prop('disabled', true);
+        $('#singlePreviewContent').hide();
+        $('#singlePreviewLoading').html('<i class="fas fa-spinner fa-spin"></i> Memuat preview nomor...').show();
         $('#modalFinalisasi').modal('show');
+
+        $.ajax({
+            url: '{{ url("admin/finalisasi") }}/' + selectedId + '/preview',
+            method: 'GET',
+            success: function(response) {
+                const data = response.data || {};
+                $('#singlePreviewJalur').text(data.jalur || '-');
+                $('#singlePreviewGelombang').text(data.gelombang_nomor_tes || data.gelombang || '-');
+                $('#singlePreviewNomorTes').text(data.nomor_tes || 'Belum bisa dipreview');
+                $('#singlePreviewRule').text(data.nomor_tes_rule || '-');
+                $('#singlePreviewMessage').text(data.nomor_tes_message || 'Nomor final dapat berubah jika ada admin lain generate nomor bersamaan.');
+                $('#singlePreviewNomorRegistrasi').text(data.nomor_registrasi || 'Akan digenerate');
+                $('#singlePreviewNomorRegistrasiStatus').text(data.nomor_registrasi_status || '');
+
+                $('#singlePreviewLoading').hide();
+                $('#singlePreviewContent').show();
+                $('#btnConfirmFinalisasi').prop('disabled', false);
+            },
+            error: function(xhr) {
+                const response = xhr.responseJSON || {};
+                let errorHtml = '<div class="alert alert-danger mb-0"><strong>' + escapeHtml(response.message || 'Preview gagal dimuat.') + '</strong>';
+                if (response.errors) {
+                    errorHtml += '<ul class="text-left mt-2 mb-0">';
+                    response.errors.forEach(function(err) {
+                        errorHtml += '<li>' + escapeHtml(err) + '</li>';
+                    });
+                    errorHtml += '</ul>';
+                }
+                errorHtml += '</div>';
+                $('#singlePreviewLoading').html(errorHtml).show();
+                $('#singlePreviewContent').hide();
+                $('#btnConfirmFinalisasi').prop('disabled', true);
+            }
+        });
     });
     
     // Confirm single finalisasi
@@ -416,8 +512,60 @@ $(function() {
     // Batch finalisasi button
     $('#btnBatchFinalisasi').click(function() {
         const count = $('.check-item:checked').length;
+        const ids = [];
+        $('.check-item:checked').each(function() {
+            ids.push($(this).val());
+        });
+
         $('#batchCount').text(count);
+        $('#btnConfirmBatch').prop('disabled', true);
+        $('#batchPreviewContent').hide();
+        $('#batchPreviewRows').empty();
+        $('#batchPreviewLoading').html('<i class="fas fa-spinner fa-spin"></i> Memuat preview batch...').show();
         $('#modalBatchFinalisasi').modal('show');
+
+        $.ajax({
+            url: '{{ route("admin.finalisasi.batch-preview") }}',
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                ids: ids
+            },
+            success: function(response) {
+                const data = response.data || {};
+                $('#batchPreviewValid').text(data.valid || 0);
+                $('#batchPreviewInvalid').text(data.invalid || 0);
+                $('#batchPreviewGenerateCount').text(data.will_generate_nomor_tes || 0);
+
+                const rows = data.previews || [];
+                if (rows.length === 0) {
+                    $('#batchPreviewRows').html('<tr><td colspan="3" class="text-center text-muted">Tidak ada data preview.</td></tr>');
+                } else {
+                    const html = rows.map(function(item) {
+                        const errors = item.errors && item.errors.length
+                            ? '<small class="text-danger d-block">' + item.errors.map(escapeHtml).join(', ') + '</small>'
+                            : '';
+                        return '<tr>' +
+                            '<td><strong>' + escapeHtml(item.nama) + '</strong>' + errors + '</td>' +
+                            '<td><code>' + escapeHtml(item.nomor_tes || '-') + '</code></td>' +
+                            '<td><small>' + escapeHtml(item.nomor_tes_rule || '-') + '</small></td>' +
+                            '</tr>';
+                    }).join('');
+                    $('#batchPreviewRows').html(html);
+                }
+
+                $('#batchPreviewLoading').hide();
+                $('#batchPreviewContent').show();
+                $('#btnConfirmBatch').prop('disabled', (data.valid || 0) === 0);
+            },
+            error: function(xhr) {
+                $('#batchPreviewLoading').html(
+                    '<div class="alert alert-danger mb-0">' + escapeHtml(xhr.responseJSON?.message || 'Preview batch gagal dimuat.') + '</div>'
+                ).show();
+                $('#batchPreviewContent').hide();
+                $('#btnConfirmBatch').prop('disabled', true);
+            }
+        });
     });
     
     // Confirm batch finalisasi

@@ -269,7 +269,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // ---- FINALISASI PENDAFTAR ----
     Route::prefix('finalisasi')->name('finalisasi.')->middleware('permission:verifikasi.finalisasi')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\FinalisasiController::class, 'index'])->name('index');
+        Route::get('/{id}/preview', [\App\Http\Controllers\Admin\FinalisasiController::class, 'preview'])->whereUuid('id')->name('preview');
         Route::post('/{id}/finalisasi', [\App\Http\Controllers\Admin\FinalisasiController::class, 'finalisasi'])->name('finalisasi');
+        Route::post('/batch-preview', [\App\Http\Controllers\Admin\FinalisasiController::class, 'batchPreview'])->name('batch-preview');
         Route::post('/batch', [\App\Http\Controllers\Admin\FinalisasiController::class, 'batchFinalisasi'])->name('batch');
         Route::get('/{id}/cek-kelengkapan', [\App\Http\Controllers\Admin\FinalisasiController::class, 'cekKelengkapan'])->name('cek-kelengkapan');
     });

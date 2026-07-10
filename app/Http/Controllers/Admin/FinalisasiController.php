@@ -149,9 +149,22 @@ class FinalisasiController extends Controller
     /**
      * Finalize a pendaftar
      */
+    public function preview($id)
+    {
+        $pendaftar = CalonSiswa::with(['jalurPendaftaran', 'gelombangPendaftaran', 'gelombangNomorTes', 'ortu', 'dokumen'])->findOrFail($id);
+        $errors = $this->validateKelengkapan($pendaftar);
+
+        return response()->json([
+            'success' => empty($errors),
+            'message' => empty($errors) ? 'Preview finalisasi berhasil dimuat.' : 'Data pendaftar belum lengkap.',
+            'data' => $this->buildFinalisasiPreview($pendaftar),
+            'errors' => $errors,
+        ], empty($errors) ? 200 : 422);
+    }
+
     public function finalisasi(Request $request, $id)
     {
-        $pendaftar = CalonSiswa::with(['jalurPendaftaran', 'gelombangPendaftaran', 'ortu', 'dokumen'])->findOrFail($id);
+        $pendaftar = CalonSiswa::with(['jalurPendaftaran', 'gelombangPendaftaran', 'gelombangNomorTes', 'ortu', 'dokumen'])->findOrFail($id);
 
         // Cek apakah sudah difinalisasi
         if ($pendaftar->is_finalisasi) {
@@ -235,6 +248,56 @@ class FinalisasiController extends Controller
     /**
      * Batch finalize multiple pendaftar
      */
+    public function batchPreview(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:calon_siswas,id'
+        ]);
+
+        $pendaftarList = CalonSiswa::with(['jalurPendaftaran', 'gelombangPendaftaran', 'gelombangNomorTes', 'ortu', 'dokumen'])
+            ->whereIn('id', $request->ids)
+            ->get()
+            ->sortBy(fn ($pendaftar) => array_search($pendaftar->id, $request->ids, true))
+            ->values();
+
+        $previews = [];
+        $validCount = 0;
+        $invalidCount = 0;
+        $willGenerateNomorTes = 0;
+
+        foreach ($pendaftarList as $pendaftar) {
+            $errors = $this->validateKelengkapan($pendaftar);
+            if (empty($errors) && !$pendaftar->is_finalisasi) {
+                $validCount++;
+                if (!$pendaftar->nomor_tes) {
+                    $willGenerateNomorTes++;
+                }
+            } else {
+                $invalidCount++;
+            }
+
+            if (count($previews) < 10) {
+                $preview = $this->buildFinalisasiPreview($pendaftar);
+                $preview['errors'] = $errors;
+                $previews[] = $preview;
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Preview batch finalisasi berhasil dimuat.',
+            'data' => [
+                'total' => $pendaftarList->count(),
+                'valid' => $validCount,
+                'invalid' => $invalidCount,
+                'will_generate_nomor_tes' => $willGenerateNomorTes,
+                'preview_limit' => 10,
+                'previews' => $previews,
+            ],
+        ]);
+    }
+
     public function batchFinalisasi(Request $request)
     {
         $request->validate([
@@ -247,7 +310,7 @@ class FinalisasiController extends Controller
         $errors = [];
 
         foreach ($request->ids as $id) {
-            $pendaftar = CalonSiswa::with(['jalurPendaftaran', 'gelombangPendaftaran', 'ortu', 'dokumen'])->find($id);
+            $pendaftar = CalonSiswa::with(['jalurPendaftaran', 'gelombangPendaftaran', 'gelombangNomorTes', 'ortu', 'dokumen'])->find($id);
             
             if (!$pendaftar) {
                 $failed++;
@@ -393,6 +456,34 @@ class FinalisasiController extends Controller
         }
 
         return $errors;
+    }
+
+    private function buildFinalisasiPreview(CalonSiswa $pendaftar): array
+    {
+        $nomorTesPreview = $pendaftar->nomor_tes
+            ? [
+                'nomor' => $pendaftar->nomor_tes,
+                'rule' => 'Sudah ada',
+                'message' => 'Nomor tes sudah tersimpan dan tidak akan digenerate ulang.',
+            ]
+            : $this->nomorService->previewNomorTes($pendaftar);
+
+        return [
+            'id' => $pendaftar->id,
+            'nama' => $pendaftar->nama_lengkap,
+            'nisn' => $pendaftar->nisn,
+            'jalur' => $pendaftar->jalurPendaftaran?->nama,
+            'jalur_kode' => $pendaftar->jalurPendaftaran?->kode,
+            'gelombang' => $pendaftar->gelombangPendaftaran?->nama,
+            'gelombang_nomor_tes' => $pendaftar->gelombangNomorTes?->nama,
+            'nomor_registrasi' => $pendaftar->nomor_registrasi,
+            'nomor_registrasi_status' => $pendaftar->nomor_registrasi ? 'Sudah ada' : 'Akan digenerate jika belum ada',
+            'nomor_tes' => $nomorTesPreview['nomor'] ?? null,
+            'nomor_tes_rule' => $nomorTesPreview['rule'] ?? null,
+            'nomor_tes_message' => $nomorTesPreview['message'] ?? null,
+            'will_generate_nomor_tes' => !$pendaftar->nomor_tes,
+            'is_finalisasi' => (bool) $pendaftar->is_finalisasi,
+        ];
     }
 
 }
