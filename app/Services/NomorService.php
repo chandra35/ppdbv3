@@ -52,13 +52,19 @@ class NomorService
 
     public function resolveRule(string $jenisNomor, CalonSiswa $calonSiswa): ?NomorRule
     {
+        $nomorTesGelombang = $jenisNomor === NomorRule::JENIS_TES
+            ? $calonSiswa->gelombangNomorTes
+            : null;
         $gelombangId = $jenisNomor === NomorRule::JENIS_TES
-            ? ($calonSiswa->gelombang_nomor_tes_id ?: $calonSiswa->gelombang_pendaftaran_id)
+            ? ($nomorTesGelombang?->id ?: $calonSiswa->gelombang_pendaftaran_id)
             : $calonSiswa->gelombang_pendaftaran_id;
+        $jalurId = $jenisNomor === NomorRule::JENIS_TES
+            ? ($nomorTesGelombang?->jalur_id ?: $calonSiswa->jalur_pendaftaran_id)
+            : $calonSiswa->jalur_pendaftaran_id;
 
         $scopeCandidates = array_filter([
             [NomorRule::SCOPE_GELOMBANG, $gelombangId],
-            [NomorRule::SCOPE_JALUR, $calonSiswa->jalur_pendaftaran_id],
+            [NomorRule::SCOPE_JALUR, $jalurId],
             [NomorRule::SCOPE_TAHUN, $calonSiswa->tahun_pelajaran_id],
             [NomorRule::SCOPE_GLOBAL, null],
         ], fn ($candidate) => $candidate[0] === NomorRule::SCOPE_GLOBAL || !empty($candidate[1]));
@@ -123,11 +129,14 @@ class NomorService
     {
         $tahunNama = $calonSiswa?->tahunPelajaran?->nama ?? date('Y') . '/' . (date('Y') + 1);
         $tahun = explode('/', $tahunNama)[0] ?? date('Y');
-        $jalur = $calonSiswa?->jalurPendaftaran?->kode
-            ?? strtoupper(substr($calonSiswa?->jalurPendaftaran?->nama ?? 'REG', 0, 3));
         $gelombangModel = $rule->jenis_nomor === NomorRule::JENIS_TES
             ? ($calonSiswa?->gelombangNomorTes ?: $calonSiswa?->gelombangPendaftaran)
             : $calonSiswa?->gelombangPendaftaran;
+        $jalurModel = $rule->jenis_nomor === NomorRule::JENIS_TES
+            ? ($gelombangModel?->jalur ?: $calonSiswa?->jalurPendaftaran)
+            : $calonSiswa?->jalurPendaftaran;
+        $jalur = $jalurModel?->kode
+            ?? strtoupper(substr($jalurModel?->nama ?? 'REG', 0, 3));
         $gelombang = 'G' . ($gelombangModel?->urutan ?? 1);
 
         return [
@@ -209,8 +218,9 @@ class NomorService
 
             $tahunNama = $calonSiswa->tahunPelajaran?->nama ?? date('Y');
             $tahun = explode('/', (string) $tahunNama)[0] ?? date('Y');
-            $jalurCode = strtoupper(substr($calonSiswa->jalurPendaftaran->nama ?? 'REG', 0, 3));
             $gelombang = $calonSiswa->gelombangNomorTes ?: $calonSiswa->gelombangPendaftaran;
+            $jalur = $gelombang?->jalur ?: $calonSiswa->jalurPendaftaran;
+            $jalurCode = $jalur?->kode ?: strtoupper(substr($jalur?->nama ?? 'REG', 0, 3));
             $gelombangCode = 'G' . ($gelombang?->urutan ?? 1);
             $counters = $settings->nomor_tes_counter ?? [];
             $jalurKey = (string) ($calonSiswa->gelombang_nomor_tes_id ?: $calonSiswa->jalur_pendaftaran_id);

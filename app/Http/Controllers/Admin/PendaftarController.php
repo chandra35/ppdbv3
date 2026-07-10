@@ -1894,12 +1894,9 @@ class PendaftarController extends Controller
                     ->lockForUpdate()
                     ->findOrFail($validated['gelombang_nomor_tes_id']);
 
-                if (!$targetGelombang->is_active || !in_array($targetGelombang->computed_status, [GelombangPendaftaran::STATUS_OPEN], true)) {
+                $targetStatus = $targetGelombang->getRawOriginal('status') ?: $targetGelombang->computed_status;
+                if (!$targetGelombang->is_active || !in_array($targetStatus, [GelombangPendaftaran::STATUS_OPEN], true)) {
                     throw new \RuntimeException('Gelombang tujuan nomor tes harus sedang aktif/dibuka.');
-                }
-
-                if ($pendaftar->jalur_pendaftaran_id && $targetGelombang->jalur_id !== $pendaftar->jalur_pendaftaran_id) {
-                    throw new \RuntimeException('Gelombang tujuan harus berada pada jalur pendaftaran yang sama.');
                 }
 
                 $targetTahunId = $targetGelombang->jalur?->tahun_pelajaran_id;
@@ -2064,7 +2061,6 @@ class PendaftarController extends Controller
         return GelombangPendaftaran::with('jalur.tahunPelajaran')
             ->where('is_active', true)
             ->where('status', GelombangPendaftaran::STATUS_OPEN)
-            ->when($pendaftar->jalur_pendaftaran_id, fn ($query) => $query->where('jalur_id', $pendaftar->jalur_pendaftaran_id))
             ->whereHas('jalur', function ($query) use ($pendaftar) {
                 $query->where('is_active', true);
 
