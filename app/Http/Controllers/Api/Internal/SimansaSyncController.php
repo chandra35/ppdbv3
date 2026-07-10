@@ -164,6 +164,9 @@ class SimansaSyncController extends Controller
             ->filter()
             ->unique()
             ->values();
+        $meaningfulTokens = $tokens
+            ->filter(fn ($token) => strlen($token) >= 3)
+            ->values();
 
         if ($normalized === '') {
             return;
@@ -172,7 +175,7 @@ class SimansaSyncController extends Controller
         $looseLike = '%' . str_replace(' ', '%', $normalized) . '%';
         $compactLike = '%' . $compact . '%';
 
-        $query->where(function ($q) use ($term, $normalized, $compact, $tokens, $looseLike, $compactLike) {
+        $query->where(function ($q) use ($term, $normalized, $compact, $tokens, $meaningfulTokens, $looseLike, $compactLike) {
             $q->where('nama_lengkap', 'like', $looseLike)
                 ->orWhere('nisn', 'like', '%' . $term . '%')
                 ->orWhere('nomor_registrasi', 'like', '%' . $term . '%')
@@ -191,10 +194,45 @@ class SimansaSyncController extends Controller
                 });
             }
 
+            if ($meaningfulTokens->count() > 1) {
+                $q->orWhere(function ($tokenQ) use ($meaningfulTokens) {
+                    foreach ($meaningfulTokens as $token) {
+                        $tokenQ->orWhere('nama_lengkap', 'like', '%' . $token . '%');
+
+                        if (strlen($token) >= 4) {
+                            $tokenQ->orWhere('nama_lengkap', 'like', '%' . substr($token, 0, 3) . '%');
+                        }
+                    }
+                });
+            }
+
             if (strlen($compact) > 1 && strlen($compact) <= 8) {
                 $q->orWhereRaw($this->initialsExpression() . ' LIKE ?', [$compact . '%']);
             }
         });
+
+        $this->applySmartOrder($query, $normalized, $compact, $meaningfulTokens);
+    }
+
+    private function applySmartOrder($query, string $normalized, string $compact, $tokens): void
+    {
+        $bindings = [$normalized, $compact];
+        $parts = [
+            'CASE WHEN LOWER(nama_lengkap) = ? THEN 100 ELSE 0 END',
+            "CASE WHEN LOWER(REPLACE(REPLACE(REPLACE(nama_lengkap, ' ', ''), '.', ''), '''', '')) = ? THEN 95 ELSE 0 END",
+        ];
+
+        foreach ($tokens->take(8) as $token) {
+            $parts[] = 'CASE WHEN LOWER(nama_lengkap) LIKE ? THEN 8 ELSE 0 END';
+            $bindings[] = '%' . $token . '%';
+
+            if (strlen($token) >= 4) {
+                $parts[] = 'CASE WHEN LOWER(nama_lengkap) LIKE ? THEN 3 ELSE 0 END';
+                $bindings[] = '%' . substr($token, 0, 3) . '%';
+            }
+        }
+
+        $query->orderByRaw('(' . implode(' + ', $parts) . ') DESC', $bindings);
     }
 
     private function normalizeSearchTerm(?string $value): string
