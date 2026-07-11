@@ -179,6 +179,11 @@ class CalonSiswa extends Model
         return $this->hasOne(Kelulusan::class, 'calon_siswa_id');
     }
 
+    public function matrikulasiPeserta(): HasOne
+    {
+        return $this->hasOne(MatrikulasiPeserta::class, 'calon_siswa_id');
+    }
+
     public function nilaiCbt(): HasOne
     {
         return $this->hasOne(NilaiCbt::class, 'calon_siswa_id');

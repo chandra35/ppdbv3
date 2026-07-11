@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Exports\RekapNilaiExport;
 use App\Http\Controllers\Controller;
 use App\Models\CalonSiswa;
+use App\Models\MatrikulasiPeserta;
 use App\Support\AdminPpdbContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -31,6 +32,7 @@ class MatrikulasiController extends Controller
             'selectedTahunIdInput' => $context['selectedTahunIdInput'],
             'selectedJalurIdInput' => $context['selectedJalurIdInput'],
             'selectedGelombangIdInput' => $context['selectedGelombangIdInput'],
+            'storedStats' => $this->storedStats($context['selectedTahunIdInput']),
         ]);
     }
 
@@ -56,6 +58,55 @@ class MatrikulasiController extends Controller
                 'not_found' => $matches->where('status', 'not_found')->count(),
                 'duplicate' => $matches->where('status', 'duplicate')->count(),
                 'matches' => $matches->values(),
+            ],
+        ]);
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'names' => ['required', 'string'],
+            'tahun_pelajaran_id' => ['nullable', 'exists:tahun_pelajarans,id'],
+            'jalur_id' => ['nullable', 'exists:jalur_pendaftaran,id'],
+            'gelombang_id' => ['nullable', 'exists:gelombang_pendaftaran,id'],
+            'include_all_year' => ['nullable', 'boolean'],
+            'kategori' => ['nullable', 'in:reguler,asrama'],
+            'is_smart_q' => ['nullable', 'boolean'],
+        ]);
+
+        $lines = $this->parseLines($validated['names']);
+        $candidates = $this->candidatePool($validated, (bool) ($validated['include_all_year'] ?? false));
+        $matches = $this->matchLines($lines, $candidates);
+        $found = $matches->where('status', 'found');
+        $saved = 0;
+
+        foreach ($found as $match) {
+            $candidate = (object) $match['candidate'];
+            MatrikulasiPeserta::updateOrCreate(
+                ['calon_siswa_id' => $candidate->id],
+                [
+                    'tahun_pelajaran_id' => $candidate->tahun_pelajaran_id ?? ($validated['tahun_pelajaran_id'] ?? null),
+                    'jalur_pendaftaran_id' => $candidate->jalur_pendaftaran_id ?? null,
+                    'gelombang_pendaftaran_id' => $candidate->gelombang_pendaftaran_id ?? null,
+                    'kategori' => $validated['kategori'] ?? null,
+                    'is_smart_q' => (bool) ($validated['is_smart_q'] ?? false),
+                    'input_text' => $match['input'],
+                    'match_score' => (int) $match['score'],
+                    'assigned_at' => now(),
+                    'assigned_by' => auth()->id(),
+                ]
+            );
+            $saved++;
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$saved} peserta matrikulasi disimpan.",
+            'data' => [
+                'saved' => $saved,
+                'not_found' => $matches->where('status', 'not_found')->count(),
+                'duplicate' => $matches->where('status', 'duplicate')->count(),
+                'stats' => $this->storedStats($validated['tahun_pelajaran_id'] ?? null),
             ],
         ]);
     }
@@ -95,6 +146,40 @@ class MatrikulasiController extends Controller
         return Excel::download(new RekapNilaiExport($tahun, null, null, $ids), $filename);
     }
 
+    public function exportStored(Request $request)
+    {
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(180);
+
+        $validated = $request->validate([
+            'tahun_pelajaran_id' => ['nullable', 'exists:tahun_pelajarans,id'],
+            'jalur_id' => ['nullable', 'exists:jalur_pendaftaran,id'],
+            'gelombang_id' => ['nullable', 'exists:gelombang_pendaftaran,id'],
+            'kategori' => ['nullable', 'in:reguler,asrama'],
+            'smart_q' => ['nullable', 'in:all,yes,no'],
+            'tahun_label' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        $query = MatrikulasiPeserta::query()
+            ->when(!empty($validated['tahun_pelajaran_id']), fn ($q) => $q->where('tahun_pelajaran_id', $validated['tahun_pelajaran_id']))
+            ->when(!empty($validated['jalur_id']), fn ($q) => $q->where('jalur_pendaftaran_id', $validated['jalur_id']))
+            ->when(!empty($validated['gelombang_id']), fn ($q) => $q->where('gelombang_pendaftaran_id', $validated['gelombang_id']))
+            ->when(!empty($validated['kategori']), fn ($q) => $q->where('kategori', $validated['kategori']))
+            ->when(($validated['smart_q'] ?? 'all') === 'yes', fn ($q) => $q->where('is_smart_q', true))
+            ->when(($validated['smart_q'] ?? 'all') === 'no', fn ($q) => $q->where('is_smart_q', false));
+
+        $ids = $query->orderBy('created_at')->pluck('calon_siswa_id')->all();
+
+        if (empty($ids)) {
+            return back()->withInput()->with('error', 'Belum ada data matrikulasi tersimpan untuk diexport.');
+        }
+
+        $tahunLabel = str_replace(['/', '\\'], '-', $validated['tahun_label'] ?? 'matrikulasi');
+        $filename = 'Matrikulasi_PPDB_Tersimpan_' . $tahunLabel . '_' . count($ids) . '_pendaftar_' . now()->format('Ymd_His') . '.xlsx';
+
+        return Excel::download(new RekapNilaiExport($validated['tahun_pelajaran_id'] ?? null, null, null, $ids), $filename);
+    }
+
     private function candidatePool(array $filters, bool $includeAllYear): Collection
     {
         return CalonSiswa::with([
@@ -102,6 +187,7 @@ class MatrikulasiController extends Controller
             'gelombangPendaftaran',
             'nilaiRapor',
             'nilaiCbt',
+            'matrikulasiPeserta',
         ])
             ->when(!$includeAllYear && !empty($filters['tahun_pelajaran_id']), fn ($q) => $q->where('tahun_pelajaran_id', $filters['tahun_pelajaran_id']))
             ->when(!empty($filters['jalur_id']), fn ($q) => $q->where('jalur_pendaftaran_id', $filters['jalur_id']))
@@ -145,6 +231,9 @@ class MatrikulasiController extends Controller
                 'score' => $match['score'],
                 'candidate' => [
                     'id' => $candidate->id,
+                    'tahun_pelajaran_id' => $candidate->tahun_pelajaran_id,
+                    'jalur_pendaftaran_id' => $candidate->jalur_pendaftaran_id,
+                    'gelombang_pendaftaran_id' => $candidate->gelombang_pendaftaran_id,
                     'nama_lengkap' => $candidate->nama_lengkap,
                     'nisn' => $candidate->nisn,
                     'nomor_tes' => $candidate->nomor_tes,
@@ -154,9 +243,26 @@ class MatrikulasiController extends Controller
                     'status_admisi' => $candidate->status_admisi,
                     'rapor_count' => $candidate->nilaiRapor->count(),
                     'has_cbt' => (bool) $candidate->nilaiCbt,
+                    'matrikulasi' => $candidate->matrikulasiPeserta ? [
+                        'kategori' => $candidate->matrikulasiPeserta->kategori,
+                        'is_smart_q' => $candidate->matrikulasiPeserta->is_smart_q,
+                    ] : null,
                 ],
             ];
         });
+    }
+
+    private function storedStats(?string $tahunPelajaranId): array
+    {
+        $query = MatrikulasiPeserta::query()
+            ->when($tahunPelajaranId && $tahunPelajaranId !== 'all', fn ($q) => $q->where('tahun_pelajaran_id', $tahunPelajaranId));
+
+        return [
+            'total' => (clone $query)->count(),
+            'reguler' => (clone $query)->where('kategori', 'reguler')->count(),
+            'asrama' => (clone $query)->where('kategori', 'asrama')->count(),
+            'smart_q' => (clone $query)->where('is_smart_q', true)->count(),
+        ];
     }
 
     private function findBestCandidate(string $line, Collection $candidates, array $usedIds): ?array

@@ -98,7 +98,34 @@
     @endif
 
     <div class="alert alert-info">
-        Export mengambil data pendaftar lengkap, nilai rapor semester 1-5, nilai CBT, nilai TBQ, nilai akhir, status admisi, jalur, dan gelombang.
+        Simpan peserta matrikulasi dari daftar nama, assign Reguler/Asrama, tandai Smart-Q, lalu export data lengkap beserta nilai.
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-3 col-6 mb-2">
+            <div class="summary-tile">
+                <div class="label">Tersimpan</div>
+                <div class="value" id="storedTotal">{{ $storedStats['total'] }}</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-2">
+            <div class="summary-tile">
+                <div class="label">Reguler</div>
+                <div class="value text-primary" id="storedReguler">{{ $storedStats['reguler'] }}</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-2">
+            <div class="summary-tile">
+                <div class="label">Asrama</div>
+                <div class="value text-info" id="storedAsrama">{{ $storedStats['asrama'] }}</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-2">
+            <div class="summary-tile">
+                <div class="label">Smart-Q</div>
+                <div class="value text-success" id="storedSmartQ">{{ $storedStats['smart_q'] }}</div>
+            </div>
+        </div>
     </div>
 
     <div class="card">
@@ -142,6 +169,18 @@
                 <button type="button" id="btnApplyContext" class="btn btn-outline-primary mb-1">
                     <i class="fas fa-sync-alt mr-1"></i>Terapkan
                 </button>
+                <form id="exportStoredForm" method="POST" action="{{ route('admin.matrikulasi.export-stored') }}" class="mb-1">
+                    @csrf
+                    <input type="hidden" name="tahun_pelajaran_id" class="stored_tahun_pelajaran_id" value="{{ $selectedTahunIdInput }}">
+                    <input type="hidden" name="jalur_id" class="stored_jalur_id" value="{{ $selectedJalurIdInput === 'all' ? '' : $selectedJalurIdInput }}">
+                    <input type="hidden" name="gelombang_id" class="stored_gelombang_id" value="{{ $selectedGelombangIdInput === 'all' ? '' : $selectedGelombangIdInput }}">
+                    <input type="hidden" name="tahun_label" class="stored_tahun_label" value="{{ $selectedTahun?->nama ?? 'matrikulasi' }}">
+                    <input type="hidden" name="kategori" id="stored_export_kategori" value="">
+                    <input type="hidden" name="smart_q" id="stored_export_smart_q" value="all">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-file-excel mr-1"></i>Export Data Tersimpan
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -164,10 +203,26 @@
                         <label>Paste nama/NISN/nomor tes, satu peserta per baris</label>
                         <textarea name="names" id="names" class="form-control match-textarea" placeholder="ABD KATON RHAMADAN&#10;ABEL AULIA HASNA&#10;011267781">{{ old('names') }}</textarea>
                         <small class="text-muted d-block mt-2">Bisa menampung ratusan baris. Matching memakai nomor dulu, lalu nama exact, lalu fuzzy nama.</small>
+                        <div class="border rounded p-3 mt-3 bg-light">
+                            <label>Assign Matrikulasi</label>
+                            <select name="kategori" id="kategori" class="form-control">
+                                <option value="">Simpan tanpa kategori</option>
+                                <option value="reguler">Reguler</option>
+                                <option value="asrama">Asrama</option>
+                            </select>
+                            <div class="form-check mt-2">
+                                <input type="checkbox" class="form-check-input" name="is_smart_q" id="is_smart_q" value="1">
+                                <label class="form-check-label" for="is_smart_q">Tandai ikut Smart-Q</label>
+                            </div>
+                            <small class="text-muted d-block mt-2">Untuk Smart-Q yang juga asrama/reguler, pilih kategorinya lalu centang Smart-Q.</small>
+                        </div>
                     </div>
                     <div class="card-footer d-flex flex-wrap" style="gap: .5rem;">
                         <button type="button" id="btnPreview" class="btn btn-primary">
                             <i class="fas fa-search mr-1"></i>Preview Match
+                        </button>
+                        <button type="button" id="btnSave" class="btn btn-info" disabled>
+                            <i class="fas fa-save mr-1"></i>Simpan/Assign
                         </button>
                         <button type="submit" id="btnExport" class="btn btn-success" disabled>
                             <i class="fas fa-file-excel mr-1"></i>Export XLS
@@ -226,6 +281,12 @@
                             </div>
                             <div id="missingList" class="missing-list"></div>
                         </div>
+                        <div class="d-flex flex-wrap mb-2" style="gap: .5rem;">
+                            <button type="button" class="btn btn-sm btn-outline-primary btnSetStoredFilter" data-kategori="" data-smart="all">Export Semua Tersimpan</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary btnSetStoredFilter" data-kategori="reguler" data-smart="all">Reguler</button>
+                            <button type="button" class="btn btn-sm btn-outline-info btnSetStoredFilter" data-kategori="asrama" data-smart="all">Asrama</button>
+                            <button type="button" class="btn btn-sm btn-outline-success btnSetStoredFilter" data-kategori="" data-smart="yes">Smart-Q</button>
+                        </div>
                     </div>
                     <div class="table-responsive p-0" style="max-height: 620px;">
                         <table class="table table-hover table-sm table-preview mb-0">
@@ -257,6 +318,7 @@
 $(function () {
     const routes = {
         preview: @json(route('admin.matrikulasi.preview')),
+        store: @json(route('admin.matrikulasi.store')),
     };
     let lastMatches = [];
     let activeFilter = 'all';
@@ -267,6 +329,10 @@ $(function () {
         $('#export_gelombang_id').val($('#gelombang_id').val());
         $('#export_tahun_label').val($('#tahun_pelajaran_id option:selected').data('label') || 'matrikulasi');
         $('#export_include_all_year').val($('#include_all_year').is(':checked') ? '1' : '0');
+        $('.stored_tahun_pelajaran_id').val($('#tahun_pelajaran_id').val());
+        $('.stored_jalur_id').val($('#jalur_id').val());
+        $('.stored_gelombang_id').val($('#gelombang_id').val());
+        $('.stored_tahun_label').val($('#tahun_pelajaran_id option:selected').data('label') || 'matrikulasi');
     }
 
     function badgeStatus(status) {
@@ -314,7 +380,7 @@ $(function () {
                 ? `<span class="badge badge-light">Rapor ${candidate.rapor_count}/5</span><br><span class="badge ${candidate.has_cbt ? 'badge-success' : 'badge-secondary'}">${candidate.has_cbt ? 'CBT ada' : 'CBT kosong'}</span>`
                 : '-';
             const hasil = candidate
-                ? `<strong>${candidate.nama_lengkap || '-'}</strong><br><small class="text-muted">${candidate.nisn || '-'} | ${candidate.nomor_tes || '-'} | ${candidate.nomor_registrasi || '-'}</small><br><small>${candidate.jalur || '-'} / ${candidate.gelombang || '-'}</small>`
+                ? `<strong>${candidate.nama_lengkap || '-'}</strong><br><small class="text-muted">${candidate.nisn || '-'} | ${candidate.nomor_tes || '-'} | ${candidate.nomor_registrasi || '-'}</small><br><small>${candidate.jalur || '-'} / ${candidate.gelombang || '-'}</small>${storedBadges(candidate)}`
                 : '<span class="text-danger">Tidak ditemukan</span>';
 
             return `<tr${rowClass}>
@@ -335,6 +401,32 @@ $(function () {
             : '<i class="fas fa-search mr-1"></i>Preview Match');
     }
 
+    function storedBadges(candidate) {
+        if (!candidate.matrikulasi) return '';
+        const badges = [];
+        if (candidate.matrikulasi.kategori) {
+            badges.push(`<span class="badge badge-primary">${candidate.matrikulasi.kategori === 'asrama' ? 'Asrama' : 'Reguler'}</span>`);
+        }
+        if (candidate.matrikulasi.is_smart_q) {
+            badges.push('<span class="badge badge-success">Smart-Q</span>');
+        }
+        return badges.length ? `<br>${badges.join(' ')}` : '';
+    }
+
+    function setSaveLoading(isLoading) {
+        $('#btnSave').prop('disabled', isLoading || !(lastMatches.filter(item => item.status === 'found').length > 0)).html(isLoading
+            ? '<i class="fas fa-spinner fa-spin mr-1"></i>Menyimpan...'
+            : '<i class="fas fa-save mr-1"></i>Simpan/Assign');
+    }
+
+    function updateStoredStats(stats) {
+        if (!stats) return;
+        $('#storedTotal').text(stats.total || 0);
+        $('#storedReguler').text(stats.reguler || 0);
+        $('#storedAsrama').text(stats.asrama || 0);
+        $('#storedSmartQ').text(stats.smart_q || 0);
+    }
+
     $('#btnApplyContext').on('click', function () {
         const params = new URLSearchParams();
         if ($('#tahun_pelajaran_id').val()) params.set('tahun_pelajaran_id', $('#tahun_pelajaran_id').val());
@@ -349,6 +441,7 @@ $(function () {
         syncContext();
         setLoading(true);
         $('#btnExport').prop('disabled', true);
+        $('#btnSave').prop('disabled', true);
 
         $.post(routes.preview, $('#exportForm').serialize())
             .done(response => {
@@ -363,11 +456,39 @@ $(function () {
                 $(`.btnPreviewFilter[data-filter="${activeFilter}"]`).addClass('active');
                 renderRows();
                 $('#btnExport').prop('disabled', !(data.found > 0));
+                $('#btnSave').prop('disabled', !(data.found > 0));
             })
             .fail(xhr => {
                 alert(xhr.responseJSON?.message || 'Preview matching gagal.');
             })
             .always(() => setLoading(false));
+    });
+
+    $('#btnSave').on('click', function () {
+        syncContext();
+        if (!$('#names').val().trim()) {
+            alert('Isi daftar nama terlebih dahulu.');
+            return;
+        }
+
+        setSaveLoading(true);
+        $.post(routes.store, $('#exportForm').serialize())
+            .done(response => {
+                updateStoredStats(response.data?.stats);
+                alert(response.message || 'Data matrikulasi disimpan.');
+                $('#btnPreview').trigger('click');
+            })
+            .fail(xhr => {
+                alert(xhr.responseJSON?.message || 'Gagal menyimpan data matrikulasi.');
+            })
+            .always(() => setSaveLoading(false));
+    });
+
+    $('.btnSetStoredFilter').on('click', function () {
+        $('#stored_export_kategori').val($(this).data('kategori') || '');
+        $('#stored_export_smart_q').val($(this).data('smart') || 'all');
+        $('.btnSetStoredFilter').removeClass('active');
+        $(this).addClass('active');
     });
 
     $('.btnPreviewFilter').on('click', function () {

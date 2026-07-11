@@ -281,7 +281,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::prefix('matrikulasi')->name('matrikulasi.')->middleware('permission:pendaftar.export')->group(function () {
         Route::get('/', [MatrikulasiController::class, 'index'])->name('index');
         Route::post('/preview', [MatrikulasiController::class, 'preview'])->name('preview');
+        Route::post('/store', [MatrikulasiController::class, 'store'])->name('store');
         Route::post('/export', [MatrikulasiController::class, 'export'])->name('export');
+        Route::post('/export-stored', [MatrikulasiController::class, 'exportStored'])->name('export-stored');
     });
 
     // ---- CETAK DOKUMEN ----

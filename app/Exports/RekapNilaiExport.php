@@ -92,7 +92,8 @@ class RekapNilaiExport implements FromCollection, WithHeadings, WithMapping, Wit
             'kabupatenSiswa',
             'kecamatanSiswa',
             'kelurahanSiswa',
-            'user'
+            'user',
+            'matrikulasiPeserta',
         ]);
 
         if ($this->tahunPelajaranId) {
@@ -157,6 +158,8 @@ class RekapNilaiExport implements FromCollection, WithHeadings, WithMapping, Wit
             'Jalur Pendaftaran',
             'Gelombang',
             'Pilihan Program',
+            'Matrikulasi',
+            'Smart-Q',
 
             // Status
             'Status Verifikasi',
@@ -330,6 +333,8 @@ class RekapNilaiExport implements FromCollection, WithHeadings, WithMapping, Wit
             $pendaftar->jalurPendaftaran?->nama ?? '',
             $pendaftar->gelombangPendaftaran?->nama ?? '',
             $pendaftar->pilihan_program ?? '',
+            $this->formatMatrikulasiKategori($pendaftar->matrikulasiPeserta?->kategori),
+            $pendaftar->matrikulasiPeserta?->is_smart_q ? 'Ya' : 'Tidak',
 
             // Status
             $this->formatStatus($pendaftar->status_verifikasi),
@@ -484,6 +489,15 @@ class RekapNilaiExport implements FromCollection, WithHeadings, WithMapping, Wit
             'rejected' => 'Ditolak',
             'revisi' => 'Perlu Revisi',
             default => $status ?? '',
+        };
+    }
+
+    private function formatMatrikulasiKategori($kategori): string
+    {
+        return match ($kategori) {
+            'reguler' => 'Reguler',
+            'asrama' => 'Asrama',
+            default => '',
         };
     }
 
