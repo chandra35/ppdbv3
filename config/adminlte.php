@@ -137,6 +137,12 @@ return [
                     'can' => 'verifikasi.finalisasi',
                 ],
                 [
+                    'text' => 'Matrikulasi',
+                    'route' => 'admin.matrikulasi.index',
+                    'icon' => 'fas fa-fw fa-user-graduate',
+                    'can' => 'pendaftar.export',
+                ],
+                [
                     'text' => 'Cetak Dokumen',
                     'route' => 'admin.cetak-dokumen.index',
                     'icon' => 'fas fa-fw fa-print',

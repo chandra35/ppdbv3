@@ -23,17 +23,19 @@ class RekapNilaiExport implements FromCollection, WithHeadings, WithMapping, Wit
     protected $jalurId;
     protected $gelombangId;
     protected $tahunPelajaranId;
+    protected array $calonSiswaIds;
 
     // Pre-loaded data
     protected $nilaiSeleksiMap;
     protected $nilaiCbtMap;
     protected $raporMap;
 
-    public function __construct($tahunPelajaranId = null, $jalurId = null, $gelombangId = null)
+    public function __construct($tahunPelajaranId = null, $jalurId = null, $gelombangId = null, array $calonSiswaIds = [])
     {
         $this->tahunPelajaranId = $tahunPelajaranId;
         $this->jalurId = $jalurId;
         $this->gelombangId = $gelombangId;
+        $this->calonSiswaIds = array_values(array_filter($calonSiswaIds));
 
         $this->preloadData();
     }
@@ -45,6 +47,9 @@ class RekapNilaiExport implements FromCollection, WithHeadings, WithMapping, Wit
     {
         // Load NilaiSeleksi (TBQ) - ambil yang submitted/verified, keyBy calon_siswa_id
         $seleksiQuery = NilaiSeleksi::whereIn('status', ['submitted', 'verified']);
+        if (!empty($this->calonSiswaIds)) {
+            $seleksiQuery->whereIn('calon_siswa_id', $this->calonSiswaIds);
+        }
         if ($this->tahunPelajaranId) {
             $seleksiQuery->whereHas('sesiUjian', function ($q) {
                 $q->where('tahun_pelajaran_id', $this->tahunPelajaranId);
@@ -54,6 +59,9 @@ class RekapNilaiExport implements FromCollection, WithHeadings, WithMapping, Wit
 
         // Load NilaiCbt
         $cbtQuery = NilaiCbt::query();
+        if (!empty($this->calonSiswaIds)) {
+            $cbtQuery->whereIn('calon_siswa_id', $this->calonSiswaIds);
+        }
         if ($this->tahunPelajaranId) {
             $cbtQuery->where('tahun_pelajaran_id', $this->tahunPelajaranId);
         }
@@ -61,6 +69,9 @@ class RekapNilaiExport implements FromCollection, WithHeadings, WithMapping, Wit
 
         // Load Rapor averages
         $raporQuery = NilaiRapor::selectRaw('calon_siswa_id, AVG(rata_rata) as avg_rapor');
+        if (!empty($this->calonSiswaIds)) {
+            $raporQuery->whereIn('calon_siswa_id', $this->calonSiswaIds);
+        }
         if ($this->tahunPelajaranId) {
             $raporQuery->whereHas('calonSiswa', function ($q) {
                 $q->where('tahun_pelajaran_id', $this->tahunPelajaranId);
@@ -95,6 +106,15 @@ class RekapNilaiExport implements FromCollection, WithHeadings, WithMapping, Wit
 
         if ($this->gelombangId) {
             $query->where('gelombang_pendaftaran_id', $this->gelombangId);
+        }
+
+        if (!empty($this->calonSiswaIds)) {
+            $order = array_flip($this->calonSiswaIds);
+
+            return $query->whereIn('id', $this->calonSiswaIds)
+                ->get()
+                ->sortBy(fn ($pendaftar) => $order[$pendaftar->id] ?? PHP_INT_MAX)
+                ->values();
         }
 
         return $query->orderBy('nama_lengkap')->get();

@@ -28,6 +28,7 @@ use App\Http\Controllers\Admin\VisitorLogController;
 use App\Http\Controllers\Admin\EmailLogController;
 use App\Http\Controllers\Admin\KelulusanController;
 use App\Http\Controllers\Admin\KelulusanSettingController;
+use App\Http\Controllers\Admin\MatrikulasiController;
 use App\Http\Controllers\Operator\DashboardController as OperatorDashboardController;
 use App\Http\Controllers\Operator\PendaftarController as OperatorPendaftarController;
 use App\Http\Controllers\Pendaftar\AuthController as PendaftarAuthController;
@@ -274,6 +275,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/batch-preview', [\App\Http\Controllers\Admin\FinalisasiController::class, 'batchPreview'])->name('batch-preview');
         Route::post('/batch', [\App\Http\Controllers\Admin\FinalisasiController::class, 'batchFinalisasi'])->name('batch');
         Route::get('/{id}/cek-kelengkapan', [\App\Http\Controllers\Admin\FinalisasiController::class, 'cekKelengkapan'])->name('cek-kelengkapan');
+    });
+
+    // ---- MATRIKULASI PPDB ----
+    Route::prefix('matrikulasi')->name('matrikulasi.')->middleware('permission:pendaftar.export')->group(function () {
+        Route::get('/', [MatrikulasiController::class, 'index'])->name('index');
+        Route::post('/preview', [MatrikulasiController::class, 'preview'])->name('preview');
+        Route::post('/export', [MatrikulasiController::class, 'export'])->name('export');
     });
 
     // ---- CETAK DOKUMEN ----
