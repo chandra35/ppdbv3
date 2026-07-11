@@ -62,6 +62,9 @@ class MatrikulasiController extends Controller
 
     public function export(Request $request)
     {
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(180);
+
         $validated = $request->validate([
             'names' => ['required', 'string'],
             'tahun_pelajaran_id' => ['nullable', 'exists:tahun_pelajarans,id'],
