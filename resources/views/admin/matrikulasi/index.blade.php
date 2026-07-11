@@ -214,7 +214,7 @@
                                 <input type="checkbox" class="form-check-input" name="is_smart_q" id="is_smart_q" value="1">
                                 <label class="form-check-label" for="is_smart_q">Tandai ikut Smart-Q</label>
                             </div>
-                            <small class="text-muted d-block mt-2">Untuk Smart-Q yang juga asrama/reguler, pilih kategorinya lalu centang Smart-Q.</small>
+                            <small class="text-muted d-block mt-2">Smart-Q berdiri sendiri. Jika hanya ingin menandai 30 peserta Smart-Q, kosongkan kategori lalu centang Smart-Q.</small>
                         </div>
                     </div>
                     <div class="card-footer d-flex flex-wrap" style="gap: .5rem;">

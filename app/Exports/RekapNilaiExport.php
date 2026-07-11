@@ -158,7 +158,7 @@ class RekapNilaiExport implements FromCollection, WithHeadings, WithMapping, Wit
             'Jalur Pendaftaran',
             'Gelombang',
             'Pilihan Program',
-            'Matrikulasi',
+            'Reguler/Asrama',
             'Smart-Q',
 
             // Status

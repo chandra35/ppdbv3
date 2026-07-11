@@ -82,14 +82,18 @@ class MatrikulasiController extends Controller
 
         foreach ($found as $match) {
             $candidate = (object) $match['candidate'];
+            $existing = MatrikulasiPeserta::where('calon_siswa_id', $candidate->id)->first();
+            $kategori = $validated['kategori'] ?? null;
+            $markSmartQ = (bool) ($validated['is_smart_q'] ?? false);
+
             MatrikulasiPeserta::updateOrCreate(
                 ['calon_siswa_id' => $candidate->id],
                 [
                     'tahun_pelajaran_id' => $candidate->tahun_pelajaran_id ?? ($validated['tahun_pelajaran_id'] ?? null),
                     'jalur_pendaftaran_id' => $candidate->jalur_pendaftaran_id ?? null,
                     'gelombang_pendaftaran_id' => $candidate->gelombang_pendaftaran_id ?? null,
-                    'kategori' => $validated['kategori'] ?? null,
-                    'is_smart_q' => (bool) ($validated['is_smart_q'] ?? false),
+                    'kategori' => $kategori ?: $existing?->kategori,
+                    'is_smart_q' => $markSmartQ ? true : (bool) ($existing?->is_smart_q ?? false),
                     'input_text' => $match['input'],
                     'match_score' => (int) $match['score'],
                     'assigned_at' => now(),
