@@ -41,6 +41,38 @@
         min-width: 46px;
         display: inline-block;
     }
+    .missing-panel {
+        display: none;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        background: #fef2f2;
+        color: #7f1d1d;
+        padding: 12px 14px;
+        margin-bottom: 14px;
+    }
+    .missing-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+    }
+    .missing-chip {
+        background: #fff;
+        border: 1px solid #fecaca;
+        border-radius: 999px;
+        padding: 4px 9px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+    .row-missing {
+        background: #fff1f2;
+    }
+    .preview-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+    }
 </style>
 @stop
 
@@ -174,8 +206,28 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title"><i class="fas fa-table mr-1"></i>Preview Hasil Matching</h3>
+                        <div class="card-tools preview-actions">
+                            <button type="button" class="btn btn-xs btn-outline-secondary btnPreviewFilter active" data-filter="all">Semua</button>
+                            <button type="button" class="btn btn-xs btn-outline-success btnPreviewFilter" data-filter="found">Ketemu</button>
+                            <button type="button" class="btn btn-xs btn-outline-danger btnPreviewFilter" data-filter="not_found">Belum ketemu</button>
+                            <button type="button" class="btn btn-xs btn-outline-warning btnPreviewFilter" data-filter="duplicate">Duplikat</button>
+                        </div>
                     </div>
-                    <div class="card-body table-responsive p-0" style="max-height: 620px;">
+                    <div class="card-body">
+                        <div id="missingPanel" class="missing-panel">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong><i class="fas fa-exclamation-triangle mr-1"></i>Baris belum ketemu</strong>
+                                    <div class="small">Periksa ejaan, NISN, atau coba aktifkan Cari lintas tahun.</div>
+                                </div>
+                                <button type="button" id="btnCopyMissing" class="btn btn-xs btn-outline-danger">
+                                    <i class="fas fa-copy mr-1"></i>Copy
+                                </button>
+                            </div>
+                            <div id="missingList" class="missing-list"></div>
+                        </div>
+                    </div>
+                    <div class="table-responsive p-0" style="max-height: 620px;">
                         <table class="table table-hover table-sm table-preview mb-0">
                             <thead class="thead-light">
                                 <tr>
@@ -206,6 +258,8 @@ $(function () {
     const routes = {
         preview: @json(route('admin.matrikulasi.preview')),
     };
+    let lastMatches = [];
+    let activeFilter = 'all';
 
     function syncContext() {
         $('#export_tahun_pelajaran_id').val($('#tahun_pelajaran_id').val());
@@ -221,7 +275,32 @@ $(function () {
         return '<span class="badge badge-danger">Belum ketemu</span>';
     }
 
-    function renderRows(matches) {
+    function renderMissingPanel(matches) {
+        const missing = matches.filter(item => item.status === 'not_found');
+        if (!missing.length) {
+            $('#missingPanel').hide();
+            $('#missingList').empty();
+            return;
+        }
+
+        const chips = missing.map(item => {
+            const input = $('<div>').text(item.input).html();
+            return `<span class="missing-chip">#${item.row} ${input}</span>`;
+        });
+
+        $('#missingList').html(chips.join(''));
+        $('#missingPanel').show();
+    }
+
+    function filteredMatches() {
+        if (activeFilter === 'all') return lastMatches;
+        return lastMatches.filter(item => item.status === activeFilter);
+    }
+
+    function renderRows() {
+        const matches = filteredMatches();
+        renderMissingPanel(lastMatches);
+
         if (!matches.length) {
             $('#previewBody').html('<tr><td colspan="5" class="text-center text-muted py-5">Belum ada baris untuk diproses.</td></tr>');
             return;
@@ -230,6 +309,7 @@ $(function () {
         const rows = matches.map(item => {
             const candidate = item.candidate;
             const scoreClass = item.score >= 90 ? 'badge-success' : (item.score >= 78 ? 'badge-info' : 'badge-secondary');
+            const rowClass = item.status === 'not_found' ? ' class="row-missing"' : '';
             const nilai = candidate
                 ? `<span class="badge badge-light">Rapor ${candidate.rapor_count}/5</span><br><span class="badge ${candidate.has_cbt ? 'badge-success' : 'badge-secondary'}">${candidate.has_cbt ? 'CBT ada' : 'CBT kosong'}</span>`
                 : '-';
@@ -237,7 +317,7 @@ $(function () {
                 ? `<strong>${candidate.nama_lengkap || '-'}</strong><br><small class="text-muted">${candidate.nisn || '-'} | ${candidate.nomor_tes || '-'} | ${candidate.nomor_registrasi || '-'}</small><br><small>${candidate.jalur || '-'} / ${candidate.gelombang || '-'}</small>`
                 : '<span class="text-danger">Tidak ditemukan</span>';
 
-            return `<tr>
+            return `<tr${rowClass}>
                 <td>${item.row}</td>
                 <td>${$('<div>').text(item.input).html()}<br><span class="badge ${scoreClass} badge-score">${item.score}</span></td>
                 <td>${hasil}</td>
@@ -277,13 +357,36 @@ $(function () {
                 $('#sumFound').text(data.found || 0);
                 $('#sumDuplicate').text(data.duplicate || 0);
                 $('#sumMissing').text(data.not_found || 0);
-                renderRows(data.matches || []);
+                lastMatches = data.matches || [];
+                activeFilter = (data.not_found || 0) > 0 ? 'not_found' : 'all';
+                $('.btnPreviewFilter').removeClass('active');
+                $(`.btnPreviewFilter[data-filter="${activeFilter}"]`).addClass('active');
+                renderRows();
                 $('#btnExport').prop('disabled', !(data.found > 0));
             })
             .fail(xhr => {
                 alert(xhr.responseJSON?.message || 'Preview matching gagal.');
             })
             .always(() => setLoading(false));
+    });
+
+    $('.btnPreviewFilter').on('click', function () {
+        activeFilter = $(this).data('filter');
+        $('.btnPreviewFilter').removeClass('active');
+        $(this).addClass('active');
+        renderRows();
+    });
+
+    $('#btnCopyMissing').on('click', function () {
+        const missing = lastMatches
+            .filter(item => item.status === 'not_found')
+            .map(item => item.input)
+            .join('\n');
+
+        if (!missing) return;
+        navigator.clipboard?.writeText(missing);
+        $(this).html('<i class="fas fa-check mr-1"></i>Copied');
+        setTimeout(() => $(this).html('<i class="fas fa-copy mr-1"></i>Copy'), 1200);
     });
 
     $('#exportForm').on('submit', function (event) {
