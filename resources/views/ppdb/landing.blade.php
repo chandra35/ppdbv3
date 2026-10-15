@@ -70,21 +70,44 @@
         /* Navbar */
         .navbar {
             background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 2px 15px rgba(0,0,0,0.06);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding-top: 10px;
+            padding-bottom: 10px;
+            transition: all 0.3s ease;
         }
         
         .navbar-brand img {
-            height: 40px;
+            height: 42px;
+            border-radius: 6px;
+        }
+
+        .navbar-nav .nav-link {
+            font-weight: 500;
+            color: #334155;
+            padding: 0.5rem 0.9rem;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .navbar-nav .nav-link:hover {
+            color: var(--primary-color);
+            background: rgba(0, 0, 0, 0.03);
         }
         
         /* Hero Section */
         .hero-section {
             min-height: auto;
-            padding: 60px 0 50px;
-            background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 60%, black) 100%);
+            padding: 125px 0 95px;
+            background: 
+                radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--primary-color) 40%, #3b82f6) 0%, transparent 45%),
+                radial-gradient(circle at 82% 70%, color-mix(in srgb, var(--primary-color) 30%, #8b5cf6) 0%, transparent 50%),
+                linear-gradient(145deg, #090e1a 0%, #0f172a 40%, color-mix(in srgb, var(--primary-color) 85%, #050b14) 100%);
             position: relative;
             overflow: hidden;
+            color: #ffffff;
         }
         
         .hero-section::before {
@@ -95,12 +118,223 @@
             right: 0;
             bottom: 0;
             background: url('{{ $siteSettings->hero_image_url }}') center/cover no-repeat;
-            opacity: 0.1;
+            opacity: 0.08;
+            pointer-events: none;
         }
         
         .hero-content {
             position: relative;
+            z-index: 2;
+        }
+
+        .hero-meta-badge {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            font-size: 0.85rem;
+            color: #f1f5f9;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .hero-title {
+            font-size: clamp(2.2rem, 4.5vw, 3.4rem);
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+            color: #ffffff;
+            text-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1rem, 1.8vw, 1.2rem);
+            color: rgba(255, 255, 255, 0.88);
+            max-width: 680px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.5;
+        }
+
+        .hero-status-card {
+            max-width: 820px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.09);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 26px;
+            padding: 2.25rem 2rem;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.28);
+            position: relative;
+        }
+
+        .hero-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 22px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .hero-status-pill.closed {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.45);
+        }
+
+        .hero-status-pill.open {
+            background: rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, 0.45);
+        }
+
+        .hero-status-pill.upcoming {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fcd34d;
+            border: 1px solid rgba(245, 158, 11, 0.45);
+        }
+
+        .status-pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            animation: pulse-dot 1.8s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .hero-card-desc {
+            font-size: 0.98rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.85);
+            max-width: 660px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .btn-hero-primary {
+            background: #ffffff;
+            color: #0f172a !important;
+            font-weight: 700;
+            padding: 0.75rem 1.8rem;
+            border-radius: 50px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.22);
+            transition: all 0.25s ease;
+            border: 1px solid #ffffff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-hero-primary:hover {
+            background: #f1f5f9;
+            transform: translateY(-2px);
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.32);
+            color: #0284c7 !important;
+        }
+
+        .btn-hero-secondary {
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff !important;
+            font-weight: 600;
+            padding: 0.75rem 1.8rem;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.25s ease;
+            backdrop-filter: blur(8px);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-hero-secondary:hover {
+            background: rgba(255, 255, 255, 0.22);
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.5);
+            color: #ffffff !important;
+        }
+
+        .hero-jalur-strip {
+            margin-top: 1.6rem;
+            padding-top: 1.3rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.14);
+        }
+
+        .hero-jalur-label {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 600;
+        }
+
+        .hero-jalur-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 0.82rem;
+            backdrop-filter: blur(10px);
+            transition: transform 0.2s ease;
+        }
+
+        .hero-jalur-pill:hover {
+            transform: translateY(-2px);
+        }
+
+        .hero-jalur-pill.open {
+            background: rgba(16, 185, 129, 0.22);
+            color: #a7f3d0;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+        }
+
+        .hero-jalur-pill.upcoming {
+            background: rgba(245, 158, 11, 0.22);
+            color: #fde68a;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+
+        .hero-jalur-pill.closed {
+            background: rgba(148, 163, 184, 0.18);
+            color: #e2e8f0;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+        }
+
+        .hero-wave {
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            overflow: hidden;
+            line-height: 0;
             z-index: 1;
+            pointer-events: none;
+        }
+
+        .hero-wave svg {
+            position: relative;
+            display: block;
+            width: 100%;
+            height: 40px;
+        }
+
+        .hero-status-slider-section {
+            background: 
+                radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--primary-color) 35%, #3b82f6) 0%, transparent 45%),
+                linear-gradient(145deg, #090e1a 0%, #0f172a 40%, color-mix(in srgb, var(--primary-color) 85%, #050b14) 100%);
+            padding: 60px 0;
+            position: relative;
+            color: #ffffff;
         }
         
         .hero-section .card {
@@ -742,17 +976,21 @@
         
         /* Section spacing */
         section {
-            padding: 60px 0;
+            padding: 70px 0;
         }
         
         .section-title {
-            margin-bottom: 10px;
-            color: #2d3748;
+            margin-bottom: 8px;
+            color: #0f172a;
+            font-size: 2.1rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
         }
         
         .section-subtitle {
-            color: #718096;
-            margin-bottom: 40px;
+            color: #64748b;
+            font-size: 1.05rem;
+            margin-bottom: 45px;
         }
         
         /* Smooth section backgrounds */
@@ -964,315 +1202,308 @@
         </div>
     @else
         {{-- Hero Section (tanpa slider) --}}
-        <section id="beranda" class="hero-section d-flex align-items-center text-white" style="padding-top: 80px;">
+        <section id="beranda" class="hero-section d-flex align-items-center text-white">
             <div class="container hero-content">
                 <div class="row align-items-center">
-                    <div class="col-lg-10 mx-auto text-center">
-                        {{-- School Name --}}
-                        <h1 class="display-5 fw-bold mb-2">{{ $sekolahSettings->nama_sekolah }}</h1>
-                        <p class="lead mb-4 opacity-90">Pendaftaran Peserta Didik Baru (PPDB) Online</p>
-                        
-                        @php
-                            $jalurDenganGelombang = $jalurAktif->filter(fn($j) => $j->gelombang->isNotEmpty());
-                        @endphp
-                        
-                        {{-- Status Pendaftaran dengan Countdown - Hidden saat open --}}
-                        @if($statusPendaftaran != 'open')
-                        <div class="countdown-wrapper text-white text-center mb-4">
-                            <div class="countdown-status {{ $statusPendaftaran }}">
-                                @if($statusPendaftaran == 'upcoming')
-                                    <i class="fas fa-hourglass-half"></i>
-                                    <span>Pendaftaran Segera Dibuka</span>
-                                @else
-                                    <i class="fas fa-door-closed"></i>
-                                    <span>Pendaftaran Telah Ditutup</span>
-                                @endif
-                            </div>
-                            
-                            @if($gelombangAktif && $countdownTarget && $statusPendaftaran == 'upcoming')
-                            <p class="mb-3 opacity-90">
-                                <i class="fas fa-clock me-1"></i> Pendaftaran akan dibuka dalam:
-                            </p>
-                            <div id="countdown" class="countdown-timer" data-target="{{ $countdownTarget->format('Y-m-d H:i:s') }}">
-                                <div class="countdown-box">
-                                    <div class="countdown-value" data-countdown-part="days">00</div>
-                                    <div class="countdown-label">Hari</div>
-                                </div>
-                                <span class="countdown-separator d-none d-sm-block">:</span>
-                                <div class="countdown-box">
-                                    <div class="countdown-value" data-countdown-part="hours">00</div>
-                                    <div class="countdown-label">Jam</div>
-                                </div>
-                                <span class="countdown-separator d-none d-sm-block">:</span>
-                                <div class="countdown-box">
-                                    <div class="countdown-value" data-countdown-part="minutes">00</div>
-                                    <div class="countdown-label">Menit</div>
-                                </div>
-                                <span class="countdown-separator d-none d-sm-block">:</span>
-                                <div class="countdown-box">
-                                    <div class="countdown-value" data-countdown-part="seconds">00</div>
-                                    <div class="countdown-label">Detik</div>
-                                </div>
-                            </div>
-                            @endif
-                        </div>
-                        @endif
-                        
-                        {{-- Main CTA Cards --}}
-                        @if($statusPendaftaran == 'open')
-                            @auth
-                                <div class="row justify-content-center g-3 mb-4">
-                                    <div class="col-sm-6 col-md-5 col-lg-4">
-                                        <div class="card bg-white text-dark h-100 border-0 shadow">
-                                            <div class="card-body p-4 text-center">
-                                                <div class="rounded-circle bg-success bg-opacity-10 p-3 d-inline-flex mb-3">
-                                                    <i class="fas fa-tachometer-alt fa-2x text-success"></i>
-                                                </div>
-                                                <h5 class="fw-bold mb-2">Halo, {{ Auth::user()->name }}!</h5>
-                                                <p class="text-muted small mb-3">Klik tombol di bawah untuk masuk ke dashboard.</p>
-                                                @if(Auth::user()->isAdmin())
-                                                    <a href="{{ route('admin.dashboard') }}" class="btn btn-success w-100">
-                                                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard Admin
-                                                    </a>
-                                                @elseif(Auth::user()->hasAnyRole(['operator', 'verifikator']))
-                                                    <a href="{{ route('operator.dashboard') }}" class="btn btn-success w-100">
-                                                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard Operator
-                                                    </a>
-                                                @else
-                                                    <a href="{{ route('pendaftar.dashboard') }}" class="btn btn-success w-100">
-                                                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard Saya
-                                                    </a>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @else
-                                <div class="row justify-content-center g-3 mb-4">
-                                    <div class="col-sm-6 col-md-5 col-lg-4">
-                                        <div class="card bg-white text-dark h-100 border-0 shadow">
-                                            <div class="card-body p-4 text-center">
-                                                <div class="rounded-circle bg-primary bg-opacity-10 p-3 d-inline-flex mb-3">
-                                                    <i class="fas fa-user-plus fa-2x text-primary"></i>
-                                                </div>
-                                                <h5 class="fw-bold mb-2">Pendaftaran Baru</h5>
-                                                <p class="text-muted small mb-3">Belum punya akun? Daftar di sini untuk memulai pendaftaran PPDB</p>
-                                                <a href="{{ route('pendaftar.landing') }}" class="btn btn-primary w-100">
-                                                    <i class="fas fa-arrow-right me-2"></i> Daftar Sekarang
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-sm-6 col-md-5 col-lg-4">
-                                        <div class="card bg-white bg-opacity-10 text-white h-100 border border-white border-opacity-25">
-                                            <div class="card-body p-4 text-center">
-                                                <div class="rounded-circle bg-white bg-opacity-25 p-3 d-inline-flex mb-3">
-                                                    <i class="fas fa-sign-in-alt fa-2x"></i>
-                                                </div>
-                                                <h5 class="fw-bold mb-2">Sudah Terdaftar?</h5>
-                                                <p class="opacity-75 small mb-3">Login untuk melanjutkan pendaftaran atau cek status</p>
-                                                <a href="{{ route('login') }}" class="btn btn-outline-light w-100">
-                                                    <i class="fas fa-sign-in-alt me-2"></i> Login
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endauth
-                        @else
-                            {{-- Pendaftaran belum/sudah tutup --}}
-                            <div class="d-flex justify-content-center gap-3 flex-wrap">
-                                @auth
-                                    <a href="{{ Auth::user()->isAdmin() ? route('admin.dashboard') : route('pendaftar.dashboard') }}" class="btn btn-light btn-lg px-4">
-                                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
-                                    </a>
-                                @else
-                                    <a href="{{ route('login') }}" class="btn btn-outline-light btn-lg px-4">
-                                        <i class="fas fa-sign-in-alt me-2"></i> Login
-                                    </a>
-                                @endauth
-                            </div>
-                        @endif
-                        
-                        {{-- Info Badge --}}
-                        <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">
-                            <span class="badge bg-white text-dark px-3 py-2">
-                                <i class="fas fa-graduation-cap me-1"></i>
+                    <div class="col-lg-10 col-xl-9 mx-auto text-center">
+                        {{-- Meta Badge --}}
+                        <div class="hero-meta-badge d-inline-flex align-items-center flex-wrap justify-content-center gap-2 px-3 py-1 mb-3 rounded-pill">
+                            <span class="d-inline-flex align-items-center">
+                                <i class="fas fa-school text-warning me-1"></i>
                                 {{ \App\Models\SekolahSettings::JENJANG_LIST[$sekolahSettings->jenjang] ?? $sekolahSettings->jenjang }}
                             </span>
                             @if($sekolahSettings->npsn)
-                            <span class="badge bg-white bg-opacity-25 px-3 py-2">NPSN: {{ $sekolahSettings->npsn }}</span>
+                                <span class="opacity-50">•</span>
+                                <span>NPSN: {{ $sekolahSettings->npsn }}</span>
                             @endif
                             @if($sekolahSettings->akreditasi)
-                            <span class="badge bg-warning text-dark px-3 py-2">
-                                <i class="fas fa-award me-1"></i> Akreditasi {{ $sekolahSettings->akreditasi }}
-                            </span>
+                                <span class="opacity-50">•</span>
+                                <span class="badge bg-warning text-dark fw-bold px-2 py-0.5">Akreditasi {{ $sekolahSettings->akreditasi }}</span>
                             @endif
                         </div>
-                        
-                        {{-- Info Jalur Aktif Badge --}}
-                        @if($jalurAktif->count() > 0)
-                        <div class="d-flex flex-wrap justify-content-center gap-2 mt-3">
-                            @foreach($jalurAktif as $jalur)
-                                @php
-                                    $gelombangJalur = $jalur->gelombang->first();
-                                    $isOpen = $gelombangJalur && $gelombangJalur->status == 'open';
-                                    $isUpcoming = $gelombangJalur && $gelombangJalur->status == 'upcoming';
-                                @endphp
-                                <div class="badge px-3 py-2 d-flex align-items-center gap-2" 
-                                     style="background: {{ $isOpen ? 'rgba(25, 135, 84, 0.9)' : ($isUpcoming ? 'rgba(255, 193, 7, 0.9)' : 'rgba(108, 117, 125, 0.7)') }}; color: {{ $isUpcoming ? '#000' : '#fff' }};">
-                                    <i class="{{ $jalur->icon ?? 'fas fa-graduation-cap' }}"></i>
-                                    <span class="fw-semibold">{{ $jalur->nama }}</span>
-                                    @if($gelombangJalur)
-                                        <span class="opacity-75">|</span>
-                                        <small>
-                                            @if($isOpen)
-                                                {{ $gelombangJalur->tanggal_buka->format('d M') }} - {{ $gelombangJalur->tanggal_tutup->format('d M Y') }}
-                                                <span class="badge bg-white text-success ms-1">{{ $gelombangJalur->sisa_hari }} hari lagi</span>
-                                            @elseif($isUpcoming)
-                                                Dibuka {{ $gelombangJalur->tanggal_buka->format('d M Y') }}
-                                            @else
-                                                Ditutup
-                                            @endif
-                                        </small>
-                                    @endif
+
+                        {{-- School Title & Subtitle --}}
+                        <h1 class="hero-title mb-2">{{ $sekolahSettings->nama_sekolah }}</h1>
+                        <p class="hero-subtitle mb-4">Penerimaan Peserta Didik Baru (PPDB) Online Tahun Ajaran {{ $gelombangAktif->tahun_ajaran ?? (date('Y') . '/' . (date('Y')+1)) }}</p>
+
+                        @php
+                            $jalurDenganGelombang = $jalurAktif->filter(fn($j) => $j->gelombang->isNotEmpty());
+                        @endphp
+
+                        {{-- Unified Status & CTA Glass Card --}}
+                        <div class="hero-status-card text-center">
+                            @if($statusPendaftaran == 'open')
+                                <div class="hero-status-pill open mb-3">
+                                    <span class="status-pulse-dot"></span>
+                                    <i class="fas fa-check-circle me-1"></i> Pendaftaran Sedang Dibuka
                                 </div>
-                            @endforeach
+                                <p class="hero-card-desc mb-4">
+                                    Penerimaan Peserta Didik Baru (PPDB) telah resmi dibuka. Silakan buat akun baru untuk memulai pengisian formulir, atau login bagi Anda yang sudah memiliki akun.
+                                </p>
+                                @auth
+                                    <div class="p-3 bg-white bg-opacity-10 rounded-4 border border-white border-opacity-15 mb-3 text-center">
+                                        <h6 class="fw-bold text-white mb-1">Halo, {{ Auth::user()->name }}!</h6>
+                                        <p class="small text-white-50 mb-3">Anda saat ini sedang login.</p>
+                                        <a href="{{ Auth::user()->isAdmin() ? route('admin.dashboard') : (Auth::user()->hasAnyRole(['operator', 'verifikator']) ? route('operator.dashboard') : route('pendaftar.dashboard')) }}" class="btn btn-hero-primary">
+                                            <i class="fas fa-tachometer-alt me-2"></i> Masuk ke Dashboard
+                                        </a>
+                                    </div>
+                                @else
+                                    <div class="d-flex flex-wrap justify-content-center gap-3 mb-4">
+                                        <a href="{{ route('pendaftar.landing') }}" class="btn btn-hero-primary">
+                                            <i class="fas fa-user-plus me-2"></i> Daftar Sekarang
+                                        </a>
+                                        <a href="{{ route('login') }}" class="btn btn-hero-secondary">
+                                            <i class="fas fa-sign-in-alt me-2"></i> Login Akun
+                                        </a>
+                                        <a href="#alur" class="btn btn-hero-secondary">
+                                            <i class="fas fa-info-circle me-2"></i> Alur Pendaftaran
+                                        </a>
+                                    </div>
+                                @endauth
+                            @elseif($statusPendaftaran == 'upcoming')
+                                <div class="hero-status-pill upcoming mb-3">
+                                    <i class="fas fa-hourglass-half me-1"></i> Pendaftaran Segera Dibuka
+                                </div>
+                                @if($gelombangAktif && $countdownTarget)
+                                    <p class="hero-card-desc mb-3">
+                                        Pendaftaran PPDB akan segera dibuka dalam:
+                                    </p>
+                                    <div id="countdown" class="countdown-timer mb-4" data-target="{{ $countdownTarget->format('Y-m-d H:i:s') }}">
+                                        <div class="countdown-box">
+                                            <div class="countdown-value" data-countdown-part="days">00</div>
+                                            <div class="countdown-label">Hari</div>
+                                        </div>
+                                        <span class="countdown-separator d-none d-sm-block">:</span>
+                                        <div class="countdown-box">
+                                            <div class="countdown-value" data-countdown-part="hours">00</div>
+                                            <div class="countdown-label">Jam</div>
+                                        </div>
+                                        <span class="countdown-separator d-none d-sm-block">:</span>
+                                        <div class="countdown-box">
+                                            <div class="countdown-value" data-countdown-part="minutes">00</div>
+                                            <div class="countdown-label">Menit</div>
+                                        </div>
+                                        <span class="countdown-separator d-none d-sm-block">:</span>
+                                        <div class="countdown-box">
+                                            <div class="countdown-value" data-countdown-part="seconds">00</div>
+                                            <div class="countdown-label">Detik</div>
+                                        </div>
+                                    </div>
+                                @endif
+                                <div class="d-flex flex-wrap justify-content-center gap-3 mb-4">
+                                    <a href="#alur" class="btn btn-hero-primary">
+                                        <i class="fas fa-calendar-alt me-2"></i> Lihat Jadwal & Syarat
+                                    </a>
+                                    <a href="{{ route('login') }}" class="btn btn-hero-secondary">
+                                        <i class="fas fa-sign-in-alt me-2"></i> Login
+                                    </a>
+                                </div>
+                            @else
+                                {{-- CLOSED STATE --}}
+                                <div class="hero-status-pill closed mb-3">
+                                    <i class="fas fa-door-closed me-1"></i> Pendaftaran Telah Ditutup
+                                </div>
+                                <p class="hero-card-desc mb-4">
+                                    Penerimaan Peserta Didik Baru (PPDB) periode saat ini telah ditutup. Bagi calon peserta didik yang telah terdaftar, silakan masuk ke akun Anda untuk melihat status verifikasi, pengumuman hasil seleksi, atau informasi daftar ulang.
+                                </p>
+                                <div class="d-flex flex-wrap justify-content-center gap-3 mb-4">
+                                    @auth
+                                        <a href="{{ Auth::user()->isAdmin() ? route('admin.dashboard') : (Auth::user()->hasAnyRole(['operator', 'verifikator']) ? route('operator.dashboard') : route('pendaftar.dashboard')) }}" class="btn btn-hero-primary">
+                                            <i class="fas fa-tachometer-alt me-2"></i> Buka Dashboard
+                                        </a>
+                                    @else
+                                        <a href="{{ route('login') }}" class="btn btn-hero-primary">
+                                            <i class="fas fa-sign-in-alt me-2"></i> Masuk ke Akun Pendaftar
+                                        </a>
+                                    @endauth
+                                    <a href="#alur" class="btn btn-hero-secondary">
+                                        <i class="fas fa-calendar-alt me-2"></i> Lihat Jadwal & Alur
+                                    </a>
+                                </div>
+                            @endif
+
+                            {{-- Info Jalur Aktif --}}
+                            @if($jalurAktif->count() > 0)
+                            <div class="hero-jalur-strip">
+                                <div class="hero-jalur-label mb-2">Informasi Jalur Pendaftaran:</div>
+                                <div class="d-flex flex-wrap justify-content-center gap-2">
+                                    @foreach($jalurAktif as $jalur)
+                                        @php
+                                            $gelombangJalur = $jalur->gelombang->first();
+                                            $isOpen = $gelombangJalur && $gelombangJalur->status == 'open';
+                                            $isUpcoming = $gelombangJalur && $gelombangJalur->status == 'upcoming';
+                                        @endphp
+                                        <div class="hero-jalur-pill {{ $isOpen ? 'open' : ($isUpcoming ? 'upcoming' : 'closed') }}">
+                                            <i class="{{ $jalur->icon ?? 'fas fa-graduation-cap' }}"></i>
+                                            <span class="fw-semibold">{{ $jalur->nama }}</span>
+                                            @if($gelombangJalur)
+                                                <span class="opacity-50">|</span>
+                                                <small>
+                                                    @if($isOpen)
+                                                        {{ $gelombangJalur->tanggal_buka->format('d M') }} - {{ $gelombangJalur->tanggal_tutup->format('d M Y') }}
+                                                        <span class="badge bg-success ms-1">{{ $gelombangJalur->sisa_hari }} hari lagi</span>
+                                                    @elseif($isUpcoming)
+                                                        Dibuka {{ $gelombangJalur->tanggal_buka->format('d M Y') }}
+                                                    @else
+                                                        Ditutup
+                                                    @endif
+                                                </small>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @endif
                         </div>
-                        @endif
                     </div>
                 </div>
+            </div>
+            {{-- Wave Curve Bottom --}}
+            <div class="hero-wave">
+                <svg viewBox="0 0 1440 60" fill="none" preserveAspectRatio="none">
+                    <path d="M0,0 C480,50 960,50 1440,0 L1440,60 L0,60 Z" fill="#ffffff"></path>
+                </svg>
             </div>
         </section>
     @endif
 
     {{-- Status Pendaftaran Section (ditampilkan saat slider aktif) --}}
     @if($siteSettings->enable_slider && $sliders->count() > 0)
-    <section class="py-5" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 60%, black) 100%);">
+    <section class="hero-status-slider-section">
         <div class="container">
             <div class="row align-items-center">
-                <div class="col-lg-10 mx-auto text-center text-white">
+                <div class="col-lg-10 col-xl-9 mx-auto text-center text-white">
                     @php
                         $jalurDenganGelombang = $jalurAktif->filter(fn($j) => $j->gelombang->isNotEmpty());
                     @endphp
-                    
-                    {{-- Status Pendaftaran dengan Countdown - Hidden saat open --}}
-                    @if($statusPendaftaran != 'open')
-                    <div class="countdown-wrapper text-white text-center mb-4">
-                        <div class="countdown-status {{ $statusPendaftaran }}">
-                            @if($statusPendaftaran == 'upcoming')
-                                <i class="fas fa-hourglass-half"></i>
-                                <span>Pendaftaran Segera Dibuka</span>
+
+                    {{-- Unified Status & CTA Glass Card --}}
+                    <div class="hero-status-card text-center">
+                        @if($statusPendaftaran == 'open')
+                            <div class="hero-status-pill open mb-3">
+                                <span class="status-pulse-dot"></span>
+                                <i class="fas fa-check-circle me-1"></i> Pendaftaran Sedang Dibuka
+                            </div>
+                            <p class="hero-card-desc mb-4">
+                                Penerimaan Peserta Didik Baru (PPDB) telah resmi dibuka. Silakan buat akun baru untuk memulai pengisian formulir, atau login bagi Anda yang sudah memiliki akun.
+                            </p>
+                            @auth
+                                <div class="p-3 bg-white bg-opacity-10 rounded-4 border border-white border-opacity-15 mb-3 text-center">
+                                    <h6 class="fw-bold text-white mb-1">Halo, {{ Auth::user()->name }}!</h6>
+                                    <p class="small text-white-50 mb-3">Anda saat ini sedang login.</p>
+                                    <a href="{{ Auth::user()->isAdmin() ? route('admin.dashboard') : (Auth::user()->hasAnyRole(['operator', 'verifikator']) ? route('operator.dashboard') : route('pendaftar.dashboard')) }}" class="btn btn-hero-primary">
+                                        <i class="fas fa-tachometer-alt me-2"></i> Masuk ke Dashboard
+                                    </a>
+                                </div>
                             @else
-                                <i class="fas fa-door-closed"></i>
-                                <span>Pendaftaran Telah Ditutup</span>
+                                <div class="d-flex flex-wrap justify-content-center gap-3 mb-4">
+                                    <a href="{{ route('pendaftar.landing') }}" class="btn btn-hero-primary">
+                                        <i class="fas fa-user-plus me-2"></i> Daftar Sekarang
+                                    </a>
+                                    <a href="{{ route('login') }}" class="btn btn-hero-secondary">
+                                        <i class="fas fa-sign-in-alt me-2"></i> Login Akun
+                                    </a>
+                                    <a href="#alur" class="btn btn-hero-secondary">
+                                        <i class="fas fa-info-circle me-2"></i> Alur Pendaftaran
+                                    </a>
+                                </div>
+                            @endauth
+                        @elseif($statusPendaftaran == 'upcoming')
+                            <div class="hero-status-pill upcoming mb-3">
+                                <i class="fas fa-hourglass-half me-1"></i> Pendaftaran Segera Dibuka
+                            </div>
+                            @if($gelombangAktif && $countdownTarget)
+                                <p class="hero-card-desc mb-3">
+                                    Pendaftaran PPDB akan segera dibuka dalam:
+                                </p>
+                                <div id="countdown" class="countdown-timer mb-4" data-target="{{ $countdownTarget->format('Y-m-d H:i:s') }}">
+                                    <div class="countdown-box">
+                                        <div class="countdown-value" data-countdown-part="days">00</div>
+                                        <div class="countdown-label">Hari</div>
+                                    </div>
+                                    <span class="countdown-separator d-none d-sm-block">:</span>
+                                    <div class="countdown-box">
+                                        <div class="countdown-value" data-countdown-part="hours">00</div>
+                                        <div class="countdown-label">Jam</div>
+                                    </div>
+                                    <span class="countdown-separator d-none d-sm-block">:</span>
+                                    <div class="countdown-box">
+                                        <div class="countdown-value" data-countdown-part="minutes">00</div>
+                                        <div class="countdown-label">Menit</div>
+                                    </div>
+                                    <span class="countdown-separator d-none d-sm-block">:</span>
+                                    <div class="countdown-box">
+                                        <div class="countdown-value" data-countdown-part="seconds">00</div>
+                                        <div class="countdown-label">Detik</div>
+                                    </div>
+                                </div>
                             @endif
-                        </div>
-                        
-                        @if($gelombangAktif && $countdownTarget && $statusPendaftaran == 'upcoming')
-                        <p class="mb-3 opacity-90">
-                            <i class="fas fa-clock me-1"></i> Pendaftaran akan dibuka dalam:
-                        </p>
-                        <div id="countdown" class="countdown-timer" data-target="{{ $countdownTarget->format('Y-m-d H:i:s') }}">
-                            <div class="countdown-box">
-                                <div class="countdown-value" data-countdown-part="days">00</div>
-                                <div class="countdown-label">Hari</div>
+                            <div class="d-flex flex-wrap justify-content-center gap-3 mb-4">
+                                <a href="#alur" class="btn btn-hero-primary">
+                                    <i class="fas fa-calendar-alt me-2"></i> Lihat Jadwal & Syarat
+                                </a>
+                                <a href="{{ route('login') }}" class="btn btn-hero-secondary">
+                                    <i class="fas fa-sign-in-alt me-2"></i> Login
+                                </a>
                             </div>
-                            <span class="countdown-separator d-none d-sm-block">:</span>
-                            <div class="countdown-box">
-                                <div class="countdown-value" data-countdown-part="hours">00</div>
-                                <div class="countdown-label">Jam</div>
+                        @else
+                            {{-- CLOSED STATE --}}
+                            <div class="hero-status-pill closed mb-3">
+                                <i class="fas fa-door-closed me-1"></i> Pendaftaran Telah Ditutup
                             </div>
-                            <span class="countdown-separator d-none d-sm-block">:</span>
-                            <div class="countdown-box">
-                                <div class="countdown-value" data-countdown-part="minutes">00</div>
-                                <div class="countdown-label">Menit</div>
+                            <p class="hero-card-desc mb-4">
+                                Penerimaan Peserta Didik Baru (PPDB) periode saat ini telah ditutup. Bagi calon peserta didik yang telah terdaftar, silakan masuk ke akun Anda untuk melihat status verifikasi, pengumuman hasil seleksi, atau informasi daftar ulang.
+                            </p>
+                            <div class="d-flex flex-wrap justify-content-center gap-3 mb-4">
+                                @auth
+                                    <a href="{{ Auth::user()->isAdmin() ? route('admin.dashboard') : (Auth::user()->hasAnyRole(['operator', 'verifikator']) ? route('operator.dashboard') : route('pendaftar.dashboard')) }}" class="btn btn-hero-primary">
+                                        <i class="fas fa-tachometer-alt me-2"></i> Buka Dashboard
+                                    </a>
+                                @else
+                                    <a href="{{ route('login') }}" class="btn btn-hero-primary">
+                                        <i class="fas fa-sign-in-alt me-2"></i> Masuk ke Akun Pendaftar
+                                    </a>
+                                @endauth
+                                <a href="#alur" class="btn btn-hero-secondary">
+                                    <i class="fas fa-calendar-alt me-2"></i> Lihat Jadwal & Alur
+                                </a>
                             </div>
-                            <span class="countdown-separator d-none d-sm-block">:</span>
-                            <div class="countdown-box">
-                                <div class="countdown-value" data-countdown-part="seconds">00</div>
-                                <div class="countdown-label">Detik</div>
+                        @endif
+
+                        {{-- Info Jalur Aktif --}}
+                        @if($jalurAktif->count() > 0)
+                        <div class="hero-jalur-strip">
+                            <div class="hero-jalur-label mb-2">Informasi Jalur Pendaftaran:</div>
+                            <div class="d-flex flex-wrap justify-content-center gap-2">
+                                @foreach($jalurAktif as $jalur)
+                                    @php
+                                        $gelombangJalur = $jalur->gelombang->first();
+                                        $isOpen = $gelombangJalur && $gelombangJalur->status == 'open';
+                                        $isUpcoming = $gelombangJalur && $gelombangJalur->status == 'upcoming';
+                                    @endphp
+                                    <div class="hero-jalur-pill {{ $isOpen ? 'open' : ($isUpcoming ? 'upcoming' : 'closed') }}">
+                                        <i class="{{ $jalur->icon ?? 'fas fa-graduation-cap' }}"></i>
+                                        <span class="fw-semibold">{{ $jalur->nama }}</span>
+                                        @if($gelombangJalur)
+                                            <span class="opacity-50">|</span>
+                                            <small>
+                                                @if($isOpen)
+                                                    {{ $gelombangJalur->tanggal_buka->format('d M') }} - {{ $gelombangJalur->tanggal_tutup->format('d M Y') }}
+                                                    <span class="badge bg-success ms-1">{{ $gelombangJalur->sisa_hari }} hari lagi</span>
+                                                @elseif($isUpcoming)
+                                                    Dibuka {{ $gelombangJalur->tanggal_buka->format('d M Y') }}
+                                                @else
+                                                    Ditutup
+                                                @endif
+                                            </small>
+                                        @endif
+                                    </div>
+                                @endforeach
                             </div>
                         </div>
                         @endif
                     </div>
-                    @endif
-                    
-                    {{-- Main CTA Cards --}}
-                    @if($statusPendaftaran == 'open')
-                        @auth
-                            <div class="row justify-content-center g-3">
-                                <div class="col-sm-6 col-md-5 col-lg-4">
-                                    <div class="card bg-white text-dark h-100 border-0 shadow">
-                                        <div class="card-body p-4 text-center">
-                                            <div class="rounded-circle bg-success bg-opacity-10 p-3 d-inline-flex mb-3">
-                                                <i class="fas fa-tachometer-alt fa-2x text-success"></i>
-                                            </div>
-                                            <h5 class="fw-bold mb-2">Halo, {{ Auth::user()->name }}!</h5>
-                                            <p class="text-muted small mb-3">Klik tombol di bawah untuk masuk ke dashboard.</p>
-                                            @if(Auth::user()->isAdmin())
-                                                <a href="{{ route('admin.dashboard') }}" class="btn btn-success w-100">
-                                                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard Admin
-                                                </a>
-                                            @elseif(Auth::user()->hasAnyRole(['operator', 'verifikator']))
-                                                <a href="{{ route('operator.dashboard') }}" class="btn btn-success w-100">
-                                                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard Operator
-                                                </a>
-                                            @else
-                                                <a href="{{ route('pendaftar.dashboard') }}" class="btn btn-success w-100">
-                                                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard Saya
-                                                </a>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @else
-                            <div class="row justify-content-center g-3">
-                                <div class="col-sm-6 col-md-5 col-lg-4">
-                                    <div class="card bg-white text-dark h-100 border-0 shadow">
-                                        <div class="card-body p-4 text-center">
-                                            <div class="rounded-circle bg-primary bg-opacity-10 p-3 d-inline-flex mb-3">
-                                                <i class="fas fa-user-plus fa-2x text-primary"></i>
-                                            </div>
-                                            <h5 class="fw-bold mb-2">Pendaftaran Baru</h5>
-                                            <p class="text-muted small mb-3">Daftar di sini untuk memulai pendaftaran PPDB</p>
-                                            <a href="{{ route('pendaftar.landing') }}" class="btn btn-primary w-100">
-                                                <i class="fas fa-arrow-right me-2"></i> Daftar Sekarang
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6 col-md-5 col-lg-4">
-                                    <div class="card bg-white bg-opacity-10 text-white h-100 border border-white border-opacity-25">
-                                        <div class="card-body p-4 text-center">
-                                            <div class="rounded-circle bg-white bg-opacity-25 p-3 d-inline-flex mb-3">
-                                                <i class="fas fa-sign-in-alt fa-2x"></i>
-                                            </div>
-                                            <h5 class="fw-bold mb-2">Sudah Terdaftar?</h5>
-                                            <p class="opacity-75 small mb-3">Login untuk melanjutkan pendaftaran</p>
-                                            <a href="{{ route('login') }}" class="btn btn-outline-light w-100">
-                                                <i class="fas fa-sign-in-alt me-2"></i> Login
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @endauth
-                    @else
-                        {{-- Pendaftaran Ditutup --}}
-                        <div class="d-flex justify-content-center gap-3 flex-wrap mt-3">
-                            @auth
-                                <a href="{{ Auth::user()->isAdmin() ? route('admin.dashboard') : route('pendaftar.dashboard') }}" class="btn btn-light btn-lg px-4">
-                                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard
-                                </a>
-                            @else
-                                <a href="{{ route('login') }}" class="btn btn-outline-light btn-lg px-4">
-                                    <i class="fas fa-sign-in-alt me-2"></i> Login
-                                </a>
-                            @endauth
-                        </div>
-                    @endif
                 </div>
             </div>
         </div>
