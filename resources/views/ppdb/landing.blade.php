@@ -818,70 +818,129 @@
             }
         }
         
-        /* Cards */
+        /* Cards & Info Box Containers */
         .card {
             border: none;
-            border-radius: 12px;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-            transition: box-shadow 0.3s ease;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
+            transition: all 0.3s ease;
         }
         
         .card:hover {
-            box-shadow: 0 5px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.09);
         }
-        
-        .card-jalur:hover {
-            transform: translateY(-3px);
+
+        .info-box-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 2.25rem 2rem;
+            border: 1px solid rgba(226, 232, 240, 0.85);
+            box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.02);
+            height: 100%;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .info-box-card:hover {
+            box-shadow: 0 18px 38px -5px rgba(15, 23, 42, 0.08);
+        }
+
+        .info-box-header {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            margin-bottom: 1.75rem;
+            padding-bottom: 1.15rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .info-box-header-icon {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            border-radius: 12px;
+            background: rgba(13, 110, 253, 0.1);
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .info-box-header h5 {
+            margin: 0;
+            font-weight: 700;
+            color: #0f172a;
+            font-size: 1.25rem;
+            letter-spacing: -0.3px;
         }
         
         /* Timeline */
         .timeline {
             position: relative;
-            padding-left: 40px;
-        }
-        
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 15px;
-            top: 0;
-            bottom: 0;
-            width: 3px;
-            background: linear-gradient(180deg, var(--primary-color) 0%, #e9ecef 100%);
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
         }
         
         .timeline-item {
             position: relative;
-            padding-bottom: 25px;
-            transition: all 0.3s ease;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 1.15rem 1.25rem;
+            transition: all 0.25s ease;
         }
         
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            left: -25px;
-            top: 5px;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            border: 3px solid var(--primary-color);
-            background: white;
-            transition: all 0.3s ease;
+        .timeline-item:hover {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+            transform: translateX(4px);
         }
         
-        .timeline-item.active::before {
-            background: var(--primary-color);
-            animation: pulse 2s infinite;
+        .timeline-item.active {
+            background: #f0fdf4;
+            border-color: #86efac;
+            box-shadow: 0 6px 20px rgba(34, 197, 94, 0.12);
         }
-        
-        .timeline-item:hover::before {
-            transform: scale(1.3);
+
+        .timeline-item h6 {
+            color: #0f172a;
+            font-size: 0.98rem;
+            font-weight: 700;
+            margin-bottom: 0.35rem;
         }
-        
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(0, 123, 255, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); }
+
+        .timeline-item small {
+            color: #64748b;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .timeline-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.35rem 0.8rem;
+            border-radius: 999px;
+            letter-spacing: 0.3px;
+        }
+
+        .timeline-badge.status-ongoing {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+        }
+
+        .timeline-badge.status-upcoming {
+            background: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+        }
+
+        .timeline-badge.status-done {
+            background: #f1f5f9;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
         }
         
         /* Alur Pendaftaran */
@@ -889,89 +948,129 @@
             display: flex;
             align-items: flex-start;
             position: relative;
+            padding-bottom: 1.75rem;
         }
         
         .alur-number {
-            width: 45px;
-            height: 45px;
-            min-width: 45px;
-            border-radius: 50%;
-            background: var(--primary-color);
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, #1e40af 100%);
             color: white;
-            font-size: 18px;
-            font-weight: 700;
+            font-size: 1.05rem;
+            font-weight: 800;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-right: 20px;
+            margin-right: 1.25rem;
             position: relative;
             z-index: 2;
+            box-shadow: 0 6px 16px rgba(13, 110, 253, 0.25);
+            transition: transform 0.25s ease;
+        }
+
+        .alur-step:hover .alur-number {
+            transform: scale(1.08);
         }
         
         .alur-content {
             flex: 1;
-            padding-bottom: 30px;
         }
         
-        .alur-content h5 {
-            margin-bottom: 5px;
-            font-weight: 600;
+        .alur-content h6 {
+            margin-bottom: 0.35rem;
+            font-weight: 700;
+            color: #0f172a;
+            font-size: 1.02rem;
         }
         
         .alur-content p {
-            color: #6c757d;
-            font-size: 14px;
+            color: #64748b;
+            font-size: 0.92rem;
+            line-height: 1.55;
             margin: 0;
         }
         
         .alur-line {
             position: absolute;
-            left: 22px;
-            top: 45px;
+            left: 21px;
+            top: 44px;
             bottom: 0;
             width: 2px;
-            background: #e9ecef;
+            background: #e2e8f0;
         }
         
+        .alur-step:last-child {
+            padding-bottom: 0;
+        }
+
         .alur-step:last-child .alur-line {
             display: none;
         }
         
-        .alur-step:last-child .alur-content {
-            padding-bottom: 0;
-        }
-        
         /* Footer */
         footer {
-            background: #212529;
-            color: #fff;
+            background: linear-gradient(180deg, #0b1329 0%, #060b18 100%);
+            color: #cbd5e1;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            position: relative;
         }
         
         footer a {
-            color: rgba(255,255,255,0.7);
+            color: #94a3b8;
             text-decoration: none;
+            transition: all 0.2s ease;
+            display: inline-block;
         }
         
         footer a:hover {
-            color: #fff;
+            color: #ffffff;
+            transform: translateX(3px);
+        }
+
+        footer hr {
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .footer-heading {
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+            position: relative;
+        }
+
+        .footer-heading::after {
+            content: '';
+            display: block;
+            width: 28px;
+            height: 3px;
+            border-radius: 2px;
+            background: var(--primary-color);
+            margin-top: 6px;
         }
         
         .social-links a {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.1);
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
             color: #fff;
             margin-right: 10px;
-            transition: all 0.3s ease;
+            font-size: 1.1rem;
+            transition: all 0.25s ease;
         }
         
         .social-links a:hover {
             background: var(--primary-color);
+            border-color: var(--primary-color);
             transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(13, 110, 253, 0.3);
         }
         
         /* Section spacing */
@@ -979,10 +1078,25 @@
             padding: 70px 0;
         }
         
+        .section-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--primary-color);
+            background: rgba(13, 110, 253, 0.08);
+            padding: 0.35rem 0.95rem;
+            border-radius: 999px;
+            margin-bottom: 0.85rem;
+        }
+
         .section-title {
             margin-bottom: 8px;
             color: #0f172a;
-            font-size: 2.1rem;
+            font-size: 2.15rem;
             font-weight: 800;
             letter-spacing: -0.5px;
         }
@@ -997,16 +1111,59 @@
         .bg-soft {
             background: #f8fafc;
         }
+
+        /* Kontak cards */
+        .contact-info-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .contact-icon-box {
+            width: 42px;
+            height: 42px;
+            min-width: 42px;
+            border-radius: 12px;
+            background: rgba(13, 110, 253, 0.08);
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .contact-info-body {
+            flex: 1;
+        }
+
+        .contact-info-body a {
+            color: #0f172a;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .contact-info-body a:hover {
+            color: var(--primary-color);
+        }
         
         /* Berita Card */
         .berita-card {
+            border-radius: 18px;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
             overflow: hidden;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 6px 20px -3px rgba(15, 23, 42, 0.05);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
         }
         
         .berita-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            transform: translateY(-6px);
+            box-shadow: 0 20px 35px -5px rgba(15, 23, 42, 0.12);
         }
         
         .berita-card .card-img-wrapper {
@@ -1044,6 +1201,30 @@
             align-items: center;
             justify-content: center;
             background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 70%, black) 100%);
+        }
+
+        .berita-card .card-body {
+            padding: 1.45rem;
+            flex: 1 1 auto;
+        }
+
+        .berita-card .card-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1.45;
+            transition: color 0.2s ease;
+            margin-bottom: 0.65rem;
+        }
+
+        .berita-card:hover .card-title {
+            color: var(--primary-color);
+        }
+
+        .berita-card .card-footer {
+            background: transparent;
+            border-top: 1px solid #f1f5f9;
+            padding: 1rem 1.45rem;
         }
         
         .berita-card .card-img-top {
@@ -1513,67 +1694,86 @@
     {{-- Alur & Jadwal Section (Combined) --}}
     <section id="alur">
         <div class="container">
-            <h2 class="section-title text-center fw-bold">Informasi Pendaftaran</h2>
-            <p class="section-subtitle text-center">Alur pendaftaran dan jadwal kegiatan PPDB</p>
+            <div class="text-center mb-5">
+                <span class="section-badge"><i class="fas fa-info-circle me-1"></i> Panduan & Agenda</span>
+                <h2 class="section-title fw-bold">Informasi Pendaftaran</h2>
+                <p class="section-subtitle">Alur proses pendaftaran dan jadwal resmi kegiatan PPDB</p>
+            </div>
             
             <div class="row g-4 g-lg-5">
                 {{-- Kolom Alur Pendaftaran --}}
                 <div class="col-lg-6">
-                    <h5 class="fw-bold mb-4 text-primary">
-                        <i class="fas fa-list-ol me-2"></i>Alur Pendaftaran
-                    </h5>
-                    
-                    @forelse($alurPendaftaran as $index => $alur)
-                    <div class="alur-step">
-                        <div class="alur-number" @if($alur->warna) style="background-color: {{ $alur->warna }}" @endif>
-                            {{ $index + 1 }}
+                    <div class="info-box-card">
+                        <div class="info-box-header">
+                            <div class="info-box-header-icon">
+                                <i class="fas fa-route"></i>
+                            </div>
+                            <div>
+                                <h5>Alur Pendaftaran</h5>
+                                <small class="text-muted">Tahapan mudah mendaftar sebagai calon peserta didik</small>
+                            </div>
                         </div>
-                        <div class="alur-content">
-                            <h6 class="fw-semibold mb-1">{{ $alur->judul }}</h6>
-                            <p class="mb-0">{{ $alur->deskripsi }}</p>
+                        
+                        @forelse($alurPendaftaran as $index => $alur)
+                        <div class="alur-step">
+                            <div class="alur-number" @if($alur->warna) style="background: {{ $alur->warna }}" @endif>
+                                {{ $index + 1 }}
+                            </div>
+                            <div class="alur-content">
+                                <h6>{{ $alur->judul }}</h6>
+                                <p>{{ $alur->deskripsi }}</p>
+                            </div>
+                            @if(!$loop->last)
+                            <div class="alur-line"></div>
+                            @endif
                         </div>
-                        @if(!$loop->last)
-                        <div class="alur-line"></div>
-                        @endif
+                        @empty
+                        <div class="text-muted text-center py-5">
+                            <i class="fas fa-info-circle fa-2x mb-2 text-secondary opacity-50"></i>
+                            <p class="mb-0">Alur pendaftaran belum dikonfigurasi</p>
+                        </div>
+                        @endforelse
                     </div>
-                    @empty
-                    <div class="text-muted text-center py-4">
-                        <i class="fas fa-info-circle fa-2x mb-2"></i>
-                        <p class="mb-0">Alur pendaftaran belum dikonfigurasi</p>
-                    </div>
-                    @endforelse
                 </div>
                 
                 {{-- Kolom Jadwal PPDB --}}
                 <div class="col-lg-6" id="jadwal">
-                    <h5 class="fw-bold mb-4 text-primary">
-                        <i class="fas fa-calendar-alt me-2"></i>Jadwal PPDB
-                    </h5>
-                    
-                    @if($jadwals->count() > 0)
-                    <div class="timeline">
-                        @foreach($jadwals as $jadwal)
-                        <div class="timeline-item {{ $jadwal->is_ongoing ? 'active' : '' }}">
-                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-1 fw-semibold">{{ $jadwal->nama_kegiatan }}</h6>
-                                    <small class="text-muted">
-                                        <i class="fas fa-calendar me-1"></i> {{ $jadwal->tanggal_range }}
-                                    </small>
-                                </div>
-                                <span class="badge {{ $jadwal->is_ongoing ? 'bg-success' : ($jadwal->is_upcoming ? 'bg-info' : 'bg-secondary') }}">
-                                    {{ $jadwal->is_ongoing ? 'Berlangsung' : ($jadwal->is_upcoming ? 'Akan Datang' : 'Selesai') }}
-                                </span>
+                    <div class="info-box-card">
+                        <div class="info-box-header">
+                            <div class="info-box-header-icon">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div>
+                                <h5>Jadwal PPDB</h5>
+                                <small class="text-muted">Agenda penting pelaksanaan tahapan seleksi</small>
                             </div>
                         </div>
-                        @endforeach
+                        
+                        @if($jadwals->count() > 0)
+                        <div class="timeline">
+                            @foreach($jadwals as $jadwal)
+                            <div class="timeline-item {{ $jadwal->is_ongoing ? 'active' : '' }}">
+                                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                    <div class="flex-grow-1">
+                                        <h6>{{ $jadwal->nama_kegiatan }}</h6>
+                                        <small>
+                                            <i class="far fa-clock text-primary me-1"></i> {{ $jadwal->tanggal_range }}
+                                        </small>
+                                    </div>
+                                    <span class="timeline-badge {{ $jadwal->is_ongoing ? 'status-ongoing' : ($jadwal->is_upcoming ? 'status-upcoming' : 'status-done') }}">
+                                        {{ $jadwal->is_ongoing ? '● Berlangsung' : ($jadwal->is_upcoming ? 'Akan Datang' : 'Selesai') }}
+                                    </span>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                        @else
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-calendar-times fa-3x mb-3 text-secondary opacity-50"></i>
+                            <p class="mb-0">Jadwal belum tersedia</p>
+                        </div>
+                        @endif
                     </div>
-                    @else
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-calendar-times fa-3x mb-3 opacity-50"></i>
-                        <p>Jadwal belum tersedia</p>
-                    </div>
-                    @endif
                 </div>
             </div>
         </div>
@@ -1583,19 +1783,27 @@
     @if($siteSettings->about_content)
     <section id="tentang" class="bg-soft">
         <div class="container">
-            <h2 class="section-title text-center fw-bold">Tentang Sekolah</h2>
-            <p class="section-subtitle text-center">Mengenal lebih dekat {{ $sekolahSettings->nama_sekolah }}</p>
+            <div class="text-center mb-5">
+                <span class="section-badge"><i class="fas fa-university me-1"></i> Profil Madrasah</span>
+                <h2 class="section-title fw-bold">Tentang Sekolah</h2>
+                <p class="section-subtitle">Mengenal lebih dekat keunggulan dan visi {{ $sekolahSettings->nama_sekolah }}</p>
+            </div>
+            
             <div class="row align-items-center justify-content-center">
                 @if($siteSettings->about_image)
                 <div class="col-md-5 mb-4 mb-md-0">
-                    <img src="{{ $siteSettings->about_image_url }}" class="img-fluid rounded-3" alt="Tentang Kami">
+                    <div class="position-relative">
+                        <img src="{{ $siteSettings->about_image_url }}" class="img-fluid rounded-4 shadow-sm" alt="Tentang Kami">
+                    </div>
                 </div>
                 <div class="col-md-7">
                 @else
-                <div class="col-lg-8">
+                <div class="col-lg-10">
                 @endif
-                    <div class="ps-md-4">
-                        {!! nl2br(e($siteSettings->about_content)) !!}
+                    <div class="info-box-card">
+                        <div class="ps-md-2" style="color: #475569; font-size: 1.02rem; line-height: 1.75;">
+                            {!! nl2br(e($siteSettings->about_content)) !!}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1607,12 +1815,16 @@
     @if($beritas->count() > 0)
     <section id="berita">
         <div class="container">
-            <h2 class="section-title text-center fw-bold">Berita & Pengumuman</h2>
-            <p class="section-subtitle text-center">Informasi terbaru seputar PPDB</p>
+            <div class="text-center mb-5">
+                <span class="section-badge"><i class="fas fa-newspaper me-1"></i> Kabar Terkini</span>
+                <h2 class="section-title fw-bold">Berita & Pengumuman</h2>
+                <p class="section-subtitle">Informasi terbaru seputar PPDB dan pengumuman seleksi</p>
+            </div>
+            
             <div class="row g-4">
                 @foreach($beritas as $berita)
                 <div class="col-md-4">
-                    <div class="card h-100 berita-card border-0 shadow-sm">
+                    <div class="berita-card">
                         <a href="{{ route('ppdb.berita.show', $berita->slug) }}" class="card-img-wrapper">
                             @if($berita->gambar)
                             <img src="{{ asset('storage/' . $berita->gambar) }}" alt="{{ $berita->judul }}">
@@ -1623,23 +1835,25 @@
                             @endif
                         </a>
                         <div class="card-body">
-                            @if($berita->kategori)
-                            <span class="badge bg-primary mb-2">{{ ucfirst($berita->kategori) }}</span>
-                            @endif
-                            @if($berita->is_featured)
-                            <span class="badge bg-warning mb-2"><i class="fas fa-star"></i> Featured</span>
-                            @endif
+                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                @if($berita->kategori)
+                                <span class="badge bg-primary rounded-pill px-2 py-1">{{ ucfirst($berita->kategori) }}</span>
+                                @endif
+                                @if($berita->is_featured)
+                                <span class="badge bg-warning text-dark rounded-pill px-2 py-1"><i class="fas fa-star text-dark"></i> Pilihan</span>
+                                @endif
+                            </div>
                             <a href="{{ route('ppdb.berita.show', $berita->slug) }}" class="text-decoration-none">
-                                <h5 class="card-title text-dark">{{ Str::limit($berita->judul, 50) }}</h5>
+                                <h5 class="card-title">{{ Str::limit($berita->judul, 50) }}</h5>
                             </a>
-                            <p class="card-text text-muted small">{{ $berita->excerpt }}</p>
+                            <p class="card-text text-muted small mb-0">{{ $berita->excerpt }}</p>
                         </div>
-                        <div class="card-footer bg-white border-0 d-flex justify-content-between align-items-center">
+                        <div class="card-footer d-flex justify-content-between align-items-center">
                             <small class="text-muted">
-                                <i class="fas fa-calendar me-1"></i>
+                                <i class="far fa-calendar-alt me-1 text-primary"></i>
                                 {{ $berita->tanggal_publikasi->format('d M Y') }}
                             </small>
-                            <a href="{{ route('ppdb.berita.show', $berita->slug) }}" class="btn btn-sm btn-outline-primary">
+                            <a href="{{ route('ppdb.berita.show', $berita->slug) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
                                 Baca <i class="fas fa-arrow-right ms-1"></i>
                             </a>
                         </div>
@@ -1654,61 +1868,86 @@
     {{-- Kontak Section --}}
     <section id="kontak" class="bg-soft">
         <div class="container">
-            <h2 class="section-title text-center fw-bold">Hubungi Kami</h2>
-            <p class="section-subtitle text-center">Butuh bantuan? Jangan ragu untuk menghubungi kami</p>
+            <div class="text-center mb-5">
+                <span class="section-badge"><i class="fas fa-headset me-1"></i> Pusat Bantuan</span>
+                <h2 class="section-title fw-bold">Hubungi Kami</h2>
+                <p class="section-subtitle">Butuh bantuan atau informasi lebih detail? Tim panitia siap melayani Anda</p>
+            </div>
+            
             <div class="row g-4">
                 <div class="col-md-6">
-                    <div class="card h-100 p-4">
-                        <h5 class="fw-bold mb-4"><i class="fas fa-school text-primary me-2"></i> {{ $sekolahSettings->nama_sekolah }}</h5>
+                    <div class="info-box-card">
+                        <div class="info-box-header">
+                            <div class="info-box-header-icon">
+                                <i class="fas fa-school"></i>
+                            </div>
+                            <div>
+                                <h5>{{ $sekolahSettings->nama_sekolah }}</h5>
+                                <small class="text-muted">{{ \App\Models\SekolahSettings::JENJANG_LIST[$sekolahSettings->jenjang] ?? $sekolahSettings->jenjang }}</small>
+                            </div>
+                        </div>
                         
                         @if($sekolahSettings->npsn || $sekolahSettings->nsm)
-                        <p class="mb-2">
+                        <div class="d-flex flex-wrap gap-2 mb-4">
                             @if($sekolahSettings->npsn)
-                            <span class="badge bg-primary me-2">NPSN: {{ $sekolahSettings->npsn }}</span>
+                            <span class="badge bg-primary px-3 py-2 rounded-pill">NPSN: {{ $sekolahSettings->npsn }}</span>
                             @endif
                             @if($sekolahSettings->nsm)
-                            <span class="badge bg-secondary">NSM: {{ $sekolahSettings->nsm }}</span>
+                            <span class="badge bg-secondary px-3 py-2 rounded-pill">NSM: {{ $sekolahSettings->nsm }}</span>
                             @endif
-                        </p>
+                        </div>
                         @endif
                         
-                        <p class="mb-3">
-                            <i class="fas fa-map-marker-alt text-primary me-2"></i>
-                            {{ $sekolahSettings->alamat_lengkap ?: ($siteSettings->alamat ?: 'Alamat belum diatur') }}
-                        </p>
+                        <div class="contact-info-item">
+                            <div class="contact-icon-box"><i class="fas fa-map-marker-alt"></i></div>
+                            <div class="contact-info-body">
+                                <small class="text-muted d-block">Alamat Lembaga</small>
+                                <span>{{ $sekolahSettings->alamat_lengkap ?: ($siteSettings->alamat ?: 'Alamat belum diatur') }}</span>
+                            </div>
+                        </div>
                         
                         @if($sekolahSettings->telepon || $siteSettings->telepon)
-                        <p class="mb-2">
-                            <i class="fas fa-phone text-primary me-2"></i>
-                            <a href="tel:{{ $sekolahSettings->telepon ?: $siteSettings->telepon }}">{{ $sekolahSettings->telepon ?: $siteSettings->telepon }}</a>
-                        </p>
+                        <div class="contact-info-item">
+                            <div class="contact-icon-box"><i class="fas fa-phone-alt"></i></div>
+                            <div class="contact-info-body">
+                                <small class="text-muted d-block">Telepon / WhatsApp</small>
+                                <a href="tel:{{ $sekolahSettings->telepon ?: $siteSettings->telepon }}">{{ $sekolahSettings->telepon ?: $siteSettings->telepon }}</a>
+                            </div>
+                        </div>
                         @endif
                         
                         @if($sekolahSettings->email || $siteSettings->email)
-                        <p class="mb-2">
-                            <i class="fas fa-envelope text-primary me-2"></i>
-                            <a href="mailto:{{ $sekolahSettings->email ?: $siteSettings->email }}">{{ $sekolahSettings->email ?: $siteSettings->email }}</a>
-                        </p>
+                        <div class="contact-info-item">
+                            <div class="contact-icon-box"><i class="fas fa-envelope"></i></div>
+                            <div class="contact-info-body">
+                                <small class="text-muted d-block">Email Resmi</small>
+                                <a href="mailto:{{ $sekolahSettings->email ?: $siteSettings->email }}">{{ $sekolahSettings->email ?: $siteSettings->email }}</a>
+                            </div>
+                        </div>
                         @endif
                         
                         @if($sekolahSettings->website || $siteSettings->website)
-                        <p class="mb-4">
-                            <i class="fas fa-globe text-primary me-2"></i>
-                            <a href="{{ $sekolahSettings->website ?: $siteSettings->website }}" target="_blank">{{ $sekolahSettings->website ?: $siteSettings->website }}</a>
-                        </p>
+                        <div class="contact-info-item">
+                            <div class="contact-icon-box"><i class="fas fa-globe"></i></div>
+                            <div class="contact-info-body">
+                                <small class="text-muted d-block">Website Resmi</small>
+                                <a href="{{ $sekolahSettings->website ?: $siteSettings->website }}" target="_blank">{{ $sekolahSettings->website ?: $siteSettings->website }}</a>
+                            </div>
+                        </div>
                         @endif
                         
                         @if($sekolahSettings->nama_kepala_sekolah)
-                        <hr>
-                        <p class="mb-1"><strong>Kepala Sekolah:</strong></p>
-                        <p class="mb-0">{{ $sekolahSettings->nama_kepala_sekolah }}</p>
-                        @if($sekolahSettings->nip_kepala_sekolah)
-                        <small class="text-muted">NIP: {{ $sekolahSettings->nip_kepala_sekolah }}</small>
-                        @endif
+                        <div class="mt-4 pt-3 border-top">
+                            <small class="text-muted d-block">Kepala Sekolah / Madrasah</small>
+                            <span class="fw-bold text-dark">{{ $sekolahSettings->nama_kepala_sekolah }}</span>
+                            @if($sekolahSettings->nip_kepala_sekolah)
+                            <small class="text-muted d-block">NIP. {{ $sekolahSettings->nip_kepala_sekolah }}</small>
+                            @endif
+                        </div>
                         @endif
                         
                         {{-- Social Links --}}
-                        <div class="social-links mt-4">
+                        <div class="social-links mt-4 pt-2">
                             @if($siteSettings->facebook_url)
                             <a href="{{ $siteSettings->facebook_url }}" target="_blank" title="Facebook">
                                 <i class="fab fa-facebook-f"></i>
@@ -1738,24 +1977,22 @@
                     </div>
                 </div>
                 <div class="col-md-6">
-                    @if($sekolahSettings->latitude && $sekolahSettings->longitude)
-                    <div class="card h-100 p-0 overflow-hidden">
-                        <div id="mapSekolah" style="height: 100%; min-height: 350px;"></div>
-                    </div>
-                    @elseif($siteSettings->google_maps_embed)
-                    <div class="card h-100 p-0 overflow-hidden">
-                        <div class="ratio ratio-4x3">
+                    <div class="info-box-card p-2 overflow-hidden d-flex flex-column justify-content-center">
+                        @if($sekolahSettings->latitude && $sekolahSettings->longitude)
+                        <div id="mapSekolah" style="height: 100%; min-height: 380px; border-radius: 14px;"></div>
+                        @elseif($siteSettings->google_maps_embed)
+                        <div class="ratio ratio-4x3" style="border-radius: 14px; overflow: hidden;">
                             {!! $siteSettings->google_maps_embed !!}
                         </div>
-                    </div>
-                    @else
-                    <div class="card h-100 d-flex align-items-center justify-content-center bg-light">
-                        <div class="text-center text-muted">
-                            <i class="fas fa-map-marked-alt fa-4x mb-3"></i>
-                            <p>Peta belum diatur</p>
+                        @else
+                        <div class="d-flex align-items-center justify-content-center bg-light" style="min-height: 380px; border-radius: 14px;">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-map-marked-alt fa-4x mb-3 text-secondary opacity-50"></i>
+                                <p class="mb-0">Peta belum diatur</p>
+                            </div>
                         </div>
+                        @endif
                     </div>
-                    @endif
                 </div>
             </div>
         </div>
@@ -1768,45 +2005,50 @@
                 <div class="col-md-4">
                     <div class="d-flex align-items-center mb-3">
                         @if($sekolahSettings->logo)
-                        <img src="{{ Storage::url($sekolahSettings->logo) }}" alt="{{ $sekolahSettings->nama_sekolah }}" style="height: 50px; filter: brightness(0) invert(1);" class="me-3">
+                        <img src="{{ Storage::url($sekolahSettings->logo) }}" alt="{{ $sekolahSettings->nama_sekolah }}" style="height: 48px; filter: brightness(0) invert(1);" class="me-3">
                         @elseif($siteSettings->logo)
-                        <img src="{{ $siteSettings->logo_url }}" alt="{{ $sekolahSettings->nama_sekolah }}" style="height: 50px; filter: brightness(0) invert(1);" class="me-3">
+                        <img src="{{ $siteSettings->logo_url }}" alt="{{ $sekolahSettings->nama_sekolah }}" style="height: 48px; filter: brightness(0) invert(1);" class="me-3">
                         @endif
                         <div>
-                            <h5 class="mb-0">{{ $sekolahSettings->nama_sekolah ?: 'PPDB Online' }}</h5>
-                            <small class="text-muted">{{ \App\Models\SekolahSettings::JENJANG_LIST[$sekolahSettings->jenjang] ?? $sekolahSettings->jenjang }}</small>
+                            <h5 class="mb-0 text-white fw-bold">{{ $sekolahSettings->nama_sekolah ?: 'PPDB Online' }}</h5>
+                            <small class="text-white-50">{{ \App\Models\SekolahSettings::JENJANG_LIST[$sekolahSettings->jenjang] ?? $sekolahSettings->jenjang }}</small>
                         </div>
                     </div>
                     @if($siteSettings->footer_text)
-                    <p class="text-muted small">{{ $siteSettings->footer_text }}</p>
+                    <p class="text-white-50 small mb-0">{{ $siteSettings->footer_text }}</p>
                     @endif
                 </div>
                 <div class="col-md-4">
-                    <h6 class="fw-bold mb-3">Link Cepat</h6>
+                    <h6 class="footer-heading">Navigasi Cepat</h6>
                     <ul class="list-unstyled">
-                        <li class="mb-2"><a href="#beranda"><i class="fas fa-chevron-right me-2"></i>Beranda</a></li>
-                        <li class="mb-2"><a href="#jadwal"><i class="fas fa-chevron-right me-2"></i>Jadwal</a></li>
-                        <li class="mb-2"><a href="#berita"><i class="fas fa-chevron-right me-2"></i>Berita</a></li>
-                        <li class="mb-2"><a href="{{ route('login') }}"><i class="fas fa-chevron-right me-2"></i>Login</a></li>
+                        <li class="mb-2"><a href="#beranda"><i class="fas fa-chevron-right me-2 text-primary small"></i>Beranda</a></li>
+                        <li class="mb-2"><a href="#alur"><i class="fas fa-chevron-right me-2 text-primary small"></i>Alur Pendaftaran</a></li>
+                        <li class="mb-2"><a href="#jadwal"><i class="fas fa-chevron-right me-2 text-primary small"></i>Jadwal PPDB</a></li>
+                        <li class="mb-2"><a href="#berita"><i class="fas fa-chevron-right me-2 text-primary small"></i>Berita & Pengumuman</a></li>
+                        <li class="mb-2"><a href="{{ route('login') }}"><i class="fas fa-chevron-right me-2 text-primary small"></i>Login Akun</a></li>
                     </ul>
                 </div>
                 <div class="col-md-4">
-                    <h6 class="fw-bold mb-3">Kontak</h6>
-                    <p class="text-muted small mb-2">
-                        <i class="fas fa-map-marker-alt me-2"></i>
+                    <h6 class="footer-heading">Sekretariat PPDB</h6>
+                    <p class="text-white-50 small mb-2">
+                        <i class="fas fa-map-marker-alt me-2 text-primary"></i>
                         {{ $sekolahSettings->alamat_lengkap ?: ($siteSettings->alamat ?: '-') }}
                     </p>
                     @if($sekolahSettings->telepon || $siteSettings->telepon)
-                    <p class="text-muted small mb-2"><i class="fas fa-phone me-2"></i>{{ $sekolahSettings->telepon ?: $siteSettings->telepon }}</p>
+                    <p class="text-white-50 small mb-2">
+                        <i class="fas fa-phone me-2 text-primary"></i>{{ $sekolahSettings->telepon ?: $siteSettings->telepon }}
+                    </p>
                     @endif
                     @if($sekolahSettings->email || $siteSettings->email)
-                    <p class="text-muted small mb-2"><i class="fas fa-envelope me-2"></i>{{ $sekolahSettings->email ?: $siteSettings->email }}</p>
+                    <p class="text-white-50 small mb-0">
+                        <i class="fas fa-envelope me-2 text-primary"></i>{{ $sekolahSettings->email ?: $siteSettings->email }}
+                    </p>
                     @endif
                 </div>
             </div>
-            <hr class="my-4 border-secondary">
+            <hr class="my-4">
             <div class="text-center">
-                <small class="text-muted">
+                <small class="text-white-50">
                     {{ $siteSettings->copyright_text ?: '© ' . date('Y') . ' ' . $sekolahSettings->nama_sekolah . '. All rights reserved.' }}
                 </small>
             </div>
