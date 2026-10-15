@@ -1109,46 +1109,126 @@
             display: none;
         }
         
-        /* Footer */
+        /* Minimalist Modern Footer */
         footer {
-            background: linear-gradient(180deg, #0b1329 0%, #060b18 100%);
-            color: #cbd5e1;
+            background: linear-gradient(180deg, #090e1a 0%, #050811 100%);
+            color: #94a3b8;
             border-top: 1px solid rgba(255, 255, 255, 0.08);
             position: relative;
-        }
-        
-        footer a {
-            color: #94a3b8;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            display: inline-block;
-        }
-        
-        footer a:hover {
-            color: #ffffff;
-            transform: translateX(3px);
+            font-size: 0.875rem;
         }
 
-        footer hr {
-            border-color: rgba(255, 255, 255, 0.08);
+        .footer-logo-badge {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+            padding: 3px;
+            flex-shrink: 0;
+        }
+
+        .footer-logo-badge img {
+            max-height: 100%;
+            max-width: 100%;
+            object-fit: contain;
+        }
+
+        .footer-brand-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            color: #f8fafc;
+            line-height: 1.25;
+        }
+
+        .footer-desc {
+            color: #64748b;
+            font-size: 0.815rem;
+            line-height: 1.6;
+            max-width: 420px;
         }
 
         .footer-heading {
-            color: #ffffff;
-            font-size: 1rem;
+            color: #f1f5f9;
+            font-size: 0.78rem;
             font-weight: 700;
-            margin-bottom: 1.25rem;
-            position: relative;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 7px;
         }
 
         .footer-heading::after {
-            content: '';
-            display: block;
-            width: 28px;
-            height: 3px;
-            border-radius: 2px;
-            background: var(--primary-color);
-            margin-top: 6px;
+            display: none !important;
+        }
+
+        .footer-heading-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #38bdf8;
+            display: inline-block;
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+        }
+
+        .footer-nav-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .footer-nav-list li {
+            margin-bottom: 0.45rem;
+        }
+
+        .footer-nav-list a {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.835rem;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .footer-nav-list a:hover {
+            color: #38bdf8;
+            transform: translateX(3px);
+        }
+
+        .footer-contact-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+            font-size: 0.825rem;
+            color: #94a3b8;
+            margin-bottom: 0.55rem;
+            line-height: 1.5;
+        }
+
+        .footer-contact-icon {
+            color: #38bdf8;
+            font-size: 0.825rem;
+            margin-top: 3px;
+            flex-shrink: 0;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.07);
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            padding-bottom: 0.25rem;
+        }
+
+        .footer-bottom-text {
+            color: #64748b;
+            font-size: 0.78rem;
         }
         
         .social-links a {
@@ -2095,58 +2175,78 @@
     </section>
 
     {{-- Footer --}}
-    <footer class="py-5">
+    @php
+        $footerLogo = $sekolahSettings->logo ? Storage::url($sekolahSettings->logo) : ($siteSettings->logo ? $siteSettings->logo_url : null);
+        $cleanFooter = trim($siteSettings->footer_text ?? '');
+        $isDummyFooter = in_array(strtolower($cleanFooter), ['footer', 'teks footer', '-', 'test', 'tes']);
+    @endphp
+    <footer class="pt-4 pb-3">
         <div class="container">
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <div class="d-flex align-items-center mb-3">
-                        @if($sekolahSettings->logo)
-                        <img src="{{ Storage::url($sekolahSettings->logo) }}" alt="{{ $sekolahSettings->nama_sekolah }}" style="height: 48px; filter: brightness(0) invert(1);" class="me-3">
-                        @elseif($siteSettings->logo)
-                        <img src="{{ $siteSettings->logo_url }}" alt="{{ $sekolahSettings->nama_sekolah }}" style="height: 48px; filter: brightness(0) invert(1);" class="me-3">
+            <div class="row g-4 align-items-start">
+                <div class="col-lg-5 col-md-12">
+                    <div class="d-flex align-items-center mb-2">
+                        @if($footerLogo)
+                        <div class="footer-logo-badge me-3">
+                            <img src="{{ $footerLogo }}" alt="{{ $sekolahSettings->nama_sekolah }}">
+                        </div>
                         @endif
                         <div>
-                            <h5 class="mb-0 text-white fw-bold">{{ $sekolahSettings->nama_sekolah ?: 'PPDB Online' }}</h5>
-                            <small class="text-white-50">{{ \App\Models\SekolahSettings::JENJANG_LIST[$sekolahSettings->jenjang] ?? $sekolahSettings->jenjang }}</small>
+                            <div class="footer-brand-title">{{ $sekolahSettings->nama_sekolah ?: 'PPDB Online' }}</div>
+                            <small class="text-white-50" style="font-size: 0.78rem;">{{ \App\Models\SekolahSettings::JENJANG_LIST[$sekolahSettings->jenjang] ?? ($sekolahSettings->jenjang ?: 'Madrasah Aliyah') }}</small>
                         </div>
                     </div>
-                    @if($siteSettings->footer_text)
-                    <p class="text-white-50 small mb-0">{{ $siteSettings->footer_text }}</p>
+                    @if($cleanFooter && !$isDummyFooter)
+                    <p class="footer-desc mt-2 mb-0">{{ $cleanFooter }}</p>
+                    @else
+                    <p class="footer-desc mt-2 mb-0">Sistem Informasi Penerimaan Peserta Didik Baru (PPDB) resmi diselenggarakan terpadu, transparan, dan akuntabel.</p>
                     @endif
                 </div>
-                <div class="col-md-4">
-                    <h6 class="footer-heading">Navigasi Cepat</h6>
-                    <ul class="list-unstyled">
-                        <li class="mb-2"><a href="#beranda"><i class="fas fa-chevron-right me-2 text-primary small"></i>Beranda</a></li>
-                        <li class="mb-2"><a href="#alur"><i class="fas fa-chevron-right me-2 text-primary small"></i>Alur Pendaftaran</a></li>
-                        <li class="mb-2"><a href="#jadwal"><i class="fas fa-chevron-right me-2 text-primary small"></i>Jadwal PPDB</a></li>
-                        <li class="mb-2"><a href="#berita"><i class="fas fa-chevron-right me-2 text-primary small"></i>Berita & Pengumuman</a></li>
-                        <li class="mb-2"><a href="{{ route('login') }}"><i class="fas fa-chevron-right me-2 text-primary small"></i>Login Akun</a></li>
+
+                <div class="col-lg-3 col-sm-6 col-6">
+                    <div class="footer-heading">
+                        <span class="footer-heading-dot"></span>
+                        Navigasi
+                    </div>
+                    <ul class="footer-nav-list">
+                        <li><a href="#beranda"><i class="fas fa-angle-right opacity-50"></i> Beranda</a></li>
+                        <li><a href="#alur"><i class="fas fa-angle-right opacity-50"></i> Alur Pendaftaran</a></li>
+                        <li><a href="#jadwal"><i class="fas fa-angle-right opacity-50"></i> Jadwal PPDB</a></li>
+                        <li><a href="#berita"><i class="fas fa-angle-right opacity-50"></i> Berita & Informasi</a></li>
+                        <li><a href="{{ route('login') }}"><i class="fas fa-angle-right opacity-50"></i> Login Akun</a></li>
                     </ul>
                 </div>
-                <div class="col-md-4">
-                    <h6 class="footer-heading">Sekretariat PPDB</h6>
-                    <p class="text-white-50 small mb-2">
-                        <i class="fas fa-map-marker-alt me-2 text-primary"></i>
-                        {{ $sekolahSettings->alamat_lengkap ?: ($siteSettings->alamat ?: '-') }}
-                    </p>
+
+                <div class="col-lg-4 col-sm-6 col-6">
+                    <div class="footer-heading">
+                        <span class="footer-heading-dot"></span>
+                        Sekretariat
+                    </div>
+                    <div class="footer-contact-item">
+                        <i class="fas fa-map-marker-alt footer-contact-icon"></i>
+                        <span>{{ $sekolahSettings->alamat_lengkap ?: ($siteSettings->alamat ?: '-') }}</span>
+                    </div>
                     @if($sekolahSettings->telepon || $siteSettings->telepon)
-                    <p class="text-white-50 small mb-2">
-                        <i class="fas fa-phone me-2 text-primary"></i>{{ $sekolahSettings->telepon ?: $siteSettings->telepon }}
-                    </p>
+                    <div class="footer-contact-item">
+                        <i class="fas fa-phone-alt footer-contact-icon"></i>
+                        <span>{{ $sekolahSettings->telepon ?: $siteSettings->telepon }}</span>
+                    </div>
                     @endif
                     @if($sekolahSettings->email || $siteSettings->email)
-                    <p class="text-white-50 small mb-0">
-                        <i class="fas fa-envelope me-2 text-primary"></i>{{ $sekolahSettings->email ?: $siteSettings->email }}
-                    </p>
+                    <div class="footer-contact-item">
+                        <i class="fas fa-envelope footer-contact-icon"></i>
+                        <span>{{ $sekolahSettings->email ?: $siteSettings->email }}</span>
+                    </div>
                     @endif
                 </div>
             </div>
-            <hr class="my-4">
-            <div class="text-center">
-                <small class="text-white-50">
+
+            <div class="footer-bottom d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+                <span class="footer-bottom-text">
                     {{ $siteSettings->copyright_text ?: '© ' . date('Y') . ' ' . $sekolahSettings->nama_sekolah . '. All rights reserved.' }}
-                </small>
+                </span>
+                <span class="footer-bottom-text opacity-75">
+                    Portal PPDB Online Terpadu
+                </span>
             </div>
         </div>
     </footer>
