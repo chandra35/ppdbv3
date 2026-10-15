@@ -78,10 +78,110 @@
             padding-bottom: 10px;
             transition: all 0.3s ease;
         }
-        
-        .navbar-brand img {
+
+        .navbar-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.85rem;
+            text-decoration: none;
+            padding: 0;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .navbar-brand:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+
+        .navbar-brand-logo {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .navbar-brand-logo img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.08));
+        }
+
+        .brand-icon-fallback {
+            width: 42px;
             height: 42px;
-            border-radius: 6px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary-color), #1d4ed8);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            box-shadow: 0 4px 10px rgba(13, 110, 253, 0.25);
+        }
+
+        .navbar-brand-text {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .brand-title {
+            font-size: 1.12rem;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+            color: #0f172a;
+            line-height: 1.2;
+            margin-bottom: 2px;
+        }
+
+        .brand-sub {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            line-height: 1;
+        }
+
+        .brand-badge-portal {
+            display: inline-block;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            color: var(--primary-color);
+            background: rgba(13, 110, 253, 0.09);
+            padding: 0.15rem 0.45rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .brand-divider {
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: #94a3b8;
+        }
+
+        .brand-jenjang {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        @media (max-width: 576px) {
+            .navbar-brand-logo {
+                width: 38px;
+                height: 38px;
+                min-width: 38px;
+            }
+            .brand-title {
+                font-size: 0.95rem;
+            }
+            .brand-jenjang {
+                font-size: 0.7rem;
+            }
         }
 
         .navbar-nav .nav-link {
@@ -1266,19 +1366,25 @@
     {{-- Navbar --}}
     <nav class="navbar navbar-expand-lg navbar-light fixed-top">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="{{ route('ppdb.landing') }}">
-                @if($sekolahSettings->logo)
-                    <img src="{{ Storage::url($sekolahSettings->logo) }}" alt="{{ $sekolahSettings->nama_sekolah }}" class="me-2">
-                @elseif($siteSettings->logo)
-                    <img src="{{ $siteSettings->logo_url }}" alt="{{ $sekolahSettings->nama_sekolah }}" class="me-2">
-                @else
-                    <i class="fas fa-graduation-cap fa-2x text-primary me-2"></i>
-                @endif
-                <div>
-                    <strong class="d-block">{{ $sekolahSettings->nama_sekolah ?: 'PPDB Online' }}</strong>
-                    <small class="text-muted" style="font-size: 11px;">
-                        {{ \App\Models\SekolahSettings::JENJANG_LIST[$sekolahSettings->jenjang] ?? $sekolahSettings->jenjang }}
-                    </small>
+            <a class="navbar-brand" href="{{ route('ppdb.landing') }}">
+                <div class="navbar-brand-logo">
+                    @if($sekolahSettings->logo)
+                        <img src="{{ Storage::url($sekolahSettings->logo) }}" alt="{{ $sekolahSettings->nama_sekolah }}">
+                    @elseif($siteSettings->logo)
+                        <img src="{{ $siteSettings->logo_url }}" alt="{{ $sekolahSettings->nama_sekolah }}">
+                    @else
+                        <div class="brand-icon-fallback">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                    @endif
+                </div>
+                <div class="navbar-brand-text">
+                    <span class="brand-title">{{ $sekolahSettings->nama_sekolah ?: 'PPDB Online' }}</span>
+                    <div class="brand-sub">
+                        <span class="brand-badge-portal">PORTAL PPDB</span>
+                        <span class="brand-divider"></span>
+                        <span class="brand-jenjang">{{ \App\Models\SekolahSettings::JENJANG_LIST[$sekolahSettings->jenjang] ?? $sekolahSettings->jenjang }}</span>
+                    </div>
                 </div>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -1933,16 +2039,6 @@
                                 <small class="text-muted d-block">Website Resmi</small>
                                 <a href="{{ $sekolahSettings->website ?: $siteSettings->website }}" target="_blank">{{ $sekolahSettings->website ?: $siteSettings->website }}</a>
                             </div>
-                        </div>
-                        @endif
-                        
-                        @if($sekolahSettings->nama_kepala_sekolah)
-                        <div class="mt-4 pt-3 border-top">
-                            <small class="text-muted d-block">Kepala Sekolah / Madrasah</small>
-                            <span class="fw-bold text-dark">{{ $sekolahSettings->nama_kepala_sekolah }}</span>
-                            @if($sekolahSettings->nip_kepala_sekolah)
-                            <small class="text-muted d-block">NIP. {{ $sekolahSettings->nip_kepala_sekolah }}</small>
-                            @endif
                         </div>
                         @endif
                         
